@@ -53,6 +53,9 @@ import com.android.launcher3.logger.LauncherAtom;
 import com.android.launcher3.testing.TestLogging;
 import com.android.launcher3.testing.shared.TestProtocol;
 import com.android.launcher3.util.TouchUtil;
+import com.android.launcher3.util.VibratorWrapper;
+
+import app.lawnchair.preferences.PreferenceManager;
 
 import app.lawnchair.LawnchairLauncher;
 
@@ -244,8 +247,17 @@ public class WorkspaceTouchListener extends GestureDetector.SimpleOnGestureListe
                 mLongPressState = STATE_PENDING_PARENT_INFORM;
                 mWorkspace.getParent().requestDisallowInterceptTouchEvent(true);
 
-                mWorkspace.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS,
-                        HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING);
+                int primeLongPress = PreferenceManager.getInstance(mWorkspace.getContext())
+                        .getPrimeHapticWorkspaceLongPress().get();
+                if (primeLongPress >= 100) {
+                    mWorkspace.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS,
+                            HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING);
+                } else if (primeLongPress > 0) {
+                    VibratorWrapper.INSTANCE.get(mWorkspace.getContext()).vibrateScaled(
+                            android.os.VibrationEffect.Composition.PRIMITIVE_CLICK,
+                            primeLongPress / 100f,
+                            12L);
+                }
                 mLauncher.getStatsLogManager().logger().log(LAUNCHER_WORKSPACE_LONGPRESS);
                 mLauncher.showDefaultOptions(mTouchDownPoint.x, mTouchDownPoint.y);
                 if (mLauncher.isSplitSelectionActive()) {
