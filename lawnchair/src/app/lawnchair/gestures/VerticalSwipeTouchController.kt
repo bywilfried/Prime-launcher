@@ -7,6 +7,7 @@ import app.lawnchair.LawnchairLauncher
 import app.lawnchair.gestures.config.GestureHandlerConfig
 import app.lawnchair.preferences2.PreferenceManager2
 import com.android.launcher3.AbstractFloatingView
+import com.android.launcher3.folder.FolderIcon
 import com.android.launcher3.LauncherState
 import com.android.launcher3.Utilities
 import com.android.launcher3.touch.BothAxesSwipeDetector
@@ -90,6 +91,24 @@ class VerticalSwipeTouchController(
         if (isIconSwipe) {
             return false
         }
+        // FolderIcon owns long-press -> drag. If this controller arms on the same ACTION_DOWN,
+        // it can become DragLayer's active controller before the folder starts dragging, which
+        // either triggers the configured vertical gesture or starves DragController of MOVE events.
+        val isWorkspaceFolder = launcher.workspace?.let {
+            val coord = floatArrayOf(ev.x, ev.y)
+            launcher.dragLayer.mapCoordInSelfToDescendant(it, coord)
+            val cell = it.getPageAt(it.currentPage) as? com.android.launcher3.CellLayout
+            val container = cell?.shortcutsAndWidgets
+            (0 until (container?.childCount ?: 0)).any { index ->
+                val child = container?.getChildAt(index)
+                child is FolderIcon &&
+                    coord[0] >= child.left && coord[0] < child.right &&
+                    coord[1] >= child.top && coord[1] < child.bottom
+            }
+        } ?: false
+        if (isWorkspaceFolder) {
+            return false
+        }
         return AbstractFloatingView.getTopOpenView(launcher) == null &&
             launcher.isInState(LauncherState.NORMAL)
     }
@@ -99,10 +118,6 @@ class VerticalSwipeTouchController(
     }
 
     override fun onDrag(displacement: PointF, motionEvent: MotionEvent): Boolean {
-        // A workspace item drag can start after this controller accepted ACTION_DOWN.
-        // Once DragController owns the gesture, never trigger the configured Home swipe action
-        // from the same pointer stream (notably Prime folder long-press -> drag).
-        if (launcher.dragController.isDragging) return true
         if (triggered) return true
         val velocity = computeVelocity(displacement.y - currentDisplacement, motionEvent.eventTime)
         if (velocity.absoluteValue > TRIGGER_VELOCITY) {
