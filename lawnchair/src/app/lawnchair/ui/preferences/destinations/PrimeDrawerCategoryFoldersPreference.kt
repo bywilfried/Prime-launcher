@@ -95,6 +95,10 @@ fun PrimeDrawerCategoryFoldersPreference(tabId: String) {
                     bottomSheetHandler.hide()
                     navController.navigate(PrimeDrawerFolderApps(tabId, folder.id))
                 },
+                onAdvanced = {
+                    bottomSheetHandler.hide()
+                    navController.navigate(PrimeDrawerFolderAdvanced(tabId, folder.id))
+                },
                 interactionSource = interactionSource,
                 dragIndicator = {
                     ReorderableDragHandle(
@@ -113,6 +117,7 @@ private fun PrimeFolderItem(
     onRename: (String) -> Unit,
     onDelete: () -> Unit,
     onManageApps: () -> Unit,
+    onAdvanced: () -> Unit,
     interactionSource: MutableInteractionSource,
     dragIndicator: @Composable () -> Unit,
 ) {
@@ -153,9 +158,13 @@ private fun PrimeFolderItem(
                     onDismiss = { bottomSheetHandler.hide() },
                     onAdvanced = {
                         bottomSheetHandler.hide()
-                        navController.navigate(PrimeDrawerFolderAdvanced(tabId, folder.id))
+                        onAdvanced()
                     },
                     onDelete = onDelete,
+                    onAdvanced = {
+                        bottomSheetHandler.hide()
+                        onAdvanced()
+                    },
                 )
             }
         },
