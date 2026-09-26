@@ -1105,6 +1105,8 @@
     <string name="prime_haptic_workspace">Workspace</string>
     <string name="prime_haptic_drawer">App drawer</string>
     <string name="prime_haptic_reorder">Reordering</string>
+    <string name="prime_haptic_workspace_long_press">Workspace long press</string>
+    <string name="prime_haptic_drag_start">Drag start</string>
     <string name="prime_haptic_icon_drag">Icon drag</string>
     <string name="prime_haptic_drawer_threshold">Drawer swipe threshold</string>
     <string name="prime_haptic_drawer_tap">Drawer tap / open</string>
