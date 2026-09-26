@@ -94,16 +94,29 @@ class VerticalSwipeTouchController(
         // FolderIcon owns long-press -> drag. If this controller arms on the same ACTION_DOWN,
         // it can become DragLayer's active controller before the folder starts dragging, which
         // either triggers the configured vertical gesture or starves DragController of MOVE events.
-        val isWorkspaceFolder = launcher.workspace?.let {
+        val isWorkspaceFolder = launcher.workspace?.let { workspace ->
             val coord = floatArrayOf(ev.x, ev.y)
-            launcher.dragLayer.mapCoordInSelfToDescendant(it, coord)
-            val cell = it.getPageAt(it.currentPage) as? com.android.launcher3.CellLayout
-            val container = cell?.shortcutsAndWidgets
-            (0 until (container?.childCount ?: 0)).any { index ->
-                val child = container?.getChildAt(index)
-                child is FolderIcon &&
-                    coord[0] >= child.left && coord[0] < child.right &&
-                    coord[1] >= child.top && coord[1] < child.bottom
+            launcher.dragLayer.mapCoordInSelfToDescendant(workspace, coord)
+            // getPageAt(currentPage) is not reliable while Workspace is between pages / settling.
+            // Hit-test every visible CellLayout in Workspace coordinates instead.
+            (0 until workspace.childCount).any { pageIndex ->
+                val cell = workspace.getChildAt(pageIndex) as? com.android.launcher3.CellLayout
+                    ?: return@any false
+                val container = cell.shortcutsAndWidgets
+                (0 until container.childCount).any { index ->
+                    val child = container.getChildAt(index)
+                    if (child !is FolderIcon || child.visibility != android.view.View.VISIBLE) {
+                        return@any false
+                    }
+                    val location = IntArray(2)
+                    child.getLocationInWindow(location)
+                    val dragLayerLocation = IntArray(2)
+                    launcher.dragLayer.getLocationInWindow(dragLayerLocation)
+                    val x = ev.x + dragLayerLocation[0]
+                    val y = ev.y + dragLayerLocation[1]
+                    x >= location[0] && x < location[0] + child.width &&
+                        y >= location[1] && y < location[1] + child.height
+                }
             }
         } ?: false
         if (isWorkspaceFolder) {
