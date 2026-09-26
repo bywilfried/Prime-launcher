@@ -59,6 +59,7 @@ import app.lawnchair.ui.preferences.destinations.PrimeDrawerCategoryPreference
 import app.lawnchair.ui.preferences.destinations.PrimeDrawerCategoryAppsPreference
 import app.lawnchair.ui.preferences.destinations.PrimeDrawerCategoryAdvancedPreference
 import app.lawnchair.ui.preferences.destinations.PrimeDrawerFolderAdvancedPreference
+import app.lawnchair.ui.preferences.destinations.PrimeHomeFolderAdvancedPreference
 import app.lawnchair.ui.preferences.destinations.PrimeDevelopmentOptionsPreference
 import app.lawnchair.ui.preferences.destinations.PrimeDrawerCategoryFoldersPreference
 import app.lawnchair.ui.preferences.destinations.PrimeDrawerFolderAppsPreference
@@ -200,6 +201,55 @@ fun PreferenceNavigation(
         composable<PrimeDrawerFolderAdvanced> { backStackEntry ->
             val route: PrimeDrawerFolderAdvanced = backStackEntry.toRoute()
             PrimeDrawerFolderAdvancedPreference(route.tabId, route.folderId)
+        }
+        composable<PrimeHomeFolderAdvanced> { backStackEntry ->
+            val route: PrimeHomeFolderAdvanced = backStackEntry.toRoute()
+            PrimeHomeFolderAdvancedPreference(route.folderId)
+        }
+        composable<PrimeHomeFolderShape> { backStackEntry ->
+            val route: PrimeHomeFolderShape = backStackEntry.toRoute()
+            val context = LocalContext.current
+            val repository = PrimeDrawerTabsRepository(context)
+            val prefs2 = preferenceManager2()
+            val stored = repository.getHomeFolderVisualOverrides(route.folderId)
+            val current = when (route.shapeKey) {
+                "folderChildIcon" -> stored.childIconShape
+                else -> stored.shape
+            }
+            val inherited = if (route.shapeKey == "folderShape") prefs2.folderShape.firstCached() else prefs2.iconShape.firstCached()
+            var selected by remember(route.folderId, route.shapeKey) {
+                mutableStateOf(current?.let { IconShape.fromString(it, context) } ?: inherited)
+            }
+            PrimeShapeSelection(
+                label = route.label,
+                selectedShape = selected,
+                onSelect = { shape ->
+                    selected = shape ?: inherited
+                    val o = repository.getHomeFolderVisualOverrides(route.folderId)
+                    repository.setHomeFolderVisualOverrides(
+                        route.folderId,
+                        if (route.shapeKey == "folderChildIcon") o.copy(childIconShape = shape?.toString()) else o.copy(shape = shape?.toString()),
+                    )
+                },
+            )
+        }
+        composable<PrimeHomeFolderColor> { backStackEntry ->
+            val route: PrimeHomeFolderColor = backStackEntry.toRoute()
+            val context = LocalContext.current
+            val repository = PrimeDrawerTabsRepository(context)
+            val stored = repository.getHomeFolderVisualOverrides(route.folderId)
+            PrimeColorSelection(
+                label = route.label,
+                appliedColor = stored.color?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default,
+                onApply = { option ->
+                    val resolved = when (option) {
+                        ColorOption.Default -> null
+                        else -> option.colorPreferenceEntry.lightColor(context)
+                    }
+                    val o = repository.getHomeFolderVisualOverrides(route.folderId)
+                    repository.setHomeFolderVisualOverrides(route.folderId, o.copy(color = resolved))
+                },
+            )
         }
         composable<PrimeDrawerShape> { backStackEntry ->
             val route: PrimeDrawerShape = backStackEntry.toRoute()
