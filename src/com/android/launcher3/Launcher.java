@@ -1251,7 +1251,7 @@ public class Launcher extends StatefulActivity<LauncherState>
             View folderView = mWorkspace.getViewByItemId(folderId);
             if (folderView instanceof FolderIcon folderIcon) {
                 folderIcon.getFolder().applyPrimeVisualOverrides();
-                folderIcon.invalidate();
+                folderIcon.refreshPrimeVisualOverrides();
             }
         }
         TraceHelper.INSTANCE.endSection();
