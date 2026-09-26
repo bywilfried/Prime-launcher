@@ -248,6 +248,15 @@ class PrimeDrawerTabsRepository(context: Context) {
         prefs.edit { putString(PREF_HOME_FOLDER_OVERRIDES, root.toString()) }
     }
 
+    fun getHomeFolderOverrideIds(): Set<Int> {
+        val root = runCatching { JSONObject(prefs.getString(PREF_HOME_FOLDER_OVERRIDES, "{}")) }
+            .getOrElse { JSONObject() }
+        return buildSet {
+            val keys = root.keys()
+            while (keys.hasNext()) keys.next().toIntOrNull()?.let(::add)
+        }
+    }
+
     fun deleteHomeFolderVisualOverrides(folderId: Int) {
         val root = runCatching { JSONObject(prefs.getString(PREF_HOME_FOLDER_OVERRIDES, "{}")) }
             .getOrElse { JSONObject() }
