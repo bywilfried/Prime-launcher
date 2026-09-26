@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -225,9 +227,12 @@ fun FolderEditSheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     hideAppPicker: Boolean = false,
+    onAdvanced: (() -> Unit)? = null,
+    onDelete: (() -> Unit)? = null,
 ) {
     val resources = LocalResources.current
     var textFieldValue by remember { mutableStateOf(TextFieldValue(initialTitle)) }
+    var deleteOpen by remember { mutableStateOf(false) }
 
     ModalBottomSheetContent(
         buttons = {
@@ -276,8 +281,44 @@ fun FolderEditSheet(
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 ) {
                     onNavigate(folderId)
-                }            }
+                }
+                if (onAdvanced != null) {
+                    ClickablePreference(
+                        label = stringResource(R.string.prime_tab_advanced),
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        onClick = onAdvanced,
+                    )
+                }
+                if (onDelete != null) {
+                    ClickablePreference(
+                        label = "Supprimer",
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        onClick = { deleteOpen = true },
+                    )
+                }
+            }
         }
+    }
+    if (deleteOpen && onDelete != null) {
+        AlertDialog(
+            onDismissRequest = { deleteOpen = false },
+            title = { Text("Supprimer") },
+            text = { Text("Supprimer ce dossier ?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    deleteOpen = false
+                    onDelete()
+                    onDismiss()
+                }) { Text("Supprimer") }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteOpen = false }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            },
+        )
     }
 }
 
