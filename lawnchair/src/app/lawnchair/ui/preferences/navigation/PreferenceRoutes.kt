@@ -96,6 +96,9 @@ data object Smartspace : PreferenceRootRoute, PreferenceDeepLink {
 data object PrimeDevelopmentOptions : PreferenceRootRoute
 
 @Serializable
+data object PrimeHapticTuning : PreferenceRoute
+
+@Serializable
 data object About : PreferenceRootRoute, PreferenceDeepLink {
     override val deepLink = "$URI/about"
 }
