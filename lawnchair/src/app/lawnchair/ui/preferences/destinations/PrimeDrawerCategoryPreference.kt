@@ -17,6 +17,7 @@ import app.lawnchair.ui.preferences.LocalNavController
 import app.lawnchair.ui.preferences.components.controls.ClickablePreference
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
+import app.lawnchair.ui.preferences.navigation.PrimeDrawerCategoryAdvanced
 import app.lawnchair.ui.preferences.navigation.PrimeDrawerCategoryApps
 import app.lawnchair.ui.preferences.navigation.PrimeDrawerCategoryFolders
 import com.android.launcher3.R
@@ -72,6 +73,10 @@ fun PrimeDrawerCategoryPreference(tabId: String) {
                 ClickablePreference(
                     label = stringResource(id = R.string.app_drawer_folder),
                     onClick = { navController.navigate(PrimeDrawerCategoryFolders(tab.id)) },
+                )
+                ClickablePreference(
+                    label = stringResource(id = R.string.prime_tab_advanced),
+                    onClick = { navController.navigate(PrimeDrawerCategoryAdvanced(tab.id)) },
                 )
                 ClickablePreference(
                     label = "Supprimer",
