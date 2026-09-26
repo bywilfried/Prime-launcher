@@ -72,13 +72,22 @@ public class MSDLPlayerWrapper {
 
     /** Perform MSDL feedback for a token without properties */
     public void playToken(MSDLToken token) {
-        int percent = getPrimeHapticPercent(token);
+        playPrimeScaledToken(token, getPrimeHapticPercent(token));
+    }
+
+    /** Plays the settings reorder movement token with its independent Prime intensity. */
+    public void playPrimeReorderMoveToken(MSDLToken token) {
+        int percent = PreferenceManager.getInstance(mContext).getPrimeHapticReorderMove().get();
+        playPrimeScaledToken(token, percent);
+    }
+
+    private void playPrimeScaledToken(MSDLToken token, int percent) {
+        percent = Math.max(0, Math.min(100, percent));
         if (percent <= 0) return;
         if (percent >= 100) {
             mMSDLPlayer.playToken(token, null);
             return;
         }
-
         int primitive = token == MSDLToken.DRAG_INDICATOR_DISCRETE
                 || token == MSDLToken.SWIPE_THRESHOLD_INDICATOR
                 ? PRIMITIVE_TICK
@@ -87,8 +96,6 @@ public class MSDLPlayerWrapper {
         boolean scaled = VibratorWrapper.INSTANCE.get(mContext).vibrateScaled(
                 primitive, percent / 100f, fallbackDurationMs);
         if (!scaled) {
-            // This vibrator cannot expose meaningful amplitude scaling. Keep the native token
-            // rather than pretending that a lower percentage changed its intensity.
             mMSDLPlayer.playToken(token, null);
         }
     }
