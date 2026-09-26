@@ -25,6 +25,8 @@ import app.lawnchair.ui.preferences.components.colorpreference.ColorPreference
 import app.lawnchair.theme.color.ColorOption
 import app.lawnchair.ui.preferences.navigation.PrimeDrawerCategoryColor
 import app.lawnchair.ui.preferences.navigation.PrimeDrawerShape
+import app.lawnchair.ui.preferences.navigation.PrimeHomeFolderColor
+import app.lawnchair.ui.preferences.navigation.PrimeHomeFolderShape
 import app.lawnchair.icons.shape.IconShape
 import app.lawnchair.ui.preferences.destinations.IconShapePreview
 import app.lawnchair.ui.preferences.components.controls.ClickablePreference
@@ -79,6 +81,65 @@ fun PrimeDrawerFolderAdvancedPreference(tabId: String, folderId: String) {
     PreferenceLayout(label = stringResource(id = R.string.folders_label), backArrowVisible = true) {
         PrimeFolderOptions(tabId, folderId, overrides.value, inherited, ::update)
     }
+}
+
+@Composable
+fun PrimeHomeFolderAdvancedPreference(folderId: Int) {
+    val context = LocalContext.current
+    val repository = remember { PrimeDrawerTabsRepository(context) }
+    val overrides = remember(folderId) {
+        mutableStateOf(repository.getHomeFolderVisualOverrides(folderId))
+    }
+    fun update(value: PrimeDrawerFolderVisualOverrides) {
+        overrides.value = value
+        repository.setHomeFolderVisualOverrides(folderId, value)
+    }
+    val prefs = preferenceManager()
+    val prefs2 = preferenceManager2()
+    val value = overrides.value
+
+    PreferenceLayout(label = stringResource(id = R.string.folders_label), backArrowVisible = true) {
+        PreferenceGroup(heading = stringResource(id = R.string.folders_label)) {
+            HomeFolderShapePreference("Forme des icônes dans les dossiers", value.childIconShape, folderId, "folderChildIcon")
+        }
+        PreferenceGroup(heading = stringResource(id = R.string.general_label)) {
+            HomeFolderShapePreference(stringResource(id = R.string.folder_shape_label), value.shape, folderId, "folderShape")
+            HomeFolderColorPreference("Couleur de l’arrière-plan des icônes", value.color, folderId)
+            NullableFloatSlider(stringResource(id = R.string.folder_preview_bg_opacity_label), value.previewOpacity, prefs2.folderPreviewBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, true) { update(value.copy(previewOpacity = it)) }
+            NullableFloatSlider(stringResource(id = R.string.folder_bg_opacity_label), value.backgroundOpacity, prefs2.folderBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, true) { update(value.copy(backgroundOpacity = it)) }
+        }
+        PreferenceGroup(heading = stringResource(id = R.string.grid)) {
+            NullableIntSlider(stringResource(id = R.string.max_folder_columns), value.columns, prefs2.folderColumns.getAdapter().state.value, 2..5) { update(value.copy(columns = it)) }
+            NullableIntSlider(stringResource(id = R.string.max_folder_rows), value.rows, prefs.folderRows.getAdapter().state.value, 2..5) { update(value.copy(rows = it)) }
+        }
+        PreferenceGroup(heading = stringResource(id = R.string.icons)) {
+            NullableSwitch(stringResource(id = R.string.show_labels), value.showLabels, prefs2.showIconLabelsOnHomeScreenFolder.getAdapter().state.value) { update(value.copy(showLabels = it)) }
+            NullableFloatSlider(stringResource(id = R.string.label_size), value.labelSize, prefs2.homeIconLabelFolderSizeFactor.getAdapter().state.value, 0.5f..1.5f, 0.1f, true) { update(value.copy(labelSize = it)) }
+        }
+    }
+}
+
+@Composable
+private fun HomeFolderShapePreference(label: String, value: String?, folderId: Int, shapeKey: String) {
+    val context = LocalContext.current
+    val navController = LocalNavController.current
+    val shape = value?.let { runCatching { IconShape.fromString(it, context) }.getOrNull() }
+    PreferenceTemplate(
+        title = { Text(label) },
+        description = if (value == null) ({ Text("Configuration générale") }) else null,
+        endWidget = shape?.let { selected -> { IconShapePreview(iconShape = selected) } },
+        onClick = { navController.navigate(PrimeHomeFolderShape(folderId, shapeKey, label)) },
+    )
+}
+
+@Composable
+private fun HomeFolderColorPreference(label: String, value: Int?, folderId: Int) {
+    val navController = LocalNavController.current
+    ColorPreference(
+        label = label,
+        selectedColor = value?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default,
+        onClick = { navController.navigate(PrimeHomeFolderColor(folderId, label)) },
+    )
 }
 
 @Composable
