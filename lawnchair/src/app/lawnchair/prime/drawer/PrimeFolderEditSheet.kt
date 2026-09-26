@@ -73,7 +73,7 @@ object PrimeFolderEditSheet {
                     )
                     ClickablePreference(
                         label = "Manage apps",
-                        subtitle = icon.mInfo.contents.size.toString() + " apps",
+                        subtitle = icon.mInfo.getContents().size.toString() + " apps",
                         modifier = Modifier.padding(horizontal = 8.dp),
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     ) {
