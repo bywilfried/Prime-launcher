@@ -44,6 +44,9 @@ import com.android.launcher3.accessibility.DragViewStateAnnouncer;
 import com.android.launcher3.dragndrop.DragOptions.PreDragCondition;
 import com.android.launcher3.model.data.ItemInfo;
 import com.android.launcher3.util.TouchUtil;
+import com.android.launcher3.util.VibratorWrapper;
+
+import app.lawnchair.preferences.PreferenceManager;
 import com.android.launcher3.widget.util.WidgetDragScaleUtils;
 
 /**
@@ -179,7 +182,16 @@ public class LauncherDragController extends DragController<Launcher> {
             dragView.setDragRegion(new Rect(dragRegion));
         }
 
-        mActivity.getDragLayer().performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+        int primeDragStart = PreferenceManager.getInstance(mActivity)
+                .getPrimeHapticDragStart().get();
+        if (primeDragStart >= 100) {
+            mActivity.getDragLayer().performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+        } else if (primeDragStart > 0) {
+            VibratorWrapper.INSTANCE.get(mActivity).vibrateScaled(
+                    android.os.VibrationEffect.Composition.PRIMITIVE_CLICK,
+                    primeDragStart / 100f,
+                    12L);
+        }
         dragView.show(mLastTouch.x, mLastTouch.y);
         mDistanceSinceScroll = 0;
 
