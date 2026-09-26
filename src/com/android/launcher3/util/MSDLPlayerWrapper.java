@@ -17,8 +17,9 @@
 package com.android.launcher3.util;
 
 import android.content.Context;
-import android.os.Build;
-import android.os.VibrationAttributes;
+import static android.os.VibrationEffect.Composition.PRIMITIVE_CLICK;
+import static android.os.VibrationEffect.Composition.PRIMITIVE_TICK;
+
 import android.os.Vibrator;
 
 import app.lawnchair.preferences.PreferenceManager;
@@ -73,16 +74,23 @@ public class MSDLPlayerWrapper {
     public void playToken(MSDLToken token) {
         int percent = getPrimeHapticPercent(token);
         if (percent <= 0) return;
-        if (percent >= 100 || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+        if (percent >= 100) {
             mMSDLPlayer.playToken(token, null);
             return;
         }
-        InteractionProperties properties = new InteractionProperties.DynamicVibrationScale(
-                percent / 100f,
-                new VibrationAttributes.Builder()
-                        .setUsage(VibrationAttributes.USAGE_TOUCH)
-                        .build());
-        mMSDLPlayer.playToken(token, properties);
+
+        int primitive = token == MSDLToken.DRAG_INDICATOR_DISCRETE
+                || token == MSDLToken.SWIPE_THRESHOLD_INDICATOR
+                ? PRIMITIVE_TICK
+                : PRIMITIVE_CLICK;
+        long fallbackDurationMs = primitive == PRIMITIVE_TICK ? 8L : 12L;
+        boolean scaled = VibratorWrapper.INSTANCE.get(mContext).vibrateScaled(
+                primitive, percent / 100f, fallbackDurationMs);
+        if (!scaled) {
+            // This vibrator cannot expose meaningful amplitude scaling. Keep the native token
+            // rather than pretending that a lower percentage changed its intensity.
+            mMSDLPlayer.playToken(token, null);
+        }
     }
 
     private int getPrimeHapticPercent(MSDLToken token) {
