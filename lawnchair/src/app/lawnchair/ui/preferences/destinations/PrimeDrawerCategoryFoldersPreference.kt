@@ -161,10 +161,6 @@ private fun PrimeFolderItem(
                         onAdvanced()
                     },
                     onDelete = onDelete,
-                    onAdvanced = {
-                        bottomSheetHandler.hide()
-                        onAdvanced()
-                    },
                 )
             }
         },
