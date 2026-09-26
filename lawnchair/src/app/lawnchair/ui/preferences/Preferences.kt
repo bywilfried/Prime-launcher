@@ -16,7 +16,9 @@
 
 package app.lawnchair.ui.preferences
 
+import android.app.Activity
 import android.content.Intent
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.requiredWidth
@@ -35,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -80,6 +83,10 @@ fun Preferences(
     interactor: PreferenceInteractor = viewModel<PreferenceViewModel>(),
 ) {
     val navController = rememberNavController()
+    val activity = LocalContext.current as? Activity
+    BackHandler(enabled = startDestination != null && navController.previousBackStackEntry == null) {
+        activity?.finish()
+    }
     val isExpandedScreen = windowSizeClass.widthSizeClass == WindowWidthSizeClass.Expanded &&
         windowSizeClass.heightSizeClass in
         setOf(WindowHeightSizeClass.Expanded, WindowHeightSizeClass.Medium)
