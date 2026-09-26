@@ -17,7 +17,11 @@
 package com.android.launcher3.util;
 
 import android.content.Context;
+import android.os.Build;
+import android.os.VibrationAttributes;
 import android.os.Vibrator;
+
+import app.lawnchair.preferences.PreferenceManager;
 
 import androidx.annotation.Nullable;
 
@@ -47,10 +51,12 @@ public class MSDLPlayerWrapper {
 
     /** Internal player */
     private final MSDLPlayer mMSDLPlayer;
+    private final Context mContext;
 
     @Inject
     public MSDLPlayerWrapper(@ApplicationContext Context context,
             DumpManager dumpManager, DaggerSingletonTracker lifeCycle) {
+        mContext = context;
         Vibrator vibrator = context.getSystemService(Vibrator.class);
         mMSDLPlayer = MSDLPlayer.Companion.createPlayer(vibrator,
                 java.util.concurrent.Executors.newSingleThreadExecutor(),
@@ -65,7 +71,36 @@ public class MSDLPlayerWrapper {
 
     /** Perform MSDL feedback for a token without properties */
     public void playToken(MSDLToken token) {
-        mMSDLPlayer.playToken(token, null);
+        int percent = getPrimeHapticPercent(token);
+        if (percent <= 0) return;
+        if (percent >= 100 || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            mMSDLPlayer.playToken(token, null);
+            return;
+        }
+        InteractionProperties properties = new InteractionProperties.DynamicVibrationScale(
+                percent / 100f,
+                new VibrationAttributes.Builder()
+                        .setUsage(VibrationAttributes.USAGE_TOUCH)
+                        .build());
+        mMSDLPlayer.playToken(token, properties);
+    }
+
+    private int getPrimeHapticPercent(MSDLToken token) {
+        PreferenceManager prefs = PreferenceManager.getInstance(mContext);
+        if (token == MSDLToken.DRAG_INDICATOR_DISCRETE) {
+            return prefs.getPrimeHapticIconDrag().get();
+        } else if (token == MSDLToken.SWIPE_THRESHOLD_INDICATOR) {
+            return prefs.getPrimeHapticDrawerThreshold().get();
+        } else if (token == MSDLToken.TAP_HIGH_EMPHASIS) {
+            return prefs.getPrimeHapticDrawerTap().get();
+        } else if (token == MSDLToken.START) {
+            return prefs.getPrimeHapticReorderStart().get();
+        } else if (token == MSDLToken.STOP) {
+            return prefs.getPrimeHapticReorderEnd().get();
+        } else if (token == MSDLToken.CANCEL) {
+            return prefs.getPrimeHapticReorderCancel().get();
+        }
+        return 100;
     }
 
     public List<MSDLEvent> getHistory() {
