@@ -111,6 +111,8 @@ class PreferenceManager @Inject constructor(
     val workspaceColumns = IntPref("pref_workspaceColumns", calculatedGridSpec.workspaceColumns)
     val workspaceRows = IntPref("pref_workspaceRows", calculatedGridSpec.workspaceRows)
     val workspaceIncreaseMaxGridSize = BoolPref("pref_workspace_increase_max_grid_size", false)
+    val primeHapticWorkspaceLongPress = IntPref("pref_prime_haptic_workspace_long_press", 100)
+    val primeHapticDragStart = IntPref("pref_prime_haptic_drag_start", 100)
     val primeHapticIconDrag = IntPref("pref_prime_haptic_icon_drag", 100)
     val primeHapticDrawerThreshold = IntPref("pref_prime_haptic_drawer_threshold", 100)
     val primeHapticDrawerTap = IntPref("pref_prime_haptic_drawer_tap", 100)
