@@ -369,9 +369,25 @@ public final class PrimeFolderLongPressHelper {
 
     public static PrimeDrawerFolderVisualOverrides getVisualOverrides(Context context, FolderInfo info) {
         PrimeFolderRef ref = getPrimeRef(info);
-        if (ref == null) return null;
-        return new PrimeDrawerTabsRepository(context)
-                .getResolvedFolderVisualOverrides(ref.tabId, ref.folderId);
+        PrimeDrawerTabsRepository repository = new PrimeDrawerTabsRepository(context);
+        if (ref != null) {
+            return repository.getResolvedFolderVisualOverrides(ref.tabId, ref.folderId);
+        }
+        if (info.id >= 0) {
+            return repository.getHomeFolderVisualOverrides(info.id);
+        }
+        return null;
+    }
+
+    public static void setWorkspaceAppsFromSheet(FolderIcon icon, java.util.List<String> componentKeys) {
+        Launcher launcher = Launcher.getLauncher(icon.getContext());
+        AppInfo[] apps = launcher.getAppsView().getAppsStore().getApps().clone();
+        Set<ComponentKey> keys = new HashSet<>();
+        for (String value : componentKeys) {
+            ComponentKey key = ComponentKey.fromString(value);
+            if (key != null) keys.add(key);
+        }
+        icon.getFolder().setAppsFromPrimeMenu(keys, apps);
     }
 
     private static PrimeFolderRef getPrimeRef(FolderInfo info) {
