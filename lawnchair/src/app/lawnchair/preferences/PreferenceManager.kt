@@ -111,6 +111,13 @@ class PreferenceManager @Inject constructor(
     val workspaceColumns = IntPref("pref_workspaceColumns", calculatedGridSpec.workspaceColumns)
     val workspaceRows = IntPref("pref_workspaceRows", calculatedGridSpec.workspaceRows)
     val workspaceIncreaseMaxGridSize = BoolPref("pref_workspace_increase_max_grid_size", false)
+    val primeHapticIconDrag = IntPref("pref_prime_haptic_icon_drag", 100)
+    val primeHapticDrawerThreshold = IntPref("pref_prime_haptic_drawer_threshold", 100)
+    val primeHapticDrawerTap = IntPref("pref_prime_haptic_drawer_tap", 100)
+    val primeHapticReorderStart = IntPref("pref_prime_haptic_reorder_start", 100)
+    val primeHapticReorderMove = IntPref("pref_prime_haptic_reorder_move", 100)
+    val primeHapticReorderEnd = IntPref("pref_prime_haptic_reorder_end", 100)
+    val primeHapticReorderCancel = IntPref("pref_prime_haptic_reorder_cancel", 100)
     val folderRows = IdpIntPref("pref_folderRows", { numFolderRows[INDEX_DEFAULT] }, reloadGrid)
 
     val drawerOpacity = FloatPref("pref_drawerOpacity", .5f, recreate)
