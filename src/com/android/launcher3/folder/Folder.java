@@ -728,12 +728,7 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
 
     void bind(FolderInfo info) {
         mInfo = info;
-        PrimeDrawerFolderVisualOverrides primeOverrides =
-                PrimeFolderLongPressHelper.getVisualOverrides(getContext(), info);
-        mContent.applyPrimeGridOverrides(primeOverrides);
-        if (primeOverrides != null && primeOverrides.getBackgroundOpacity() != null) {
-            mBackground.setAlpha(Math.round(255 * primeOverrides.getBackgroundOpacity()));
-        }
+        applyPrimeVisualOverrides();
         mFromTitle = info.title;
         mFromLabelState = info.getFromLabelState();
         updateItemLocationsInDatabaseBatch(true);
@@ -753,6 +748,20 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
                 replaceFolderWithFinalItem();
             }
         });
+    }
+
+    public void applyPrimeVisualOverrides() {
+        if (mInfo == null) return;
+        PrimeDrawerFolderVisualOverrides primeOverrides =
+                PrimeFolderLongPressHelper.getVisualOverrides(getContext(), mInfo);
+        mContent.applyPrimeGridOverrides(primeOverrides);
+        if (primeOverrides != null && primeOverrides.getBackgroundOpacity() != null) {
+            mBackground.setAlpha(Math.round(255 * primeOverrides.getBackgroundOpacity()));
+        } else {
+            mBackground.setAlpha(LawnchairUtilsKt.getFolderBackgroundAlpha(getContext()));
+        }
+        requestLayout();
+        invalidate();
     }
 
     public void reapplyItemInfo() {
