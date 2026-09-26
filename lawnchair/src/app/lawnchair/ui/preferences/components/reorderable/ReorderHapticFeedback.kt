@@ -1,5 +1,10 @@
 package app.lawnchair.ui.preferences.components.reorderable
 
+import android.os.Build
+import android.os.VibrationAttributes
+import app.lawnchair.preferences.preferenceManager
+import com.google.android.msdl.domain.InteractionProperties
+
 import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.Composable
@@ -23,18 +28,34 @@ interface ReorderHapticFeedback {
 @Composable
 fun rememberReorderHapticFeedback(): ReorderHapticFeedback {
     val mMSDLPlayerWrapper = MSDLPlayerWrapper.INSTANCE.get(LocalContext.current)
+    val prefs = preferenceManager()
 
     val reorderHapticFeedback = remember {
         object : ReorderHapticFeedback {
             override fun performHapticFeedback(type: ReorderHapticFeedbackType) {
-                mMSDLPlayerWrapper.playToken(
-                    when (type) {
-                        ReorderHapticFeedbackType.START -> MSDLToken.START
-                        ReorderHapticFeedbackType.MOVE -> MSDLToken.DRAG_INDICATOR_DISCRETE
-                        ReorderHapticFeedbackType.END -> MSDLToken.STOP
-                        ReorderHapticFeedbackType.CANCEL -> MSDLToken.CANCEL
-                    },
-                )
+                val token = when (type) {
+                    ReorderHapticFeedbackType.START -> MSDLToken.START
+                    ReorderHapticFeedbackType.MOVE -> MSDLToken.DRAG_INDICATOR_DISCRETE
+                    ReorderHapticFeedbackType.END -> MSDLToken.STOP
+                    ReorderHapticFeedbackType.CANCEL -> MSDLToken.CANCEL
+                }
+                if (type == ReorderHapticFeedbackType.MOVE) {
+                    val percent = prefs.primeHapticReorderMove.get().coerceIn(0, 100)
+                    if (percent == 0) return
+                    if (percent < 100 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        mMSDLPlayerWrapper.playToken(
+                            token,
+                            InteractionProperties.DynamicVibrationScale(
+                                scale = percent / 100f,
+                                vibrationAttributes = VibrationAttributes.Builder()
+                                    .setUsage(VibrationAttributes.USAGE_TOUCH)
+                                    .build(),
+                            ),
+                        )
+                        return
+                    }
+                }
+                mMSDLPlayerWrapper.playToken(token)
             }
         }
     }
