@@ -20,6 +20,8 @@ fun PrimeHapticTuningPreference() {
         backArrowVisible = true,
     ) {
         PreferenceGroup(heading = stringResource(R.string.prime_haptic_workspace)) {
+            HapticSlider(stringResource(R.string.prime_haptic_workspace_long_press), prefs.primeHapticWorkspaceLongPress)
+            HapticSlider(stringResource(R.string.prime_haptic_drag_start), prefs.primeHapticDragStart)
             HapticSlider(stringResource(R.string.prime_haptic_icon_drag), prefs.primeHapticIconDrag)
         }
         PreferenceGroup(heading = stringResource(R.string.prime_haptic_drawer)) {
@@ -36,6 +38,8 @@ fun PrimeHapticTuningPreference() {
             ClickablePreference(
                 label = stringResource(R.string.prime_haptic_reset_all),
                 onClick = {
+                    prefs.primeHapticWorkspaceLongPress.set(100)
+                    prefs.primeHapticDragStart.set(100)
                     prefs.primeHapticIconDrag.set(100)
                     prefs.primeHapticDrawerThreshold.set(100)
                     prefs.primeHapticDrawerTap.set(100)
