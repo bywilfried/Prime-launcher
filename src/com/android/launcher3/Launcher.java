@@ -1241,6 +1241,17 @@ public class Launcher extends StatefulActivity<LauncherState>
         }
 
         DragView.removeAllViews(this);
+
+        // Prime Home-folder settings are edited in PreferenceActivity while Launcher is paused.
+        // Reapply them to the existing Folder views when returning instead of waiting for a rebind.
+        PrimeDrawerTabsRepository primeRepository = new PrimeDrawerTabsRepository(this);
+        for (Integer folderId : primeRepository.getHomeFolderOverrideIds()) {
+            View folderView = mWorkspace.getViewByItemId(folderId);
+            if (folderView instanceof FolderIcon folderIcon) {
+                folderIcon.getFolder().applyPrimeVisualOverrides();
+                folderIcon.invalidate();
+            }
+        }
         TraceHelper.INSTANCE.endSection();
     }
 
