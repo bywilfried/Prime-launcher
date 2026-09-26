@@ -18,6 +18,8 @@
 
 package com.android.launcher3;
 
+import app.lawnchair.prime.drawer.PrimeDrawerTabsRepository;
+
 import static android.content.pm.ActivityInfo.CONFIG_UI_MODE;
 import static android.view.WindowInsetsAnimation.Callback.DISPATCH_MODE_CONTINUE_ON_SUBTREE;
 import static android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED;
