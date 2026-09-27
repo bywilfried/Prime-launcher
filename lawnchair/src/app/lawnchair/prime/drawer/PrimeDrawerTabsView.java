@@ -630,8 +630,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         background.setShape(GradientDrawable.RECTANGLE);
         background.setCornerRadius(dp(20));
         if (selected) {
-            int defaultTabColor = PreferenceManager2.getInstance(getContext())
-                    .getDrawerTabsColor().get().getColorPreferenceEntry().getLightColor().invoke(getContext());
+            int defaultTabColor = resolveDefaultTabColor();
             background.setColor(selectedColor != null ? selectedColor : defaultTabColor);
         } else {
             background.setColor(0x00000000);
@@ -646,6 +645,23 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         params.setMarginEnd(dp(8));
         mTabsContainer.addView(pill, params);
         return pill;
+    }
+
+    private int resolveDefaultTabColor() {
+        app.lawnchair.theme.color.ColorOption option = PreferenceManager2.getInstance(getContext())
+                .getDrawerTabsColor().get();
+        if (option instanceof app.lawnchair.theme.color.ColorOption.CustomColor) {
+            return ((app.lawnchair.theme.color.ColorOption.CustomColor) option).getColor();
+        }
+        if (option == app.lawnchair.theme.color.ColorOption.WallpaperPrimary.INSTANCE) {
+            android.app.WallpaperColors colors = android.app.WallpaperManager.getInstance(getContext())
+                    .getWallpaperColors(android.app.WallpaperManager.FLAG_SYSTEM);
+            if (colors != null && colors.getPrimaryColor() != null) {
+                return colors.getPrimaryColor().toArgb();
+            }
+            return 0xFF007FFF;
+        }
+        return Themes.getAttrColor(getContext(), android.R.attr.colorAccent);
     }
 
     private int dp(int value) {
