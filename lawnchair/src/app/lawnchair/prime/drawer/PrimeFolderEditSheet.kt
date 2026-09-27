@@ -1,5 +1,6 @@
 package app.lawnchair.prime.drawer
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.getValue
 import app.lawnchair.data.folder.FolderEntry
 import app.lawnchair.ui.preferences.PreferenceActivity
@@ -79,6 +80,8 @@ object PrimeFolderEditSheet {
     private fun showWorkspaceApps(icon: FolderIcon) {
         val launcher = Launcher.getLauncher(icon.context)
         ComposeBottomSheet.show(launcher) {
+            val sheet = this
+            BackHandler { sheet.close(true) }
             val apps by appsState()
             val selected = icon.mInfo.getContents().mapNotNull { item ->
                 item.targetComponent?.let { component ->
@@ -97,6 +100,7 @@ object PrimeFolderEditSheet {
                     PrimeFolderLongPressHelper.setWorkspaceAppsFromSheet(icon, componentKeys)
                 },
                 showDuplicateFilter = false,
+                onBack = { sheet.close(true) },
             )
         }
     }
