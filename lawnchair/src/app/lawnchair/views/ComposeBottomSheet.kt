@@ -3,6 +3,7 @@ package app.lawnchair.views
 import android.content.Context
 import android.util.FloatProperty
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.animation.Interpolator
@@ -87,6 +88,22 @@ class ComposeBottomSheet<T>(context: Context) : AbstractSlideInView<T>(context, 
         super.onLayout(changed, l, t, r, b)
 
         setTranslationShift(mTranslationShift)
+    }
+
+    override fun dispatchKeyEventPreIme(event: KeyEvent): Boolean {
+        if (event.keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP && mIsOpen) {
+            close(true)
+            return true
+        }
+        return super.dispatchKeyEventPreIme(event)
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP && mIsOpen) {
+            close(true)
+            return true
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     private fun animateOpen() {
