@@ -226,6 +226,14 @@ class PreferenceManager2 @Inject constructor(
         onSet = { reloadHelper.recreate() },
     )
 
+    val drawerTabsColor = preference(
+        key = stringPreferencesKey(name = "prime_drawer_tabs_color"),
+        parse = ColorOption::fromString,
+        save = ColorOption::toString,
+        onSet = { reloadHelper.recreate() },
+        defaultValue = ColorOption.SystemAccent,
+    )
+
     val appDrawerBackgroundColor = preference(
         key = stringPreferencesKey(name = "app_drawer_bg_color"),
         parse = ColorOption::fromString,
