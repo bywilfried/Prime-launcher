@@ -61,7 +61,6 @@ fun FolderPreferences(
                 },
             )
             ColorPreference(preference = prefs2.folderColor)
-            ColorPreference(preference = prefs2.folderOpenColor)
             SliderPreference(
                 label = stringResource(id = R.string.folder_preview_bg_opacity_label),
                 adapter = prefs2.folderPreviewBackgroundOpacity.getAdapter(),
