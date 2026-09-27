@@ -1248,11 +1248,15 @@ public class Launcher extends StatefulActivity<LauncherState>
         // Reapply them to the existing Folder views when returning instead of waiting for a rebind.
         PrimeDrawerTabsRepository primeRepository = new PrimeDrawerTabsRepository(this);
         for (Integer folderId : primeRepository.getHomeFolderOverrideIds()) {
-            View folderView = mWorkspace.getViewByItemId(folderId);
-            if (folderView instanceof FolderIcon folderIcon) {
-                folderIcon.getFolder().applyPrimeVisualOverrides();
-                folderIcon.refreshPrimeVisualOverrides();
-            }
+            mWorkspace.mapOverItems((info, view) -> {
+                if (info instanceof FolderInfo folderInfo && folderInfo.id == folderId
+                        && view instanceof FolderIcon folderIcon) {
+                    folderIcon.getFolder().applyPrimeVisualOverrides();
+                    folderIcon.refreshPrimeVisualOverrides();
+                    return true;
+                }
+                return false;
+            });
         }
         TraceHelper.INSTANCE.endSection();
     }
