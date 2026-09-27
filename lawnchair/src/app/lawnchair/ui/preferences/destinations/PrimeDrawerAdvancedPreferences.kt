@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import app.lawnchair.prime.drawer.PrimeDrawerFolderVisualOverrides
 import app.lawnchair.prime.drawer.PrimeDrawerTabsRepository
+import app.lawnchair.prime.drawer.PrimeFolderLongPressHelper
 import app.lawnchair.prime.drawer.PrimeDrawerVisualOverrides
 import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences.preferenceManager
@@ -93,6 +94,7 @@ fun PrimeHomeFolderAdvancedPreference(folderId: Int) {
     fun update(value: PrimeDrawerFolderVisualOverrides) {
         overrides.value = value
         repository.setHomeFolderVisualOverrides(folderId, value)
+        PrimeFolderLongPressHelper.refreshHomeFolderVisualOverrides(context, folderId)
     }
     val prefs = preferenceManager()
     val prefs2 = preferenceManager2()
@@ -112,8 +114,10 @@ fun PrimeHomeFolderAdvancedPreference(folderId: Int) {
             NullableIntSlider(stringResource(id = R.string.max_folder_columns), value.columns, prefs2.folderColumns.getAdapter().state.value, 2..5) { update(value.copy(columns = it)) }
             NullableIntSlider(stringResource(id = R.string.max_folder_rows), value.rows, prefs.folderRows.getAdapter().state.value, 2..5) { update(value.copy(rows = it)) }
         }
-        PreferenceGroup(heading = stringResource(id = R.string.icons)) {
+        PreferenceGroup(heading = stringResource(id = R.string.folders_label)) {
             NullableSwitch("Afficher le nom du dossier fermé", value.showFolderLabel, true) { update(value.copy(showFolderLabel = it)) }
+        }
+        PreferenceGroup(heading = stringResource(id = R.string.icons)) {
             NullableSwitch(stringResource(id = R.string.show_labels), value.showLabels, prefs2.showIconLabelsOnHomeScreenFolder.getAdapter().state.value) { update(value.copy(showLabels = it)) }
             NullableFloatSlider(stringResource(id = R.string.label_size), value.labelSize, prefs2.homeIconLabelFolderSizeFactor.getAdapter().state.value, 0.5f..1.5f, 0.1f, true) { update(value.copy(labelSize = it)) }
         }
