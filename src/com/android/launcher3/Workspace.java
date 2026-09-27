@@ -3143,6 +3143,28 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
         } else {
             // This is for other drag/drop cases, like dragging from All Apps
             mLauncher.getStateManager().goToState(NORMAL, SPRING_LOADED_EXIT_DELAY);
+            // Prime drawer folders are projections of repository data, not Launcher model
+            // objects. Never persist/reuse that transient FolderInfo on Workspace: create a
+            // genuine independent Home FolderInfo and independent WorkspaceItemInfo children.
+            if (info instanceof FolderInfo sourceFolder
+                    && sourceFolder.container == ItemInfo.NO_ID) {
+                FolderInfo homeFolder = new FolderInfo();
+                homeFolder.title = sourceFolder.title;
+                homeFolder.options = sourceFolder.options;
+                homeFolder.id = ItemInfo.NO_ID;
+                homeFolder.container = ItemInfo.NO_ID;
+                for (ItemInfo sourceChild : sourceFolder.getContents()) {
+                    if (sourceChild instanceof WorkspaceItemInfo workspaceItem) {
+                        WorkspaceItemInfo homeChild = new WorkspaceItemInfo(workspaceItem);
+                        homeChild.id = ItemInfo.NO_ID;
+                        homeChild.container = ItemInfo.NO_ID;
+                        homeFolder.add(homeChild);
+                    }
+                }
+                info = homeFolder;
+                d.dragInfo = homeFolder;
+            }
+
             // TODO(b/414409465) We could just create a new info making a copy with all the new
             //  needed values instead of choosing on each case what to modify.
             View view = mLauncher.getItemInflater().inflateItem(info, cellLayout, container);
