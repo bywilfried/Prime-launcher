@@ -6,6 +6,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.material3.Text
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
@@ -100,18 +101,20 @@ fun PrimeHomeFolderAdvancedPreference(folderId: Int) {
     val prefs = preferenceManager()
     val prefs2 = preferenceManager2()
     val value = overrides.value
+    val defaultTextColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurface.toArgb()
+    val defaultFolderColor = app.lawnchair.util.resolveFolderBackgroundColor(context)
 
     PreferenceLayout(label = stringResource(id = R.string.folders_label), backArrowVisible = true) {
         PreferenceGroup(heading = "Dossier fermé") {
             HomeFolderShapePreference(stringResource(id = R.string.folder_shape_label), value.shape, prefs2.folderShape.getAdapter().state.value, folderId, "folderShape")
-            HomeFolderColorPreference("Couleur de l’arrière-plan des icônes", value.color, folderId, "folderColor")
+            HomeFolderColorPreference("Couleur de l’arrière-plan des icônes", value.color, defaultFolderColor, folderId, "folderColor")
             NullableFloatSlider(stringResource(id = R.string.folder_preview_bg_opacity_label), value.previewOpacity, prefs2.folderPreviewBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, true) { update(value.copy(previewOpacity = it)) }
             NullableSwitch("Afficher le nom du dossier fermé", value.showFolderLabel, true) { update(value.copy(showFolderLabel = it)) }
-            HomeFolderColorPreference("Couleur du nom du dossier fermé", value.closedLabelColor, folderId, "folderClosedText")
+            HomeFolderColorPreference("Couleur du nom du dossier fermé", value.closedLabelColor, defaultTextColor, folderId, "folderClosedText")
         }
         PreferenceGroup(heading = "Dossier ouvert") {
             NullableFloatSlider(stringResource(id = R.string.folder_bg_opacity_label), value.backgroundOpacity, prefs2.folderBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, true) { update(value.copy(backgroundOpacity = it)) }
-            HomeFolderColorPreference("Couleur du texte dans le dossier ouvert", value.textColor, folderId, "folderText")
+            HomeFolderColorPreference("Couleur du texte dans le dossier ouvert", value.textColor, defaultTextColor, folderId, "folderText")
         }
         PreferenceGroup(heading = stringResource(id = R.string.grid)) {
             NullableIntSlider(stringResource(id = R.string.max_folder_columns), value.columns, prefs2.folderColumns.getAdapter().state.value, 2..5) { update(value.copy(columns = it)) }
@@ -141,11 +144,14 @@ private fun HomeFolderShapePreference(label: String, value: String?, inherited: 
 }
 
 @Composable
-private fun HomeFolderColorPreference(label: String, value: Int?, folderId: Int, colorKey: String) {
+private fun HomeFolderColorPreference(label: String, value: Int?, inherited: Int, folderId: Int, colorKey: String) {
     val navController = LocalNavController.current
     ColorPreference(
         label = label,
         selectedColor = value?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default,
+        modifier = Modifier.alpha(if (value == null) 0.55f else 1f),
+        description = if (value == null) "Par défaut" else "Personnalisé",
+        previewColor = ColorOption.CustomColor(value ?: inherited),
         onClick = { navController.navigate(PrimeHomeFolderColor(folderId, label, colorKey)) },
     )
 }
@@ -156,12 +162,19 @@ private fun PrimeCategoryDrawerOptions(
     value: PrimeDrawerVisualOverrides,
     update: (PrimeDrawerVisualOverrides) -> Unit,
 ) {
+    val context = LocalContext.current
     val prefs = preferenceManager()
     val prefs2 = preferenceManager2()
+    val repository = remember { PrimeDrawerTabsRepository(context) }
+    val configuration = repository.getConfiguration()
+    val defaultTextColor = configuration.defaultDrawerTextColor ?: androidx.compose.material3.MaterialTheme.colorScheme.onSurface.toArgb()
+    val defaultBackgroundColor = configuration.defaultDrawerBackgroundColor
+        ?: prefs2.appDrawerBackgroundColor.getAdapter().state.value.colorPreferenceEntry.lightColor(context)
+    val defaultTabColor = prefs2.drawerTabsColor.getAdapter().state.value.colorPreferenceEntry.lightColor(context)
     PreferenceGroup(heading = stringResource(id = R.string.style)) {
-        NullableColorPreference("Couleur de l’onglet de cette catégorie", value.tabColor, tabId, "tab")
-        NullableColorPreference("Couleur d’arrière-plan", value.drawerBackgroundColor, tabId, "background")
-        NullableColorPreference("Couleur du texte", value.drawerTextColor, tabId, "drawerText")
+        NullableColorPreference("Couleur de l’onglet de cette catégorie", value.tabColor, defaultTabColor, tabId, "tab")
+        NullableColorPreference("Couleur d’arrière-plan", value.drawerBackgroundColor, defaultBackgroundColor, tabId, "background")
+        NullableColorPreference("Couleur du texte", value.drawerTextColor, defaultTextColor, tabId, "drawerText")
         NullableFloatSlider(stringResource(id = R.string.background_opacity), value.drawerBackgroundOpacity, prefs.drawerOpacity.getAdapter().state.value, 0f..1f, 0.1f, showAsPercentage = true) {
             update(value.copy(drawerBackgroundOpacity = it))
         }
@@ -211,12 +224,16 @@ private fun PrimeCategoryFolderOptions(
     value: PrimeDrawerVisualOverrides,
     update: (PrimeDrawerVisualOverrides) -> Unit,
 ) {
+    val context = LocalContext.current
     val prefs = preferenceManager()
     val prefs2 = preferenceManager2()
+    val repository = remember { PrimeDrawerTabsRepository(context) }
+    val defaultTextColor = repository.getConfiguration().defaultDrawerTextColor ?: androidx.compose.material3.MaterialTheme.colorScheme.onSurface.toArgb()
+    val defaultFolderColor = app.lawnchair.util.resolveFolderBackgroundColor(context)
     PreferenceGroup(heading = stringResource(id = R.string.general_label)) {
         NullableShapePreference(stringResource(id = R.string.folder_shape_label), value.folderShape, prefs2.folderShape.getAdapter().state.value, tabId, "folderShape")
-        NullableColorPreference("Couleur de l’arrière-plan des icônes", value.folderColor, tabId, "folderColor")
-        NullableColorPreference("Couleur du texte dans les dossiers", value.folderTextColor, tabId, "folderText")
+        NullableColorPreference("Couleur de l’arrière-plan des icônes", value.folderColor, defaultFolderColor, tabId, "folderColor")
+        NullableColorPreference("Couleur du texte dans les dossiers", value.folderTextColor, defaultTextColor, tabId, "folderText")
         NullableFloatSlider(stringResource(id = R.string.folder_preview_bg_opacity_label), value.folderPreviewOpacity, prefs2.folderPreviewBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, showAsPercentage = true) {
             update(value.copy(folderPreviewOpacity = it))
         }
@@ -257,21 +274,21 @@ private fun PrimeFolderOptions(
 
     PreferenceGroup(heading = "Dossier fermé") {
         NullableShapePreference(stringResource(id = R.string.folder_shape_label), value.shape, resolveInheritedShape(context, inherited.shape, prefs2.folderShape.getAdapter().state.value), tabId, "folderShape", folderId)
-        NullableColorPreference("Couleur de l’arrière-plan des icônes", value.color, tabId, "folderColor", folderId)
+        NullableColorPreference("Couleur de l’arrière-plan des icônes", value.color, inherited.color ?: app.lawnchair.util.resolveFolderBackgroundColor(context), tabId, "folderColor", folderId)
         NullableFloatSlider(stringResource(id = R.string.folder_preview_bg_opacity_label), value.previewOpacity, inherited.previewOpacity ?: prefs2.folderPreviewBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, showAsPercentage = true) {
             update(value.copy(previewOpacity = it))
         }
         NullableSwitch("Afficher le nom du dossier fermé", value.showFolderLabel, inherited.showFolderLabel ?: true) {
             update(value.copy(showFolderLabel = it))
         }
-        NullableColorPreference("Couleur du nom du dossier fermé", value.closedLabelColor, tabId, "folderClosedText", folderId)
+        NullableColorPreference("Couleur du nom du dossier fermé", value.closedLabelColor, inherited.closedLabelColor ?: androidx.compose.material3.MaterialTheme.colorScheme.onSurface.toArgb(), tabId, "folderClosedText", folderId)
     }
 
     PreferenceGroup(heading = "Dossier ouvert") {
         NullableFloatSlider(stringResource(id = R.string.folder_bg_opacity_label), value.backgroundOpacity, inherited.backgroundOpacity ?: prefs2.folderBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, showAsPercentage = true) {
             update(value.copy(backgroundOpacity = it))
         }
-        NullableColorPreference("Couleur du texte dans le dossier ouvert", value.textColor, tabId, "folderText", folderId)
+        NullableColorPreference("Couleur du texte dans le dossier ouvert", value.textColor, inherited.textColor ?: androidx.compose.material3.MaterialTheme.colorScheme.onSurface.toArgb(), tabId, "folderText", folderId)
     }
 
     PreferenceGroup(heading = stringResource(id = R.string.grid)) {
@@ -323,6 +340,7 @@ private fun NullableShapePreference(
 private fun NullableColorPreference(
     label: String,
     value: Int?,
+    inherited: Int,
     tabId: String,
     colorKey: String,
     folderId: String? = null,
@@ -331,6 +349,9 @@ private fun NullableColorPreference(
     ColorPreference(
         label = label,
         selectedColor = value?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default,
+        modifier = Modifier.alpha(if (value == null) 0.55f else 1f),
+        description = if (value == null) "Par défaut" else "Personnalisé",
+        previewColor = ColorOption.CustomColor(value ?: inherited),
         onClick = { navController.navigate(PrimeDrawerCategoryColor(tabId, colorKey, label, folderId)) },
     )
 }
