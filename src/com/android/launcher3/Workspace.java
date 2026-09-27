@@ -3206,7 +3206,10 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
             if (info instanceof FolderInfo folderInfo) {
                 int rank = 0;
                 for (ItemInfo child : folderInfo.getContents()) {
-                    child.rank = rank++;
+                    child.rank = rank;
+                    child.cellX = rank % Math.max(1, mLauncher.getDeviceProfile().inv.numFolderColumns);
+                    child.cellY = rank / Math.max(1, mLauncher.getDeviceProfile().inv.numFolderColumns);
+                    rank++;
                     mLauncher.getModelWriter().addOrMoveItemInDatabase(
                             child, folderInfo.id, 0, child.cellX, child.cellY);
                 }
