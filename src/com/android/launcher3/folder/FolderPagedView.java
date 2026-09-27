@@ -382,7 +382,12 @@ public class FolderPagedView extends PagedView<PageIndicatorDots> implements Cli
             if (primeOverrides != null) {
                 BubbleTextView bubble = (BubbleTextView) icon;
                 if (primeOverrides.getShowLabels() != null) {
-                    bubble.setTextVisibility(primeOverrides.getShowLabels());
+                    boolean showLabels = primeOverrides.getShowLabels();
+                    // Apply this at creation time as well as from Folder. Some folder children are
+                    // rebound after Folder.applyPrimeVisualOverrides(), which otherwise restores
+                    // the title for only those views.
+                    bubble.setText(showLabels ? item.title : "");
+                    bubble.setTextVisibility(showLabels);
                 }
                 if (primeOverrides.getLabelSize() != null) {
                     bubble.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX,
