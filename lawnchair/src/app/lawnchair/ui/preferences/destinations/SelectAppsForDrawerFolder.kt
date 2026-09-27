@@ -77,6 +77,7 @@ fun SelectAppsForDrawerFolder(
     showDuplicateFilter: Boolean = true,
     showStandardMenuActions: Boolean = true,
     reorderEnabled: Boolean = true,
+    onBack: (() -> Unit)? = null,
 ) {
     var filterNonUniqueItems by remember { mutableStateOf(true) }
 
@@ -120,6 +121,10 @@ fun SelectAppsForDrawerFolder(
         )
     }
 
+    if (onBack != null) {
+        androidx.activity.compose.BackHandler(onBack = onBack)
+    }
+
     PreferenceScaffold(
         label = if (loading) {
             stringResource(R.string.loading)
@@ -151,6 +156,8 @@ fun SelectAppsForDrawerFolder(
             }
         },
         isExpandedScreen = LocalIsExpandedScreen.current,
+        backArrowVisible = onBack != null || !LocalIsExpandedScreen.current,
+        onBack = onBack,
     ) { contentPadding ->
         Crossfade(targetState = loading, label = "") { isLoading ->
             if (isLoading) {
