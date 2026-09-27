@@ -43,6 +43,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import app.lawnchair.preferences.PreferenceManager;
+import app.lawnchair.preferences2.PreferenceManager2;
 import app.lawnchair.ui.preferences.PreferenceActivity;
 import app.lawnchair.ui.preferences.navigation.PrimeDrawerCategory;
 import app.lawnchair.ui.preferences.navigation.PrimeDrawerCategoryFolders;
