@@ -156,6 +156,7 @@ private fun PrimeCategoryDrawerOptions(
     PreferenceGroup(heading = stringResource(id = R.string.style)) {
         NullableColorPreference("Couleur de l’onglet de cette catégorie", value.tabColor, tabId, "tab")
         NullableColorPreference("Couleur d’arrière-plan", value.drawerBackgroundColor, tabId, "background")
+        NullableColorPreference("Couleur du texte", value.drawerTextColor, tabId, "drawerText")
         NullableFloatSlider(stringResource(id = R.string.background_opacity), value.drawerBackgroundOpacity, prefs.drawerOpacity.getAdapter().state.value, 0f..1f, 0.1f, showAsPercentage = true) {
             update(value.copy(drawerBackgroundOpacity = it))
         }
@@ -210,6 +211,7 @@ private fun PrimeCategoryFolderOptions(
     PreferenceGroup(heading = stringResource(id = R.string.general_label)) {
         NullableShapePreference(stringResource(id = R.string.folder_shape_label), value.folderShape, tabId, "folderShape")
         NullableColorPreference("Couleur de l’arrière-plan des icônes", value.folderColor, tabId, "folderColor")
+        NullableColorPreference("Couleur du texte dans les dossiers", value.folderTextColor, tabId, "folderText")
         NullableFloatSlider(stringResource(id = R.string.folder_preview_bg_opacity_label), value.folderPreviewOpacity, prefs2.folderPreviewBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, showAsPercentage = true) {
             update(value.copy(folderPreviewOpacity = it))
         }
@@ -249,6 +251,7 @@ private fun PrimeFolderOptions(
     PreferenceGroup(heading = stringResource(id = R.string.general_label)) {
         NullableShapePreference(stringResource(id = R.string.folder_shape_label), value.shape, tabId, "folderShape", folderId)
         NullableColorPreference("Couleur de l’arrière-plan des icônes", value.color, tabId, "folderColor", folderId)
+        NullableColorPreference("Couleur du texte", value.textColor, tabId, "folderText", folderId)
         NullableFloatSlider(stringResource(id = R.string.folder_preview_bg_opacity_label), value.previewOpacity, inherited.previewOpacity ?: prefs2.folderPreviewBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, showAsPercentage = true) {
             update(value.copy(previewOpacity = it))
         }
