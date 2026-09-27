@@ -78,6 +78,7 @@ fun SelectAppsForDrawerFolder(
     showStandardMenuActions: Boolean = true,
     reorderEnabled: Boolean = true,
     onBack: (() -> Unit)? = null,
+    handleSystemBack: Boolean = true,
 ) {
     var filterNonUniqueItems by remember { mutableStateOf(true) }
 
@@ -121,7 +122,7 @@ fun SelectAppsForDrawerFolder(
         )
     }
 
-    if (onBack != null) {
+    if (onBack != null && handleSystemBack) {
         androidx.activity.compose.BackHandler(onBack = onBack)
     }
 
