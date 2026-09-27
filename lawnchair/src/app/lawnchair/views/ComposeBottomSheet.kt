@@ -60,6 +60,9 @@ class ComposeBottomSheet<T>(context: Context) : AbstractSlideInView<T>(context, 
     }
 
     fun show() {
+        if (mActivityContext is Launcher) {
+            mActivityContext.registerPrimeComposeBackTarget(this)
+        }
         val parent = parent
         if (parent is ViewGroup) {
             parent.removeView(this)
@@ -105,6 +108,9 @@ class ComposeBottomSheet<T>(context: Context) : AbstractSlideInView<T>(context, 
     }
 
     override fun onCloseComplete() {
+        if (mActivityContext is Launcher) {
+            mActivityContext.clearPrimeComposeBackTarget(this)
+        }
         super.onCloseComplete()
         setSystemUiFlags(0)
     }
