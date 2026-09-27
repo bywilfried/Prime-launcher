@@ -70,6 +70,12 @@ class ComposeBottomSheet<T>(context: Context) : AbstractSlideInView<T>(context, 
         removeAllViews()
         addView(mContent)
         attachToContainer()
+        // Launcher normally recalculates whether Android's Back gesture may reach it when the
+        // DragLayer hierarchy changes. ComposeBottomSheet is attached programmatically, so make
+        // that recalculation explicit after this floating view is actually in the hierarchy.
+        if (mActivityContext is Launcher) {
+            mActivityContext.onDragLayerHierarchyChanged()
+        }
         animateOpen()
     }
 
@@ -112,6 +118,10 @@ class ComposeBottomSheet<T>(context: Context) : AbstractSlideInView<T>(context, 
             mActivityContext.clearPrimeComposeBackTarget(this)
         }
         super.onCloseComplete()
+        if (mActivityContext is Launcher) {
+            // Restore Launcher's normal Home back-gesture exclusion after the sheet is removed.
+            mActivityContext.onDragLayerHierarchyChanged()
+        }
         setSystemUiFlags(0)
     }
 
