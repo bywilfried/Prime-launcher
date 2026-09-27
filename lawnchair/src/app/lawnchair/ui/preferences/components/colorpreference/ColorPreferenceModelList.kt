@@ -40,6 +40,13 @@ class ColorPreferenceModelList @Inject constructor(
         )
         registerModel(
             ColorPreferenceModel(
+                prefObject = prefs.drawerTabsColor,
+                labelRes = R.string.prime_tabs_color,
+                dynamicEntries = dynamicColors,
+            ),
+        )
+        registerModel(
+            ColorPreferenceModel(
                 prefObject = prefs.appDrawerBackgroundColor,
                 labelRes = R.string.app_drawer_bg_color_label,
                 dynamicEntries = dynamicColorsWithDefault,
