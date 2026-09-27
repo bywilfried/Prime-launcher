@@ -101,9 +101,6 @@ fun PrimeHomeFolderAdvancedPreference(folderId: Int) {
     val value = overrides.value
 
     PreferenceLayout(label = stringResource(id = R.string.folders_label), backArrowVisible = true) {
-        PreferenceGroup(heading = stringResource(id = R.string.folders_label)) {
-            HomeFolderShapePreference("Forme des icônes dans les dossiers", value.childIconShape, folderId, "folderChildIcon")
-        }
         PreferenceGroup(heading = stringResource(id = R.string.general_label)) {
             HomeFolderShapePreference(stringResource(id = R.string.folder_shape_label), value.shape, folderId, "folderShape")
             HomeFolderColorPreference("Couleur de l’arrière-plan des icônes", value.color, folderId)
@@ -118,6 +115,7 @@ fun PrimeHomeFolderAdvancedPreference(folderId: Int) {
             NullableSwitch("Afficher le nom du dossier fermé", value.showFolderLabel, true) { update(value.copy(showFolderLabel = it)) }
         }
         PreferenceGroup(heading = stringResource(id = R.string.icons)) {
+            HomeFolderShapePreference("Forme des icônes dans les dossiers", value.childIconShape, folderId, "folderChildIcon")
             NullableSwitch(stringResource(id = R.string.show_labels), value.showLabels, prefs2.showIconLabelsOnHomeScreenFolder.getAdapter().state.value) { update(value.copy(showLabels = it)) }
             NullableFloatSlider(stringResource(id = R.string.label_size), value.labelSize, prefs2.homeIconLabelFolderSizeFactor.getAdapter().state.value, 0.5f..1.5f, 0.1f, true) { update(value.copy(labelSize = it)) }
         }
@@ -209,9 +207,6 @@ private fun PrimeCategoryFolderOptions(
 ) {
     val prefs = preferenceManager()
     val prefs2 = preferenceManager2()
-    PreferenceGroup(heading = stringResource(id = R.string.folders_label)) {
-        NullableShapePreference("Forme des icônes dans les dossiers", value.folderChildIconShape, tabId, "folderChildIcon")
-    }
     PreferenceGroup(heading = stringResource(id = R.string.general_label)) {
         NullableShapePreference(stringResource(id = R.string.folder_shape_label), value.folderShape, tabId, "folderShape")
         NullableColorPreference("Couleur de l’arrière-plan des icônes", value.folderColor, tabId, "folderColor")
@@ -231,6 +226,7 @@ private fun PrimeCategoryFolderOptions(
         }
     }
     PreferenceGroup(heading = stringResource(id = R.string.icons)) {
+        NullableShapePreference("Forme des icônes dans les dossiers", value.folderChildIconShape, tabId, "folderChildIcon")
         NullableSwitch(stringResource(id = R.string.show_labels), value.folderShowLabels, prefs2.showIconLabelsOnHomeScreenFolder.getAdapter().state.value) {
             update(value.copy(folderShowLabels = it))
         }
@@ -250,9 +246,6 @@ private fun PrimeFolderOptions(
 ) {
     val prefs = preferenceManager()
     val prefs2 = preferenceManager2()
-    PreferenceGroup(heading = stringResource(id = R.string.folders_label)) {
-        NullableShapePreference("Forme des icônes dans les dossiers", value.childIconShape, tabId, "folderChildIcon", folderId)
-    }
     PreferenceGroup(heading = stringResource(id = R.string.general_label)) {
         NullableShapePreference(stringResource(id = R.string.folder_shape_label), value.shape, tabId, "folderShape", folderId)
         NullableColorPreference("Couleur de l’arrière-plan des icônes", value.color, tabId, "folderColor", folderId)
@@ -272,6 +265,7 @@ private fun PrimeFolderOptions(
         }
     }
     PreferenceGroup(heading = stringResource(id = R.string.icons)) {
+        NullableShapePreference("Forme des icônes dans les dossiers", value.childIconShape, tabId, "folderChildIcon", folderId)
         NullableSwitch("Afficher le nom du dossier fermé", value.showFolderLabel, inherited.showFolderLabel ?: true) { update(value.copy(showFolderLabel = it)) }
         NullableSwitch(stringResource(id = R.string.show_labels), value.showLabels, inherited.showLabels ?: prefs2.showIconLabelsOnHomeScreenFolder.getAdapter().state.value) {
             update(value.copy(showLabels = it))
