@@ -181,6 +181,9 @@ public class DeviceProfile {
     public float iconScale;
     public int iconSizePx;
     public int iconTextSizePx;
+    // Workspace label size with the user's size factor, before the global visibility toggle.
+    // Prime folder-label overrides use this when Home labels are globally disabled.
+    public int primeWorkspaceLabelTextSizePx;
     public int iconDrawablePaddingPx;
     private int mIconDrawablePaddingOriginalPx;
     public boolean iconCenterVertically;
@@ -1230,6 +1233,13 @@ public class DeviceProfile {
         // Workspace
         final boolean isVerticalLayout = isVerticalBarLayout();
         cellLayoutBorderSpacePx = getCellLayoutBorderSpace(inv, scale);
+
+        // Lawnchair: Keep the configured Workspace label size available independently of the
+        // global visibility toggle. Prime can explicitly show a single folder label even when
+        // regular Home labels are disabled.
+        primeWorkspaceLabelTextSizePx = Math.round(iconTextSizePx
+                * PreferenceCacheExtensionsKt.firstCached(
+                        preferenceManager2.getHomeIconLabelSizeFactor()));
 
         // Lawnchair: Get initial text size before calculating layout
         // This scales offset with text sizing, all the way down to zero
