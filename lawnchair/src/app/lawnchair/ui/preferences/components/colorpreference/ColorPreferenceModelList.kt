@@ -81,11 +81,7 @@ class ColorPreferenceModelList @Inject constructor(
             ),
         )
         registerModel(
-            ColorPreferenceModel(
-                prefObject = prefs.folderOpenColor,
-                labelRes = R.string.folder_open_bg_color_label,
-                dynamicEntries = dynamicColorsWithDefault,
-            ),
+
         )
     }
 
