@@ -101,20 +101,22 @@ fun PrimeHomeFolderAdvancedPreference(folderId: Int) {
     val value = overrides.value
 
     PreferenceLayout(label = stringResource(id = R.string.folders_label), backArrowVisible = true) {
-        PreferenceGroup(heading = stringResource(id = R.string.general_label)) {
+        PreferenceGroup(heading = "Dossier fermé") {
             HomeFolderShapePreference(stringResource(id = R.string.folder_shape_label), value.shape, folderId, "folderShape")
             HomeFolderColorPreference("Couleur de l’arrière-plan des icônes", value.color, folderId, "folderColor")
             NullableFloatSlider(stringResource(id = R.string.folder_preview_bg_opacity_label), value.previewOpacity, prefs2.folderPreviewBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, true) { update(value.copy(previewOpacity = it)) }
+            NullableSwitch("Afficher le nom du dossier fermé", value.showFolderLabel, true) { update(value.copy(showFolderLabel = it)) }
+            HomeFolderColorPreference("Couleur du nom du dossier fermé", value.closedLabelColor, folderId, "folderClosedText")
+        }
+        PreferenceGroup(heading = "Dossier ouvert") {
             NullableFloatSlider(stringResource(id = R.string.folder_bg_opacity_label), value.backgroundOpacity, prefs2.folderBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, true) { update(value.copy(backgroundOpacity = it)) }
+            HomeFolderColorPreference("Couleur du texte dans le dossier ouvert", value.textColor, folderId, "folderText")
         }
         PreferenceGroup(heading = stringResource(id = R.string.grid)) {
             NullableIntSlider(stringResource(id = R.string.max_folder_columns), value.columns, prefs2.folderColumns.getAdapter().state.value, 2..5) { update(value.copy(columns = it)) }
             NullableIntSlider(stringResource(id = R.string.max_folder_rows), value.rows, prefs.folderRows.getAdapter().state.value, 2..5) { update(value.copy(rows = it)) }
         }
-        PreferenceGroup(heading = stringResource(id = R.string.folders_label)) {
-            NullableSwitch("Afficher le nom du dossier fermé", value.showFolderLabel, true) { update(value.copy(showFolderLabel = it)) }
-        }
-        PreferenceGroup(heading = stringResource(id = R.string.icons)) {
+        PreferenceGroup(heading = "Icônes dans le dossier ouvert") {
             HomeFolderShapePreference("Forme des icônes dans les dossiers", value.childIconShape, folderId, "folderChildIcon")
             NullableSwitch(stringResource(id = R.string.show_labels), value.showLabels, prefs2.showIconLabelsOnHomeScreenFolder.getAdapter().state.value) { update(value.copy(showLabels = it)) }
             NullableFloatSlider(stringResource(id = R.string.label_size), value.labelSize, prefs2.homeIconLabelFolderSizeFactor.getAdapter().state.value, 0.5f..1.5f, 0.1f, true) { update(value.copy(labelSize = it)) }
