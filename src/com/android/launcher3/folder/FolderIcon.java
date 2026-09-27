@@ -121,6 +121,7 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
     private static final int ON_OPEN_DELAY = 800;
 
     @Thunk BubbleTextView mFolderName;
+    private boolean mPrimeForceShowLabel;
 
     PreviewBackground mBackground = new PreviewBackground(getContext());
     private boolean mBackgroundIsVisible = true;
@@ -259,6 +260,7 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
             }
             if (primeOverrides.getShowFolderLabel() != null) {
                 boolean showFolderLabel = primeOverrides.getShowFolderLabel();
+                icon.mPrimeForceShowLabel = showFolderLabel;
                 icon.setTextVisible(showFolderLabel);
                 icon.mFolderName.setTextVisibility(showFolderLabel);
             }
@@ -290,6 +292,8 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
             shape = IconShape.Companion.fromString(overrides.getShape(), getContext());
         }
         mBackground.setPrimeShape(shape);
+        mPrimeForceShowLabel = overrides != null
+                && Boolean.TRUE.equals(overrides.getShowFolderLabel());
         if (overrides != null && overrides.getShowFolderLabel() != null) {
             boolean showFolderLabel = overrides.getShowFolderLabel();
             // FolderIcon.setTextVisible controls the actual View visibility used by Workspace.
@@ -305,6 +309,28 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
             mFolderName.setTextVisibility(showFolderLabel);
         }
         invalidate();
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+        if (mFolderName == null) return;
+
+        // When Home labels are globally disabled, DeviceProfile can shrink the Workspace cell to
+        // icon-only height. A Prime per-folder override may restore this label afterwards, so move
+        // only the overflowing part back inside this FolderIcon instead of changing the grid.
+        float translationY = 0f;
+        if (mPrimeForceShowLabel && mInfo != null && mInfo.container != ItemInfo.NO_ID) {
+            int textHeight = (int) Math.ceil(
+                    mFolderName.getPaint().getFontMetrics().bottom
+                            - mFolderName.getPaint().getFontMetrics().top);
+            int textBottom = mFolderName.getTop() + textHeight;
+            int overflow = textBottom - getHeight();
+            if (overflow > 0) {
+                translationY = -overflow;
+            }
+        }
+        mFolderName.setTranslationY(translationY);
     }
 
     public void animateBgShadowAndStroke() {
