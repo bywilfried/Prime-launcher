@@ -292,6 +292,9 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
             shape = IconShape.Companion.fromString(overrides.getShape(), getContext());
         }
         mBackground.setPrimeShape(shape);
+        if (overrides != null && overrides.getClosedLabelColor() != null) {
+            mFolderName.setTextColor(overrides.getClosedLabelColor());
+        }
         mPrimeForceShowLabel = overrides != null
                 && Boolean.TRUE.equals(overrides.getShowFolderLabel());
         if (overrides != null && overrides.getShowFolderLabel() != null) {
