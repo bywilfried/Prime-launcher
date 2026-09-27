@@ -241,8 +241,11 @@ fun PreferenceNavigation(
             val stored = repository.getHomeFolderVisualOverrides(route.folderId)
             PrimeColorSelection(
                 label = route.label,
-                appliedColor = stored.color
-                    ?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default,
+                appliedColor = when (route.colorKey) {
+                    "folderClosedText" -> stored.closedLabelColor
+                    "folderText" -> stored.textColor
+                    else -> stored.color
+                }?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default,
                 onApply = { option ->
                     val resolved = when (option) {
                         ColorOption.Default -> null
@@ -251,8 +254,13 @@ fun PreferenceNavigation(
                     val o = repository.getHomeFolderVisualOverrides(route.folderId)
                     repository.setHomeFolderVisualOverrides(
                         route.folderId,
-                        o.copy(color = resolved),
+                        when (route.colorKey) {
+                            "folderClosedText" -> o.copy(closedLabelColor = resolved)
+                            "folderText" -> o.copy(textColor = resolved)
+                            else -> o.copy(color = resolved)
+                        },
                     )
+                    PrimeFolderLongPressHelper.refreshHomeFolderVisualOverrides(route.folderId)
                 },
             )
         }
