@@ -376,12 +376,11 @@ public class FolderPagedView extends PagedView<PageIndicatorDots> implements Cli
             }
         }
 
-        if (icon instanceof BubbleTextView && mFolder.isInAppDrawer()) {
+        if (icon instanceof BubbleTextView) {
             PrimeDrawerFolderVisualOverrides primeOverrides =
                     PrimeFolderLongPressHelper.getVisualOverrides(getContext(), mFolder.getInfo());
             if (primeOverrides != null) {
                 BubbleTextView bubble = (BubbleTextView) icon;
-                bubble.setTextVisibility(true);
                 if (primeOverrides.getShowLabels() != null) {
                     bubble.setTextVisibility(primeOverrides.getShowLabels());
                 }
