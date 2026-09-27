@@ -241,7 +241,7 @@ fun PreferenceNavigation(
             val stored = repository.getHomeFolderVisualOverrides(route.folderId)
             PrimeColorSelection(
                 label = route.label,
-                appliedColor = (if (route.colorKey == "folderOpenColor") stored.openColor else stored.color)
+                appliedColor = stored.color
                     ?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default,
                 onApply = { option ->
                     val resolved = when (option) {
@@ -251,7 +251,7 @@ fun PreferenceNavigation(
                     val o = repository.getHomeFolderVisualOverrides(route.folderId)
                     repository.setHomeFolderVisualOverrides(
                         route.folderId,
-                        if (route.colorKey == "folderOpenColor") o.copy(openColor = resolved) else o.copy(color = resolved),
+                        o.copy(color = resolved),
                     )
                 },
             )
@@ -319,7 +319,6 @@ fun PreferenceNavigation(
                 "tab" -> tab?.visualOverrides?.tabColor
                 "background" -> tab?.visualOverrides?.drawerBackgroundColor
                 "folderColor" -> folder?.visualOverrides?.color ?: tab?.visualOverrides?.folderColor
-                "folderOpenColor" -> folder?.visualOverrides?.openColor ?: tab?.visualOverrides?.folderOpenColor
                 else -> null
             }
             PrimeColorSelection(
@@ -331,16 +330,12 @@ fun PreferenceNavigation(
                         else -> option.colorPreferenceEntry.lightColor(context)
                     }
                     val currentTab = repository.getTab(route.tabId) ?: return@PrimeColorSelection
-                    if (route.folderId != null && (route.colorKey == "folderColor" || route.colorKey == "folderOpenColor")) {
+                    if (route.folderId != null && route.colorKey == "folderColor") {
                         val currentFolder = currentTab.folders.firstOrNull { it.id == route.folderId } ?: return@PrimeColorSelection
                         repository.setFolderVisualOverrides(
                             route.tabId,
                             route.folderId,
-                            if (route.colorKey == "folderOpenColor") {
-                                currentFolder.visualOverrides.copy(openColor = resolved)
-                            } else {
-                                currentFolder.visualOverrides.copy(color = resolved)
-                            },
+                            currentFolder.visualOverrides.copy(color = resolved),
                         )
                     } else {
                         val overrides = currentTab.visualOverrides
@@ -349,7 +344,6 @@ fun PreferenceNavigation(
                             when (route.colorKey) {
                                 "tab" -> overrides.copy(tabColor = resolved)
                                 "folderColor" -> overrides.copy(folderColor = resolved)
-                                "folderOpenColor" -> overrides.copy(folderOpenColor = resolved)
                                 else -> overrides.copy(drawerBackgroundColor = resolved)
                             },
                         )
