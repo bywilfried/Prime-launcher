@@ -102,7 +102,7 @@ fun PrimeDrawerCategoryAppsPreference(tabId: String) {
     }
 
     val activeAppKeys = activeApps.mapTo(hashSetOf()) { it.key }
-    val folderApps = apps
+    val folderApps = if (hideFolderApps) apps
         .filter { it.key.toString() in folderAppKeys }
         .sortedBy { it.label.lowercase() }
         .map { app ->
@@ -112,10 +112,11 @@ fun PrimeDrawerCategoryAppsPreference(tabId: String) {
                 folderTitles = tab.folders.filter { key in it.apps }.map { it.title },
             )
         }
+    else emptyList()
     val inactiveItems = apps
         .filter { app ->
             val key = app.key.toString()
-            key !in activeAppKeys && key !in folderAppKeys
+            key !in activeAppKeys && (!hideFolderApps || key !in folderAppKeys)
         }
         .sortedBy { it.label.lowercase() }
         .map { PrimeCategoryListItem.AppItem(it) }
