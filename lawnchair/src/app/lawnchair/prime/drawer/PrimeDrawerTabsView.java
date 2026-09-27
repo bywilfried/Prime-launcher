@@ -631,7 +631,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         background.setCornerRadius(dp(20));
         if (selected) {
             int defaultTabColor = PreferenceManager2.getInstance(getContext())
-                    .getDrawerTabsColor().get().getColorPreferenceEntry().lightColor(getContext());
+                    .getDrawerTabsColor().get().getColorPreferenceEntry().getLightColor().invoke(getContext());
             background.setColor(selectedColor != null ? selectedColor : defaultTabColor);
         } else {
             background.setColor(0x00000000);
