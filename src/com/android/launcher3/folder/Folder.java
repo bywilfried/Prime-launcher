@@ -86,6 +86,7 @@ import androidx.core.content.res.ResourcesCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.android.launcher3.AbstractFloatingView;
 import com.android.launcher3.Alarm;
+import com.android.launcher3.BubbleTextView;
 import com.android.launcher3.CellLayout;
 import com.android.launcher3.DeviceProfile;
 import com.android.launcher3.DragSource;
@@ -755,6 +756,22 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         PrimeDrawerFolderVisualOverrides primeOverrides =
                 PrimeFolderLongPressHelper.getVisualOverrides(getContext(), mInfo);
         mContent.applyPrimeGridOverrides(primeOverrides);
+        for (View itemView : mItemsInReadingOrder) {
+            if (itemView instanceof BubbleTextView bubble) {
+                if (primeOverrides != null && primeOverrides.getShowLabels() != null) {
+                    bubble.setTextVisibility(primeOverrides.getShowLabels());
+                } else {
+                    bubble.setTextVisibility(
+                            PreferenceExtensionsKt.firstBlocking(
+                                    preferenceManager2.getShowIconLabelsOnHomeScreenFolder()));
+                }
+                if (primeOverrides != null && primeOverrides.getLabelSize() != null) {
+                    bubble.setTextSize(TypedValue.COMPLEX_UNIT_PX,
+                            mActivityContext.getDeviceProfile().folderChildTextSizePx
+                                    * primeOverrides.getLabelSize());
+                }
+            }
+        }
         if (primeOverrides != null && primeOverrides.getBackgroundOpacity() != null) {
             mBackground.setAlpha(Math.round(255 * primeOverrides.getBackgroundOpacity()));
         } else {
@@ -1182,7 +1199,7 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
             }
             mFolderIcon.setVisibility(View.VISIBLE);
             mFolderIcon.setIconVisible(true);
-            mFolderIcon.mFolderName.setTextVisibility(true);
+            mFolderIcon.refreshPrimeVisualOverrides();
             if (wasAnimated) {
                 mFolderIcon.animateBgShadowAndStroke();
                 if (mFolderIcon.hasDot()) {
