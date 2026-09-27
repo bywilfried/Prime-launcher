@@ -213,7 +213,7 @@ fun resolveFolderPreviewColor(context: Context): Int {
  */
 fun resolveFolderBackgroundColor(context: Context): Int {
     val prefs2 = PreferenceManager2.getInstance(context)
-    val custom = prefs2.folderOpenColor.firstCached().colorPreferenceEntry.lightColor(context)
+    val custom = prefs2.folderColor.firstCached().colorPreferenceEntry.lightColor(context)
     return if (custom != 0) {
         custom
     } else {
