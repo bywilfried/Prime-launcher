@@ -2110,6 +2110,16 @@ public class Launcher extends StatefulActivity<LauncherState>
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         TestLogging.recordKeyEvent(TestProtocol.SEQUENCE_MAIN, "Key event", event);
+        if (event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
+            AbstractFloatingView primeTarget = mPrimeComposeBackTarget;
+            if (primeTarget != null && primeTarget.isOpen()) {
+                if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) {
+                    primeTarget.close(true);
+                }
+                // Consume both DOWN and UP so the framework does not also navigate Launcher state.
+                return true;
+            }
+        }
         return (event.getKeyCode() == KeyEvent.KEYCODE_HOME) || super.dispatchKeyEvent(event);
     }
 
