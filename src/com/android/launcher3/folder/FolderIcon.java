@@ -287,9 +287,13 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
             shape = IconShape.Companion.fromString(overrides.getShape(), getContext());
         }
         mBackground.setPrimeShape(shape);
-        mFolderName.setTextVisibility(
+        boolean showFolderLabel =
                 overrides == null || overrides.getShowFolderLabel() == null
-                        || overrides.getShowFolderLabel());
+                        || overrides.getShowFolderLabel();
+        // Keep the closed-folder label independent from BubbleTextView's cached alpha state.
+        // Workspace binding can restore that alpha, so also control the rendered text itself.
+        mFolderName.setText(showFolderLabel ? mInfo.title : "");
+        mFolderName.setTextVisibility(showFolderLabel);
         invalidate();
     }
 
