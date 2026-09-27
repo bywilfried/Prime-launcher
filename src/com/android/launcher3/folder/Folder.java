@@ -768,6 +768,12 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
                             mActivityContext.getDeviceProfile().folderChildTextSizePx
                                     * primeOverrides.getLabelSize());
                 }
+                IconShape childShape = null;
+                if (primeOverrides != null && primeOverrides.getChildIconShape() != null) {
+                    childShape = IconShape.Companion.fromString(
+                            primeOverrides.getChildIconShape(), getContext());
+                }
+                bubble.setPrimeIconShape(childShape);
             }
             return false;
         });
