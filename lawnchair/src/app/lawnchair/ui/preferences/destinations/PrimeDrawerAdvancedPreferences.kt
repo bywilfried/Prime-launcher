@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import app.lawnchair.prime.drawer.PrimeDrawerFolderVisualOverrides
@@ -327,17 +328,20 @@ private fun NullableColorPreference(
 
 @Composable
 private fun NullableSwitch(label: String, value: Boolean?, inherited: Boolean, update: (Boolean?) -> Unit) {
-    if (value == null) {
-        SwitchPreference(checked = inherited, onCheckedChange = { update(it) }, label = label, description = "Par défaut • ${if (inherited) "Activé" else "Désactivé"}")
-    } else {
-        SwitchPreference(
-            checked = value,
-            onCheckedChange = { update(it) },
-            label = label,
-            description = "Personnalisé • ${if (value) "Activé" else "Désactivé"}",
-        )
-        ClickablePreference(label = "Revenir à la valeur par défaut", subtitle = "Supprimer la personnalisation", onClick = { update(null) })
-    }
+    val isInherited = value == null
+    val effective = value ?: inherited
+    SwitchPreference(
+        checked = effective,
+        onCheckedChange = { update(it) },
+        label = label,
+        modifier = Modifier.alpha(if (isInherited) 0.55f else 1f),
+        description = if (isInherited) {
+            "Par défaut • ${if (inherited) "Activé" else "Désactivé"}"
+        } else {
+            "Personnalisé • ${if (effective) "Activé" else "Désactivé"} • ↶ Par défaut : ${if (inherited) "Activé" else "Désactivé"}"
+        },
+        onClick = if (isInherited) null else ({ update(null) }),
+    )
 }
 
 @Composable
@@ -350,24 +354,37 @@ private fun NullableFloatSlider(
     showAsPercentage: Boolean = false,
     update: (Float?) -> Unit,
 ) {
-    if (value == null) {
-        SliderPreference(label = label, value = inherited, onValueChangeFinished = { update(it) }, valueRange = range, step = step, showAsPercentage = showAsPercentage)
-        ClickablePreference(label = "Par défaut • ${formatAdvancedValue(inherited, showAsPercentage)}", subtitle = "Valeur effective héritée • modifier le curseur pour personnaliser", onClick = {})
-    } else {
-        SliderPreference(label = label, value = value, onValueChangeFinished = { update(it) }, valueRange = range, step = step, showAsPercentage = showAsPercentage)
-        ClickablePreference(label = "Revenir à la valeur par défaut", subtitle = "Valeur héritée : ${formatAdvancedValue(inherited, showAsPercentage)}", onClick = { update(null) })
-    }
+    val isInherited = value == null
+    SliderPreference(
+        label = label,
+        value = value ?: inherited,
+        onValueChangeFinished = { update(it) },
+        valueRange = range,
+        step = step,
+        showAsPercentage = showAsPercentage,
+        modifier = Modifier.alpha(if (isInherited) 0.55f else 1f),
+        status = if (isInherited) {
+            "Par défaut • ${formatAdvancedValue(inherited, showAsPercentage)}"
+        } else {
+            "Personnalisé • ↶ Par défaut : ${formatAdvancedValue(inherited, showAsPercentage)}"
+        },
+        onReset = if (isInherited) null else ({ update(null) }),
+    )
 }
 
 @Composable
 private fun NullableIntSlider(label: String, value: Int?, inherited: Int, range: ClosedRange<Int>, update: (Int?) -> Unit) {
-    if (value == null) {
-        SliderPreference(label = label, value = inherited.toFloat(), onValueChangeFinished = { update(it.toInt()) }, valueRange = range.start.toFloat()..range.endInclusive.toFloat(), step = 1f)
-        ClickablePreference(label = "Par défaut • $inherited", subtitle = "Valeur effective héritée • modifier le curseur pour personnaliser", onClick = {})
-    } else {
-        SliderPreference(label = label, value = value.toFloat(), onValueChangeFinished = { update(it.toInt()) }, valueRange = range.start.toFloat()..range.endInclusive.toFloat(), step = 1f)
-        ClickablePreference(label = "Revenir à la valeur par défaut", subtitle = "Valeur héritée : $inherited", onClick = { update(null) })
-    }
+    val isInherited = value == null
+    SliderPreference(
+        label = label,
+        value = (value ?: inherited).toFloat(),
+        onValueChangeFinished = { update(it.toInt()) },
+        valueRange = range.start.toFloat()..range.endInclusive.toFloat(),
+        step = 1f,
+        modifier = Modifier.alpha(if (isInherited) 0.55f else 1f),
+        status = if (isInherited) "Par défaut • $inherited" else "Personnalisé • ↶ Par défaut : $inherited",
+        onReset = if (isInherited) null else ({ update(null) }),
+    )
 }
 
 private fun formatAdvancedValue(value: Float, asPercentage: Boolean): String =
@@ -384,6 +401,9 @@ private fun SliderPreference(
     valueRange: ClosedFloatingPointRange<Float>,
     step: Float,
     showAsPercentage: Boolean = false,
+    modifier: Modifier = Modifier,
+    status: String? = null,
+    onReset: (() -> Unit)? = null,
 ) {
     val state = remember(value) { mutableStateOf(value) }
     app.lawnchair.ui.preferences.components.controls.SliderPreference(
@@ -395,7 +415,17 @@ private fun SliderPreference(
         valueRange = valueRange,
         step = step,
         showAsPercentage = showAsPercentage,
+        modifier = modifier,
     )
+    if (status != null) {
+        Text(
+            text = status,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp)
+                .then(if (onReset != null) Modifier.clickable(onClick = onReset) else Modifier),
+        )
+    }
 }
 
 @Composable
