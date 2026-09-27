@@ -166,6 +166,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.StringRes;
 import androidx.annotation.UiThread;
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.os.BuildCompat;
 import androidx.window.embedding.RuleController;
@@ -321,6 +322,21 @@ public class Launcher extends StatefulActivity<LauncherState>
 
     private static final String EXCLUDE_CLOSE_WIDGET_PICKER =
             "launcher.extra.EXCLUDE_CLOSE_WIDGET_PICKER";
+
+    private AbstractFloatingView mPrimeComposeBackTarget;
+    private final OnBackPressedCallback mPrimeComposeBackCallback =
+            new OnBackPressedCallback(false) {
+                @Override
+                public void handleOnBackPressed() {
+                    AbstractFloatingView target = mPrimeComposeBackTarget;
+                    if (target != null && target.isOpen()) {
+                        target.close(true);
+                        return;
+                    }
+                    setEnabled(false);
+                    getOnBackPressedDispatcher().onBackPressed();
+                }
+            };
 
     private StateManager<LauncherState, Launcher> mStateManager;
 
@@ -2118,6 +2134,22 @@ public class Launcher extends StatefulActivity<LauncherState>
         }
         TestLogging.recordMotionEvent(TestProtocol.SEQUENCE_MAIN, "Touch event", ev);
         return super.dispatchTouchEvent(ev);
+    }
+
+    public void registerPrimeComposeBackTarget(AbstractFloatingView target) {
+        mPrimeComposeBackTarget = target;
+        if (!mPrimeComposeBackCallback.isEnabled()) {
+            getOnBackPressedDispatcher().addCallback(this, mPrimeComposeBackCallback);
+        }
+        mPrimeComposeBackCallback.setEnabled(true);
+    }
+
+    public void clearPrimeComposeBackTarget(AbstractFloatingView target) {
+        if (mPrimeComposeBackTarget == target) {
+            mPrimeComposeBackTarget = null;
+            mPrimeComposeBackCallback.setEnabled(false);
+            mPrimeComposeBackCallback.remove();
+        }
     }
 
     @Override
