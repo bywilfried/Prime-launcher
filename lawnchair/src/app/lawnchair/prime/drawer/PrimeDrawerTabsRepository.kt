@@ -300,15 +300,29 @@ class PrimeDrawerTabsRepository(context: Context) {
             childIconShape = own.childIconShape ?: category.folderChildIconShape,
             shape = own.shape ?: category.folderShape,
             color = own.color ?: category.folderColor,
-            textColor = own.textColor ?: category.folderTextColor,
+            textColor = own.textColor ?: category.folderTextColor ?: getConfiguration().defaultDrawerTextColor,
+            closedLabelColor = own.closedLabelColor ?: category.drawerTextColor ?: getConfiguration().defaultDrawerTextColor,
         )
     }
 
     fun getSelectedTabVisualOverrides(): PrimeDrawerVisualOverrides? {
         val configuration = getConfiguration()
-        return configuration.tabs.firstOrNull { it.id == configuration.selectedTabId }
+        val selected = configuration.tabs.firstOrNull { it.id == configuration.selectedTabId }
             ?.takeUnless { it.isSystem }
-            ?.visualOverrides
+            ?.visualOverrides ?: PrimeDrawerVisualOverrides()
+        return selected.copy(
+            drawerBackgroundColor = selected.drawerBackgroundColor
+                ?: configuration.defaultDrawerBackgroundColor,
+            drawerTextColor = selected.drawerTextColor ?: configuration.defaultDrawerTextColor,
+        ).takeUnless { it == PrimeDrawerVisualOverrides() }
+    }
+
+    fun setDefaultDrawerColors(textColor: Int? = getConfiguration().defaultDrawerTextColor,
+                               backgroundColor: Int? = getConfiguration().defaultDrawerBackgroundColor) {
+        saveConfiguration(getConfiguration().copy(
+            defaultDrawerTextColor = textColor,
+            defaultDrawerBackgroundColor = backgroundColor,
+        ))
     }
 
     fun isAppInTab(componentKey: ComponentKey, tabId: String): Boolean {
@@ -348,6 +362,8 @@ class PrimeDrawerTabsRepository(context: Context) {
         put("version", CONFIG_VERSION)
         put("defaultTabId", configuration.defaultTabId)
         put("selectedTabId", configuration.selectedTabId)
+        configuration.defaultDrawerTextColor?.let { put("defaultDrawerTextColor", it) }
+        configuration.defaultDrawerBackgroundColor?.let { put("defaultDrawerBackgroundColor", it) }
         put("tabs", JSONArray().apply {
             configuration.tabs.forEach { tab ->
                 put(JSONObject().apply {
@@ -401,6 +417,8 @@ class PrimeDrawerTabsRepository(context: Context) {
                 tabs = tabs,
                 defaultTabId = json.optString("defaultTabId", ALL_TAB_ID),
                 selectedTabId = json.optString("selectedTabId", ALL_TAB_ID),
+                defaultDrawerTextColor = json.optIntOrNull("defaultDrawerTextColor"),
+                defaultDrawerBackgroundColor = json.optIntOrNull("defaultDrawerBackgroundColor"),
             ).normalized()
         }.getOrElse { PrimeDrawerTabsConfiguration.initial() }
     }
@@ -502,6 +520,7 @@ class PrimeDrawerTabsRepository(context: Context) {
         shape?.let { put("shape", it) }
         color?.let { put("color", it) }
         textColor?.let { put("textColor", it) }
+        closedLabelColor?.let { put("closedLabelColor", it) }
     }
 
     private fun JSONObject?.toFolderVisualOverrides() = PrimeDrawerFolderVisualOverrides(
@@ -516,6 +535,7 @@ class PrimeDrawerTabsRepository(context: Context) {
         shape = this.optStringOrNull("shape"),
         color = this.optIntOrNull("color"),
         textColor = this.optIntOrNull("textColor"),
+        closedLabelColor = this.optIntOrNull("closedLabelColor"),
     )
 
     private fun JSONObject?.optStringOrNull(key: String): String? =
@@ -554,6 +574,8 @@ data class PrimeDrawerTabsConfiguration(
     val tabs: List<PrimeDrawerTab>,
     val defaultTabId: String,
     val selectedTabId: String,
+    val defaultDrawerTextColor: Int? = null,
+    val defaultDrawerBackgroundColor: Int? = null,
 ) {
     fun normalized(): PrimeDrawerTabsConfiguration {
         val uniqueTabs = tabs.distinctBy { it.id }.toMutableList()
@@ -583,6 +605,8 @@ data class PrimeDrawerTabsConfiguration(
             ),
             defaultTabId = PrimeDrawerTabsRepository.ALL_TAB_ID,
             selectedTabId = PrimeDrawerTabsRepository.ALL_TAB_ID,
+            defaultDrawerTextColor = null,
+            defaultDrawerBackgroundColor = null,
         )
     }
 }
@@ -651,4 +675,5 @@ data class PrimeDrawerFolderVisualOverrides(
     val shape: String? = null,
     val color: Int? = null,
     val textColor: Int? = null,
+    val closedLabelColor: Int? = null,
 )
