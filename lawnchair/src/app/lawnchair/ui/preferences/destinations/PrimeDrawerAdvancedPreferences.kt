@@ -370,7 +370,13 @@ private fun NullableIntSlider(label: String, value: Int?, inherited: Int, range:
     }
 }
 
-private fun formatAdvancedValue(value: Float, asPercentage: Boolean): String =\n    if (asPercentage) "${kotlin.math.round(value * 100).toInt()} %" else {\n        val rounded = kotlin.math.round(value * 100) / 100f\n        if (rounded % 1f == 0f) rounded.toInt().toString() else rounded.toString()\n    }\n\n@Composable
+private fun formatAdvancedValue(value: Float, asPercentage: Boolean): String =
+    if (asPercentage) "${kotlin.math.round(value * 100).toInt()} %" else {
+        val rounded = kotlin.math.round(value * 100) / 100f
+        if (rounded % 1f == 0f) rounded.toInt().toString() else rounded.toString()
+    }
+
+@Composable
 private fun SliderPreference(
     label: String,
     value: Float,
