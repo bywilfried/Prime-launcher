@@ -248,17 +248,26 @@ private fun PrimeFolderOptions(
 ) {
     val prefs = preferenceManager()
     val prefs2 = preferenceManager2()
-    PreferenceGroup(heading = stringResource(id = R.string.general_label)) {
+
+    PreferenceGroup(heading = "Dossier fermé") {
         NullableShapePreference(stringResource(id = R.string.folder_shape_label), value.shape, tabId, "folderShape", folderId)
         NullableColorPreference("Couleur de l’arrière-plan des icônes", value.color, tabId, "folderColor", folderId)
-        NullableColorPreference("Couleur du texte", value.textColor, tabId, "folderText", folderId)
         NullableFloatSlider(stringResource(id = R.string.folder_preview_bg_opacity_label), value.previewOpacity, inherited.previewOpacity ?: prefs2.folderPreviewBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, showAsPercentage = true) {
             update(value.copy(previewOpacity = it))
         }
+        NullableSwitch("Afficher le nom du dossier fermé", value.showFolderLabel, inherited.showFolderLabel ?: true) {
+            update(value.copy(showFolderLabel = it))
+        }
+        NullableColorPreference("Couleur du nom du dossier fermé", value.closedLabelColor, tabId, "folderClosedText", folderId)
+    }
+
+    PreferenceGroup(heading = "Dossier ouvert") {
         NullableFloatSlider(stringResource(id = R.string.folder_bg_opacity_label), value.backgroundOpacity, inherited.backgroundOpacity ?: prefs2.folderBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, showAsPercentage = true) {
             update(value.copy(backgroundOpacity = it))
         }
+        NullableColorPreference("Couleur du texte dans le dossier ouvert", value.textColor, tabId, "folderText", folderId)
     }
+
     PreferenceGroup(heading = stringResource(id = R.string.grid)) {
         NullableIntSlider(stringResource(id = R.string.max_folder_columns), value.columns, inherited.columns ?: prefs2.folderColumns.getAdapter().state.value, 2..5) {
             update(value.copy(columns = it))
@@ -267,9 +276,9 @@ private fun PrimeFolderOptions(
             update(value.copy(rows = it))
         }
     }
-    PreferenceGroup(heading = stringResource(id = R.string.icons)) {
+
+    PreferenceGroup(heading = "Icônes dans le dossier ouvert") {
         NullableShapePreference("Forme des icônes dans les dossiers", value.childIconShape, tabId, "folderChildIcon", folderId)
-        NullableSwitch("Afficher le nom du dossier fermé", value.showFolderLabel, inherited.showFolderLabel ?: true) { update(value.copy(showFolderLabel = it)) }
         NullableSwitch(stringResource(id = R.string.show_labels), value.showLabels, inherited.showLabels ?: prefs2.showIconLabelsOnHomeScreenFolder.getAdapter().state.value) {
             update(value.copy(showLabels = it))
         }
@@ -278,7 +287,6 @@ private fun PrimeFolderOptions(
         }
     }
 }
-
 
 @Composable
 private fun NullableShapePreference(
