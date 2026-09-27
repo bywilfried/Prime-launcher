@@ -131,7 +131,7 @@ private fun HomeFolderShapePreference(label: String, value: String?, folderId: I
     val shape = value?.let { runCatching { IconShape.fromString(it, context) }.getOrNull() }
     PreferenceTemplate(
         title = { Text(label) },
-        description = if (value == null) ({ Text("Configuration générale") }) else null,
+        description = if (value == null) ({ Text("Par défaut • valeur héritée") }) else ({ Text("Personnalisé") }),
         endWidget = shape?.let { selected -> { IconShapePreview(iconShape = selected) } },
         onClick = { navController.navigate(PrimeHomeFolderShape(folderId, shapeKey, label)) },
     )
@@ -303,7 +303,7 @@ private fun NullableShapePreference(
     val shape = value?.let { runCatching { IconShape.fromString(it, context) }.getOrNull() }
     PreferenceTemplate(
         title = { Text(label) },
-        description = if (value == null) ({ Text("Configuration générale") }) else null,
+        description = if (value == null) ({ Text("Par défaut • valeur héritée") }) else ({ Text("Personnalisé") }),
         endWidget = shape?.let { selected -> { IconShapePreview(iconShape = selected) } },
         onClick = { navController.navigate(PrimeDrawerShape(tabId, shapeKey, label, folderId)) },
     )
@@ -328,15 +328,15 @@ private fun NullableColorPreference(
 @Composable
 private fun NullableSwitch(label: String, value: Boolean?, inherited: Boolean, update: (Boolean?) -> Unit) {
     if (value == null) {
-        SwitchPreference(checked = inherited, onCheckedChange = { update(it) }, label = label, description = "Configuration générale")
+        SwitchPreference(checked = inherited, onCheckedChange = { update(it) }, label = label, description = "Par défaut • ${if (inherited) "Activé" else "Désactivé"}")
     } else {
         SwitchPreference(
             checked = value,
             onCheckedChange = { update(it) },
             label = label,
-            description = null,
+            description = "Personnalisé • ${if (value) "Activé" else "Désactivé"}",
         )
-        ClickablePreference(label = "Utiliser la configuration générale", onClick = { update(null) })
+        ClickablePreference(label = "Revenir à la valeur par défaut", subtitle = "Supprimer la personnalisation", onClick = { update(null) })
     }
 }
 
@@ -352,10 +352,10 @@ private fun NullableFloatSlider(
 ) {
     if (value == null) {
         SliderPreference(label = label, value = inherited, onValueChangeFinished = { update(it) }, valueRange = range, step = step, showAsPercentage = showAsPercentage)
-        ClickablePreference(label = "Configuration générale", subtitle = "Toucher le réglage pour le personnaliser", onClick = {})
+        ClickablePreference(label = "Par défaut • ${formatAdvancedValue(inherited, showAsPercentage)}", subtitle = "Valeur effective héritée • modifier le curseur pour personnaliser", onClick = {})
     } else {
         SliderPreference(label = label, value = value, onValueChangeFinished = { update(it) }, valueRange = range, step = step, showAsPercentage = showAsPercentage)
-        ClickablePreference(label = "Utiliser la configuration générale", onClick = { update(null) })
+        ClickablePreference(label = "Revenir à la valeur par défaut", subtitle = "Valeur héritée : ${formatAdvancedValue(inherited, showAsPercentage)}", onClick = { update(null) })
     }
 }
 
@@ -363,14 +363,14 @@ private fun NullableFloatSlider(
 private fun NullableIntSlider(label: String, value: Int?, inherited: Int, range: ClosedRange<Int>, update: (Int?) -> Unit) {
     if (value == null) {
         SliderPreference(label = label, value = inherited.toFloat(), onValueChangeFinished = { update(it.toInt()) }, valueRange = range.start.toFloat()..range.endInclusive.toFloat(), step = 1f)
-        ClickablePreference(label = "Configuration générale", subtitle = "Toucher le réglage pour le personnaliser", onClick = {})
+        ClickablePreference(label = "Par défaut • $inherited", subtitle = "Valeur effective héritée • modifier le curseur pour personnaliser", onClick = {})
     } else {
         SliderPreference(label = label, value = value.toFloat(), onValueChangeFinished = { update(it.toInt()) }, valueRange = range.start.toFloat()..range.endInclusive.toFloat(), step = 1f)
-        ClickablePreference(label = "Utiliser la configuration générale", onClick = { update(null) })
+        ClickablePreference(label = "Revenir à la valeur par défaut", subtitle = "Valeur héritée : $inherited", onClick = { update(null) })
     }
 }
 
-@Composable
+private fun formatAdvancedValue(value: Float, asPercentage: Boolean): String =\n    if (asPercentage) "${kotlin.math.round(value * 100).toInt()} %" else {\n        val rounded = kotlin.math.round(value * 100) / 100f\n        if (rounded % 1f == 0f) rounded.toInt().toString() else rounded.toString()\n    }\n\n@Composable
 private fun SliderPreference(
     label: String,
     value: Float,
