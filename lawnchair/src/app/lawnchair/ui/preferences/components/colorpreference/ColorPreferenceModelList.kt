@@ -80,10 +80,7 @@ class ColorPreferenceModelList @Inject constructor(
                 dynamicEntries = dynamicColorsWithDefault,
             ),
         )
-        registerModel(
-
-        )
-    }
+     }
 
     operator fun get(key: String): ColorPreferenceModel = models.getValue(key)
 
