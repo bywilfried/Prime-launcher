@@ -45,6 +45,7 @@ fun TopBar(
     isExpandedScreen: Boolean,
     modifier: Modifier = Modifier,
     scrollBehavior: TopAppBarScrollBehavior? = null,
+    onBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
@@ -71,7 +72,7 @@ fun TopBar(
                     Box(modifier = Modifier.padding(buttonPadding)) {
                         ClickableIcon(
                             imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                            onClick = { backDispatcher?.onBackPressed() },
+                            onClick = { onBack?.invoke() ?: backDispatcher?.onBackPressed() },
                         )
                     }
                 }
@@ -100,7 +101,7 @@ fun TopBar(
                     Box(modifier = Modifier.padding(horizontal = buttonPadding)) {
                         ClickableIcon(
                             imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                            onClick = { backDispatcher?.onBackPressed() },
+                            onClick = { onBack?.invoke() ?: backDispatcher?.onBackPressed() },
                         )
                     }
                 }
