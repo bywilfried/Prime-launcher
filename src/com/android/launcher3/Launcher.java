@@ -580,6 +580,14 @@ public class Launcher extends StatefulActivity<LauncherState>
     @NonNull
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     protected OnBackAnimationCallback getOnBackAnimationCallback() {
+        // Prime Compose sheets are hosted by an AbstractFloatingView but their Compose content
+        // has no OnBackPressedDispatcherOwner. Route Android's predictive/system Back through
+        // Launcher's native callback chain instead.
+        AbstractFloatingView primeTarget = mPrimeComposeBackTarget;
+        if (primeTarget != null && primeTarget.isOpen()) {
+            return primeTarget;
+        }
+
         // #1 auto cancel action mode handler
         if (isInAutoCancelActionMode()) {
             return this::finishAutoCancelActionMode;
