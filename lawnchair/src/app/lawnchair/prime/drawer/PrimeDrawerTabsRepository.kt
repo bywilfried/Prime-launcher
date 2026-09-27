@@ -306,6 +306,9 @@ class PrimeDrawerTabsRepository(context: Context) {
     }
 
     fun getSelectedTabVisualOverrides(): PrimeDrawerVisualOverrides? {
+        // Prime tab visuals belong exclusively to Tabs mode. Other drawer modes must keep
+        // using their own global Lawnchair appearance preferences.
+        if (!primePrefs.drawerTabsEnabled.get()) return null
         val configuration = getConfiguration()
         val selected = configuration.tabs.firstOrNull { it.id == configuration.selectedTabId }
             ?.takeUnless { it.isSystem }
