@@ -189,7 +189,7 @@ data class PrimeDrawerFolderAdvanced(val tabId: String, val folderId: String) : 
 data class PrimeHomeFolderAdvanced(val folderId: Int) : PreferenceRoute
 
 @Serializable
-data class PrimeHomeFolderColor(val folderId: Int, val label: String) : PreferenceRoute
+data class PrimeHomeFolderColor(val folderId: Int, val label: String, val colorKey: String = "folderColor") : PreferenceRoute
 
 @Serializable
 data class PrimeHomeFolderShape(val folderId: Int, val shapeKey: String, val label: String) : PreferenceRoute
