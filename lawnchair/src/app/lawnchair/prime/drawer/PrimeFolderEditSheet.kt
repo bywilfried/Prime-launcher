@@ -53,6 +53,9 @@ object PrimeFolderEditSheet {
                 onDismiss = { sheet.close(true) },
                 onAdvanced = {
                     sheet.close(false)
+                    if (tabId == null || folderId == null) {
+                        PrimeFolderLongPressHelper.registerHomeFolderIcon(icon)
+                    }
                     icon.context.startActivity(
                         PreferenceActivity.createIntent(
                             icon.context,
