@@ -300,6 +300,7 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
             if (showFolderLabel && mFolderName.getTextSize() == 0f) {
                 mFolderName.setTextSize(TypedValue.COMPLEX_UNIT_PX,
                         mActivity.getDeviceProfile().primeWorkspaceLabelTextSizePx);
+                requestLayout();
             }
             mFolderName.setTextVisibility(showFolderLabel);
         }
@@ -728,6 +729,26 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
                     - cellHeightPx) / 2, getPaddingRight(), getPaddingBottom());
         }
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
+        // When Home labels are globally disabled, DeviceProfile sizes the Workspace cell without
+        // label space. A Prime override can still explicitly show this folder label, so keep its
+        // restored text line inside the measured FolderIcon instead of letting it be clipped below.
+        PrimeDrawerFolderVisualOverrides overrides = mInfo == null ? null
+                : PrimeFolderLongPressHelper.getVisualOverrides(getContext(), mInfo);
+        if (overrides != null && Boolean.TRUE.equals(overrides.getShowFolderLabel())
+                && mFolderName.getTextSize() > 0f) {
+            FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) mFolderName.getLayoutParams();
+            Paint.FontMetrics fm = mFolderName.getPaint().getFontMetrics();
+            int textHeight = (int) Math.ceil(fm.bottom - fm.top);
+            int maxTopMargin = Math.max(0, getMeasuredHeight() - textHeight);
+            int desiredTopMargin = Math.min(
+                    mActivity.getDeviceProfile().iconSizePx
+                            + mActivity.getDeviceProfile().iconDrawablePaddingPx,
+                    maxTopMargin);
+            if (lp.topMargin != desiredTopMargin) {
+                lp.topMargin = desiredTopMargin;
+            }
+        }
     }
 
     /** Sets the visibility of the icon's title text */
