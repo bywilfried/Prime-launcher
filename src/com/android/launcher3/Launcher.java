@@ -2119,6 +2119,11 @@ public class Launcher extends StatefulActivity<LauncherState>
     @Override
     @TargetApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     public void onBackPressed() {
+        AbstractFloatingView topView = AbstractFloatingView.getTopOpenView(this);
+        if (topView != null && topView.canHandleBack()) {
+            topView.onBackInvoked();
+            return;
+        }
         getOnBackAnimationCallback().onBackInvoked();
     }
 
