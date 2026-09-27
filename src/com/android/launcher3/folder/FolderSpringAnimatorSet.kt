@@ -231,10 +231,11 @@ class FolderSpringAnimatorSet(val animatorSet: AnimatorSet) {
         ) {
             with(folder) {
                 val folderBackground = folder.background as GradientDrawable
-                // Set up the Folder background (respects Lawnchair folder color pref).
+                // Use the exact same resolved color as the closed FolderIcon. Prime folder
+                // overrides and the general folder color therefore share one color source.
                 val isOpening = animationData.isOpening
-                val initialColor = app.lawnchair.util.resolveFolderPreviewColor(context)
-                val finalColor = app.lawnchair.util.resolveFolderBackgroundColor(context)
+                val initialColor = folder.folderIcon.mBackground.resolvedColor
+                val finalColor = initialColor
                 folderBackground.mutate()
                 folderBackground.setColor(if (isOpening) initialColor else finalColor)
                 // TODO: convert to spring animation?
