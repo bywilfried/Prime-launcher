@@ -762,7 +762,7 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
                     bubble.setTextVisibility(primeOverrides.getShowLabels());
                 } else {
                     bubble.setTextVisibility(
-                            PreferenceExtensionsKt.firstBlocking(
+                            app.lawnchair.preferences2.PreferenceCacheExtensionsKt.firstCached(
                                     preferenceManager2.getShowIconLabelsOnHomeScreenFolder()));
                 }
                 if (primeOverrides != null && primeOverrides.getLabelSize() != null) {
