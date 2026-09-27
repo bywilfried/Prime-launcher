@@ -117,7 +117,7 @@ fun AppDrawerPreferences(
                         adapter = prefs.drawerTabsSwipeEnabled.getAdapter(),
                     )
                     ColorPreference(
-                        preference = prefs.drawerTabsColor,
+                        preference = prefs2.drawerTabsColor,
                     )
                     SwitchPreference(
                         label = stringResource(id = R.string.apps_in_folder_label),
