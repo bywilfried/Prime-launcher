@@ -198,6 +198,9 @@ data class PrimeHomeFolderShape(val folderId: Int, val shapeKey: String, val lab
 data class PrimeDrawerCategoryColor(val tabId: String, val colorKey: String, val label: String, val folderId: String? = null) : PreferenceRoute
 
 @Serializable
+data class PrimeDrawerDefaultColor(val colorKey: String, val label: String) : PreferenceRoute
+
+@Serializable
 data class PrimeDrawerShape(val tabId: String, val shapeKey: String, val label: String, val folderId: String? = null) : PreferenceRoute
 
 @Serializable
