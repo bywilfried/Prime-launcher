@@ -2,8 +2,10 @@ package app.lawnchair.ui.preferences.destinations
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -37,6 +39,14 @@ private sealed interface PrimeCategoryListItem {
     data class FolderItem(val folder: PrimeDrawerFolder) : PrimeCategoryListItem {
         override val key = "folder:" + folder.id
         override val label = folder.title
+    }
+
+    data class FolderAppItem(
+        val app: App,
+        val folderTitles: List<String>,
+    ) : PrimeCategoryListItem {
+        override val key = app.key.toString()
+        override val label = app.label
     }
 }
 
@@ -92,8 +102,21 @@ fun PrimeDrawerCategoryAppsPreference(tabId: String) {
     }
 
     val activeAppKeys = activeApps.mapTo(hashSetOf()) { it.key }
+    val folderApps = apps
+        .filter { it.key.toString() in folderAppKeys }
+        .sortedBy { it.label.lowercase() }
+        .map { app ->
+            val key = app.key.toString()
+            PrimeCategoryListItem.FolderAppItem(
+                app = app,
+                folderTitles = tab.folders.filter { key in it.apps }.map { it.title },
+            )
+        }
     val inactiveItems = apps
-        .filter { it.key.toString() !in activeAppKeys }
+        .filter { app ->
+            val key = app.key.toString()
+            key !in activeAppKeys && key !in folderAppKeys
+        }
         .sortedBy { it.label.lowercase() }
         .map { PrimeCategoryListItem.AppItem(it) }
 
@@ -123,7 +146,7 @@ fun PrimeDrawerCategoryAppsPreference(tabId: String) {
     )
 
     PreferenceScaffold(
-        label = "${tab.title} (${state.activeCount})",
+        label = "${tab.title} (${state.activeCount + folderApps.size})",
         actions = {
             PositionalListOverflowMenu(
                 state = state,
@@ -175,6 +198,35 @@ fun PrimeDrawerCategoryAppsPreference(tabId: String) {
                         title = { Text(item.folder.title) },
                         description = { Text("Dossier") },
                         startWidget = dragHandle,
+                    )
+                    is PrimeCategoryListItem.FolderAppItem -> Unit
+                }
+            },
+            middleSectionHeading = if (folderApps.isNotEmpty()) "Éléments actifs dans des dossiers" else null,
+            middleItems = folderApps,
+            middleItemKey = { it.key },
+            middleItemContent = { item ->
+                if (item is PrimeCategoryListItem.FolderAppItem) {
+                    PreferenceTemplate(
+                        title = { Text(item.app.label) },
+                        description = {
+                            Text(
+                                if (item.folderTitles.size == 1) {
+                                    "Dossier : " + item.folderTitles.first()
+                                } else {
+                                    "Dossiers : " + item.folderTitles.joinToString(", ")
+                                },
+                            )
+                        },
+                        endWidget = {
+                            IconButton(
+                                onClick = {
+                                    repository.removeAppFromTabAndFolders(tabId, item.app.key)
+                                },
+                            ) {
+                                Icon(Icons.Rounded.Remove, contentDescription = "Retirer de la catégorie")
+                            }
+                        },
                     )
                 }
             },
