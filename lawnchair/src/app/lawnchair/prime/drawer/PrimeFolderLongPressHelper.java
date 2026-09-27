@@ -163,7 +163,10 @@ public final class PrimeFolderLongPressHelper {
         if (activity == null) return;
         ArrayList<OptionsPopupView.OptionItem> items = new ArrayList<>();
         items.add(option(mIcon.getContext().getString(R.string.prime_edit_folder), v -> {
-            PrimeFolderRef ref = getPrimeRef(mIcon.mInfo);
+            // A Prime drawer FolderInfo can be the source object of a drag to Workspace and can
+            // therefore still carry its drawer ref. The icon's actual location is authoritative:
+            // once it lives on Workspace it must be edited as an independent Home folder.
+            PrimeFolderRef ref = isAttachedToAllApps() ? getPrimeRef(mIcon.mInfo) : null;
             PrimeFolderEditSheet.show(mIcon, ref == null ? null : ref.tabId,
                     ref == null ? null : ref.folderId);
             return true;
