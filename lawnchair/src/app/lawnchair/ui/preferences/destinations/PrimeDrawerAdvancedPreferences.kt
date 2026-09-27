@@ -16,7 +16,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import app.lawnchair.prime.drawer.PrimeDrawerFolderVisualOverrides
 import app.lawnchair.prime.drawer.PrimeDrawerTabsRepository
-import app.lawnchair.prime.drawer.PrimeFolderLongPressHelper
 import app.lawnchair.prime.drawer.PrimeDrawerVisualOverrides
 import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences.preferenceManager
@@ -94,7 +93,6 @@ fun PrimeHomeFolderAdvancedPreference(folderId: Int) {
     fun update(value: PrimeDrawerFolderVisualOverrides) {
         overrides.value = value
         repository.setHomeFolderVisualOverrides(folderId, value)
-        PrimeFolderLongPressHelper.refreshHomeFolderVisualOverrides(context, folderId)
     }
     val prefs = preferenceManager()
     val prefs2 = preferenceManager2()
