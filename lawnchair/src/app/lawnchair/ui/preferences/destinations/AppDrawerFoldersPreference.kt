@@ -231,7 +231,7 @@ fun FolderEditSheet(
     onDelete: (() -> Unit)? = null,
 ) {
     val resources = LocalResources.current
-    var textFieldValue by remember { mutableStateOf(TextFieldValue(initialTitle)) }
+    var renameOpen by remember { mutableStateOf(false) }
     var deleteOpen by remember { mutableStateOf(false) }
 
     ModalBottomSheetContent(
@@ -242,31 +242,16 @@ fun FolderEditSheet(
             ) {
                 Text(stringResource(android.R.string.cancel))
             }
-            Spacer(Modifier.width(8.dp))
-            Button(
-                onClick = {
-                    onRename(folderId, textFieldValue.text)
-                    onDismiss()
-                },
-                shapes = ButtonDefaults.shapes(),
-            ) {
-                Text(stringResource(android.R.string.ok))
-            }
         },
         modifier = modifier,
     ) {
         Column {
-            OutlinedTextField(
-                value = textFieldValue,
-                onValueChange = {
-                    textFieldValue = it
-                },
-                label = { Text(text = stringResource(id = R.string.label)) },
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .fillMaxWidth(),
-                singleLine = true,
-                isError = textFieldValue.text.isEmpty(),
+            ClickablePreference(
+                label = stringResource(id = R.string.label),
+                subtitle = initialTitle,
+                modifier = Modifier.padding(horizontal = 8.dp),
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                onClick = { renameOpen = true },
             )
             if (!hideAppPicker) {
                 ClickablePreference(
@@ -276,8 +261,7 @@ fun FolderEditSheet(
                         itemCount,
                         itemCount,
                     ),
-                    modifier = Modifier
-                        .padding(horizontal = 8.dp),
+                    modifier = Modifier.padding(horizontal = 8.dp),
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 ) {
                     onNavigate(folderId)
@@ -301,6 +285,39 @@ fun FolderEditSheet(
             }
         }
     }
+
+    if (renameOpen) {
+        var newTitle by remember(initialTitle) { mutableStateOf(initialTitle) }
+        AlertDialog(
+            onDismissRequest = { renameOpen = false },
+            title = { Text(stringResource(id = R.string.label)) },
+            text = {
+                OutlinedTextField(
+                    value = newTitle,
+                    onValueChange = { newTitle = it },
+                    singleLine = true,
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val title = newTitle.trim()
+                        if (title.isNotEmpty()) {
+                            onRename(folderId, title)
+                            renameOpen = false
+                            onDismiss()
+                        }
+                    },
+                ) { Text(stringResource(android.R.string.ok)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { renameOpen = false }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            },
+        )
+    }
+
     if (deleteOpen && onDelete != null) {
         AlertDialog(
             onDismissRequest = { deleteOpen = false },
