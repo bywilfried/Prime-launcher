@@ -300,6 +300,7 @@ class PrimeDrawerTabsRepository(context: Context) {
             childIconShape = own.childIconShape ?: category.folderChildIconShape,
             shape = own.shape ?: category.folderShape,
             color = own.color ?: category.folderColor,
+            textColor = own.textColor ?: category.folderTextColor,
         )
     }
 
@@ -457,6 +458,8 @@ class PrimeDrawerTabsRepository(context: Context) {
         folderChildIconShape?.let { put("folderChildIconShape", it) }
         folderShape?.let { put("folderShape", it) }
         folderColor?.let { put("folderColor", it) }
+        drawerTextColor?.let { put("drawerTextColor", it) }
+        folderTextColor?.let { put("folderTextColor", it) }
     }
 
     private fun JSONObject?.toVisualOverrides() = PrimeDrawerVisualOverrides(
@@ -483,6 +486,8 @@ class PrimeDrawerTabsRepository(context: Context) {
         folderChildIconShape = this.optStringOrNull("folderChildIconShape"),
         folderShape = this.optStringOrNull("folderShape"),
         folderColor = this.optIntOrNull("folderColor"),
+        drawerTextColor = this.optIntOrNull("drawerTextColor"),
+        folderTextColor = this.optIntOrNull("folderTextColor"),
     )
 
     private fun PrimeDrawerFolderVisualOverrides.toJson() = JSONObject().apply {
@@ -496,6 +501,7 @@ class PrimeDrawerTabsRepository(context: Context) {
         childIconShape?.let { put("childIconShape", it) }
         shape?.let { put("shape", it) }
         color?.let { put("color", it) }
+        textColor?.let { put("textColor", it) }
     }
 
     private fun JSONObject?.toFolderVisualOverrides() = PrimeDrawerFolderVisualOverrides(
@@ -509,6 +515,7 @@ class PrimeDrawerTabsRepository(context: Context) {
         childIconShape = this.optStringOrNull("childIconShape"),
         shape = this.optStringOrNull("shape"),
         color = this.optIntOrNull("color"),
+        textColor = this.optIntOrNull("textColor"),
     )
 
     private fun JSONObject?.optStringOrNull(key: String): String? =
@@ -628,6 +635,8 @@ data class PrimeDrawerVisualOverrides(
     val folderChildIconShape: String? = null,
     val folderShape: String? = null,
     val folderColor: Int? = null,
+    val drawerTextColor: Int? = null,
+    val folderTextColor: Int? = null,
 )
 
 data class PrimeDrawerFolderVisualOverrides(
@@ -641,4 +650,5 @@ data class PrimeDrawerFolderVisualOverrides(
     val childIconShape: String? = null,
     val shape: String? = null,
     val color: Int? = null,
+    val textColor: Int? = null,
 )
