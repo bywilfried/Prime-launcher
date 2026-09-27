@@ -727,11 +727,17 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
 
     /** Sets the visibility of the icon's title text */
     public void setTextVisible(boolean visible) {
-        if (visible) {
-            mFolderName.setVisibility(VISIBLE);
-        } else {
-            mFolderName.setVisibility(INVISIBLE);
+        boolean resolvedVisible = visible;
+        if (mInfo != null) {
+            PrimeDrawerFolderVisualOverrides overrides =
+                    PrimeFolderLongPressHelper.getVisualOverrides(getContext(), mInfo);
+            if (overrides != null && overrides.getShowFolderLabel() != null) {
+                // An explicit per-folder setting is authoritative over the Workspace-wide
+                // label preference, including later Workspace rebinding calls.
+                resolvedVisible = overrides.getShowFolderLabel();
+            }
         }
+        mFolderName.setVisibility(resolvedVisible ? VISIBLE : INVISIBLE);
     }
 
     public boolean getTextVisible() {
