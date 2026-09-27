@@ -45,12 +45,6 @@ import com.android.launcher3.views.BaseDragLayer
 
 class ComposeBottomSheet<T>(context: Context) : AbstractSlideInView<T>(context, null, 0) where T : Context, T : ActivityContext {
 
-    private val backCallback = object : OnBackPressedCallback(false) {
-        override fun handleOnBackPressed() {
-            close(true)
-        }
-    }
-
     private val container = ComposeView(context)
     private var imeShift = 0f
     private var _hintCloseProgress = mutableFloatStateOf(0f)
@@ -66,8 +60,6 @@ class ComposeBottomSheet<T>(context: Context) : AbstractSlideInView<T>(context, 
     }
 
     fun show() {
-        (context as? ComponentActivity)?.onBackPressedDispatcher?.addCallback(backCallback)
-        backCallback.isEnabled = true
         val parent = parent
         if (parent is ViewGroup) {
             parent.removeView(this)
@@ -113,8 +105,6 @@ class ComposeBottomSheet<T>(context: Context) : AbstractSlideInView<T>(context, 
     }
 
     override fun onCloseComplete() {
-        backCallback.isEnabled = false
-        backCallback.remove()
         super.onCloseComplete()
         setSystemUiFlags(0)
     }
