@@ -28,6 +28,7 @@ import androidx.annotation.Nullable;
 import com.android.launcher3.Flags;
 import com.android.launcher3.Utilities;
 import com.android.launcher3.graphics.ThemeManager;
+import app.lawnchair.icons.shape.IconShape;
 import com.android.launcher3.icons.BitmapInfo;
 import com.android.launcher3.icons.BitmapInfo.DrawableCreationFlags;
 import com.android.launcher3.icons.FastBitmapDrawable;
@@ -331,12 +332,17 @@ public abstract class ItemInfoWithIcon extends ItemInfo {
      * Returns a FastBitmapDrawable with the icon and context theme applied
      */
     public FastBitmapDrawable newIcon(Context context, @DrawableCreationFlags int creationFlags) {
+        return newIcon(context, creationFlags, Utilities.getIconShapeOrNull(context));
+    }
+
+    /** Creates the icon using an explicit view-local shape without changing the global icon cache. */
+    public FastBitmapDrawable newIcon(Context context, @DrawableCreationFlags int creationFlags,
+            @Nullable IconShape iconShape) {
         var shouldTheme = PreferenceManager.getInstance(context).getThemedIcons().get();
         if (!shouldTheme) {
             creationFlags &= ~FLAG_THEMED;
         }
-        FastBitmapDrawable drawable = bitmap.newIcon(
-                context, creationFlags, Utilities.getIconShapeOrNull(context));
+        FastBitmapDrawable drawable = bitmap.newIcon(context, creationFlags, iconShape);
         drawable.setDisabled(isDisabled());
         return drawable;
     }
