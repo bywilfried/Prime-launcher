@@ -40,6 +40,7 @@ import android.os.Looper;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.Property;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -296,6 +297,10 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
             // INVISIBLE folder label set by the global Home label preference.
             setTextVisible(showFolderLabel);
             mFolderName.setText(mInfo.title);
+            if (showFolderLabel && mFolderName.getTextSize() == 0f) {
+                mFolderName.setTextSize(TypedValue.COMPLEX_UNIT_PX,
+                        mActivity.getDeviceProfile().primeWorkspaceLabelTextSizePx);
+            }
             mFolderName.setTextVisibility(showFolderLabel);
         }
         invalidate();
