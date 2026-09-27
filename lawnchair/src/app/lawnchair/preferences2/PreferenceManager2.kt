@@ -288,14 +288,6 @@ class PreferenceManager2 @Inject constructor(
         defaultValue = ColorOption.fromString(context.getString(R.string.config_default_folder_color)),
     )
 
-    val folderOpenColor = preference(
-        key = stringPreferencesKey(name = "folder_open_color"),
-        parse = ColorOption::fromString,
-        save = ColorOption::toString,
-        onSet = { reloadHelper.reloadGrid() },
-        defaultValue = ColorOption.Default,
-    )
-
     val showNotificationCount = preference(
         key = booleanPreferencesKey(name = "show_notification_count"),
         defaultValue = context.resources.getBoolean(R.bool.config_default_show_notification_count),
