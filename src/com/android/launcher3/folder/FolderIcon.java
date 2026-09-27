@@ -253,6 +253,9 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
                     icon.mBackground.setPrimeShape(primeShape);
                 }
             }
+            if (primeOverrides.getShowFolderLabel() != null) {
+                icon.mFolderName.setTextVisibility(primeOverrides.getShowFolderLabel());
+            }
         }
         icon.updatePreviewItems(false);
 
