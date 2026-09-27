@@ -30,6 +30,7 @@ import app.lawnchair.ui.preferences.components.colorpreference.ColorSelection
 import app.lawnchair.ui.preferences.components.colorpreference.PrimeColorSelection
 import app.lawnchair.theme.color.ColorOption
 import app.lawnchair.prime.drawer.PrimeDrawerTabsRepository
+import app.lawnchair.prime.drawer.PrimeFolderLongPressHelper
 import app.lawnchair.ui.preferences.components.search.SearchProviderId
 import app.lawnchair.ui.preferences.components.search.SearchProviderPreferenceScreen
 import app.lawnchair.ui.preferences.destinations.AppDrawerFoldersPreference
