@@ -1083,6 +1083,7 @@
     <string name="prime_tab_delete">Delete</string>\n    <string name="prime_tab_delete_confirm_title">Delete tab?</string>\n    <string name="prime_tab_delete_confirm_message">Delete “%1$s”? Apps in this tab will become unclassified unless they belong to another tab.</string>
     <string name="prime_app_categories">Categories</string>
     <string name="prime_tabs_settings">Tabs</string>
+    <string name="prime_tabs_color">Category tab color</string>
     <string name="prime_categories_manage">Manage categories</string>
     <string name="prime_category_hidden">Hidden</string>
     <string name="prime_category_settings">Category settings</string>
