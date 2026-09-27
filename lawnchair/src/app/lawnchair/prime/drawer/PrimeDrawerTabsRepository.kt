@@ -296,6 +296,7 @@ class PrimeDrawerTabsRepository(context: Context) {
             columns = own.columns ?: category.folderColumns,
             rows = own.rows ?: category.folderRows,
             showLabels = own.showLabels ?: category.folderShowLabels,
+            showFolderLabel = own.showFolderLabel,
             labelSize = own.labelSize ?: category.folderLabelSize,
             childIconShape = own.childIconShape ?: category.folderChildIconShape,
             shape = own.shape ?: category.folderShape,
@@ -439,6 +440,7 @@ class PrimeDrawerTabsRepository(context: Context) {
         drawerBackgroundOpacity?.let { put("drawerBackgroundOpacity", it.toDouble()) }
         drawerIconSize?.let { put("drawerIconSize", it.toDouble()) }
         showLabels?.let { put("showLabels", it) }
+        showFolderLabel?.let { put("showFolderLabel", it) }
         labelSize?.let { put("labelSize", it.toDouble()) }
         twoLineLabels?.let { put("twoLineLabels", it) }
         drawerColumns?.let { put("drawerColumns", it) }
@@ -465,6 +467,7 @@ class PrimeDrawerTabsRepository(context: Context) {
         drawerBackgroundOpacity = this.optFloatOrNull("drawerBackgroundOpacity"),
         drawerIconSize = this.optFloatOrNull("drawerIconSize"),
         showLabels = this.optBooleanOrNull("showLabels"),
+        showFolderLabel = this.optBooleanOrNull("showFolderLabel"),
         labelSize = this.optFloatOrNull("labelSize"),
         twoLineLabels = this.optBooleanOrNull("twoLineLabels"),
         drawerColumns = this.optIntOrNull("drawerColumns"),
@@ -634,6 +637,7 @@ data class PrimeDrawerFolderVisualOverrides(
     val columns: Int? = null,
     val rows: Int? = null,
     val showLabels: Boolean? = null,
+    val showFolderLabel: Boolean? = null,
     val labelSize: Float? = null,
     val childIconShape: String? = null,
     val shape: String? = null,
