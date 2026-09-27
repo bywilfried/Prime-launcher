@@ -685,10 +685,15 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
 
     @Override
     public void setVerticalScroll(int scroll, boolean isScrolledOut) {
-        setTranslationY(scroll);
-        mIsScrolledOut = isScrolledOut;
-        boolean enabled = mPrefs.getDrawerTabsEnabled().get();
-        setVisibility(enabled && !isScrolledOut ? VISIBLE : enabled ? INVISIBLE : GONE);
+        // Prime category tabs are navigation, not disposable floating content. FloatingHeaderView
+        // moves upward as the app list scrolls, so cancel that movement here to keep this row
+        // pinned at the top of the drawer instead of scrolling out with prediction/header rows.
+        int headerTranslation = mHeaderParent != null
+                ? Math.round(mHeaderParent.getTranslationY())
+                : scroll;
+        setTranslationY(-headerTranslation);
+        mIsScrolledOut = false;
+        setVisibility(mPrefs.getDrawerTabsEnabled().get() ? VISIBLE : GONE);
     }
 
     @Override
