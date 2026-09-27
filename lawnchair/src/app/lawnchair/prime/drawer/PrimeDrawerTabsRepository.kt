@@ -292,9 +292,7 @@ class PrimeDrawerTabsRepository(context: Context) {
         val own = folder.visualOverrides
         return PrimeDrawerFolderVisualOverrides(
             previewOpacity = own.previewOpacity ?: category.folderPreviewOpacity,
-            backgroundOpacity = own.backgroundOpacity ?: category.folderBackgroundOpacity,
-            openColor = own.openColor ?: category.folderOpenColor,
-            columns = own.columns ?: category.folderColumns,
+            backgroundOpacity = own.backgroundOpacity ?: category.folderBackgroundOpacity,            columns = own.columns ?: category.folderColumns,
             rows = own.rows ?: category.folderRows,
             showLabels = own.showLabels ?: category.folderShowLabels,
             showFolderLabel = own.showFolderLabel,
@@ -451,7 +449,6 @@ class PrimeDrawerTabsRepository(context: Context) {
         showScrollbar?.let { put("showScrollbar", it) }
         folderPreviewOpacity?.let { put("folderPreviewOpacity", it.toDouble()) }
         folderBackgroundOpacity?.let { put("folderBackgroundOpacity", it.toDouble()) }
-        folderOpenColor?.let { put("folderOpenColor", it) }
         folderColumns?.let { put("folderColumns", it) }
         folderRows?.let { put("folderRows", it) }
         folderShowLabels?.let { put("folderShowLabels", it) }
@@ -478,7 +475,6 @@ class PrimeDrawerTabsRepository(context: Context) {
         showScrollbar = this.optBooleanOrNull("showScrollbar"),
         folderPreviewOpacity = this.optFloatOrNull("folderPreviewOpacity"),
         folderBackgroundOpacity = this.optFloatOrNull("folderBackgroundOpacity"),
-        folderOpenColor = this.optIntOrNull("folderOpenColor"),
         folderColumns = this.optIntOrNull("folderColumns"),
         folderRows = this.optIntOrNull("folderRows"),
         folderShowLabels = this.optBooleanOrNull("folderShowLabels"),
@@ -492,7 +488,6 @@ class PrimeDrawerTabsRepository(context: Context) {
     private fun PrimeDrawerFolderVisualOverrides.toJson() = JSONObject().apply {
         previewOpacity?.let { put("previewOpacity", it.toDouble()) }
         backgroundOpacity?.let { put("backgroundOpacity", it.toDouble()) }
-        openColor?.let { put("openColor", it) }
         columns?.let { put("columns", it) }
         rows?.let { put("rows", it) }
         showLabels?.let { put("showLabels", it) }
@@ -506,7 +501,6 @@ class PrimeDrawerTabsRepository(context: Context) {
     private fun JSONObject?.toFolderVisualOverrides() = PrimeDrawerFolderVisualOverrides(
         previewOpacity = this.optFloatOrNull("previewOpacity"),
         backgroundOpacity = this.optFloatOrNull("backgroundOpacity"),
-        openColor = this.optIntOrNull("openColor"),
         columns = this.optIntOrNull("columns"),
         rows = this.optIntOrNull("rows"),
         showLabels = this.optBooleanOrNull("showLabels"),
@@ -626,7 +620,6 @@ data class PrimeDrawerVisualOverrides(
     val showScrollbar: Boolean? = null,
     val folderPreviewOpacity: Float? = null,
     val folderBackgroundOpacity: Float? = null,
-    val folderOpenColor: Int? = null,
     val folderColumns: Int? = null,
     val folderRows: Int? = null,
     val folderShowLabels: Boolean? = null,
@@ -640,7 +633,6 @@ data class PrimeDrawerVisualOverrides(
 data class PrimeDrawerFolderVisualOverrides(
     val previewOpacity: Float? = null,
     val backgroundOpacity: Float? = null,
-    val openColor: Int? = null,
     val columns: Int? = null,
     val rows: Int? = null,
     val showLabels: Boolean? = null,
