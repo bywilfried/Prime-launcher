@@ -61,6 +61,7 @@ import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
 import app.lawnchair.ui.preferences.navigation.AppDrawerHiddenApps
 import app.lawnchair.ui.preferences.navigation.PrimeDrawerCategories
+import app.lawnchair.ui.preferences.navigation.PrimeDrawerDefaultColor
 import app.lawnchair.ui.preferences.navigation.Predictions
 import com.android.launcher3.InvariantDeviceProfile
 import com.android.launcher3.R
@@ -118,6 +119,30 @@ fun AppDrawerPreferences(
                     )
                     ColorPreference(
                         preference = prefs2.drawerTabsColor,
+                    )
+                    val primeDrawerDefaults = PrimeDrawerTabsRepository(context).getConfiguration()
+                    val navController = app.lawnchair.ui.preferences.LocalNavController.current
+                    ColorPreference(
+                        label = "Couleur du texte par défaut du drawer",
+                        selectedColor = primeDrawerDefaults.defaultDrawerTextColor
+                            ?.let { app.lawnchair.theme.color.ColorOption.CustomColor(it) }
+                            ?: app.lawnchair.theme.color.ColorOption.Default,
+                        onClick = {
+                            navController.navigate(
+                                PrimeDrawerDefaultColor("text", "Couleur du texte par défaut du drawer"),
+                            )
+                        },
+                    )
+                    ColorPreference(
+                        label = "Couleur de fond par défaut du drawer",
+                        selectedColor = primeDrawerDefaults.defaultDrawerBackgroundColor
+                            ?.let { app.lawnchair.theme.color.ColorOption.CustomColor(it) }
+                            ?: app.lawnchair.theme.color.ColorOption.Default,
+                        onClick = {
+                            navController.navigate(
+                                PrimeDrawerDefaultColor("background", "Couleur de fond par défaut du drawer"),
+                            )
+                        },
                     )
                     SwitchPreference(
                         label = stringResource(id = R.string.apps_in_folder_label),
