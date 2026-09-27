@@ -229,6 +229,9 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
         icon.mInfo = folderInfo;
         icon.mActivity = activity;
         icon.mDotRenderer = grid.mDotRendererWorkSpace;
+        if (folderInfo.container != ItemInfo.NO_ID) {
+            PrimeFolderLongPressHelper.registerHomeFolderIcon(icon);
+        }
 
         icon.setContentDescription(icon.getAccessiblityTitle(folderInfo.title));
         icon.updateDotInfo();
