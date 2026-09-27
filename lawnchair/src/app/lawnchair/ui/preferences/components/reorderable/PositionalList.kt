@@ -394,6 +394,10 @@ fun <T, K : Any> PositionalList(
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
     reorderEnabled: Boolean = true,
+    middleSectionHeading: String? = null,
+    middleItems: List<T> = emptyList(),
+    middleItemKey: (T) -> Any = { it.hashCode() },
+    middleItemContent: @Composable (item: T) -> Unit = {},
 ) {
     val lazyListState = rememberLazyListState()
     val reorderableState = rememberReorderableLazyListState(lazyListState) { from, to ->
@@ -426,6 +430,28 @@ fun <T, K : Any> PositionalList(
             key = { _, item -> item.id as Any },
         ) { index, item ->
             val isActive = index < state.activeCount
+
+            if (index == state.activeCount && middleItems.isNotEmpty()) {
+                middleSectionHeading?.let { heading ->
+                    PreferenceGroupHeading(heading = heading)
+                }
+                middleItems.forEachIndexed { middleIndex, middleItem ->
+                    androidx.compose.material3.Surface(
+                        color = preferenceGroupColor(),
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .clip(
+                                PositionalListDefaults.containerShape(
+                                    isFirst = middleIndex == 0,
+                                    isLast = middleIndex == middleItems.lastIndex,
+                                    isSelfDragging = false,
+                                ),
+                            ),
+                    ) {
+                        middleItemContent(middleItem)
+                    }
+                }
+            }
 
             ExpandAndShrink(visible = index == state.activeCount) {
                 PreferenceGroupHeading(
@@ -461,6 +487,35 @@ fun <T, K : Any> PositionalList(
                     content = itemContent,
                     reorderEnabled = reorderEnabled,
                 )
+            }
+        }
+
+        // If there is no regular disabled item, the middle section still belongs between
+        // active items and the trailing "other items" hint.
+        if (state.activeCount == state.items.size && middleItems.isNotEmpty()) {
+            middleSectionHeading?.let { heading ->
+                item(key = "middle_header_" + heading) {
+                    PreferenceGroupHeading(heading = heading)
+                }
+            }
+            itemsIndexed(
+                items = middleItems,
+                key = { _, item -> "middle_" + middleItemKey(item).toString() },
+            ) { middleIndex, middleItem ->
+                Surface(
+                    color = preferenceGroupColor(),
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .clip(
+                            PositionalListDefaults.containerShape(
+                                isFirst = middleIndex == 0,
+                                isLast = middleIndex == middleItems.lastIndex,
+                                isSelfDragging = false,
+                            ),
+                        ),
+                ) {
+                    middleItemContent(middleItem)
+                }
             }
         }
 
