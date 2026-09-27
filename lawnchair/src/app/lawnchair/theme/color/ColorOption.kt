@@ -49,6 +49,7 @@ sealed class ColorOption {
             this,
             { stringResource(id = R.string.custom) },
             { color },
+            { color },
         )
 
         constructor(color: Long) : this(color.toInt())
