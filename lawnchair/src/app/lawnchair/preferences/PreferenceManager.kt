@@ -197,6 +197,7 @@ class PreferenceManager @Inject constructor(
     val drawerTabsHideAll = BoolPref("pref_drawerTabsHideAll", false, recreate)
     val drawerTabsHideUnclassified = BoolPref("pref_drawerTabsHideUnclassified", true, recreate)
     val drawerTabsSwipeEnabled = BoolPref("pref_drawerTabsSwipeEnabled", true)
+    val drawerTabsColor = StringPref("pref_drawerTabsColor", "default")
     val primeShowEmptyFolders = BoolPref("pref_primeShowEmptyFolders", false, recreate)
     val primeHideFolderApps = BoolPref("pref_primeHideFolderApps", true, recreate)
     val folderApps = BoolPref("pref_hideFolderApps", true, reloadGrid)
