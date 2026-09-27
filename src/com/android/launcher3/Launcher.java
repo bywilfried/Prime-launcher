@@ -166,7 +166,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.StringRes;
 import androidx.annotation.UiThread;
-import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.os.BuildCompat;
 import androidx.window.embedding.RuleController;
@@ -324,19 +323,6 @@ public class Launcher extends StatefulActivity<LauncherState>
             "launcher.extra.EXCLUDE_CLOSE_WIDGET_PICKER";
 
     private AbstractFloatingView mPrimeComposeBackTarget;
-    private final OnBackPressedCallback mPrimeComposeBackCallback =
-            new OnBackPressedCallback(false) {
-                @Override
-                public void handleOnBackPressed() {
-                    AbstractFloatingView target = mPrimeComposeBackTarget;
-                    if (target != null && target.isOpen()) {
-                        target.close(true);
-                        return;
-                    }
-                    setEnabled(false);
-                    getOnBackPressedDispatcher().onBackPressed();
-                }
-            };
 
     private StateManager<LauncherState, Launcher> mStateManager;
 
@@ -2138,23 +2124,22 @@ public class Launcher extends StatefulActivity<LauncherState>
 
     public void registerPrimeComposeBackTarget(AbstractFloatingView target) {
         mPrimeComposeBackTarget = target;
-        if (!mPrimeComposeBackCallback.isEnabled()) {
-            getOnBackPressedDispatcher().addCallback(this, mPrimeComposeBackCallback);
-        }
-        mPrimeComposeBackCallback.setEnabled(true);
     }
 
     public void clearPrimeComposeBackTarget(AbstractFloatingView target) {
         if (mPrimeComposeBackTarget == target) {
             mPrimeComposeBackTarget = null;
-            mPrimeComposeBackCallback.setEnabled(false);
-            mPrimeComposeBackCallback.remove();
         }
     }
 
     @Override
     @TargetApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     public void onBackPressed() {
+        AbstractFloatingView primeTarget = mPrimeComposeBackTarget;
+        if (primeTarget != null && primeTarget.isOpen()) {
+            primeTarget.close(true);
+            return;
+        }
         AbstractFloatingView topView = AbstractFloatingView.getTopOpenView(this);
         if (topView != null && topView.canHandleBack()) {
             topView.onBackInvoked();
