@@ -584,7 +584,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             flags |= FLAG_SKIP_USER_BADGE;
         }
         FastBitmapDrawable iconDrawable = mPrimeIconShape != null
-                ? info.newIcon(getContext(), flags, mPrimeIconShape)
+                ? info.newIcon(getContext(), flags, mPrimeIconShape.getMaskPath())
                 : info.newIcon(getContext(), flags);
         mDotParams.appColor = iconDrawable.getIconColor();
         mDotParams.dotColor = Themes.getAttrColor(getContext(), R.attr.notificationDotColor);
