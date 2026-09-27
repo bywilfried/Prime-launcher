@@ -394,13 +394,18 @@ public final class PrimeFolderLongPressHelper {
     }
 
     public static PrimeDrawerFolderVisualOverrides getVisualOverrides(Context context, FolderInfo info) {
-        PrimeFolderRef ref = getPrimeRef(info);
         PrimeDrawerTabsRepository repository = new PrimeDrawerTabsRepository(context);
+
+        // A real Workspace folder must be independent from the virtual Prime drawer folder it may
+        // have originated from. Older/in-memory FolderInfo instances can still be present in
+        // PRIME_FOLDERS, so never let that stale drawer reference shadow the Home overrides.
+        if (info.container != ItemInfo.NO_ID && info.id >= 0) {
+            return repository.getHomeFolderVisualOverrides(info.id);
+        }
+
+        PrimeFolderRef ref = getPrimeRef(info);
         if (ref != null) {
             return repository.getResolvedFolderVisualOverrides(ref.tabId, ref.folderId);
-        }
-        if (info.id >= 0) {
-            return repository.getHomeFolderVisualOverrides(info.id);
         }
         return null;
     }
