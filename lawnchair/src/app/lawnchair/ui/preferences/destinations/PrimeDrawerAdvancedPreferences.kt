@@ -113,6 +113,7 @@ fun PrimeHomeFolderAdvancedPreference(folderId: Int) {
             NullableIntSlider(stringResource(id = R.string.max_folder_rows), value.rows, prefs.folderRows.getAdapter().state.value, 2..5) { update(value.copy(rows = it)) }
         }
         PreferenceGroup(heading = stringResource(id = R.string.icons)) {
+            NullableSwitch("Afficher le nom du dossier fermé", value.showFolderLabel, true) { update(value.copy(showFolderLabel = it)) }
             NullableSwitch(stringResource(id = R.string.show_labels), value.showLabels, prefs2.showIconLabelsOnHomeScreenFolder.getAdapter().state.value) { update(value.copy(showLabels = it)) }
             NullableFloatSlider(stringResource(id = R.string.label_size), value.labelSize, prefs2.homeIconLabelFolderSizeFactor.getAdapter().state.value, 0.5f..1.5f, 0.1f, true) { update(value.copy(labelSize = it)) }
         }
@@ -267,6 +268,7 @@ private fun PrimeFolderOptions(
         }
     }
     PreferenceGroup(heading = stringResource(id = R.string.icons)) {
+        NullableSwitch("Afficher le nom du dossier fermé", value.showFolderLabel, inherited.showFolderLabel ?: true) { update(value.copy(showFolderLabel = it)) }
         NullableSwitch(stringResource(id = R.string.show_labels), value.showLabels, inherited.showLabels ?: prefs2.showIconLabelsOnHomeScreenFolder.getAdapter().state.value) {
             update(value.copy(showLabels = it))
         }
