@@ -100,6 +100,7 @@ object PrimeFolderEditSheet {
                 },
                 showDuplicateFilter = false,
                 onBack = { sheet.close(true) },
+                handleSystemBack = false,
             )
         }
     }
