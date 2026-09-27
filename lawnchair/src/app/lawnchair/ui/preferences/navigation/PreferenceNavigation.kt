@@ -319,6 +319,8 @@ fun PreferenceNavigation(
                 "tab" -> tab?.visualOverrides?.tabColor
                 "background" -> tab?.visualOverrides?.drawerBackgroundColor
                 "folderColor" -> folder?.visualOverrides?.color ?: tab?.visualOverrides?.folderColor
+                "drawerText" -> tab?.visualOverrides?.drawerTextColor
+                "folderText" -> folder?.visualOverrides?.textColor ?: tab?.visualOverrides?.folderTextColor
                 else -> null
             }
             PrimeColorSelection(
@@ -330,12 +332,16 @@ fun PreferenceNavigation(
                         else -> option.colorPreferenceEntry.lightColor(context)
                     }
                     val currentTab = repository.getTab(route.tabId) ?: return@PrimeColorSelection
-                    if (route.folderId != null && route.colorKey == "folderColor") {
+                    if (route.folderId != null && (route.colorKey == "folderColor" || route.colorKey == "folderText")) {
                         val currentFolder = currentTab.folders.firstOrNull { it.id == route.folderId } ?: return@PrimeColorSelection
                         repository.setFolderVisualOverrides(
                             route.tabId,
                             route.folderId,
-                            currentFolder.visualOverrides.copy(color = resolved),
+                            if (route.colorKey == "folderText") {
+                                currentFolder.visualOverrides.copy(textColor = resolved)
+                            } else {
+                                currentFolder.visualOverrides.copy(color = resolved)
+                            },
                         )
                     } else {
                         val overrides = currentTab.visualOverrides
@@ -344,6 +350,8 @@ fun PreferenceNavigation(
                             when (route.colorKey) {
                                 "tab" -> overrides.copy(tabColor = resolved)
                                 "folderColor" -> overrides.copy(folderColor = resolved)
+                                "drawerText" -> overrides.copy(drawerTextColor = resolved)
+                                "folderText" -> overrides.copy(folderTextColor = resolved)
                                 else -> overrides.copy(drawerBackgroundColor = resolved)
                             },
                         )
