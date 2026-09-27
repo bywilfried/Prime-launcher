@@ -772,8 +772,7 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
                             mActivityContext.getDeviceProfile().folderChildTextSizePx
                                     * primeOverrides.getLabelSize());
                 }
-                if (isInAppDrawer() && primeOverrides != null
-                        && primeOverrides.getTextColor() != null) {
+                if (primeOverrides != null && primeOverrides.getTextColor() != null) {
                     bubble.setTextColor(primeOverrides.getTextColor());
                 }
                 IconShape childShape = null;
@@ -785,7 +784,7 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
             }
             return false;
         });
-        if (isInAppDrawer() && primeOverrides != null && primeOverrides.getTextColor() != null) {
+        if (primeOverrides != null && primeOverrides.getTextColor() != null) {
             mFolderName.setTextColor(primeOverrides.getTextColor());
         }
         if (primeOverrides != null && primeOverrides.getColor() != null) {
