@@ -3,7 +3,6 @@ package app.lawnchair.views
 import android.content.Context
 import android.util.FloatProperty
 import android.view.Gravity
-import android.view.KeyEvent
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.animation.Interpolator
@@ -90,22 +89,6 @@ class ComposeBottomSheet<T>(context: Context) : AbstractSlideInView<T>(context, 
         setTranslationShift(mTranslationShift)
     }
 
-    override fun dispatchKeyEventPreIme(event: KeyEvent): Boolean {
-        if (event.keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP && mIsOpen) {
-            close(true)
-            return true
-        }
-        return super.dispatchKeyEventPreIme(event)
-    }
-
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (event.keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP && mIsOpen) {
-            close(true)
-            return true
-        }
-        return super.dispatchKeyEvent(event)
-    }
-
     private fun animateOpen() {
         if (mIsOpen || mOpenCloseAnimation.animationPlayer.isRunning) {
             return
@@ -127,7 +110,7 @@ class ComposeBottomSheet<T>(context: Context) : AbstractSlideInView<T>(context, 
     }
 
     override fun isOfType(type: Int): Boolean {
-        return type and TYPE_COMPOSE_VIEW != 0
+        return type and (TYPE_COMPOSE_VIEW or TYPE_ON_BOARD_POPUP) != 0
     }
 
     override fun getScrimColor(context: Context): Int {
