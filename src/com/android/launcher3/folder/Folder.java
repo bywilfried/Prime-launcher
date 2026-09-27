@@ -43,6 +43,7 @@ import android.appwidget.AppWidgetHostView;
 import android.content.Context;
 
 import app.lawnchair.preferences.PreferenceManager;
+import app.lawnchair.icons.shape.IconShape;
 import app.lawnchair.prime.drawer.PrimeDrawerTabsRepository;
 import android.graphics.Canvas;
 import android.graphics.Insets;
