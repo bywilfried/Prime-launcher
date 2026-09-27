@@ -382,6 +382,22 @@ public final class PrimeFolderLongPressHelper {
         return null;
     }
 
+    public static void refreshHomeFolderVisualOverrides(Context context, int folderId) {
+        Launcher launcher = Launcher.getLauncher(context);
+        if (launcher == null) return;
+        launcher.getWorkspace().mapOverItems((info, view) -> {
+            if (info instanceof FolderInfo folderInfo && folderInfo.id == folderId
+                    && view instanceof FolderIcon folderIcon) {
+                folderIcon.refreshPrimeVisualOverrides();
+                if (folderIcon.getFolder() != null) {
+                    folderIcon.getFolder().applyPrimeVisualOverrides();
+                }
+                return true;
+            }
+            return false;
+        });
+    }
+
     public static void copyVisualOverridesToHome(Context context, FolderInfo sourceInfo, FolderInfo homeInfo) {
         PrimeFolderRef ref = getPrimeRef(sourceInfo);
         if (ref == null || homeInfo.id < 0) return;
