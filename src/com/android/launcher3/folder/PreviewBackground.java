@@ -284,6 +284,11 @@ public class PreviewBackground extends DelegatedCellDrawing {
         return mBgColor;
     }
 
+    /** Returns the exact color currently used to draw the closed folder background. */
+    public int getResolvedColor() {
+        return mPrimeColor != null ? mPrimeColor : mBgColor;
+    }
+
     public int getDotColor() {
         return mDotColor;
     }
