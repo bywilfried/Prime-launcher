@@ -188,21 +188,13 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
     }
 
     private void updateStickyBackground(PrimeDrawerTabsConfiguration configuration) {
-        PrimeDrawerTab selectedTab = null;
-        for (PrimeDrawerTab tab : configuration.getTabs()) {
-            if (tab.getId().equals(configuration.getSelectedTabId())) {
-                selectedTab = tab;
-                break;
-            }
-        }
-
         int backgroundColor = Themes.getAttrColor(getContext(), android.R.attr.colorBackground);
-        if (selectedTab != null && selectedTab.getVisualOverrides().getDrawerBackgroundColor() != null) {
-            backgroundColor = selectedTab.getVisualOverrides().getDrawerBackgroundColor();
+        if (mHeaderParent != null
+                && mHeaderParent.getParent() instanceof ActivityAllAppsContainerView) {
+            backgroundColor = ((ActivityAllAppsContainerView<?>) mHeaderParent.getParent())
+                    .getPrimeDrawerOpaqueBackgroundColor();
         }
-        // The sticky navigation row must stay fully opaque even when the drawer content itself
-        // uses transparency, otherwise scrolling app icons remain visible behind the tabs.
-        setBackgroundColor(androidx.core.graphics.ColorUtils.setAlphaComponent(backgroundColor, 255));
+        setBackgroundColor(backgroundColor);
     }
 
     private void selectTab(FloatingHeaderView parent, String tabId, int direction) {
