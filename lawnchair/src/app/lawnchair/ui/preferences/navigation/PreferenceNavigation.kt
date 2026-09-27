@@ -309,6 +309,32 @@ fun PreferenceNavigation(
                 },
             )
         }
+        composable<PrimeDrawerDefaultColor> { backStackEntry ->
+            val route: PrimeDrawerDefaultColor = backStackEntry.toRoute()
+            val context = LocalContext.current
+            val repository = PrimeDrawerTabsRepository(context)
+            val configuration = repository.getConfiguration()
+            val current = if (route.colorKey == "text") {
+                configuration.defaultDrawerTextColor
+            } else {
+                configuration.defaultDrawerBackgroundColor
+            }
+            PrimeColorSelection(
+                label = route.label,
+                appliedColor = current?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default,
+                onApply = { option ->
+                    val resolved = when (option) {
+                        ColorOption.Default -> null
+                        else -> option.colorPreferenceEntry.lightColor(context)
+                    }
+                    if (route.colorKey == "text") {
+                        repository.setDefaultDrawerColors(textColor = resolved)
+                    } else {
+                        repository.setDefaultDrawerColors(backgroundColor = resolved)
+                    }
+                },
+            )
+        }
         composable<PrimeDrawerCategoryColor> { backStackEntry ->
             val route: PrimeDrawerCategoryColor = backStackEntry.toRoute()
             val context = LocalContext.current
@@ -321,6 +347,7 @@ fun PreferenceNavigation(
                 "folderColor" -> folder?.visualOverrides?.color ?: tab?.visualOverrides?.folderColor
                 "drawerText" -> tab?.visualOverrides?.drawerTextColor
                 "folderText" -> folder?.visualOverrides?.textColor ?: tab?.visualOverrides?.folderTextColor
+                "folderClosedText" -> folder?.visualOverrides?.closedLabelColor ?: tab?.visualOverrides?.drawerTextColor
                 else -> null
             }
             PrimeColorSelection(
@@ -332,15 +359,15 @@ fun PreferenceNavigation(
                         else -> option.colorPreferenceEntry.lightColor(context)
                     }
                     val currentTab = repository.getTab(route.tabId) ?: return@PrimeColorSelection
-                    if (route.folderId != null && (route.colorKey == "folderColor" || route.colorKey == "folderText")) {
+                    if (route.folderId != null && (route.colorKey == "folderColor" || route.colorKey == "folderText" || route.colorKey == "folderClosedText")) {
                         val currentFolder = currentTab.folders.firstOrNull { it.id == route.folderId } ?: return@PrimeColorSelection
                         repository.setFolderVisualOverrides(
                             route.tabId,
                             route.folderId,
-                            if (route.colorKey == "folderText") {
-                                currentFolder.visualOverrides.copy(textColor = resolved)
-                            } else {
-                                currentFolder.visualOverrides.copy(color = resolved)
+                            when (route.colorKey) {
+                                "folderText" -> currentFolder.visualOverrides.copy(textColor = resolved)
+                                "folderClosedText" -> currentFolder.visualOverrides.copy(closedLabelColor = resolved)
+                                else -> currentFolder.visualOverrides.copy(color = resolved)
                             },
                         )
                     } else {
