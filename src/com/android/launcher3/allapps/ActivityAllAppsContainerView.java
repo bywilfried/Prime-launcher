@@ -965,6 +965,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     }
 
     // LC-Note: Hey! We cache this! see updateBottomSheetBackgroundColor() for more details.
+    public int getPrimeDrawerOpaqueBackgroundColor() {
+        return ColorUtils.setAlphaComponent(getBackgroundColor(), 255);
+    }
+
     int getBottomSheetBackgroundColor() {
         PrimeDrawerVisualOverrides overrides =
                 new PrimeDrawerTabsRepository(getContext()).getSelectedTabVisualOverrides();
