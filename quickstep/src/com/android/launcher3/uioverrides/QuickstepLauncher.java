@@ -1052,7 +1052,12 @@ public class QuickstepLauncher extends Launcher implements RecentsViewContainer,
             return false;
         }
 
-        if (Utilities.ATLEAST_U) getOnBackAnimationCallback().onBackInvoked();
+        if (!Utilities.ATLEAST_U) {
+            // Android 12 and older still use Activity's legacy Back dispatch. Do not consume
+            // KEYCODE_BACK here without handling it; let Launcher/Activity receive it.
+            return false;
+        }
+        getOnBackAnimationCallback().onBackInvoked();
         return true;
     }
 
