@@ -440,7 +440,6 @@ class PrimeDrawerTabsRepository(context: Context) {
         drawerBackgroundOpacity?.let { put("drawerBackgroundOpacity", it.toDouble()) }
         drawerIconSize?.let { put("drawerIconSize", it.toDouble()) }
         showLabels?.let { put("showLabels", it) }
-        showFolderLabel?.let { put("showFolderLabel", it) }
         labelSize?.let { put("labelSize", it.toDouble()) }
         twoLineLabels?.let { put("twoLineLabels", it) }
         drawerColumns?.let { put("drawerColumns", it) }
@@ -467,7 +466,6 @@ class PrimeDrawerTabsRepository(context: Context) {
         drawerBackgroundOpacity = this.optFloatOrNull("drawerBackgroundOpacity"),
         drawerIconSize = this.optFloatOrNull("drawerIconSize"),
         showLabels = this.optBooleanOrNull("showLabels"),
-        showFolderLabel = this.optBooleanOrNull("showFolderLabel"),
         labelSize = this.optFloatOrNull("labelSize"),
         twoLineLabels = this.optBooleanOrNull("twoLineLabels"),
         drawerColumns = this.optIntOrNull("drawerColumns"),
@@ -494,6 +492,7 @@ class PrimeDrawerTabsRepository(context: Context) {
         columns?.let { put("columns", it) }
         rows?.let { put("rows", it) }
         showLabels?.let { put("showLabels", it) }
+        showFolderLabel?.let { put("showFolderLabel", it) }
         labelSize?.let { put("labelSize", it.toDouble()) }
         childIconShape?.let { put("childIconShape", it) }
         shape?.let { put("shape", it) }
@@ -506,6 +505,7 @@ class PrimeDrawerTabsRepository(context: Context) {
         columns = this.optIntOrNull("columns"),
         rows = this.optIntOrNull("rows"),
         showLabels = this.optBooleanOrNull("showLabels"),
+        showFolderLabel = this.optBooleanOrNull("showFolderLabel"),
         labelSize = this.optFloatOrNull("labelSize"),
         childIconShape = this.optStringOrNull("childIconShape"),
         shape = this.optStringOrNull("shape"),
