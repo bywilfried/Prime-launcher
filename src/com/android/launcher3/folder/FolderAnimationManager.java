@@ -54,8 +54,6 @@ import com.android.launcher3.views.BaseDragLayer;
 
 import java.util.List;
 
-import app.lawnchair.prime.drawer.PrimeDrawerFolderVisualOverrides;
-import app.lawnchair.prime.drawer.PrimeFolderLongPressHelper;
 import app.lawnchair.util.LawnchairUtilsKt;
 
 /**
@@ -189,17 +187,10 @@ public class FolderAnimationManager implements FolderAnimationCreator {
         final float xDistance = initialX - lp.x;
         final float yDistance = initialY - lp.y;
 
-        // Set up the Folder background. A Prime folder color override is authoritative for both
-        // the closed preview and the opened folder; otherwise use Lawnchair's global colors.
-        PrimeDrawerFolderVisualOverrides primeOverrides =
-                PrimeFolderLongPressHelper.getVisualOverrides(mContext, mFolder.mInfo);
-        Integer primeColor = primeOverrides != null ? primeOverrides.getColor() : null;
-        int initialColor = primeColor != null
-                ? primeColor
-                : LawnchairUtilsKt.resolveFolderPreviewColor(mContext);
-        int finalColor = primeColor != null
-                ? primeColor
-                : LawnchairUtilsKt.resolveFolderBackgroundColor(mContext);
+        // Use the exact same resolved color as the closed FolderIcon. This keeps one color source
+        // for both states: Prime override when present, otherwise the general folder color.
+        int initialColor = mPreviewBackground.getResolvedColor();
+        int finalColor = initialColor;
 
         mFolderBackground.mutate();
         mFolderBackground.setColor(mIsOpening ? initialColor : finalColor);
