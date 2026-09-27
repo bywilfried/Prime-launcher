@@ -46,4 +46,5 @@
     <string name="prime_development_options_description">Options de développement et de diagnostic Prime</string>
     <string name="prime_show_empty_folders">Afficher les dossiers vides</string>
     <string name="prime_show_empty_folders_description">Afficher les dossiers vides dans le tiroir lorsque la mise en page Onglets est utilisée</string>
+    <string name="folder_open_bg_color_label">Couleur du dossier ouvert</string>
 </resources>
