@@ -128,6 +128,8 @@ import com.android.launcher3.util.OverlayEdgeEffect;
 import com.android.launcher3.util.RunnableList;
 import com.android.launcher3.util.Thunk;
 import com.android.launcher3.util.WallpaperOffsetInterpolator;
+import app.lawnchair.prime.drawer.PrimeFolderLongPressHelper;
+
 import com.android.launcher3.widget.LauncherAppWidgetHostView;
 import com.android.launcher3.widget.NavigableAppWidgetHostView;
 import com.android.launcher3.widget.PendingAddShortcutInfo;
@@ -3146,8 +3148,10 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
             // Prime drawer folders are projections of repository data, not Launcher model
             // objects. Never persist/reuse that transient FolderInfo on Workspace: create a
             // genuine independent Home FolderInfo and independent WorkspaceItemInfo children.
+            FolderInfo primeDrawerSourceFolder = null;
             if (info instanceof FolderInfo sourceFolder
                     && sourceFolder.container == ItemInfo.NO_ID) {
+                primeDrawerSourceFolder = sourceFolder;
                 FolderInfo homeFolder = new FolderInfo();
                 homeFolder.title = sourceFolder.title;
                 homeFolder.options = sourceFolder.options;
@@ -3199,6 +3203,10 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
             // values of the info is properly updated.
             mLauncher.getModelWriter().addOrMoveItemInDatabase(info, container, screenId,
                     mTargetCell[0], mTargetCell[1]);
+            if (primeDrawerSourceFolder != null && info instanceof FolderInfo homeFolder) {
+                PrimeFolderLongPressHelper.copyVisualOverridesToHome(
+                        mLauncher, primeDrawerSourceFolder, homeFolder);
+            }
 
             // External folders (including Prime drawer folders) arrive as one FolderInfo object.
             // Persist their children only after the folder has received its new workspace id;
