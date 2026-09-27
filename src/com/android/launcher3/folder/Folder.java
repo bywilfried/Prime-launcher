@@ -756,22 +756,21 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         PrimeDrawerFolderVisualOverrides primeOverrides =
                 PrimeFolderLongPressHelper.getVisualOverrides(getContext(), mInfo);
         mContent.applyPrimeGridOverrides(primeOverrides);
-        for (View itemView : mItemsInReadingOrder) {
+        mContent.iterateOverItems((item, itemView) -> {
             if (itemView instanceof BubbleTextView bubble) {
-                if (primeOverrides != null && primeOverrides.getShowLabels() != null) {
-                    bubble.setTextVisibility(primeOverrides.getShowLabels());
-                } else {
-                    bubble.setTextVisibility(
-                            app.lawnchair.preferences2.PreferenceCacheExtensionsKt.firstCached(
-                                    preferenceManager2.getShowIconLabelsOnHomeScreenFolder()));
-                }
+                boolean showLabels = primeOverrides != null && primeOverrides.getShowLabels() != null
+                        ? primeOverrides.getShowLabels()
+                        : app.lawnchair.preferences2.PreferenceCacheExtensionsKt.firstCached(
+                                preferenceManager2.getShowIconLabelsOnHomeScreenFolder());
+                bubble.setTextVisibility(showLabels);
                 if (primeOverrides != null && primeOverrides.getLabelSize() != null) {
                     bubble.setTextSize(TypedValue.COMPLEX_UNIT_PX,
                             mActivityContext.getDeviceProfile().folderChildTextSizePx
                                     * primeOverrides.getLabelSize());
                 }
             }
-        }
+            return false;
+        });
         if (primeOverrides != null && primeOverrides.getBackgroundOpacity() != null) {
             mBackground.setAlpha(Math.round(255 * primeOverrides.getBackgroundOpacity()));
         } else {
