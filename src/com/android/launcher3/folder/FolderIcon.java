@@ -263,6 +263,13 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
     }
 
 
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        // Workspace binding can restore the default folder-label state after inflation.
+        post(this::refreshPrimeVisualOverrides);
+    }
+
     public void refreshPrimeVisualOverrides() {
         if (mInfo == null) return;
         PrimeDrawerFolderVisualOverrides overrides =
