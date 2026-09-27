@@ -53,6 +53,7 @@ import app.lawnchair.ui.preferences.components.controls.SliderPreference
 import app.lawnchair.ui.preferences.components.controls.ListPreference
 import app.lawnchair.ui.preferences.components.controls.ListPreferenceEntry
 import app.lawnchair.ui.preferences.components.controls.SwitchPreference
+import app.lawnchair.ui.preferences.components.colorpreference.ColorPreference
 import app.lawnchair.ui.preferences.components.controls.SwitchPreferencePreviewCard
 import app.lawnchair.ui.preferences.components.controls.WarningPreference
 import app.lawnchair.ui.preferences.components.layout.ExpandAndShrink
@@ -114,6 +115,9 @@ fun AppDrawerPreferences(
                     SwitchPreference(
                         label = stringResource(id = R.string.prime_tabs_swipe_enabled),
                         adapter = prefs.drawerTabsSwipeEnabled.getAdapter(),
+                    )
+                    ColorPreference(
+                        preference = prefs.drawerTabsColor,
                     )
                     SwitchPreference(
                         label = stringResource(id = R.string.apps_in_folder_label),
