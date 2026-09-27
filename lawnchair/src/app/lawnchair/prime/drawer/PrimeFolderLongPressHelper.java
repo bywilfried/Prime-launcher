@@ -29,6 +29,7 @@ import com.android.launcher3.util.ComponentKey;
 import com.android.launcher3.views.ActivityContext;
 import com.android.launcher3.views.OptionsPopupView;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -44,6 +45,7 @@ import app.lawnchair.ui.preferences.navigation.PrimeDrawerFolderAdvanced;
 /** Prime folder long-press menu and drag bridge for drawer and workspace folders. */
 public final class PrimeFolderLongPressHelper {
     private static final Map<FolderInfo, PrimeFolderRef> PRIME_FOLDERS = new WeakHashMap<>();
+    private static final Map<Integer, WeakReference<FolderIcon>> HOME_FOLDER_ICONS = new java.util.HashMap<>();
     private final FolderIcon mIcon;
     private final int mTouchSlop;
     private float mDownX;
@@ -61,6 +63,27 @@ public final class PrimeFolderLongPressHelper {
         synchronized (PRIME_FOLDERS) {
             PRIME_FOLDERS.put(info, new PrimeFolderRef(tabId, folderId));
         }
+    }
+
+    public static void registerHomeFolderIcon(FolderIcon icon) {
+        if (icon == null || icon.mInfo == null || icon.mInfo.id < 0) return;
+        synchronized (HOME_FOLDER_ICONS) {
+            HOME_FOLDER_ICONS.put(icon.mInfo.id, new WeakReference<>(icon));
+        }
+    }
+
+    public static void refreshHomeFolderVisualOverrides(int folderId) {
+        FolderIcon icon;
+        synchronized (HOME_FOLDER_ICONS) {
+            WeakReference<FolderIcon> reference = HOME_FOLDER_ICONS.get(folderId);
+            icon = reference != null ? reference.get() : null;
+            if (icon == null) HOME_FOLDER_ICONS.remove(folderId);
+        }
+        if (icon == null) return;
+        icon.post(() -> {
+            icon.refreshPrimeVisualOverrides();
+            icon.getFolder().applyPrimeVisualOverrides();
+        });
     }
 
     public static boolean shouldHandle(FolderIcon icon) {
