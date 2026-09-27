@@ -251,6 +251,7 @@ private fun PrimeFolderOptions(
     inherited: PrimeDrawerFolderVisualOverrides,
     update: (PrimeDrawerFolderVisualOverrides) -> Unit,
 ) {
+    val context = LocalContext.current
     val prefs = preferenceManager()
     val prefs2 = preferenceManager2()
 
