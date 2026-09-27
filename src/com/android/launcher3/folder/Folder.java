@@ -781,6 +781,11 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
             }
             return false;
         });
+        if (primeOverrides != null && primeOverrides.getOpenColor() != null) {
+            mBackground.setColor(primeOverrides.getOpenColor());
+        } else {
+            mBackground.setColor(LawnchairUtilsKt.resolveFolderBackgroundColor(getContext()));
+        }
         if (primeOverrides != null && primeOverrides.getBackgroundOpacity() != null) {
             mBackground.setAlpha(Math.round(255 * primeOverrides.getBackgroundOpacity()));
         } else {
