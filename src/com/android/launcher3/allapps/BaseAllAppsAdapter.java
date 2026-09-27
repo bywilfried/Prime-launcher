@@ -51,6 +51,8 @@ import com.android.launcher3.views.ActivityContext;
 
 import app.lawnchair.preferences.PreferenceManager;
 import app.lawnchair.prime.drawer.PrimeDrawerTabsRepository;
+import app.lawnchair.prime.drawer.PrimeDrawerFolderVisualOverrides;
+import app.lawnchair.prime.drawer.PrimeFolderLongPressHelper;
 import app.lawnchair.prime.drawer.PrimeDrawerVisualOverrides;
 import app.lawnchair.icons.shape.IconShape;
 
@@ -379,10 +381,16 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
                 // LC-Note: Implement long-press support for folder type for purposes like showing popup
                 FolderIcon folderIcon = FolderIcon.inflateFolderAndIcon(
                         R.layout.all_apps_folder_icon, mActivityContext, container, folderInfo);
-                PrimeDrawerVisualOverrides folderTabOverrides =
-                        new PrimeDrawerTabsRepository(mActivityContext).getSelectedTabVisualOverrides();
-                if (folderTabOverrides != null && folderTabOverrides.getDrawerTextColor() != null) {
-                    folderIcon.getFolderName().setTextColor(folderTabOverrides.getDrawerTextColor());
+                PrimeDrawerFolderVisualOverrides folderOverrides =
+                        PrimeFolderLongPressHelper.getVisualOverrides(mActivityContext, folderInfo);
+                if (folderOverrides != null && folderOverrides.getClosedLabelColor() != null) {
+                    folderIcon.getFolderName().setTextColor(folderOverrides.getClosedLabelColor());
+                } else {
+                    PrimeDrawerVisualOverrides folderTabOverrides =
+                            new PrimeDrawerTabsRepository(mActivityContext).getSelectedTabVisualOverrides();
+                    if (folderTabOverrides != null && folderTabOverrides.getDrawerTextColor() != null) {
+                        folderIcon.getFolderName().setTextColor(folderTabOverrides.getDrawerTextColor());
+                    }
                 }
                 folderIcon.setOnLongClickListener(mOnIconLongClickListener);
                 container.addView(folderIcon);
