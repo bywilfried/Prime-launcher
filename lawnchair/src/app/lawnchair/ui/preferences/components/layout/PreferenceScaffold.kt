@@ -33,6 +33,7 @@ fun PreferenceScaffold(
     isExpandedScreen: Boolean,
     modifier: Modifier = Modifier,
     backArrowVisible: Boolean = true,
+    onBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
     bottomBar: @Composable () -> Unit = { BottomSpacer() },
     content: @Composable (PaddingValues) -> Unit,
@@ -47,6 +48,7 @@ fun PreferenceScaffold(
                 isExpandedScreen = isExpandedScreen,
                 actions = actions,
                 scrollBehavior = scrollBehavior,
+                onBack = onBack,
             )
         },
         bottomBar = bottomBar,
