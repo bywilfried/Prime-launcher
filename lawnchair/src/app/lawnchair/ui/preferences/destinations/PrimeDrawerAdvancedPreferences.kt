@@ -103,7 +103,7 @@ fun PrimeHomeFolderAdvancedPreference(folderId: Int) {
 
     PreferenceLayout(label = stringResource(id = R.string.folders_label), backArrowVisible = true) {
         PreferenceGroup(heading = "Dossier fermé") {
-            HomeFolderShapePreference(stringResource(id = R.string.folder_shape_label), value.shape, folderId, "folderShape")
+            HomeFolderShapePreference(stringResource(id = R.string.folder_shape_label), value.shape, prefs2.folderShape.getAdapter().state.value, folderId, "folderShape")
             HomeFolderColorPreference("Couleur de l’arrière-plan des icônes", value.color, folderId, "folderColor")
             NullableFloatSlider(stringResource(id = R.string.folder_preview_bg_opacity_label), value.previewOpacity, prefs2.folderPreviewBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, true) { update(value.copy(previewOpacity = it)) }
             NullableSwitch("Afficher le nom du dossier fermé", value.showFolderLabel, true) { update(value.copy(showFolderLabel = it)) }
@@ -118,7 +118,7 @@ fun PrimeHomeFolderAdvancedPreference(folderId: Int) {
             NullableIntSlider(stringResource(id = R.string.max_folder_rows), value.rows, prefs.folderRows.getAdapter().state.value, 2..5) { update(value.copy(rows = it)) }
         }
         PreferenceGroup(heading = "Icônes dans le dossier ouvert") {
-            HomeFolderShapePreference("Forme des icônes dans les dossiers", value.childIconShape, folderId, "folderChildIcon")
+            HomeFolderShapePreference("Forme des icônes dans les dossiers", value.childIconShape, prefs2.iconShape.getAdapter().state.value, folderId, "folderChildIcon")
             NullableSwitch(stringResource(id = R.string.show_labels), value.showLabels, prefs2.showIconLabelsOnHomeScreenFolder.getAdapter().state.value) { update(value.copy(showLabels = it)) }
             NullableFloatSlider(stringResource(id = R.string.label_size), value.labelSize, prefs2.homeIconLabelFolderSizeFactor.getAdapter().state.value, 0.5f..1.5f, 0.1f, true) { update(value.copy(labelSize = it)) }
         }
@@ -126,14 +126,16 @@ fun PrimeHomeFolderAdvancedPreference(folderId: Int) {
 }
 
 @Composable
-private fun HomeFolderShapePreference(label: String, value: String?, folderId: Int, shapeKey: String) {
+private fun HomeFolderShapePreference(label: String, value: String?, inherited: IconShape, folderId: Int, shapeKey: String) {
     val context = LocalContext.current
     val navController = LocalNavController.current
     val shape = value?.let { runCatching { IconShape.fromString(it, context) }.getOrNull() }
+    val effective = shape ?: inherited
     PreferenceTemplate(
         title = { Text(label) },
-        description = if (value == null) ({ Text("Par défaut • valeur héritée") }) else ({ Text("Personnalisé") }),
-        endWidget = shape?.let { selected -> { IconShapePreview(iconShape = selected) } },
+        modifier = Modifier.alpha(if (value == null) 0.55f else 1f),
+        description = if (value == null) ({ Text("Par défaut") }) else ({ Text("Personnalisé") }),
+        endWidget = { IconShapePreview(iconShape = effective) },
         onClick = { navController.navigate(PrimeHomeFolderShape(folderId, shapeKey, label)) },
     )
 }
@@ -179,7 +181,7 @@ private fun PrimeCategoryDrawerOptions(
         }
     }
     PreferenceGroup(heading = stringResource(id = R.string.icons)) {
-        NullableShapePreference("Forme des icônes", value.drawerIconShape, tabId, "drawerIcon")
+        NullableShapePreference("Forme des icônes", value.drawerIconShape, prefs2.iconShape.getAdapter().state.value, tabId, "drawerIcon")
         NullableFloatSlider(stringResource(id = R.string.icon_sizes), value.drawerIconSize, prefs2.drawerIconSizeFactor.getAdapter().state.value, 0.5f..1.5f, 0.1f, showAsPercentage = true) {
             update(value.copy(drawerIconSize = it))
         }
@@ -212,7 +214,7 @@ private fun PrimeCategoryFolderOptions(
     val prefs = preferenceManager()
     val prefs2 = preferenceManager2()
     PreferenceGroup(heading = stringResource(id = R.string.general_label)) {
-        NullableShapePreference(stringResource(id = R.string.folder_shape_label), value.folderShape, tabId, "folderShape")
+        NullableShapePreference(stringResource(id = R.string.folder_shape_label), value.folderShape, prefs2.folderShape.getAdapter().state.value, tabId, "folderShape")
         NullableColorPreference("Couleur de l’arrière-plan des icônes", value.folderColor, tabId, "folderColor")
         NullableColorPreference("Couleur du texte dans les dossiers", value.folderTextColor, tabId, "folderText")
         NullableFloatSlider(stringResource(id = R.string.folder_preview_bg_opacity_label), value.folderPreviewOpacity, prefs2.folderPreviewBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, showAsPercentage = true) {
@@ -231,7 +233,7 @@ private fun PrimeCategoryFolderOptions(
         }
     }
     PreferenceGroup(heading = stringResource(id = R.string.icons)) {
-        NullableShapePreference("Forme des icônes dans les dossiers", value.folderChildIconShape, tabId, "folderChildIcon")
+        NullableShapePreference("Forme des icônes dans les dossiers", value.folderChildIconShape, prefs2.iconShape.getAdapter().state.value, tabId, "folderChildIcon")
         NullableSwitch(stringResource(id = R.string.show_labels), value.folderShowLabels, prefs2.showIconLabelsOnHomeScreenFolder.getAdapter().state.value) {
             update(value.copy(folderShowLabels = it))
         }
@@ -253,7 +255,7 @@ private fun PrimeFolderOptions(
     val prefs2 = preferenceManager2()
 
     PreferenceGroup(heading = "Dossier fermé") {
-        NullableShapePreference(stringResource(id = R.string.folder_shape_label), value.shape, tabId, "folderShape", folderId)
+        NullableShapePreference(stringResource(id = R.string.folder_shape_label), value.shape, resolveInheritedShape(context, inherited.shape, prefs2.folderShape.getAdapter().state.value), tabId, "folderShape", folderId)
         NullableColorPreference("Couleur de l’arrière-plan des icônes", value.color, tabId, "folderColor", folderId)
         NullableFloatSlider(stringResource(id = R.string.folder_preview_bg_opacity_label), value.previewOpacity, inherited.previewOpacity ?: prefs2.folderPreviewBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, showAsPercentage = true) {
             update(value.copy(previewOpacity = it))
@@ -281,7 +283,7 @@ private fun PrimeFolderOptions(
     }
 
     PreferenceGroup(heading = "Icônes dans le dossier ouvert") {
-        NullableShapePreference("Forme des icônes dans les dossiers", value.childIconShape, tabId, "folderChildIcon", folderId)
+        NullableShapePreference("Forme des icônes dans les dossiers", value.childIconShape, resolveInheritedShape(context, inherited.childIconShape, prefs2.iconShape.getAdapter().state.value), tabId, "folderChildIcon", folderId)
         NullableSwitch(stringResource(id = R.string.show_labels), value.showLabels, inherited.showLabels ?: prefs2.showIconLabelsOnHomeScreenFolder.getAdapter().state.value) {
             update(value.copy(showLabels = it))
         }
@@ -291,10 +293,14 @@ private fun PrimeFolderOptions(
     }
 }
 
+private fun resolveInheritedShape(context: android.content.Context, value: String?, fallback: IconShape): IconShape =
+    value?.let { runCatching { IconShape.fromString(it, context) }.getOrNull() } ?: fallback
+
 @Composable
 private fun NullableShapePreference(
     label: String,
     value: String?,
+    inherited: IconShape,
     tabId: String,
     shapeKey: String,
     folderId: String? = null,
@@ -302,10 +308,12 @@ private fun NullableShapePreference(
     val context = LocalContext.current
     val navController = LocalNavController.current
     val shape = value?.let { runCatching { IconShape.fromString(it, context) }.getOrNull() }
+    val effective = shape ?: inherited
     PreferenceTemplate(
         title = { Text(label) },
-        description = if (value == null) ({ Text("Par défaut • valeur héritée") }) else ({ Text("Personnalisé") }),
-        endWidget = shape?.let { selected -> { IconShapePreview(iconShape = selected) } },
+        modifier = Modifier.alpha(if (value == null) 0.55f else 1f),
+        description = if (value == null) ({ Text("Par défaut") }) else ({ Text("Personnalisé") }),
+        endWidget = { IconShapePreview(iconShape = effective) },
         onClick = { navController.navigate(PrimeDrawerShape(tabId, shapeKey, label, folderId)) },
     )
 }
