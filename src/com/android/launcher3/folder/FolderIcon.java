@@ -257,7 +257,9 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
                 }
             }
             if (primeOverrides.getShowFolderLabel() != null) {
-                icon.mFolderName.setTextVisibility(primeOverrides.getShowFolderLabel());
+                boolean showFolderLabel = primeOverrides.getShowFolderLabel();
+                icon.setTextVisible(showFolderLabel);
+                icon.mFolderName.setTextVisibility(showFolderLabel);
             }
         }
         icon.updatePreviewItems(false);
@@ -287,13 +289,15 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
             shape = IconShape.Companion.fromString(overrides.getShape(), getContext());
         }
         mBackground.setPrimeShape(shape);
-        boolean showFolderLabel =
-                overrides == null || overrides.getShowFolderLabel() == null
-                        || overrides.getShowFolderLabel();
-        // Keep the closed-folder label independent from BubbleTextView's cached alpha state.
-        // Workspace binding can restore that alpha, so also control the rendered text itself.
-        mFolderName.setText(showFolderLabel ? mInfo.title : "");
-        mFolderName.setTextVisibility(showFolderLabel);
+        if (overrides != null && overrides.getShowFolderLabel() != null) {
+            boolean showFolderLabel = overrides.getShowFolderLabel();
+            // FolderIcon.setTextVisible controls the actual View visibility used by Workspace.
+            // BubbleTextView.setTextVisibility only changes text alpha and cannot override an
+            // INVISIBLE folder label set by the global Home label preference.
+            setTextVisible(showFolderLabel);
+            mFolderName.setText(mInfo.title);
+            mFolderName.setTextVisibility(showFolderLabel);
+        }
         invalidate();
     }
 
