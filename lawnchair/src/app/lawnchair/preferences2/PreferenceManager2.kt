@@ -234,6 +234,8 @@ class PreferenceManager2 @Inject constructor(
         defaultValue = ColorOption.SystemAccent,
     )
 
+    fun getDrawerTabsColorBlocking(): ColorOption = drawerTabsColor.get().firstBlocking()
+
     val appDrawerBackgroundColor = preference(
         key = stringPreferencesKey(name = "app_drawer_bg_color"),
         parse = ColorOption::fromString,
