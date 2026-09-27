@@ -173,6 +173,27 @@ class PrimeDrawerTabsRepository(context: Context) {
         }
     }
 
+    fun removeAppFromTabAndFolders(tabId: String, componentKey: ComponentKey) {
+        val key = componentKey.toString()
+        updateUserTab(tabId) { tab ->
+            tab.copy(
+                apps = tab.apps - key,
+                folders = tab.folders.map { folder ->
+                    if (key in folder.apps) {
+                        val apps = folder.apps - key
+                        folder.copy(
+                            apps = apps,
+                            customOrder = folder.customOrder.filter(apps::contains),
+                        )
+                    } else {
+                        folder
+                    }
+                },
+                customOrder = tab.customOrder.filterNot { it == key },
+            )
+        }
+    }
+
     fun setFolderApps(tabId: String, folderId: String, apps: Set<ComponentKey>) {
         updateUserTab(tabId) { tab ->
             tab.copy(
