@@ -928,6 +928,9 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         closeOpenFolder(openFolder);
 
         mContent.bindItems(items);
+        // bindItems() can recreate child BubbleTextViews and restore their default label state.
+        // Reapply Prime overrides only after the current folder views exist.
+        applyPrimeVisualOverrides();
         mContent.setCanAnnouncePageDescriptionForFolder(true);
         centerAboutIcon();
         mItemsInvalidated = true;
