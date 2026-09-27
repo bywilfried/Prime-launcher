@@ -763,6 +763,9 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
                         ? primeOverrides.getShowLabels()
                         : app.lawnchair.preferences2.PreferenceCacheExtensionsKt.firstCached(
                                 preferenceManager2.getShowIconLabelsOnHomeScreenFolder());
+                // Do not rely only on BubbleTextView's alpha: binding/recycling can restore
+                // its default text alpha after Prime applies the folder override.
+                bubble.setText(showLabels ? item.title : "");
                 bubble.setTextVisibility(showLabels);
                 if (primeOverrides != null && primeOverrides.getLabelSize() != null) {
                     bubble.setTextSize(TypedValue.COMPLEX_UNIT_PX,
