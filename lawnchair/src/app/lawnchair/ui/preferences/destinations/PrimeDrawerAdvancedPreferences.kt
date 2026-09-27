@@ -104,7 +104,6 @@ fun PrimeHomeFolderAdvancedPreference(folderId: Int) {
         PreferenceGroup(heading = stringResource(id = R.string.general_label)) {
             HomeFolderShapePreference(stringResource(id = R.string.folder_shape_label), value.shape, folderId, "folderShape")
             HomeFolderColorPreference("Couleur de l’arrière-plan des icônes", value.color, folderId, "folderColor")
-            HomeFolderColorPreference("Couleur du dossier ouvert", value.openColor, folderId, "folderOpenColor")
             NullableFloatSlider(stringResource(id = R.string.folder_preview_bg_opacity_label), value.previewOpacity, prefs2.folderPreviewBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, true) { update(value.copy(previewOpacity = it)) }
             NullableFloatSlider(stringResource(id = R.string.folder_bg_opacity_label), value.backgroundOpacity, prefs2.folderBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, true) { update(value.copy(backgroundOpacity = it)) }
         }
@@ -211,7 +210,6 @@ private fun PrimeCategoryFolderOptions(
     PreferenceGroup(heading = stringResource(id = R.string.general_label)) {
         NullableShapePreference(stringResource(id = R.string.folder_shape_label), value.folderShape, tabId, "folderShape")
         NullableColorPreference("Couleur de l’arrière-plan des icônes", value.folderColor, tabId, "folderColor")
-        NullableColorPreference("Couleur du dossier ouvert", value.folderOpenColor, tabId, "folderOpenColor")
         NullableFloatSlider(stringResource(id = R.string.folder_preview_bg_opacity_label), value.folderPreviewOpacity, prefs2.folderPreviewBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, showAsPercentage = true) {
             update(value.copy(folderPreviewOpacity = it))
         }
@@ -251,7 +249,6 @@ private fun PrimeFolderOptions(
     PreferenceGroup(heading = stringResource(id = R.string.general_label)) {
         NullableShapePreference(stringResource(id = R.string.folder_shape_label), value.shape, tabId, "folderShape", folderId)
         NullableColorPreference("Couleur de l’arrière-plan des icônes", value.color, tabId, "folderColor", folderId)
-        NullableColorPreference("Couleur du dossier ouvert", value.openColor, tabId, "folderOpenColor", folderId)
         NullableFloatSlider(stringResource(id = R.string.folder_preview_bg_opacity_label), value.previewOpacity, inherited.previewOpacity ?: prefs2.folderPreviewBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, showAsPercentage = true) {
             update(value.copy(previewOpacity = it))
         }
