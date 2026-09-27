@@ -20,6 +20,7 @@ import static com.android.launcher3.icons.BitmapInfo.FLAG_THEMED;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Path;
 import android.os.Process;
 
 import androidx.annotation.NonNull;
@@ -28,7 +29,6 @@ import androidx.annotation.Nullable;
 import com.android.launcher3.Flags;
 import com.android.launcher3.Utilities;
 import com.android.launcher3.graphics.ThemeManager;
-import app.lawnchair.icons.shape.IconShape;
 import com.android.launcher3.icons.BitmapInfo;
 import com.android.launcher3.icons.BitmapInfo.DrawableCreationFlags;
 import com.android.launcher3.icons.FastBitmapDrawable;
@@ -337,7 +337,7 @@ public abstract class ItemInfoWithIcon extends ItemInfo {
 
     /** Creates the icon using an explicit view-local shape without changing the global icon cache. */
     public FastBitmapDrawable newIcon(Context context, @DrawableCreationFlags int creationFlags,
-            @Nullable IconShape iconShape) {
+            @Nullable Path iconShape) {
         var shouldTheme = PreferenceManager.getInstance(context).getThemedIcons().get();
         if (!shouldTheme) {
             creationFlags &= ~FLAG_THEMED;
