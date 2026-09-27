@@ -212,7 +212,8 @@ fun resolveFolderPreviewColor(context: Context): Int {
  * Opacity is applied separately via [getFolderBackgroundAlpha] on the drawable.
  */
 fun resolveFolderBackgroundColor(context: Context): Int {
-    val custom = getCustomFolderColor(context)
+    val prefs2 = PreferenceManager2.getInstance(context)
+    val custom = prefs2.folderOpenColor.firstCached().colorPreferenceEntry.lightColor(context)
     return if (custom != 0) {
         custom
     } else {
