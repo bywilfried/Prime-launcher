@@ -20,30 +20,31 @@ class PrimeDrawerModePreferences(context: Context) {
     private val prefs = LauncherPrefs.getPrefs(this.context)
     private val legacy = PreferenceManager.getInstance(this.context)
     private val legacy2 = PreferenceManager2.INSTANCE.get(this.context)!!
-    private val idp = InvariantDeviceProfile.INSTANCE.get(this.context)
 
-    fun get(mode: PrimeDrawerMode = PrimeDrawerMode.current(legacy)): PrimeDrawerModeProfile {
+    fun get(
+        gridOption: InvariantDeviceProfile.GridOption,
+        mode: PrimeDrawerMode = PrimeDrawerMode.current(legacy),
+    ): PrimeDrawerModeProfile {
         val root = readRoot()
         val stored = root.optJSONObject(mode.storageKey)
-        if (stored != null) return stored.toProfile()
-        return legacyProfile()
+        if (stored != null) return stored.toProfile(gridOption)
+        return legacyProfile(gridOption)
     }
 
     fun update(
+        gridOption: InvariantDeviceProfile.GridOption,
         mode: PrimeDrawerMode = PrimeDrawerMode.current(legacy),
         transform: (PrimeDrawerModeProfile) -> PrimeDrawerModeProfile,
     ) {
         val root = readRoot()
-        root.put(mode.storageKey, transform(get(mode)).toJson())
+        root.put(mode.storageKey, transform(get(gridOption, mode)).toJson())
         prefs.edit { putString(PREF_MODE_PROFILES, root.toString()) }
-        idp.onPreferencesChanged(context)
     }
 
     fun hasStoredProfile(mode: PrimeDrawerMode): Boolean =
         readRoot().has(mode.storageKey)
 
-    private fun legacyProfile(): PrimeDrawerModeProfile {
-        val grid = idp.closestProfile
+    private fun legacyProfile(grid: InvariantDeviceProfile.GridOption): PrimeDrawerModeProfile {
         return PrimeDrawerModeProfile(
             drawerOpacity = legacy.drawerOpacity.get(),
             drawerColumns = legacy2.drawerColumns.firstCached(gridOption = grid),
@@ -79,12 +80,12 @@ class PrimeDrawerModePreferences(context: Context) {
         put("showScrollbar", showScrollbar)
     }
 
-    private fun JSONObject.toProfile() = PrimeDrawerModeProfile(
+    private fun JSONObject.toProfile(grid: InvariantDeviceProfile.GridOption) = PrimeDrawerModeProfile(
         drawerOpacity = optDouble("drawerOpacity", legacy.drawerOpacity.get().toDouble()).toFloat(),
-        drawerColumns = optInt("drawerColumns", legacy2.drawerColumns.firstCached(gridOption = idp.closestProfile)),
+        drawerColumns = optInt("drawerColumns", legacy2.drawerColumns.firstCached(gridOption = grid)),
         drawerColumnsUnfolded = optInt(
             "drawerColumnsUnfolded",
-            legacy2.drawerColumnsUnfolded.firstCached(gridOption = idp.closestProfile),
+            legacy2.drawerColumnsUnfolded.firstCached(gridOption = grid),
         ),
         drawerIconSize = optDouble("drawerIconSize", legacy2.drawerIconSizeFactor.firstCached().toDouble()).toFloat(),
         showLabels = optBoolean("showLabels", legacy2.showIconLabelsInDrawer.firstCached()),
