@@ -304,6 +304,9 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
                                 || (privateProfileManager != null
                                         && privateProfileManager.isPrivateSpaceItem(adapterItem)));
                 icon.setSkipUserBadge(skipUserBadge);
+                // Resolve Prime shape before binding the normal icon so a cached Prime drawable
+                // can be displayed on the first frame instead of flashing Lawnchair's shape.
+                applyPrimeTabIconShape(icon);
                 icon.applyFromApplicationInfo(adapterItem.itemInfo);
                 applyPrimeTabIconOverrides(icon);
                 applyPrimeTabCellHeight(icon);
@@ -421,6 +424,16 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
         applyPrimeTabIconOverrides(icon);
         icon.requestLayout();
         icon.invalidate();
+    }
+
+    private void applyPrimeTabIconShape(BubbleTextView icon) {
+        if (!PreferenceManager.getInstance(mActivityContext).getDrawerTabsEnabled().get()) return;
+        PrimeDrawerVisualOverrides overrides =
+                new PrimeDrawerTabsRepository(mActivityContext).getSelectedTabVisualOverrides();
+        if (overrides != null && overrides.getDrawerIconShape() != null) {
+            icon.setPrimeIconShapeForNextBind(IconShape.Companion.fromString(
+                    overrides.getDrawerIconShape(), icon.getContext()));
+        }
     }
 
     private void applyPrimeTabIconOverrides(BubbleTextView icon) {
