@@ -32,6 +32,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.android.launcher3.BubbleTextView;
 import com.android.launcher3.Flags;
 import com.android.launcher3.Insettable;
 import com.android.launcher3.R;
@@ -454,6 +455,19 @@ public class FloatingHeaderView extends LinearLayout implements
         // previous tab's styling.
         if (rv.getAdapter() != null) {
             rv.getAdapter().notifyDataSetChanged();
+        }
+        // Keep the live refresh deterministic for currently attached app cells. A full adapter
+        // rebind first restores the normal Lawnchair drawable via applyFromApplicationInfo(), while
+        // the Prime shape is rebuilt asynchronously. Reapply the current category override directly
+        // to attached BubbleTextViews, mirroring the folder override refresh path.
+        if (rv.getAdapter() instanceof BaseAllAppsAdapter) {
+            BaseAllAppsAdapter<?> adapter = (BaseAllAppsAdapter<?>) rv.getAdapter();
+            for (int i = 0; i < rv.getChildCount(); i++) {
+                View child = rv.getChildAt(i);
+                if (child instanceof BubbleTextView) {
+                    adapter.reapplyPrimeTabIconOverrides((BubbleTextView) child);
+                }
+            }
         }
         Boolean rememberPosition = primeOverrides != null ? primeOverrides.getRememberPosition() : null;
         boolean shouldRememberPosition = rememberPosition != null
