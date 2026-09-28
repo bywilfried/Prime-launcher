@@ -211,7 +211,7 @@ fun AppDrawerPreferences(
             )
             SliderPreference(
                 label = stringResource(id = R.string.background_opacity),
-                adapter = prefs.drawerOpacity.getAdapter(),
+                adapter = modePreference("drawerOpacity", { it.drawerOpacity }, { profile, value -> profile.copy(drawerOpacity = value) }, { ReloadHelper(context).recreate() }).getAdapter(),
                 step = 0.1f,
                 valueRange = 0F..1F,
                 showAsPercentage = true,
@@ -258,21 +258,21 @@ fun AppDrawerPreferences(
                 )
             }
             SliderPreference(
-                adapter = prefs2.drawerCellHeightFactor.getAdapter(),
+                adapter = modePreference("rowHeight", { it.rowHeight }, { profile, value -> profile.copy(rowHeight = value) }).getAdapter(),
                 label = stringResource(id = R.string.row_height_label),
                 valueRange = 0.3F..1.5F,
                 step = 0.1F,
                 showAsPercentage = true,
             )
             SliderPreference(
-                adapter = prefs2.drawerLeftRightMarginFactor.getAdapter(),
+                adapter = modePreference("horizontalMargin", { it.horizontalMargin }, { profile, value -> profile.copy(horizontalMargin = value) }).getAdapter(),
                 label = stringResource(id = R.string.app_drawer_indent_label),
                 valueRange = 0.0F..1.5F,
                 step = 0.05F,
                 showAsPercentage = true,
             )
             SliderPreference(
-                adapter = prefs2.drawerPaddingTopFactor.getAdapter(),
+                adapter = modePreference("topPadding", { it.topPadding }, { profile, value -> profile.copy(topPadding = value) }).getAdapter(),
                 label = stringResource(id = R.string.top_padding_label),
                 valueRange = 1.0F..2.0F,
                 step = 0.05F,
@@ -307,7 +307,7 @@ fun AppDrawerPreferences(
                 visible = showDrawerLabels.state.value,
             ) {
                 SwitchPreference(
-                    adapter = prefs2.twoLineAllApps.getAdapter(),
+                    adapter = modePreference("twoLineLabels", { it.twoLineLabels }, { profile, value -> profile.copy(twoLineLabels = value) }, { value -> com.android.launcher3.LauncherPrefs.get(context).put(com.android.launcher3.LauncherPrefs.ENABLE_TWOLINE_ALLAPPS_TOGGLE, value) }).getAdapter(),
                     label = stringResource(R.string.twoline_label),
                 )
             }
@@ -316,16 +316,16 @@ fun AppDrawerPreferences(
             SwitchPreference(
                 label = stringResource(id = R.string.apps_in_folder_label),
                 description = stringResource(id = R.string.apps_in_folder_description),
-                adapter = prefs.primeHideFolderApps.getAdapter(),
+                adapter = modePreference("hideFolderApps", { it.hideFolderApps }, { profile, value -> profile.copy(hideFolderApps = value) }, { ReloadHelper(context).recreate() }).getAdapter(),
             )
             SwitchPreference(
                 label = stringResource(id = R.string.pref_all_apps_remember_position_title),
                 description = stringResource(id = R.string.pref_all_apps_remember_position_description),
-                adapter = prefs2.rememberPosition.getAdapter(),
+                adapter = modePreference("rememberPosition", { it.rememberPosition }, { profile, value -> profile.copy(rememberPosition = value) }).getAdapter(),
             )
             SwitchPreference(
                 label = stringResource(id = R.string.pref_all_apps_show_scrollbar_title),
-                adapter = prefs2.showScrollbar.getAdapter(),
+                adapter = modePreference("showScrollbar", { it.showScrollbar }, { profile, value -> profile.copy(showScrollbar = value) }, { ReloadHelper(context).recreate() }).getAdapter(),
             )
         }
     }
