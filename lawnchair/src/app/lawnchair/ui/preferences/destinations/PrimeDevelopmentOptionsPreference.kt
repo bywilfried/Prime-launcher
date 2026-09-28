@@ -9,6 +9,7 @@ import app.lawnchair.ui.preferences.components.controls.ClickablePreference
 import app.lawnchair.ui.preferences.components.controls.SwitchPreference
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
+import app.lawnchair.ui.preferences.navigation.PrimeDiagnosticLogs
 import app.lawnchair.ui.preferences.navigation.PrimeHapticTuning
 import com.android.launcher3.R
 
@@ -41,6 +42,11 @@ fun PrimeDevelopmentOptionsPreference() {
                     stringResource(R.string.workspace_increase_max_grid_size_description)
                 },
                 enabled = !gridExceedsDefault || !extendedGrid.state.value,
+            )
+            ClickablePreference(
+                label = stringResource(R.string.prime_diagnostic_logs),
+                subtitle = stringResource(R.string.prime_diagnostic_logs_description),
+                onClick = { navController.navigate(PrimeDiagnosticLogs) },
             )
             ClickablePreference(
                 label = stringResource(R.string.prime_haptic_tuning),
