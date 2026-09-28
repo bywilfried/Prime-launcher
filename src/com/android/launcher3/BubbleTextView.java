@@ -1637,13 +1637,13 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         mPrimeIconShape = shape;
         final int generation = ++mPrimeIconShapeRequestGeneration;
         final String shapeKey = shape == null ? "null" : shape.toString();
-        Log.d("PrimeIconShape", "request shape=" + shapeKey + " generation=" + generation
+        PrimeDebugLog.d("PrimeIconShape", "request shape=" + shapeKey + " generation=" + generation
                 + " display=" + mDisplay + " tag=" + getTag());
 
         if (shape == null || (mDisplay != DISPLAY_ALL_APPS && mDisplay != DISPLAY_FOLDER)
                 || !(getTag() instanceof ItemInfoWithIcon info)
                 || !(getContext() instanceof Launcher launcher)) {
-            Log.d("PrimeIconShape", "skip request shape=" + shapeKey + " generation=" + generation
+            PrimeDebugLog.d("PrimeIconShape", "skip request shape=" + shapeKey + " generation=" + generation
                     + " display=" + mDisplay + " tag=" + getTag()
                     + " context=" + getContext().getClass().getSimpleName());
             return;
@@ -1667,7 +1667,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             Pair<AdaptiveIconDrawable, Drawable> fullDrawable = Utilities.getFullDrawable(
                     launcher, info, iconSize, iconSize, useTheme);
             if (fullDrawable == null || fullDrawable.first == null) {
-                Log.d("PrimeIconShape", "source missing shape=" + shapeKey + " generation="
+                PrimeDebugLog.d("PrimeIconShape", "source missing shape=" + shapeKey + " generation="
                         + generation + " info=" + info);
                 // Only fall back to the already loaded drawable when the original source cannot
                 // be reconstructed (for example some icon-pack cases). Never use it as the normal
@@ -1676,7 +1676,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                     if (generation == mPrimeIconShapeRequestGeneration
                             && mPrimeIconShape == shape
                             && getTag() == info) {
-                        Log.d("PrimeIconShape", "fallback default drawable shape=" + shapeKey
+                        PrimeDebugLog.d("PrimeIconShape", "fallback default drawable shape=" + shapeKey
                                 + " generation=" + generation + " info=" + info);
                         applyCompoundDrawables(getIconOrTransparentColor());
                         invalidate();
@@ -1685,7 +1685,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                 return;
             }
 
-            Log.d("PrimeIconShape", "source ready shape=" + shapeKey + " generation="
+            PrimeDebugLog.d("PrimeIconShape", "source ready shape=" + shapeKey + " generation="
                     + generation + " info=" + info);
             final BitmapInfo primeBitmap;
             try (LauncherIcons launcherIcons = LauncherIcons.obtain(launcher)) {
@@ -1695,7 +1695,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             // The Prime bitmap is already rasterized with the selected shape. Do not pass a
             // second mask here: doing so intersects the Prime silhouette with another icon mask
             // and breaks complex shapes such as Meow or Complex Clover.
-            Log.d("PrimeIconShape", "bitmap ready shape=" + shapeKey + " generation="
+            PrimeDebugLog.d("PrimeIconShape", "bitmap ready shape=" + shapeKey + " generation="
                     + generation + " info=" + info);
             final FastBitmapDrawable primeDrawable = primeBitmap.newIcon(launcher, flags);
             if (isPrivateSpaceIcon) {
@@ -1706,13 +1706,13 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                 if (generation != mPrimeIconShapeRequestGeneration
                         || mPrimeIconShape != shape
                         || getTag() != info) {
-                    Log.d("PrimeIconShape", "drop result shape=" + shapeKey + " generation="
+                    PrimeDebugLog.d("PrimeIconShape", "drop result shape=" + shapeKey + " generation="
                             + generation + " currentGeneration=" + mPrimeIconShapeRequestGeneration
                             + " sameShape=" + (mPrimeIconShape == shape)
                             + " sameTag=" + (getTag() == info) + " info=" + info);
                     return;
                 }
-                Log.d("PrimeIconShape", "apply result shape=" + shapeKey + " generation="
+                PrimeDebugLog.d("PrimeIconShape", "apply result shape=" + shapeKey + " generation="
                         + generation + " info=" + info);
                 mDotParams.appColor = primeDrawable.getIconColor();
                 setIcon(primeDrawable);
