@@ -16,6 +16,10 @@
 package com.android.launcher3.icons
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Matrix
+import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Rect
 import android.graphics.RectF
@@ -93,14 +97,28 @@ internal constructor(
         }
     }
 
-    /** Rasterizes a source drawable with a Prime shape and the normal Launcher user badge. */
-    fun createPrimeIconBitmap(drawable: Drawable, user: UserHandle, shape: IconShape): BitmapInfo =
-        withPrimeIconShape(shape) {
-            createBadgedIconBitmap(
-                drawable,
-                BaseIconFactory.IconOptions().setUser(getUserInfo(user)),
-            )
+    /** Rasterizes a source drawable, then applies the Prime mask to the final bitmap. */
+    fun createPrimeIconBitmap(drawable: Drawable, user: UserHandle, shape: IconShape): BitmapInfo {
+        val base = createBadgedIconBitmap(
+            drawable,
+            BaseIconFactory.IconOptions().setUser(getUserInfo(user)),
+        )
+        val source = base.icon ?: return base
+        val masked = Bitmap.createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(masked)
+        val mask = Path(shape.getMaskPath()).apply {
+            transform(Matrix().apply {
+                setRectToRect(
+                    RectF(0f, 0f, 100f, 100f),
+                    RectF(0f, 0f, source.width.toFloat(), source.height.toFloat()),
+                    Matrix.ScaleToFit.FILL,
+                )
+            })
         }
+        canvas.clipPath(mask)
+        canvas.drawBitmap(source, 0f, 0f, Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG))
+        return BitmapInfo.of(masked, base.color)
+    }
 
     override fun close() {
         recycle()
