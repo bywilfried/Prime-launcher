@@ -33,9 +33,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -101,27 +98,11 @@ fun AppDrawerPreferences(
         val modePreferences = PrimeDrawerModePreferences(context)
         val drawerGridOption = InvariantDeviceProfile.INSTANCE.get(context).closestProfile
         val modeProfile = modePreferences.get(drawerGridOption, activeDrawerMode)
-        @Composable
-        fun <T> modeAdapter(
-            value: T,
-            update: (app.lawnchair.prime.drawer.PrimeDrawerModeProfile, T) -> app.lawnchair.prime.drawer.PrimeDrawerModeProfile,
-        ): PreferenceAdapter<T> {
-            val state = remember(activeDrawerMode) { mutableStateOf(value) }
-            LaunchedEffect(activeDrawerMode, value) {
-                state.value = value
-            }
-            return remember(activeDrawerMode, modePreferences, drawerGridOption) {
-                object : PreferenceAdapter<T> {
-                    override val state = state
-                    override fun onChange(newValue: T) {
-                        state.value = newValue
-                        modePreferences.update(drawerGridOption, activeDrawerMode) { profile ->
-                            update(profile, newValue)
-                        }
-                    }
-                }
-            }
-        }
+        fun <T> modePreference(
+            key: String,
+            read: (app.lawnchair.prime.drawer.PrimeDrawerModeProfile) -> T,
+            write: (app.lawnchair.prime.drawer.PrimeDrawerModeProfile, T) -> app.lawnchair.prime.drawer.PrimeDrawerModeProfile,
+        ) = modePreferences.preference(drawerGridOption, activeDrawerMode, key, read, write)
         Column {
             DrawerLayoutPreference(drawerListAdapter, drawerTabsAdapter, context)
             ExpandAndShrink(visible = drawerListAdapter.state.value && !drawerTabsAdapter.state.value) {
@@ -240,8 +221,8 @@ fun AppDrawerPreferences(
             )
         }
         PreferenceGroup(heading = stringResource(id = R.string.grid)) {
-            val drawerColumnsAdapter = modeAdapter(modeProfile.drawerColumns) { profile, value -> profile.copy(drawerColumns = value) }
-            val drawerColumnsUnfoldedAdapter = modeAdapter(modeProfile.drawerColumnsUnfolded) { profile, value -> profile.copy(drawerColumnsUnfolded = value) }
+            val drawerColumnsAdapter = modePreference("drawerColumns", { it.drawerColumns }) { profile, value -> profile.copy(drawerColumns = value) }.getAdapter()
+            val drawerColumnsUnfoldedAdapter = modePreference("drawerColumnsUnfolded", { it.drawerColumnsUnfolded }) { profile, value -> profile.copy(drawerColumnsUnfolded = value) }.getAdapter()
             if (isFoldable) {
                 SliderPreference(
                     label = stringResource(id = R.string.state_folded, stringResource(id = R.string.app_drawer_columns)),
@@ -292,11 +273,11 @@ fun AppDrawerPreferences(
                 showAsPercentage = true,
             )
         }
-        val showDrawerLabels = modeAdapter(modeProfile.showLabels) { profile, value -> profile.copy(showLabels = value) }
+        val showDrawerLabels = modePreference("showLabels", { it.showLabels }) { profile, value -> profile.copy(showLabels = value) }.getAdapter()
         PreferenceGroup(heading = stringResource(id = R.string.icons)) {
             SliderPreference(
                 label = stringResource(id = R.string.icon_sizes),
-                adapter = modeAdapter(modeProfile.drawerIconSize) { profile, value -> profile.copy(drawerIconSize = value) },
+                adapter = modePreference("drawerIconSize", { it.drawerIconSize }) { profile, value -> profile.copy(drawerIconSize = value) }.getAdapter(),
                 step = 0.1f,
                 valueRange = 0.5F..1.5F,
                 showAsPercentage = true,
@@ -310,7 +291,7 @@ fun AppDrawerPreferences(
             ) {
                 SliderPreference(
                     label = stringResource(id = R.string.label_size),
-                    adapter = modeAdapter(modeProfile.labelSize) { profile, value -> profile.copy(labelSize = value) },
+                    adapter = modePreference("labelSize", { it.labelSize }) { profile, value -> profile.copy(labelSize = value) }.getAdapter(),
                     step = 0.1F,
                     valueRange = 0.5F..1.5F,
                     showAsPercentage = true,
