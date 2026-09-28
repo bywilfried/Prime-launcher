@@ -102,6 +102,11 @@ fun AppDrawerPreferences(
         val drawerGridOption = InvariantDeviceProfile.INSTANCE.get(context).closestProfile
         val modeProfile = modePreferences.get(drawerGridOption, activeDrawerMode)
         val nativeDrawerOpacity = prefs.drawerOpacity.getAdapter()
+        val nativeDrawerColumns = prefs2.drawerColumns.getAdapter(gridOption = drawerGridOption)
+        val nativeDrawerColumnsUnfolded = prefs2.drawerColumnsUnfolded.getAdapter(gridOption = drawerGridOption)
+        val nativeDrawerIconSize = prefs2.drawerIconSizeFactor.getAdapter()
+        val nativeShowLabels = prefs2.showIconLabelsInDrawer.getAdapter()
+        val nativeLabelSize = prefs2.drawerIconLabelSizeFactor.getAdapter()
         val nativeDrawerBackgroundColor = prefs2.appDrawerBackgroundColor.getAdapter()
         val nativeRowHeight = prefs2.drawerCellHeightFactor.getAdapter()
         val nativeHorizontalMargin = prefs2.drawerLeftRightMarginFactor.getAdapter()
@@ -119,6 +124,11 @@ fun AppDrawerPreferences(
         LaunchedEffect(activeDrawerMode) {
             if (nativeDrawerBackgroundColor.state.value != modeProfile.appDrawerBackgroundColor) nativeDrawerBackgroundColor.onChange(modeProfile.appDrawerBackgroundColor)
             if (nativeDrawerOpacity.state.value != modeProfile.drawerOpacity) nativeDrawerOpacity.onChange(modeProfile.drawerOpacity)
+            if (nativeDrawerColumns.state.value != modeProfile.drawerColumns) nativeDrawerColumns.onChange(modeProfile.drawerColumns)
+            if (nativeDrawerColumnsUnfolded.state.value != modeProfile.drawerColumnsUnfolded) nativeDrawerColumnsUnfolded.onChange(modeProfile.drawerColumnsUnfolded)
+            if (nativeDrawerIconSize.state.value != modeProfile.drawerIconSize) nativeDrawerIconSize.onChange(modeProfile.drawerIconSize)
+            if (nativeShowLabels.state.value != modeProfile.showLabels) nativeShowLabels.onChange(modeProfile.showLabels)
+            if (nativeLabelSize.state.value != modeProfile.labelSize) nativeLabelSize.onChange(modeProfile.labelSize)
             if (nativeRowHeight.state.value != modeProfile.rowHeight) nativeRowHeight.onChange(modeProfile.rowHeight)
             if (nativeHorizontalMargin.state.value != modeProfile.horizontalMargin) nativeHorizontalMargin.onChange(modeProfile.horizontalMargin)
             if (nativeTopPadding.state.value != modeProfile.topPadding) nativeTopPadding.onChange(modeProfile.topPadding)
@@ -249,8 +259,8 @@ fun AppDrawerPreferences(
             )
         }
         PreferenceGroup(heading = stringResource(id = R.string.grid)) {
-            val drawerColumnsAdapter = modePreference(key = "drawerColumns", read = { it.drawerColumns }, write = { profile, value -> profile.copy(drawerColumns = value) }).getAdapter()
-            val drawerColumnsUnfoldedAdapter = modePreference(key = "drawerColumnsUnfolded", read = { it.drawerColumnsUnfolded }, write = { profile, value -> profile.copy(drawerColumnsUnfolded = value) }).getAdapter()
+            val drawerColumnsAdapter = modeBackedAdapter(modePreference("drawerColumns", { it.drawerColumns }, { profile, value -> profile.copy(drawerColumns = value) }, { }), nativeDrawerColumns)
+            val drawerColumnsUnfoldedAdapter = modeBackedAdapter(modePreference("drawerColumnsUnfolded", { it.drawerColumnsUnfolded }, { profile, value -> profile.copy(drawerColumnsUnfolded = value) }, { }), nativeDrawerColumnsUnfolded)
             if (isFoldable) {
                 SliderPreference(
                     label = stringResource(id = R.string.state_folded, stringResource(id = R.string.app_drawer_columns)),
@@ -301,11 +311,11 @@ fun AppDrawerPreferences(
                 showAsPercentage = true,
             )
         }
-        val showDrawerLabels = modePreference(key = "showLabels", read = { it.showLabels }, write = { profile, value -> profile.copy(showLabels = value) }).getAdapter()
+        val showDrawerLabels = modeBackedAdapter(modePreference("showLabels", { it.showLabels }, { profile, value -> profile.copy(showLabels = value) }, { }), nativeShowLabels)
         PreferenceGroup(heading = stringResource(id = R.string.icons)) {
             SliderPreference(
                 label = stringResource(id = R.string.icon_sizes),
-                adapter = modePreference(key = "drawerIconSize", read = { it.drawerIconSize }, write = { profile, value -> profile.copy(drawerIconSize = value) }).getAdapter(),
+                adapter = modeBackedAdapter(modePreference("drawerIconSize", { it.drawerIconSize }, { profile, value -> profile.copy(drawerIconSize = value) }, { }), nativeDrawerIconSize),
                 step = 0.1f,
                 valueRange = 0.5F..1.5F,
                 showAsPercentage = true,
@@ -319,7 +329,7 @@ fun AppDrawerPreferences(
             ) {
                 SliderPreference(
                     label = stringResource(id = R.string.label_size),
-                    adapter = modePreference(key = "labelSize", read = { it.labelSize }, write = { profile, value -> profile.copy(labelSize = value) }).getAdapter(),
+                    adapter = modeBackedAdapter(modePreference("labelSize", { it.labelSize }, { profile, value -> profile.copy(labelSize = value) }, { }), nativeLabelSize),
                     step = 0.1F,
                     valueRange = 0.5F..1.5F,
                     showAsPercentage = true,
