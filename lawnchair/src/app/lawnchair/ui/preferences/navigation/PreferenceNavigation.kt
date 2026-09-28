@@ -339,6 +339,7 @@ fun PreferenceNavigation(
             val modePreferences = app.lawnchair.prime.drawer.PrimeDrawerModePreferences(context)
             val profile = modePreferences.get(gridOption, mode)
             val prefs2 = preferenceManager2()
+            val nativeDrawerBackgroundColor = prefs2.appDrawerBackgroundColor.getAdapter()
             val current = if (route.colorKey == "text") {
                 profile.defaultDrawerTextColor?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default
             } else {
@@ -369,7 +370,7 @@ fun PreferenceNavigation(
                             { currentProfile -> currentProfile.copy(appDrawerBackgroundColor = option) },
                             {},
                         )
-                        prefs2.appDrawerBackgroundColor.getAdapter().onChange(option)
+                        nativeDrawerBackgroundColor.onChange(option)
                     }
                 },
             )
