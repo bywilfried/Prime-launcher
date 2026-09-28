@@ -569,7 +569,8 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
 
     private boolean applyCachedPrimeIcon(ItemInfoWithIcon info) {
         if (mPrimeIconShape == null
-                || (mDisplay != DISPLAY_ALL_APPS && mDisplay != DISPLAY_FOLDER)) {
+                || (mDisplay != DISPLAY_ALL_APPS && mDisplay != DISPLAY_FOLDER
+                        && mDisplay != DISPLAY_DRAWER_FOLDER)) {
             return false;
         }
         boolean useTheme = shouldUseTheme();
@@ -1613,7 +1614,8 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             // applied its Prime tab override. Rebuild the Prime drawable as well so the category
             // shape cannot disappear when the asynchronous high-res icon arrives.
             if (mPrimeIconShape != null
-                    && (mDisplay == DISPLAY_ALL_APPS || mDisplay == DISPLAY_FOLDER)) {
+                    && (mDisplay == DISPLAY_ALL_APPS || mDisplay == DISPLAY_FOLDER
+                            || mDisplay == DISPLAY_DRAWER_FOLDER)) {
                 setPrimeIconShape(mPrimeIconShape);
             }
         }
@@ -1692,7 +1694,8 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         final int generation = ++mPrimeIconShapeRequestGeneration;
         final String shapeKey = shape == null ? "null" : shape.toString();
 
-        if (shape == null || (mDisplay != DISPLAY_ALL_APPS && mDisplay != DISPLAY_FOLDER)
+        if (shape == null || (mDisplay != DISPLAY_ALL_APPS && mDisplay != DISPLAY_FOLDER
+                && mDisplay != DISPLAY_DRAWER_FOLDER)
                 || !(getTag() instanceof ItemInfoWithIcon info)) {
             return;
         }
