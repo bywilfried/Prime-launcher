@@ -436,7 +436,7 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
                         overrides.getDrawerIconShape(), icon.getContext());
             }
         }
-        icon.setPrimeIconShape(shape);
+        icon.setPrimeIconShapeForNextBind(shape);
     }
 
     private void applyPrimeTabIconOverrides(BubbleTextView icon) {
