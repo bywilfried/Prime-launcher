@@ -96,11 +96,12 @@ fun AppDrawerPreferences(
             else -> PrimeDrawerMode.CADDY
         }
         val modePreferences = PrimeDrawerModePreferences(context)
-        val modeProfile = modePreferences.get(activeDrawerMode)
+        val drawerGridOption = InvariantDeviceProfile.INSTANCE.get(context).closestProfile
+        val modeProfile = modePreferences.get(drawerGridOption, activeDrawerMode)
         @Composable
         fun <T> modeAdapter(value: T, update: (app.lawnchair.prime.drawer.PrimeDrawerModeProfile, T) -> app.lawnchair.prime.drawer.PrimeDrawerModeProfile) =
             customPreferenceAdapter(value) { newValue ->
-                modePreferences.update(activeDrawerMode) { profile -> update(profile, newValue) }
+                modePreferences.update(drawerGridOption, activeDrawerMode) { profile -> update(profile, newValue) }
             }
         Column {
             DrawerLayoutPreference(drawerListAdapter, drawerTabsAdapter)
