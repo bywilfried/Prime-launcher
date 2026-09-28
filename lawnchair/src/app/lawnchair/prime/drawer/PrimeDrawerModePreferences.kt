@@ -36,6 +36,7 @@ class PrimeDrawerModePreferences(context: Context) {
         val root = readRoot()
         root.put(mode.storageKey, transform(get(mode)).toJson())
         prefs.edit { putString(PREF_MODE_PROFILES, root.toString()) }
+        idp.onPreferencesChanged(context)
     }
 
     fun hasStoredProfile(mode: PrimeDrawerMode): Boolean =
