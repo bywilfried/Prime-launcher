@@ -10,6 +10,7 @@ import app.lawnchair.preferences2.ReloadHelper
 import app.lawnchair.preferences2.firstCached
 import com.android.launcher3.InvariantDeviceProfile
 import com.android.launcher3.LauncherPrefs
+import com.android.launcher3.LauncherPrefs.Companion.ENABLE_TWOLINE_ALLAPPS_TOGGLE
 import org.json.JSONObject
 
 /**
@@ -38,11 +39,12 @@ class PrimeDrawerModePreferences(context: Context) {
         gridOption: InvariantDeviceProfile.GridOption,
         mode: PrimeDrawerMode = PrimeDrawerMode.current(legacy),
         transform: (PrimeDrawerModeProfile) -> PrimeDrawerModeProfile,
+        invalidate: () -> Unit = { ReloadHelper(context).reloadGrid() },
     ) {
         val root = readRoot()
         root.put(mode.storageKey, transform(get(gridOption, mode)).toJson())
         prefs.edit { putString(PREF_MODE_PROFILES, root.toString()) }
-        ReloadHelper(context).reloadGrid()
+        invalidate()
     }
 
     fun hasStoredProfile(mode: PrimeDrawerMode): Boolean =
@@ -54,12 +56,13 @@ class PrimeDrawerModePreferences(context: Context) {
         key: String,
         read: (PrimeDrawerModeProfile) -> T,
         write: (PrimeDrawerModeProfile, T) -> PrimeDrawerModeProfile,
+        invalidate: () -> Unit = { ReloadHelper(context).reloadGrid() },
     ): PrefEntry<T> = CallbackPrefEntry(
         key = "$PREF_MODE_PROFILES/${mode.storageKey}/$key",
         defaultValue = read(legacyProfile(gridOption)),
         getter = { read(get(gridOption, mode)) },
         setter = { newValue ->
-            update(gridOption, mode) { profile -> write(profile, newValue) }
+            update(gridOption, mode, { profile -> write(profile, newValue) }, invalidate)
         },
     )
 
@@ -77,6 +80,7 @@ class PrimeDrawerModePreferences(context: Context) {
             topPadding = legacy2.drawerPaddingTopFactor.firstCached(),
             rememberPosition = legacy2.rememberPosition.firstCached(),
             showScrollbar = legacy2.showScrollbar.firstCached(),
+            hideFolderApps = legacy.primeHideFolderApps.get(),
         )
     }
 
@@ -97,6 +101,7 @@ class PrimeDrawerModePreferences(context: Context) {
         put("topPadding", topPadding.toDouble())
         put("rememberPosition", rememberPosition)
         put("showScrollbar", showScrollbar)
+        put("hideFolderApps", hideFolderApps)
     }
 
     private fun JSONObject.toProfile(grid: InvariantDeviceProfile.GridOption) = PrimeDrawerModeProfile(
@@ -118,6 +123,7 @@ class PrimeDrawerModePreferences(context: Context) {
         topPadding = optDouble("topPadding", legacy2.drawerPaddingTopFactor.firstCached().toDouble()).toFloat(),
         rememberPosition = optBoolean("rememberPosition", legacy2.rememberPosition.firstCached()),
         showScrollbar = optBoolean("showScrollbar", legacy2.showScrollbar.firstCached()),
+        hideFolderApps = optBoolean("hideFolderApps", legacy.primeHideFolderApps.get()),
     )
 
     companion object {
@@ -138,4 +144,5 @@ data class PrimeDrawerModeProfile(
     val topPadding: Float,
     val rememberPosition: Boolean,
     val showScrollbar: Boolean,
+    val hideFolderApps: Boolean,
 )
