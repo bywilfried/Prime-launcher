@@ -38,6 +38,8 @@ import static com.android.launcher3.icons.cache.CacheLookupFlag.DEFAULT_LOOKUP_F
 import static com.android.launcher3.model.data.ItemInfoWithIcon.FLAG_INCREMENTAL_DOWNLOAD_ACTIVE;
 import static com.android.launcher3.model.data.ItemInfoWithIcon.FLAG_INSTALL_SESSION_ACTIVE;
 import static com.android.launcher3.model.data.ItemInfoWithIcon.FLAG_SHOW_DOWNLOAD_PROGRESS_MASK;
+import static com.android.launcher3.util.Executors.MAIN_EXECUTOR;
+import static com.android.launcher3.util.Executors.MODEL_EXECUTOR;
 import static com.android.launcher3.util.MultiTranslateDelegate.INDEX_TASKBAR_APP_RUNNING_STATE_ANIM;
 
 import android.animation.Animator;
@@ -52,6 +54,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.DrawableWrapper;
@@ -65,6 +68,7 @@ import android.text.TextUtils.TruncateAt;
 import android.text.style.ImageSpan;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.util.Pair;
 import android.util.Property;
 import android.util.TypedValue;
 import android.view.KeyEvent;
@@ -87,10 +91,12 @@ import com.android.launcher3.dragndrop.DragOptions.PreDragCondition;
 import com.android.launcher3.dragndrop.DraggableView;
 import com.android.launcher3.folder.FolderIcon;
 import com.android.launcher3.graphics.PreloadIconDrawable;
+import com.android.launcher3.icons.BitmapInfo;
 import com.android.launcher3.icons.DotRenderer;
 import com.android.launcher3.icons.FastBitmapDrawable;
 import com.android.launcher3.icons.IconCache.ItemInfoUpdateReceiver;
 import com.android.launcher3.icons.PlaceHolderIconDrawable;
+import com.android.launcher3.icons.LauncherIcons;
 import com.android.launcher3.icons.cache.CacheLookupFlag;
 import com.android.launcher3.model.data.AppInfo;
 import com.android.launcher3.model.data.ItemInfo;
@@ -189,6 +195,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     protected final ActivityContext mActivity;
     private FastBitmapDrawable mIcon;
     private IconShape mPrimeIconShape;
+    private int mPrimeIconShapeRequestGeneration;
     private DeviceProfile mDeviceProfile;
     private boolean mCenterVertically;
 
@@ -366,6 +373,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         mDotParams.scale = 0f;
         mForceHideDot = false;
         mPrimeIconShape = null;
+        mPrimeIconShapeRequestGeneration++;
         setBackground(null);
 
         mLineIndicatorColor = Color.TRANSPARENT;
@@ -1620,8 +1628,59 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     /** Prime: applies a view-local mask by wrapping only the compound drawable. */
     public void setPrimeIconShape(@Nullable IconShape shape) {
         mPrimeIconShape = shape;
+        final int generation = ++mPrimeIconShapeRequestGeneration;
+
+        // Keep the existing masked drawable as an immediate fallback (icon packs and any source
+        // drawable that cannot be reconstructed by Utilities.getFullDrawable()).
         applyCompoundDrawables(getIconOrTransparentColor());
         invalidate();
+
+        if (shape == null || !(getTag() instanceof ItemInfoWithIcon info)
+                || !(getContext() instanceof Launcher launcher)) {
+            return;
+        }
+
+        final int iconSize = mIconSize;
+        final boolean useTheme = shouldUseTheme();
+        final boolean isPrivateSpaceIcon = Objects.equals(
+                info.getTargetPackage(), PRIVATE_SPACE_PACKAGE);
+        int creationFlags = isPrivateSpaceIcon
+                ? info.bitmap.creationFlags : useTheme ? FLAG_THEMED : 0;
+        if (mHideBadge || mDisplay == DISPLAY_SEARCH_RESULT_SMALL) {
+            creationFlags |= FLAG_NO_BADGE;
+        }
+        if (mSkipUserBadge) {
+            creationFlags |= FLAG_SKIP_USER_BADGE;
+        }
+        final int flags = creationFlags;
+
+        MODEL_EXECUTOR.execute(() -> {
+            Pair<AdaptiveIconDrawable, Drawable> fullDrawable = Utilities.getFullDrawable(
+                    launcher, info, iconSize, iconSize, useTheme);
+            if (fullDrawable == null || fullDrawable.first == null) return;
+
+            final BitmapInfo primeBitmap;
+            try (LauncherIcons launcherIcons = LauncherIcons.obtain(launcher)) {
+                primeBitmap = launcherIcons.createPrimeIconBitmap(
+                        fullDrawable.first, info.user, shape);
+            }
+            final FastBitmapDrawable primeDrawable = primeBitmap.newIcon(
+                    launcher, flags, shape.getMaskPath());
+            if (isPrivateSpaceIcon) {
+                primeDrawable.setAnimationEnabled(false);
+            }
+
+            MAIN_EXECUTOR.execute(() -> {
+                if (generation != mPrimeIconShapeRequestGeneration
+                        || mPrimeIconShape != shape
+                        || getTag() != info) {
+                    return;
+                }
+                mDotParams.appColor = primeDrawable.getIconColor();
+                setIcon(primeDrawable);
+                invalidate();
+            });
+        });
     }
 
     /** Prime: updates the rendered icon bounds for per-category drawer overrides. */
