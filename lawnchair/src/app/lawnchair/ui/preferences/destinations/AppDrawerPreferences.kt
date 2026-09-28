@@ -41,7 +41,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.lawnchair.preferences.PreferenceAdapter
 import app.lawnchair.preferences.getAdapter
-import app.lawnchair.preferences.rememberTransformAdapter
 import app.lawnchair.preferences.preferenceManager
 import app.lawnchair.preferences2.preferenceManager2
 import app.lawnchair.preferences2.ReloadHelper
@@ -104,7 +103,14 @@ fun AppDrawerPreferences(
             write: (app.lawnchair.prime.drawer.PrimeDrawerModeProfile, T) -> app.lawnchair.prime.drawer.PrimeDrawerModeProfile,
         ) = modePreferences.preference(drawerGridOption, activeDrawerMode, key, read, write)
         Column {
-            DrawerLayoutPreference(drawerListAdapter, drawerTabsAdapter, context)
+            DrawerLayoutPreference(
+                activeMode = activeDrawerMode,
+                onModeChange = { mode ->
+                    drawerTabsAdapter.onChange(mode == PrimeDrawerMode.TABS)
+                    drawerListAdapter.onChange(mode != PrimeDrawerMode.CADDY)
+                    ReloadHelper(context).reloadGrid()
+                },
+            )
             ExpandAndShrink(visible = drawerListAdapter.state.value && !drawerTabsAdapter.state.value) {
                 AppDrawerFolderPreferenceItem()
             }
@@ -329,27 +335,9 @@ fun AppDrawerPreferences(
 
 @Composable
 private fun DrawerLayoutPreference(
-    drawerListAdapter: PreferenceAdapter<Boolean>,
-    drawerTabsAdapter: PreferenceAdapter<Boolean>,
-    context: android.content.Context,
+    activeMode: PrimeDrawerMode,
+    onModeChange: (PrimeDrawerMode) -> Unit,
 ) {
-    val layoutModeAdapter = rememberTransformAdapter(
-        adapter = drawerListAdapter,
-        transformGet = { drawerList ->
-            when {
-                drawerTabsAdapter.state.value -> PrimeDrawerMode.TABS
-                drawerList -> PrimeDrawerMode.DEFAULT
-                else -> PrimeDrawerMode.CADDY
-            }
-        },
-        transformSet = { mode ->
-            drawerTabsAdapter.onChange(mode == PrimeDrawerMode.TABS)
-            val drawerList = mode != PrimeDrawerMode.CADDY
-            drawerListAdapter.onChange(drawerList)
-            ReloadHelper(context).reloadGrid()
-            drawerList
-        },
-    )
     val maxPreviewHeight = LocalConfiguration.current.screenHeightDp.dp / 4
     val maxPreviewWidth = maxPreviewHeight * 4 / 3
 
@@ -374,8 +362,8 @@ private fun DrawerLayoutPreference(
                             PrimeDrawerMode.TABS -> stringResource(id = R.string.drawer_tabs)
                             PrimeDrawerMode.CADDY -> stringResource(id = R.string.caddy_beta)
                         },
-                        isSelected = layoutModeAdapter.state.value == mode,
-                        onClick = { layoutModeAdapter.onChange(mode) },
+                        isSelected = activeMode == mode,
+                        onClick = { onModeChange(mode) },
                         modifier = Modifier.width(cardWidth),
                     ) { DrawerLayoutPreview(mode) }
                 }
