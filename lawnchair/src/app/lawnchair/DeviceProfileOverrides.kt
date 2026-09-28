@@ -66,10 +66,10 @@ class DeviceProfileOverrides @Inject constructor(
         defaultGrid = defaultGrid,
         deviceType = deviceType,
         previewOverrides = previewOverrides ?: PreviewOverrides(),
-        drawerProfile = PrimeDrawerModePreferences(context).get(),
+        drawerProfile = PrimeDrawerModePreferences(context).get(defaultGrid),
     )
 
-    fun getTextFactors() = TextFactors(preferenceManager2, PrimeDrawerModePreferences(context).get())
+    fun getTextFactors() = TextFactors(preferenceManager2)
     override fun close() {
         TODO("Not yet implemented")
     }
@@ -208,14 +208,13 @@ class DeviceProfileOverrides @Inject constructor(
     ) {
         constructor(
             prefs2: PreferenceManager2,
-            drawerProfile: app.lawnchair.prime.drawer.PrimeDrawerModeProfile,
         ) : this(
             enableIconText = prefs2.showIconLabelsOnHomeScreen.firstCached(),
             iconTextSizeFactor = prefs2.homeIconLabelSizeFactor.firstCached(),
             enableIconTextFolder = prefs2.showIconLabelsOnHomeScreenFolder.firstCached(),
             iconFolderTextSizeFactor = prefs2.homeIconLabelFolderSizeFactor.firstCached(),
-            enableAllAppsIconText = drawerProfile.showLabels,
-            allAppsIconTextSizeFactor = drawerProfile.labelSize,
+            enableAllAppsIconText = prefs2.showIconLabelsInDrawer.firstCached(),
+            allAppsIconTextSizeFactor = prefs2.drawerIconLabelSizeFactor.firstCached(),
         )
 
         constructor(
