@@ -465,8 +465,10 @@ private fun <T> modeBackedAdapter(
     modePreference: PrefEntry<T>,
     nativeAdapter: PreferenceAdapter<T>,
 ): PreferenceAdapter<T> {
-    val modeAdapter = modePreference.getAdapter()
-    return remember(modeAdapter, nativeAdapter) {
+    val modeAdapter = androidx.compose.runtime.key(modePreference.key) {
+        modePreference.getAdapter()
+    }
+    return remember(modePreference.key, modeAdapter, nativeAdapter) {
         object : PreferenceAdapter<T> {
             override val state = modeAdapter.state
             override fun onChange(newValue: T) {
