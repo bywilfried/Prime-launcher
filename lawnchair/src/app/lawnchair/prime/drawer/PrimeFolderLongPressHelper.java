@@ -46,6 +46,7 @@ import app.lawnchair.ui.preferences.navigation.PrimeDrawerFolderAdvanced;
 public final class PrimeFolderLongPressHelper {
     private static final Map<FolderInfo, PrimeFolderRef> PRIME_FOLDERS = new WeakHashMap<>();
     private static final Map<Integer, WeakReference<FolderIcon>> HOME_FOLDER_ICONS = new java.util.HashMap<>();
+    private static final Map<String, WeakReference<FolderIcon>> DRAWER_FOLDER_ICONS = new java.util.HashMap<>();
     private final FolderIcon mIcon;
     private final int mTouchSlop;
     private float mDownX;
@@ -63,6 +64,28 @@ public final class PrimeFolderLongPressHelper {
         synchronized (PRIME_FOLDERS) {
             PRIME_FOLDERS.put(info, new PrimeFolderRef(tabId, folderId));
         }
+    }
+
+    public static void registerDrawerFolderIcon(FolderIcon icon, String tabId, String folderId) {
+        if (icon == null) return;
+        synchronized (DRAWER_FOLDER_ICONS) {
+            DRAWER_FOLDER_ICONS.put(tabId + ":" + folderId, new WeakReference<>(icon));
+        }
+    }
+
+    public static void refreshDrawerFolderVisualOverrides(String tabId, String folderId) {
+        String key = tabId + ":" + folderId;
+        FolderIcon icon;
+        synchronized (DRAWER_FOLDER_ICONS) {
+            WeakReference<FolderIcon> reference = DRAWER_FOLDER_ICONS.get(key);
+            icon = reference != null ? reference.get() : null;
+            if (icon == null) DRAWER_FOLDER_ICONS.remove(key);
+        }
+        if (icon == null) return;
+        icon.post(() -> {
+            icon.refreshPrimeVisualOverrides();
+            icon.getFolder().applyPrimeVisualOverrides();
+        });
     }
 
     public static void registerHomeFolderIcon(FolderIcon icon) {
