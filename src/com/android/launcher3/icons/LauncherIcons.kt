@@ -101,9 +101,14 @@ internal constructor(
     fun createPrimeIconBitmap(drawable: Drawable, user: UserHandle, shape: IconShape): BitmapInfo =
         withPrimeIconShape(shape) {
             val source = if (drawable is AdaptiveIconDrawable) {
-                PrimeAdaptiveIconDrawable(drawable, shape)
+                // Never rasterize with the child Drawable instances owned by IconCache. Icon
+                // creation changes bounds/state while drawing; sharing those instances makes the
+                // next live shape change start from a source already touched by the previous one.
+                val isolated = (drawable.constantState?.newDrawable()?.mutate()
+                    as? AdaptiveIconDrawable) ?: drawable
+                PrimeAdaptiveIconDrawable(isolated, shape)
             } else {
-                drawable
+                drawable.constantState?.newDrawable()?.mutate() ?: drawable
             }
             createBadgedIconBitmap(
                 source,
