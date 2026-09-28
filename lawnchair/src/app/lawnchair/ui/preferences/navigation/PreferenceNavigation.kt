@@ -62,6 +62,7 @@ import app.lawnchair.ui.preferences.destinations.PrimeDrawerCategoryAdvancedPref
 import app.lawnchair.ui.preferences.destinations.PrimeDrawerFolderAdvancedPreference
 import app.lawnchair.ui.preferences.destinations.PrimeHomeFolderAdvancedPreference
 import app.lawnchair.ui.preferences.destinations.PrimeDevelopmentOptionsPreference
+import app.lawnchair.ui.preferences.destinations.PrimeDiagnosticLogsPreference
 import app.lawnchair.ui.preferences.destinations.PrimeHapticTuningPreference
 import app.lawnchair.ui.preferences.destinations.PrimeDrawerCategoryFoldersPreference
 import app.lawnchair.ui.preferences.destinations.PrimeDrawerFolderAppsPreference
@@ -437,6 +438,7 @@ fun PreferenceNavigation(
         ) { BackupAndRestorePreference() }
 
         composable<PrimeDevelopmentOptions> { PrimeDevelopmentOptionsPreference() }
+        composable<PrimeDiagnosticLogs> { PrimeDiagnosticLogsPreference() }
         composable<PrimeHapticTuning> { PrimeHapticTuningPreference() }
         composable<About>(
             deepLinks = getDeepLink(About),
