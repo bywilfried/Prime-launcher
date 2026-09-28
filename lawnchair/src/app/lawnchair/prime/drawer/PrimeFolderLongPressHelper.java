@@ -73,6 +73,29 @@ public final class PrimeFolderLongPressHelper {
         }
     }
 
+    public static void refreshDrawerTabFolderVisualOverrides(String tabId) {
+        java.util.List<FolderIcon> icons = new java.util.ArrayList<>();
+        synchronized (DRAWER_FOLDER_ICONS) {
+            java.util.Iterator<java.util.Map.Entry<String, WeakReference<FolderIcon>>> iterator =
+                    DRAWER_FOLDER_ICONS.entrySet().iterator();
+            while (iterator.hasNext()) {
+                java.util.Map.Entry<String, WeakReference<FolderIcon>> entry = iterator.next();
+                FolderIcon icon = entry.getValue().get();
+                if (icon == null) {
+                    iterator.remove();
+                } else if (entry.getKey().startsWith(tabId + ":")) {
+                    icons.add(icon);
+                }
+            }
+        }
+        for (FolderIcon icon : icons) {
+            icon.post(() -> {
+                icon.refreshPrimeVisualOverrides();
+                icon.getFolder().applyPrimeVisualOverrides();
+            });
+        }
+    }
+
     public static void refreshDrawerFolderVisualOverrides(String tabId, String folderId) {
         String key = tabId + ":" + folderId;
         FolderIcon icon;
