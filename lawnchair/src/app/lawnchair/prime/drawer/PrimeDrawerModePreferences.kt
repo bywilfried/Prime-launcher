@@ -8,6 +8,7 @@ import app.lawnchair.preferences.PreferenceManager
 import app.lawnchair.preferences2.PreferenceManager2
 import app.lawnchair.preferences2.ReloadHelper
 import app.lawnchair.preferences2.firstCached
+import app.lawnchair.theme.color.ColorOption
 import com.android.launcher3.InvariantDeviceProfile
 import com.android.launcher3.LauncherPrefs
 import org.json.JSONObject
@@ -81,8 +82,8 @@ class PrimeDrawerModePreferences(context: Context) {
             rememberPosition = legacy2.rememberPosition.firstCached(),
             showScrollbar = legacy2.showScrollbar.firstCached(),
             hideFolderApps = legacy.primeHideFolderApps.get(),
+            appDrawerBackgroundColor = legacy2.appDrawerBackgroundColor.firstCached(),
             defaultDrawerTextColor = tabsRepository.getConfiguration().defaultDrawerTextColor,
-            defaultDrawerBackgroundColor = tabsRepository.getConfiguration().defaultDrawerBackgroundColor,
         )
     }
 
@@ -104,8 +105,8 @@ class PrimeDrawerModePreferences(context: Context) {
         put("rememberPosition", rememberPosition)
         put("showScrollbar", showScrollbar)
         put("hideFolderApps", hideFolderApps)
+        put("appDrawerBackgroundColor", appDrawerBackgroundColor.toString())
         put("defaultDrawerTextColor", defaultDrawerTextColor ?: JSONObject.NULL)
-        put("defaultDrawerBackgroundColor", defaultDrawerBackgroundColor ?: JSONObject.NULL)
     }
 
     private fun JSONObject.toProfile(grid: InvariantDeviceProfile.GridOption) = PrimeDrawerModeProfile(
@@ -128,8 +129,8 @@ class PrimeDrawerModePreferences(context: Context) {
         rememberPosition = optBoolean("rememberPosition", legacy2.rememberPosition.firstCached()),
         showScrollbar = optBoolean("showScrollbar", legacy2.showScrollbar.firstCached()),
         hideFolderApps = optBoolean("hideFolderApps", legacy.primeHideFolderApps.get()),
-        defaultDrawerTextColor = if (has("defaultDrawerTextColor") && !isNull("defaultDrawerTextColor")) getInt("defaultDrawerTextColor") else tabsRepository.getConfiguration().defaultDrawerTextColor,
-        defaultDrawerBackgroundColor = if (has("defaultDrawerBackgroundColor") && !isNull("defaultDrawerBackgroundColor")) getInt("defaultDrawerBackgroundColor") else tabsRepository.getConfiguration().defaultDrawerBackgroundColor,
+        appDrawerBackgroundColor = ColorOption.fromString(optString("appDrawerBackgroundColor", legacy2.appDrawerBackgroundColor.firstCached().toString())),
+        defaultDrawerTextColor = if (has("defaultDrawerTextColor") && !isNull("defaultDrawerTextColor")) getInt("defaultDrawerTextColor") else tabsRepository.getConfiguration().defaultDrawerTextColor
     )
 
     companion object {
@@ -151,6 +152,6 @@ data class PrimeDrawerModeProfile(
     val rememberPosition: Boolean,
     val showScrollbar: Boolean,
     val hideFolderApps: Boolean,
+    val appDrawerBackgroundColor: ColorOption,
     val defaultDrawerTextColor: Int?,
-    val defaultDrawerBackgroundColor: Int?,
 )
