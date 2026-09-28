@@ -101,7 +101,8 @@ fun AppDrawerPreferences(
             key: String,
             read: (app.lawnchair.prime.drawer.PrimeDrawerModeProfile) -> T,
             write: (app.lawnchair.prime.drawer.PrimeDrawerModeProfile, T) -> app.lawnchair.prime.drawer.PrimeDrawerModeProfile,
-        ) = modePreferences.preference(drawerGridOption, activeDrawerMode, key, read, write)
+            invalidate: (T) -> Unit = { ReloadHelper(context).reloadGrid() },
+        ) = modePreferences.preference(drawerGridOption, activeDrawerMode, key, read, write, invalidate)
         Column {
             DrawerLayoutPreference(
                 activeMode = activeDrawerMode,
