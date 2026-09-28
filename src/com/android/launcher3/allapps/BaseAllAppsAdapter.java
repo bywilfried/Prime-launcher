@@ -416,6 +416,13 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
         }
     }
 
+    /** Reapplies Prime category overrides to an already-bound All Apps icon. */
+    public void reapplyPrimeTabIconOverrides(BubbleTextView icon) {
+        applyPrimeTabIconOverrides(icon);
+        icon.requestLayout();
+        icon.invalidate();
+    }
+
     private void applyPrimeTabIconOverrides(BubbleTextView icon) {
         if (!PreferenceManager.getInstance(mActivityContext).getDrawerTabsEnabled().get()) return;
         PrimeDrawerVisualOverrides overrides =
