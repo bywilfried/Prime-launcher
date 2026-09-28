@@ -151,10 +151,10 @@ class LawnchairAlphabeticalAppsList<T>(
                 }
             }
 
-            if (prefs.primeHideFolderApps.get()) {
+            if (prefs.folderApps.get()) {
                 folderItems.forEach { (_, _, resolvedApps) -> filteredList.addAll(resolvedApps) }
             }
-            var remainingApps = if (prefs.primeHideFolderApps.get()) {
+            var remainingApps = if (prefs.folderApps.get()) {
                 appList.filterNot(filteredList::contains)
             } else {
                 appList
