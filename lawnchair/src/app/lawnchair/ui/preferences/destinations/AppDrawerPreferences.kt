@@ -44,6 +44,7 @@ import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences.rememberTransformAdapter
 import app.lawnchair.preferences.preferenceManager
 import app.lawnchair.preferences2.preferenceManager2
+import app.lawnchair.prime.drawer.PrimeDrawerMode
 import app.lawnchair.prime.drawer.PrimeDrawerTabsRepository
 import app.lawnchair.ui.preferences.LocalIsExpandedScreen
 import app.lawnchair.ui.preferences.components.AppDrawerHapticFeedbackPreference
@@ -320,14 +321,14 @@ private fun DrawerLayoutPreference(
         adapter = drawerListAdapter,
         transformGet = { drawerList ->
             when {
-                drawerTabsAdapter.state.value -> DrawerLayoutMode.TABS
-                drawerList -> DrawerLayoutMode.DEFAULT
-                else -> DrawerLayoutMode.CADDY
+                drawerTabsAdapter.state.value -> PrimeDrawerMode.TABS
+                drawerList -> PrimeDrawerMode.DEFAULT
+                else -> PrimeDrawerMode.CADDY
             }
         },
         transformSet = { mode ->
-            drawerTabsAdapter.onChange(mode == DrawerLayoutMode.TABS)
-            mode != DrawerLayoutMode.CADDY
+            drawerTabsAdapter.onChange(mode == PrimeDrawerMode.TABS)
+            mode != PrimeDrawerMode.CADDY
         },
     )
     val maxPreviewHeight = LocalConfiguration.current.screenHeightDp.dp / 4
@@ -347,12 +348,12 @@ private fun DrawerLayoutPreference(
                 horizontalArrangement = Arrangement.spacedBy(spacing),
                 verticalAlignment = Alignment.Top,
             ) {
-                DrawerLayoutMode.entries.forEach { mode ->
+                PrimeDrawerMode.entries.forEach { mode ->
                     SwitchPreferencePreviewCard(
                         label = when (mode) {
-                            DrawerLayoutMode.DEFAULT -> stringResource(id = R.string.feed_default)
-                            DrawerLayoutMode.TABS -> stringResource(id = R.string.drawer_tabs)
-                            DrawerLayoutMode.CADDY -> stringResource(id = R.string.caddy_beta)
+                            PrimeDrawerMode.DEFAULT -> stringResource(id = R.string.feed_default)
+                            PrimeDrawerMode.TABS -> stringResource(id = R.string.drawer_tabs)
+                            PrimeDrawerMode.CADDY -> stringResource(id = R.string.caddy_beta)
                         },
                         isSelected = layoutModeAdapter.state.value == mode,
                         onClick = { layoutModeAdapter.onChange(mode) },
@@ -365,7 +366,7 @@ private fun DrawerLayoutPreference(
 }
 
 @Composable
-private fun DrawerLayoutPreview(mode: DrawerLayoutMode) {
+private fun DrawerLayoutPreview(mode: PrimeDrawerMode) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         // The original preview was designed inside a 136 x 96 dp content area
         // (160 x 120 card minus 12 dp padding on every side). Scale every element
@@ -393,7 +394,7 @@ private fun DrawerLayoutPreview(mode: DrawerLayoutMode) {
                         RoundedCornerShape(16.dp * scale),
                     ),
             )
-            if (mode == DrawerLayoutMode.TABS) {
+            if (mode == PrimeDrawerMode.TABS) {
                 Row(horizontalArrangement = Arrangement.spacedBy(tabSpacing)) {
                     repeat(3) {
                         Box(
@@ -409,10 +410,10 @@ private fun DrawerLayoutPreview(mode: DrawerLayoutMode) {
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(iconSpacing)) {
-                repeat(if (mode == DrawerLayoutMode.CADDY) 2 else 4) {
+                repeat(if (mode == PrimeDrawerMode.CADDY) 2 else 4) {
                     Box(
                         modifier = Modifier
-                            .size(if (mode == DrawerLayoutMode.CADDY) 16.dp * scale else iconSize)
+                            .size(if (mode == PrimeDrawerMode.CADDY) 16.dp * scale else iconSize)
                             .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
                     )
                 }
@@ -421,4 +422,3 @@ private fun DrawerLayoutPreview(mode: DrawerLayoutMode) {
     }
 }
 
-private enum class DrawerLayoutMode { DEFAULT, TABS, CADDY }
