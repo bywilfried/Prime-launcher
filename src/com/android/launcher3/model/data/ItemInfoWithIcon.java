@@ -20,7 +20,6 @@ import static com.android.launcher3.icons.BitmapInfo.FLAG_THEMED;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Path;
 import android.os.Process;
 
 import androidx.annotation.NonNull;
@@ -332,17 +331,12 @@ public abstract class ItemInfoWithIcon extends ItemInfo {
      * Returns a FastBitmapDrawable with the icon and context theme applied
      */
     public FastBitmapDrawable newIcon(Context context, @DrawableCreationFlags int creationFlags) {
-        return newIcon(context, creationFlags, Utilities.getIconShapeOrNull(context));
-    }
-
-    /** Creates the icon using an explicit view-local shape without changing the global icon cache. */
-    public FastBitmapDrawable newIcon(Context context, @DrawableCreationFlags int creationFlags,
-            @Nullable Path iconShape) {
         var shouldTheme = PreferenceManager.getInstance(context).getThemedIcons().get();
         if (!shouldTheme) {
             creationFlags &= ~FLAG_THEMED;
         }
-        FastBitmapDrawable drawable = bitmap.newIcon(context, creationFlags, iconShape);
+        FastBitmapDrawable drawable = bitmap.newIcon(
+                context, creationFlags, Utilities.getIconShapeOrNull(context));
         drawable.setDisabled(isDisabled());
         return drawable;
     }
