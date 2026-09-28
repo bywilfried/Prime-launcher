@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.core.content.edit
 import app.lawnchair.preferences.PreferenceManager
 import app.lawnchair.preferences2.PreferenceManager2
+import app.lawnchair.preferences2.ReloadHelper
 import app.lawnchair.preferences2.firstCached
 import com.android.launcher3.InvariantDeviceProfile
 import com.android.launcher3.LauncherPrefs
@@ -39,6 +40,7 @@ class PrimeDrawerModePreferences(context: Context) {
         val root = readRoot()
         root.put(mode.storageKey, transform(get(gridOption, mode)).toJson())
         prefs.edit { putString(PREF_MODE_PROFILES, root.toString()) }
+        ReloadHelper(context).reloadGrid()
     }
 
     fun hasStoredProfile(mode: PrimeDrawerMode): Boolean =
