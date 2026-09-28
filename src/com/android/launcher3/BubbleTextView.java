@@ -158,6 +158,21 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
 
     private static final int[] STATE_PRESSED = new int[]{android.R.attr.state_pressed};
 
+    // Prime render variants are separate from IconCache so Home/global icons are never replaced.
+    // The key is stable across RecyclerView/AppInfo recreation; the source bitmap identity
+    // invalidates an entry when Lawnchair refreshes the underlying app icon.
+    private static final HashMap<String, PrimeIconCacheEntry> PRIME_ICON_CACHE = new HashMap<>();
+
+    private static final class PrimeIconCacheEntry {
+        final Object sourceBitmap;
+        final BitmapInfo primeBitmap;
+
+        PrimeIconCacheEntry(Object sourceBitmap, BitmapInfo primeBitmap) {
+            this.sourceBitmap = sourceBitmap;
+            this.primeBitmap = primeBitmap;
+        }
+    }
+
     private float mScaleForReorderBounce = 1f;
 
     private IntArray mBreakPointsIntArray;
@@ -537,10 +552,48 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     public void applyIconAndLabel(ItemInfoWithIcon info) {
         FastBitmapDrawable oldIcon = mIcon;
         if (!canReuseIcon(info)) {
-            setNonPendingIcon(info);
+            if (!applyCachedPrimeIcon(info)) {
+                setNonPendingIcon(info);
+            }
         }
         applyLabel(info);
         maybeApplyProgressLevel(info, oldIcon);
+    }
+
+    private String getPrimeIconCacheKey(ItemInfoWithIcon info, IconShape shape, int iconSize,
+            boolean useTheme) {
+        Object stableId = info.getStableId();
+        if (stableId == null || shape == null) return null;
+        return stableId + "|" + shape + "|" + iconSize + "|" + useTheme;
+    }
+
+    private boolean applyCachedPrimeIcon(ItemInfoWithIcon info) {
+        if (mPrimeIconShape == null
+                || (mDisplay != DISPLAY_ALL_APPS && mDisplay != DISPLAY_FOLDER)) {
+            return false;
+        }
+        boolean useTheme = shouldUseTheme();
+        String key = getPrimeIconCacheKey(info, mPrimeIconShape, mIconSize, useTheme);
+        PrimeIconCacheEntry cached;
+        synchronized (PRIME_ICON_CACHE) {
+            cached = key == null ? null : PRIME_ICON_CACHE.get(key);
+        }
+        if (cached == null || cached.sourceBitmap != info.bitmap.icon) return false;
+        ActivityContext activityContext = ActivityContext.lookupContextNoThrow(getContext());
+        if (!(activityContext instanceof Launcher launcher)) return false;
+
+        boolean isPrivateSpaceIcon = Objects.equals(
+                info.getTargetPackage(), PRIVATE_SPACE_PACKAGE);
+        int flags = isPrivateSpaceIcon
+                ? info.bitmap.creationFlags : useTheme ? FLAG_THEMED : 0;
+        if (mHideBadge || mDisplay == DISPLAY_SEARCH_RESULT_SMALL) flags |= FLAG_NO_BADGE;
+        if (mSkipUserBadge) flags |= FLAG_SKIP_USER_BADGE;
+        FastBitmapDrawable drawable = cached.primeBitmap.newIcon(launcher, flags);
+        if (isPrivateSpaceIcon) drawable.setAnimationEnabled(false);
+        mDotParams.appColor = drawable.getIconColor();
+        setIcon(drawable);
+        PrimeDebugLog.d("PrimeIconShape", "stable cache hit key=" + key);
+        return true;
     }
 
     /**
@@ -1513,11 +1566,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         }
         icon.setBounds(0, 0, mIconSize, mIconSize);
 
-        Drawable displayedIcon = mPrimeIconShape != null
-                ? new PrimeMaskedDrawable(icon, mPrimeIconShape)
-                : icon;
-        displayedIcon.setBounds(0, 0, mIconSize, mIconSize);
-        updateIcon(displayedIcon);
+        updateIcon(icon);
 
         // If the current icon is a placeholder color, animate its update.
         if (mIcon != null
@@ -1631,21 +1680,74 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
 
 
 
-    /** Prime: applies the effective shape directly to this view's existing icon. */
+    /** Prime: primes the effective shape before an item bind without clipping its bitmap. */
+    public void setPrimeIconShapeForNextBind(@Nullable IconShape shape) {
+        mPrimeIconShape = shape;
+    }
+
+    /** Prime: rebuilds a variant only when no stable cached variant exists. */
     public void setPrimeIconShape(@Nullable IconShape shape) {
-        String previousShapeKey = mPrimeIconShape == null ? null : mPrimeIconShape.toString();
-        String nextShapeKey = shape == null ? null : shape.toString();
-        if (Objects.equals(previousShapeKey, nextShapeKey)) {
+        mPrimeIconShape = shape;
+        final int generation = ++mPrimeIconShapeRequestGeneration;
+        final String shapeKey = shape == null ? "null" : shape.toString();
+
+        if (shape == null || (mDisplay != DISPLAY_ALL_APPS && mDisplay != DISPLAY_FOLDER)
+                || !(getTag() instanceof ItemInfoWithIcon info)) {
             return;
         }
-        mPrimeIconShape = shape;
-        mPrimeIconShapeRequestGeneration++;
-        PrimeDebugLog.d("PrimeIconShape", "direct shape=" + nextShapeKey
-                + " display=" + mDisplay + " tag=" + getTag());
-        if (mIcon != null) {
-            applyCompoundDrawables(getIconOrTransparentColor());
-            invalidate();
+        ActivityContext activityContext = ActivityContext.lookupContextNoThrow(getContext());
+        if (!(activityContext instanceof Launcher launcher)) return;
+
+        final int iconSize = mIconSize;
+        final boolean useTheme = shouldUseTheme();
+        final String cacheKey = getPrimeIconCacheKey(info, shape, iconSize, useTheme);
+        final boolean isPrivateSpaceIcon = Objects.equals(
+                info.getTargetPackage(), PRIVATE_SPACE_PACKAGE);
+        int creationFlags = isPrivateSpaceIcon
+                ? info.bitmap.creationFlags : useTheme ? FLAG_THEMED : 0;
+        if (mHideBadge || mDisplay == DISPLAY_SEARCH_RESULT_SMALL) creationFlags |= FLAG_NO_BADGE;
+        if (mSkipUserBadge) creationFlags |= FLAG_SKIP_USER_BADGE;
+        final int flags = creationFlags;
+
+        PrimeIconCacheEntry cached;
+        synchronized (PRIME_ICON_CACHE) {
+            cached = cacheKey == null ? null : PRIME_ICON_CACHE.get(cacheKey);
         }
+        if (cached != null && cached.sourceBitmap == info.bitmap.icon) {
+            FastBitmapDrawable drawable = cached.primeBitmap.newIcon(launcher, flags);
+            if (isPrivateSpaceIcon) drawable.setAnimationEnabled(false);
+            mDotParams.appColor = drawable.getIconColor();
+            setIcon(drawable);
+            invalidate();
+            return;
+        }
+
+        MODEL_EXECUTOR.execute(() -> {
+            Pair<AdaptiveIconDrawable, Drawable> fullDrawable = Utilities.getFullDrawable(
+                    launcher, info, iconSize, iconSize, useTheme);
+            if (fullDrawable == null || fullDrawable.first == null) return;
+
+            final BitmapInfo primeBitmap;
+            try (LauncherIcons launcherIcons = LauncherIcons.obtain(launcher)) {
+                primeBitmap = launcherIcons.createPrimeIconBitmap(
+                        fullDrawable.first, info.user, shape);
+            }
+            if (cacheKey != null) {
+                synchronized (PRIME_ICON_CACHE) {
+                    PRIME_ICON_CACHE.put(cacheKey,
+                            new PrimeIconCacheEntry(info.bitmap.icon, primeBitmap));
+                }
+            }
+            final FastBitmapDrawable primeDrawable = primeBitmap.newIcon(launcher, flags);
+            if (isPrivateSpaceIcon) primeDrawable.setAnimationEnabled(false);
+            MAIN_EXECUTOR.execute(() -> {
+                if (generation != mPrimeIconShapeRequestGeneration
+                        || mPrimeIconShape != shape || getTag() != info) return;
+                mDotParams.appColor = primeDrawable.getIconColor();
+                setIcon(primeDrawable);
+                invalidate();
+            });
+        });
     }
 
     /** Prime: updates the rendered icon bounds for per-category drawer overrides. */
