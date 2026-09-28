@@ -54,6 +54,7 @@ import app.lawnchair.ui.preferences.LocalIsExpandedScreen
 import app.lawnchair.ui.preferences.components.AppDrawerHapticFeedbackPreference
 import app.lawnchair.ui.preferences.components.NavigationActionPreference
 import app.lawnchair.ui.preferences.components.colorpreference.ColorPreference
+import app.lawnchair.ui.preferences.components.colorpreference.ColorPreferenceModelList
 import app.lawnchair.ui.preferences.components.controls.SliderPreference
 import app.lawnchair.ui.preferences.components.controls.ListPreference
 import app.lawnchair.ui.preferences.components.controls.ListPreferenceEntry
@@ -101,6 +102,7 @@ fun AppDrawerPreferences(
         val drawerGridOption = InvariantDeviceProfile.INSTANCE.get(context).closestProfile
         val modeProfile = modePreferences.get(drawerGridOption, activeDrawerMode)
         val nativeDrawerOpacity = prefs.drawerOpacity.getAdapter()
+        val nativeDrawerBackgroundColor = prefs2.appDrawerBackgroundColor.getAdapter()
         val nativeRowHeight = prefs2.drawerCellHeightFactor.getAdapter()
         val nativeHorizontalMargin = prefs2.drawerLeftRightMarginFactor.getAdapter()
         val nativeTopPadding = prefs2.drawerPaddingTopFactor.getAdapter()
@@ -115,6 +117,7 @@ fun AppDrawerPreferences(
             invalidate: (T) -> Unit = { ReloadHelper(context).reloadGrid() },
         ) = modePreferences.preference(drawerGridOption, activeDrawerMode, key, read, write, invalidate)
         LaunchedEffect(activeDrawerMode) {
+            if (nativeDrawerBackgroundColor.state.value != modeProfile.appDrawerBackgroundColor) nativeDrawerBackgroundColor.onChange(modeProfile.appDrawerBackgroundColor)
             if (nativeDrawerOpacity.state.value != modeProfile.drawerOpacity) nativeDrawerOpacity.onChange(modeProfile.drawerOpacity)
             if (nativeRowHeight.state.value != modeProfile.rowHeight) nativeRowHeight.onChange(modeProfile.rowHeight)
             if (nativeHorizontalMargin.state.value != modeProfile.horizontalMargin) nativeHorizontalMargin.onChange(modeProfile.horizontalMargin)
@@ -203,11 +206,20 @@ fun AppDrawerPreferences(
             AppDrawerHapticFeedbackPreference()
         }
         PreferenceGroup(heading = stringResource(R.string.style)) {
-            ColorPreference(preference = prefs2.appDrawerBackgroundColor)
+            val navController = app.lawnchair.ui.preferences.LocalNavController.current
+            val drawerBackgroundModel = ColorPreferenceModelList.INSTANCE.get(context)[prefs2.appDrawerBackgroundColor.key.name]
+            ColorPreference(
+                label = stringResource(id = drawerBackgroundModel.labelRes),
+                selectedColor = modeProfile.appDrawerBackgroundColor,
+                onClick = {
+                    navController.navigate(
+                        PrimeDrawerDefaultColor(activeDrawerMode.storageKey, "background", resources.getString(drawerBackgroundModel.labelRes)),
+                    )
+                },
+            )
             if (drawerTabsAdapter.state.value) {
                 ColorPreference(preference = prefs2.drawerTabsColor)
             }
-                        val navController = app.lawnchair.ui.preferences.LocalNavController.current
             ColorPreference(
                 label = "Couleur du texte par défaut du drawer",
                 selectedColor = modeProfile.defaultDrawerTextColor
@@ -216,17 +228,6 @@ fun AppDrawerPreferences(
                 onClick = {
                     navController.navigate(
                         PrimeDrawerDefaultColor(activeDrawerMode.storageKey, "text", "Couleur du texte par défaut du drawer"),
-                    )
-                },
-            )
-            ColorPreference(
-                label = "Couleur de fond par défaut du drawer",
-                selectedColor = modeProfile.defaultDrawerBackgroundColor
-                    ?.let { app.lawnchair.theme.color.ColorOption.CustomColor(it) }
-                    ?: app.lawnchair.theme.color.ColorOption.Default,
-                onClick = {
-                    navController.navigate(
-                        PrimeDrawerDefaultColor(activeDrawerMode.storageKey, "background", "Couleur de fond par défaut du drawer"),
                     )
                 },
             )
