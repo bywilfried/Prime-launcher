@@ -117,38 +117,6 @@ fun AppDrawerPreferences(
                         label = stringResource(id = R.string.prime_tabs_swipe_enabled),
                         adapter = prefs.drawerTabsSwipeEnabled.getAdapter(),
                     )
-                    ColorPreference(
-                        preference = prefs2.drawerTabsColor,
-                    )
-                    val primeDrawerDefaults = PrimeDrawerTabsRepository(context).getConfiguration()
-                    val navController = app.lawnchair.ui.preferences.LocalNavController.current
-                    ColorPreference(
-                        label = "Couleur du texte par défaut du drawer",
-                        selectedColor = primeDrawerDefaults.defaultDrawerTextColor
-                            ?.let { app.lawnchair.theme.color.ColorOption.CustomColor(it) }
-                            ?: app.lawnchair.theme.color.ColorOption.Default,
-                        onClick = {
-                            navController.navigate(
-                                PrimeDrawerDefaultColor("text", "Couleur du texte par défaut du drawer"),
-                            )
-                        },
-                    )
-                    ColorPreference(
-                        label = "Couleur de fond par défaut du drawer",
-                        selectedColor = primeDrawerDefaults.defaultDrawerBackgroundColor
-                            ?.let { app.lawnchair.theme.color.ColorOption.CustomColor(it) }
-                            ?: app.lawnchair.theme.color.ColorOption.Default,
-                        onClick = {
-                            navController.navigate(
-                                PrimeDrawerDefaultColor("background", "Couleur de fond par défaut du drawer"),
-                            )
-                        },
-                    )
-                    SwitchPreference(
-                        label = stringResource(id = R.string.apps_in_folder_label),
-                        description = stringResource(id = R.string.apps_in_folder_description),
-                        adapter = prefs.primeHideFolderApps.getAdapter(),
-                    )
                     val hideAllAdapter = prefs.drawerTabsHideAll.getAdapter()
                     val hideUnclassifiedAdapter = prefs.drawerTabsHideUnclassified.getAdapter()
                     val hasUserTabs = PrimeDrawerTabsRepository(context)
@@ -192,6 +160,33 @@ fun AppDrawerPreferences(
         }
         PreferenceGroup(heading = stringResource(R.string.style)) {
             ColorPreference(preference = prefs2.appDrawerBackgroundColor)
+            ColorPreference(preference = prefs2.drawerTabsColor)
+            if (drawerTabsAdapter.state.value) {
+                val primeDrawerDefaults = PrimeDrawerTabsRepository(context).getConfiguration()
+                val navController = app.lawnchair.ui.preferences.LocalNavController.current
+                ColorPreference(
+                    label = "Couleur du texte par défaut du drawer",
+                    selectedColor = primeDrawerDefaults.defaultDrawerTextColor
+                        ?.let { app.lawnchair.theme.color.ColorOption.CustomColor(it) }
+                        ?: app.lawnchair.theme.color.ColorOption.Default,
+                    onClick = {
+                        navController.navigate(
+                            PrimeDrawerDefaultColor("text", "Couleur du texte par défaut du drawer"),
+                        )
+                    },
+                )
+                ColorPreference(
+                    label = "Couleur de fond par défaut du drawer",
+                    selectedColor = primeDrawerDefaults.defaultDrawerBackgroundColor
+                        ?.let { app.lawnchair.theme.color.ColorOption.CustomColor(it) }
+                        ?: app.lawnchair.theme.color.ColorOption.Default,
+                    onClick = {
+                        navController.navigate(
+                            PrimeDrawerDefaultColor("background", "Couleur de fond par défaut du drawer"),
+                        )
+                    },
+                )
+            }
             SliderPreference(
                 label = stringResource(id = R.string.background_opacity),
                 adapter = prefs.drawerOpacity.getAdapter(),
@@ -296,6 +291,13 @@ fun AppDrawerPreferences(
             }
         }
         PreferenceGroup(heading = stringResource(id = R.string.advanced)) {
+            if (drawerTabsAdapter.state.value) {
+                SwitchPreference(
+                    label = stringResource(id = R.string.apps_in_folder_label),
+                    description = stringResource(id = R.string.apps_in_folder_description),
+                    adapter = prefs.primeHideFolderApps.getAdapter(),
+                )
+            }
             SwitchPreference(
                 label = stringResource(id = R.string.pref_all_apps_remember_position_title),
                 description = stringResource(id = R.string.pref_all_apps_remember_position_description),
