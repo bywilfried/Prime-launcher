@@ -102,8 +102,8 @@ fun AppDrawerPreferences(
         val drawerGridOption = InvariantDeviceProfile.INSTANCE.get(context).closestProfile
         val modeProfile = modePreferences.get(drawerGridOption, activeDrawerMode)
         val nativeDrawerOpacity = prefs.drawerOpacity.getAdapter()
-        val nativeDrawerColumns = prefs2.drawerColumns.getAdapter(gridOption = drawerGridOption)
-        val nativeDrawerColumnsUnfolded = prefs2.drawerColumnsUnfolded.getAdapter(gridOption = drawerGridOption)
+        val nativeDrawerColumns = prefs2.drawerColumns.getAdapter()
+        val nativeDrawerColumnsUnfolded = prefs2.drawerColumnsUnfolded.getAdapter()
         val nativeDrawerIconSize = prefs2.drawerIconSizeFactor.getAdapter()
         val nativeShowLabels = prefs2.showIconLabelsInDrawer.getAdapter()
         val nativeLabelSize = prefs2.drawerIconLabelSizeFactor.getAdapter()
