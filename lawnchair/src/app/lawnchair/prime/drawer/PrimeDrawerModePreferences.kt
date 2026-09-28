@@ -2,15 +2,14 @@ package app.lawnchair.prime.drawer
 
 import android.content.Context
 import androidx.core.content.edit
+import app.lawnchair.preferences.CallbackPrefEntry
 import app.lawnchair.preferences.PrefEntry
-import app.lawnchair.preferences.PreferenceChangeListener
 import app.lawnchair.preferences.PreferenceManager
 import app.lawnchair.preferences2.PreferenceManager2
 import app.lawnchair.preferences2.ReloadHelper
 import app.lawnchair.preferences2.firstCached
 import com.android.launcher3.InvariantDeviceProfile
 import com.android.launcher3.LauncherPrefs
-import java.util.concurrent.CopyOnWriteArraySet
 import org.json.JSONObject
 
 /**
@@ -55,38 +54,14 @@ class PrimeDrawerModePreferences(context: Context) {
         key: String,
         read: (PrimeDrawerModeProfile) -> T,
         write: (PrimeDrawerModeProfile, T) -> PrimeDrawerModeProfile,
-    ): PrefEntry<T> = ModePrefEntry(gridOption, mode, key, read, write)
-
-    private inner class ModePrefEntry<T>(
-        private val gridOption: InvariantDeviceProfile.GridOption,
-        private val mode: PrimeDrawerMode,
-        fieldKey: String,
-        private val read: (PrimeDrawerModeProfile) -> T,
-        private val write: (PrimeDrawerModeProfile, T) -> PrimeDrawerModeProfile,
-    ) : PrefEntry<T> {
-        override val key = "$PREF_MODE_PROFILES/${mode.storageKey}/$fieldKey"
-        override val defaultValue: T
-            get() = read(legacyProfile(gridOption))
-
-        private val listeners = CopyOnWriteArraySet<PreferenceChangeListener>()
-
-        override fun get(): T = read(this@PrimeDrawerModePreferences.get(gridOption, mode))
-
-        override fun set(newValue: T) {
-            this@PrimeDrawerModePreferences.update(gridOption, mode) { profile ->
-                write(profile, newValue)
-            }
-            listeners.forEach(PreferenceChangeListener::onPreferenceChange)
-        }
-
-        override fun addListener(listener: PreferenceChangeListener) {
-            listeners.add(listener)
-        }
-
-        override fun removeListener(listener: PreferenceChangeListener) {
-            listeners.remove(listener)
-        }
-    }
+    ): PrefEntry<T> = CallbackPrefEntry(
+        key = "$PREF_MODE_PROFILES/${mode.storageKey}/$key",
+        defaultValue = read(legacyProfile(gridOption)),
+        getter = { read(get(gridOption, mode)) },
+        setter = { newValue ->
+            update(gridOption, mode) { profile -> write(profile, newValue) }
+        },
+    )
 
     private fun legacyProfile(grid: InvariantDeviceProfile.GridOption): PrimeDrawerModeProfile {
         return PrimeDrawerModeProfile(
