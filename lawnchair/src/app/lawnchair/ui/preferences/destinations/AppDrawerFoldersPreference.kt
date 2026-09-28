@@ -39,8 +39,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.lawnchair.data.folder.FolderEntry
 import app.lawnchair.data.folder.model.FolderViewModel
+import app.lawnchair.preferences.PreferenceAdapter
 import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences.preferenceManager
+import app.lawnchair.prime.drawer.PrimeDrawerMode
+import app.lawnchair.prime.drawer.PrimeDrawerModePreferences
+import com.android.launcher3.InvariantDeviceProfile
 import app.lawnchair.ui.ModalBottomSheetContent
 import app.lawnchair.ui.preferences.LocalNavController
 import app.lawnchair.ui.preferences.components.controls.ClickablePreference
@@ -136,8 +140,28 @@ fun AppDrawerFoldersPreference(
             PreferenceGroup(
                 heading = stringResource(R.string.settings),
             ) {
+                val context = LocalContext.current
+                val nativeFolderApps = prefs.folderApps.getAdapter()
+                val gridOption = InvariantDeviceProfile.INSTANCE.get(context).closestProfile
+                val modePreferences = PrimeDrawerModePreferences(context)
+                val modeFolderApps = modePreferences.preference(
+                    gridOption = gridOption,
+                    mode = PrimeDrawerMode.DEFAULT,
+                    key = "hideFolderApps",
+                    read = { it.hideFolderApps },
+                    write = { profile, value -> profile.copy(hideFolderApps = value) },
+                    invalidate = {},
+                ).getAdapter()
                 SwitchPreference(
-                    adapter = prefs.folderApps.getAdapter(),
+                    adapter = remember(modeFolderApps, nativeFolderApps) {
+                        object : PreferenceAdapter<Boolean> {
+                            override val state = modeFolderApps.state
+                            override fun onChange(newValue: Boolean) {
+                                modeFolderApps.onChange(newValue)
+                                nativeFolderApps.onChange(newValue)
+                            }
+                        }
+                    },
                     label = stringResource(id = R.string.apps_in_folder_label),
                     description = stringResource(id = R.string.apps_in_folder_description),
                 )
