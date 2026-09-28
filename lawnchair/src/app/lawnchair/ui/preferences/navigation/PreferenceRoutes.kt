@@ -99,6 +99,9 @@ data object PrimeDevelopmentOptions : PreferenceRootRoute
 data object PrimeHapticTuning : PreferenceRoute
 
 @Serializable
+data object PrimeDiagnosticLogs : PreferenceRoute
+
+@Serializable
 data object About : PreferenceRootRoute, PreferenceDeepLink {
     override val deepLink = "$URI/about"
 }
