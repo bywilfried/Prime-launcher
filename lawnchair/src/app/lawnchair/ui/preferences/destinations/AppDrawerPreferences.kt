@@ -313,13 +313,11 @@ fun AppDrawerPreferences(
             }
         }
         PreferenceGroup(heading = stringResource(id = R.string.advanced)) {
-            if (drawerTabsAdapter.state.value) {
-                SwitchPreference(
-                    label = stringResource(id = R.string.apps_in_folder_label),
-                    description = stringResource(id = R.string.apps_in_folder_description),
-                    adapter = prefs.primeHideFolderApps.getAdapter(),
-                )
-            }
+            SwitchPreference(
+                label = stringResource(id = R.string.apps_in_folder_label),
+                description = stringResource(id = R.string.apps_in_folder_description),
+                adapter = prefs.primeHideFolderApps.getAdapter(),
+            )
             SwitchPreference(
                 label = stringResource(id = R.string.pref_all_apps_remember_position_title),
                 description = stringResource(id = R.string.pref_all_apps_remember_position_description),
