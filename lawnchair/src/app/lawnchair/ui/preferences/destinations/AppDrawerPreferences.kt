@@ -45,6 +45,7 @@ import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences.rememberTransformAdapter
 import app.lawnchair.preferences.preferenceManager
 import app.lawnchair.preferences2.preferenceManager2
+import app.lawnchair.preferences2.ReloadHelper
 import app.lawnchair.prime.drawer.PrimeDrawerMode
 import app.lawnchair.prime.drawer.PrimeDrawerModePreferences
 import app.lawnchair.prime.drawer.PrimeDrawerTabsRepository
@@ -104,7 +105,7 @@ fun AppDrawerPreferences(
                 modePreferences.update(drawerGridOption, activeDrawerMode) { profile -> update(profile, newValue) }
             }
         Column {
-            DrawerLayoutPreference(drawerListAdapter, drawerTabsAdapter)
+            DrawerLayoutPreference(drawerListAdapter, drawerTabsAdapter, context)
             ExpandAndShrink(visible = drawerListAdapter.state.value && !drawerTabsAdapter.state.value) {
                 AppDrawerFolderPreferenceItem()
             }
@@ -331,6 +332,7 @@ fun AppDrawerPreferences(
 private fun DrawerLayoutPreference(
     drawerListAdapter: PreferenceAdapter<Boolean>,
     drawerTabsAdapter: PreferenceAdapter<Boolean>,
+    context: android.content.Context,
 ) {
     val layoutModeAdapter = rememberTransformAdapter(
         adapter = drawerListAdapter,
@@ -343,7 +345,10 @@ private fun DrawerLayoutPreference(
         },
         transformSet = { mode ->
             drawerTabsAdapter.onChange(mode == PrimeDrawerMode.TABS)
-            mode != PrimeDrawerMode.CADDY
+            val drawerList = mode != PrimeDrawerMode.CADDY
+            drawerListAdapter.onChange(drawerList)
+            ReloadHelper(context).reloadGrid()
+            drawerList
         },
     )
     val maxPreviewHeight = LocalConfiguration.current.screenHeightDp.dp / 4
