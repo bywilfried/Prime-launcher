@@ -33,6 +33,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -40,7 +43,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.lawnchair.preferences.PreferenceAdapter
-import app.lawnchair.preferences.customPreferenceAdapter
 import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences.rememberTransformAdapter
 import app.lawnchair.preferences.preferenceManager
@@ -100,10 +102,26 @@ fun AppDrawerPreferences(
         val drawerGridOption = InvariantDeviceProfile.INSTANCE.get(context).closestProfile
         val modeProfile = modePreferences.get(drawerGridOption, activeDrawerMode)
         @Composable
-        fun <T> modeAdapter(value: T, update: (app.lawnchair.prime.drawer.PrimeDrawerModeProfile, T) -> app.lawnchair.prime.drawer.PrimeDrawerModeProfile) =
-            customPreferenceAdapter(value) { newValue ->
-                modePreferences.update(drawerGridOption, activeDrawerMode) { profile -> update(profile, newValue) }
+        fun <T> modeAdapter(
+            value: T,
+            update: (app.lawnchair.prime.drawer.PrimeDrawerModeProfile, T) -> app.lawnchair.prime.drawer.PrimeDrawerModeProfile,
+        ): PreferenceAdapter<T> {
+            val state = remember(activeDrawerMode) { mutableStateOf(value) }
+            LaunchedEffect(activeDrawerMode, value) {
+                state.value = value
             }
+            return remember(activeDrawerMode, modePreferences, drawerGridOption) {
+                object : PreferenceAdapter<T> {
+                    override val state = state
+                    override fun onChange(newValue: T) {
+                        state.value = newValue
+                        modePreferences.update(drawerGridOption, activeDrawerMode) { profile ->
+                            update(profile, newValue)
+                        }
+                    }
+                }
+            }
+        }
         Column {
             DrawerLayoutPreference(drawerListAdapter, drawerTabsAdapter, context)
             ExpandAndShrink(visible = drawerListAdapter.state.value && !drawerTabsAdapter.state.value) {
