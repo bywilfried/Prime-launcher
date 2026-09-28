@@ -51,11 +51,14 @@ import androidx.core.os.UserManagerCompat
 import app.lawnchair.preferences.PreferenceManager
 import app.lawnchair.preferences2.PreferenceManager2
 import app.lawnchair.preferences2.firstCached
+import app.lawnchair.prime.drawer.PrimeDrawerMode
+import app.lawnchair.prime.drawer.PrimeDrawerModePreferences
 import app.lawnchair.theme.color.ColorOption
 import app.lawnchair.theme.color.tokens.ColorTokens
 import com.android.launcher3.BaseActivity
 import com.android.launcher3.BuildConfig
 import com.android.launcher3.R
+import com.android.launcher3.InvariantDeviceProfile
 import com.android.launcher3.Utilities
 import com.android.launcher3.util.Executors.MAIN_EXECUTOR
 import com.android.launcher3.util.Themes
@@ -150,8 +153,21 @@ fun supportsRoundedCornersOnWindows(context: Context): Boolean {
 
 fun overrideAllAppsTextColor(textView: TextView) {
     val context = textView.context
+    val prefs = PreferenceManager.getInstance(context)
+    val mode = PrimeDrawerMode.current(prefs)
+    if (mode != PrimeDrawerMode.TABS) {
+        val grid = InvariantDeviceProfile.INSTANCE.get(context).closestProfile
+        val primeTextColor = PrimeDrawerModePreferences(context)
+            .get(grid, mode)
+            .defaultDrawerTextColor
+        if (primeTextColor != null) {
+            textView.setTextColor(primeTextColor)
+            return
+        }
+    }
+
     val luminance = getAllAppsBaseColor(context, ColorTokens.AllAppsScrimColor.resolveColor(context)).luminance
-    val opacity = PreferenceManager.getInstance(context).drawerOpacity.get()
+    val opacity = prefs.drawerOpacity.get()
     if (luminance > 0.5f || opacity <= 0.3f) {
         textView.setTextColor(Themes.getAttrColor(context, R.attr.allAppsAlternateTextColor))
     }
