@@ -97,27 +97,42 @@ internal constructor(
         }
     }
 
-    /** Rasterizes a source drawable, then applies the Prime mask to the final bitmap. */
-    fun createPrimeIconBitmap(drawable: Drawable, user: UserHandle, shape: IconShape): BitmapInfo {
-        val base = createBadgedIconBitmap(
-            drawable,
-            BaseIconFactory.IconOptions().setUser(getUserInfo(user)),
-        )
-        val source = base.icon ?: return base
-        val masked = Bitmap.createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(masked)
-        val mask = Path(shape.getMaskPath()).apply {
-            transform(Matrix().apply {
-                setRectToRect(
-                    RectF(0f, 0f, 100f, 100f),
-                    RectF(0f, 0f, source.width.toFloat(), source.height.toFloat()),
-                    Matrix.ScaleToFit.FILL,
-                )
-            })
+    /** Rasterizes an adaptive icon with the Prime mask replacing the system/Lawnchair mask. */
+    fun createPrimeIconBitmap(drawable: Drawable, user: UserHandle, shape: IconShape): BitmapInfo =
+        withPrimeIconShape(shape) {
+            val source = if (drawable is AdaptiveIconDrawable) {
+                PrimeAdaptiveIconDrawable(drawable, shape)
+            } else {
+                drawable
+            }
+            createBadgedIconBitmap(
+                source,
+                BaseIconFactory.IconOptions().setUser(getUserInfo(user)),
+            )
         }
-        canvas.clipPath(mask)
-        canvas.drawBitmap(source, 0f, 0f, Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG))
-        return BitmapInfo.of(masked, base.color)
+
+    private class PrimeAdaptiveIconDrawable(
+        source: AdaptiveIconDrawable,
+        private val shape: IconShape,
+    ) : AdaptiveIconDrawable(source.background, source.foreground) {
+        override fun draw(canvas: Canvas) {
+            val currentBounds = bounds
+            if (currentBounds.isEmpty) return
+            val mask = Path(shape.getMaskPath()).apply {
+                transform(Matrix().apply {
+                    setRectToRect(
+                        RectF(0f, 0f, 100f, 100f),
+                        RectF(currentBounds),
+                        Matrix.ScaleToFit.FILL,
+                    )
+                })
+            }
+            val save = canvas.save()
+            canvas.clipPath(mask)
+            background.draw(canvas)
+            foreground.draw(canvas)
+            canvas.restoreToCount(save)
+        }
     }
 
     override fun close() {
