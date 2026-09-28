@@ -314,8 +314,6 @@ class PrimeDrawerTabsRepository(context: Context) {
             ?.takeUnless { it.isSystem }
             ?.visualOverrides ?: PrimeDrawerVisualOverrides()
         return selected.copy(
-            drawerBackgroundColor = selected.drawerBackgroundColor
-                ?: configuration.defaultDrawerBackgroundColor,
             drawerTextColor = selected.drawerTextColor ?: configuration.defaultDrawerTextColor,
         ).takeUnless { it == PrimeDrawerVisualOverrides() }
     }
