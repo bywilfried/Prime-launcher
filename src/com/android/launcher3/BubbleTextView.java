@@ -1637,7 +1637,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         mPrimeIconShape = shape;
         final int generation = ++mPrimeIconShapeRequestGeneration;
 
-        if (shape == null || mDisplay != DISPLAY_ALL_APPS
+        if (shape == null || (mDisplay != DISPLAY_ALL_APPS && mDisplay != DISPLAY_FOLDER)
                 || !(getTag() instanceof ItemInfoWithIcon info)
                 || !(getContext() instanceof Launcher launcher)) {
             return;
