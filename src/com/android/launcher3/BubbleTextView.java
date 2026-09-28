@@ -1564,7 +1564,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             // A high-res cache callback rebuilds the normal drawable after the adapter has already
             // applied its Prime tab override. Rebuild the Prime drawable as well so the category
             // shape cannot disappear when the asynchronous high-res icon arrives.
-            if (mPrimeIconShape != null) {
+            if (mPrimeIconShape != null && mDisplay == DISPLAY_ALL_APPS) {
                 setPrimeIconShape(mPrimeIconShape);
             }
         }
@@ -1642,7 +1642,8 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         applyCompoundDrawables(getIconOrTransparentColor());
         invalidate();
 
-        if (shape == null || !(getTag() instanceof ItemInfoWithIcon info)
+        if (shape == null || mDisplay != DISPLAY_ALL_APPS
+                || !(getTag() instanceof ItemInfoWithIcon info)
                 || !(getContext() instanceof Launcher launcher)) {
             return;
         }
