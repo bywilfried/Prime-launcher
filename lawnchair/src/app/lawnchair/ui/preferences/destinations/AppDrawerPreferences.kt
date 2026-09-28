@@ -207,27 +207,26 @@ fun AppDrawerPreferences(
             if (drawerTabsAdapter.state.value) {
                 ColorPreference(preference = prefs2.drawerTabsColor)
             }
-            val primeDrawerDefaults = PrimeDrawerTabsRepository(context).getConfiguration()
-            val navController = app.lawnchair.ui.preferences.LocalNavController.current
+                        val navController = app.lawnchair.ui.preferences.LocalNavController.current
             ColorPreference(
                 label = "Couleur du texte par défaut du drawer",
-                selectedColor = primeDrawerDefaults.defaultDrawerTextColor
+                selectedColor = modeProfile.defaultDrawerTextColor
                     ?.let { app.lawnchair.theme.color.ColorOption.CustomColor(it) }
                     ?: app.lawnchair.theme.color.ColorOption.Default,
                 onClick = {
                     navController.navigate(
-                        PrimeDrawerDefaultColor("text", "Couleur du texte par défaut du drawer"),
+                        PrimeDrawerDefaultColor(activeDrawerMode.storageKey, "text", "Couleur du texte par défaut du drawer"),
                     )
                 },
             )
             ColorPreference(
                 label = "Couleur de fond par défaut du drawer",
-                selectedColor = primeDrawerDefaults.defaultDrawerBackgroundColor
+                selectedColor = modeProfile.defaultDrawerBackgroundColor
                     ?.let { app.lawnchair.theme.color.ColorOption.CustomColor(it) }
                     ?: app.lawnchair.theme.color.ColorOption.Default,
                 onClick = {
                     navController.navigate(
-                        PrimeDrawerDefaultColor("background", "Couleur de fond par défaut du drawer"),
+                        PrimeDrawerDefaultColor(activeDrawerMode.storageKey, "background", "Couleur de fond par défaut du drawer"),
                     )
                 },
             )
