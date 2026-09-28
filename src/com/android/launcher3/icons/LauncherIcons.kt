@@ -20,6 +20,7 @@ import android.graphics.Path
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.drawable.AdaptiveIconDrawable
+import android.graphics.drawable.Drawable
 import android.os.UserHandle
 import com.android.launcher3.Flags
 import com.android.launcher3.InvariantDeviceProfile
@@ -91,6 +92,15 @@ internal constructor(
             primeIconShape = null
         }
     }
+
+    /** Rasterizes a source drawable with a Prime shape and the normal Launcher user badge. */
+    fun createPrimeIconBitmap(drawable: Drawable, user: UserHandle, shape: IconShape): BitmapInfo =
+        withPrimeIconShape(shape) {
+            createBadgedIconBitmap(
+                drawable,
+                IconOptions().setUser(getUserInfo(user)),
+            )
+        }
 
     override fun close() {
         recycle()
