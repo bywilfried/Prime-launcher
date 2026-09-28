@@ -107,7 +107,7 @@ fun AppDrawerPreferences(
         val nativeHorizontalMargin = prefs2.drawerLeftRightMarginFactor.getAdapter()
         val nativeTopPadding = prefs2.drawerPaddingTopFactor.getAdapter()
         val nativeTwoLineLabels = prefs2.twoLineAllApps.getAdapter()
-        val nativeHideFolderApps = prefs.primeHideFolderApps.getAdapter()
+        val nativeHideFolderApps = prefs.folderApps.getAdapter()
         val nativeRememberPosition = prefs2.rememberPosition.getAdapter()
         val nativeShowScrollbar = prefs2.showScrollbar.getAdapter()
         fun <T> modePreference(
