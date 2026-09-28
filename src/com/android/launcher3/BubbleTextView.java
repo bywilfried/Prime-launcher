@@ -1641,11 +1641,18 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                 + " display=" + mDisplay + " tag=" + getTag());
 
         if (shape == null || (mDisplay != DISPLAY_ALL_APPS && mDisplay != DISPLAY_FOLDER)
-                || !(getTag() instanceof ItemInfoWithIcon info)
-                || !(getContext() instanceof Launcher launcher)) {
+                || !(getTag() instanceof ItemInfoWithIcon info)) {
             PrimeDebugLog.d("PrimeIconShape", "skip request shape=" + shapeKey + " generation=" + generation
                     + " display=" + mDisplay + " tag=" + getTag()
                     + " context=" + getContext().getClass().getSimpleName());
+            return;
+        }
+
+        ActivityContext activityContext = ActivityContext.lookupContextNoThrow(getContext());
+        if (!(activityContext instanceof Launcher launcher)) {
+            PrimeDebugLog.d("PrimeIconShape", "skip request: no Launcher activity context shape="
+                    + shapeKey + " generation=" + generation + " context="
+                    + getContext().getClass().getSimpleName());
             return;
         }
 
