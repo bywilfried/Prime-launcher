@@ -1637,11 +1637,6 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         mPrimeIconShape = shape;
         final int generation = ++mPrimeIconShapeRequestGeneration;
 
-        // Keep the existing masked drawable as an immediate fallback (icon packs and any source
-        // drawable that cannot be reconstructed by Utilities.getFullDrawable()).
-        applyCompoundDrawables(getIconOrTransparentColor());
-        invalidate();
-
         if (shape == null || mDisplay != DISPLAY_ALL_APPS
                 || !(getTag() instanceof ItemInfoWithIcon info)
                 || !(getContext() instanceof Launcher launcher)) {
@@ -1665,7 +1660,20 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         MODEL_EXECUTOR.execute(() -> {
             Pair<AdaptiveIconDrawable, Drawable> fullDrawable = Utilities.getFullDrawable(
                     launcher, info, iconSize, iconSize, useTheme);
-            if (fullDrawable == null || fullDrawable.first == null) return;
+            if (fullDrawable == null || fullDrawable.first == null) {
+                // Only fall back to the already loaded drawable when the original source cannot
+                // be reconstructed (for example some icon-pack cases). Never use it as the normal
+                // refresh path, because it may already contain the previous/global mask.
+                MAIN_EXECUTOR.execute(() -> {
+                    if (generation == mPrimeIconShapeRequestGeneration
+                            && mPrimeIconShape == shape
+                            && getTag() == info) {
+                        applyCompoundDrawables(getIconOrTransparentColor());
+                        invalidate();
+                    }
+                });
+                return;
+            }
 
             final BitmapInfo primeBitmap;
             try (LauncherIcons launcherIcons = LauncherIcons.obtain(launcher)) {
