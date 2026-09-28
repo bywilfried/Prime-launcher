@@ -40,11 +40,13 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.lawnchair.preferences.PreferenceAdapter
+import app.lawnchair.preferences.customPreferenceAdapter
 import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences.rememberTransformAdapter
 import app.lawnchair.preferences.preferenceManager
 import app.lawnchair.preferences2.preferenceManager2
 import app.lawnchair.prime.drawer.PrimeDrawerMode
+import app.lawnchair.prime.drawer.PrimeDrawerModePreferences
 import app.lawnchair.prime.drawer.PrimeDrawerTabsRepository
 import app.lawnchair.ui.preferences.LocalIsExpandedScreen
 import app.lawnchair.ui.preferences.components.AppDrawerHapticFeedbackPreference
@@ -88,6 +90,17 @@ fun AppDrawerPreferences(
     ) {
         val drawerListAdapter = prefs.drawerList.getAdapter()
         val drawerTabsAdapter = prefs.drawerTabsEnabled.getAdapter()
+        val activeDrawerMode = when {
+            drawerTabsAdapter.state.value -> PrimeDrawerMode.TABS
+            drawerListAdapter.state.value -> PrimeDrawerMode.DEFAULT
+            else -> PrimeDrawerMode.CADDY
+        }
+        val modePreferences = PrimeDrawerModePreferences(context)
+        val modeProfile = modePreferences.get(activeDrawerMode)
+        fun <T> modeAdapter(value: T, update: (app.lawnchair.prime.drawer.PrimeDrawerModeProfile, T) -> app.lawnchair.prime.drawer.PrimeDrawerModeProfile) =
+            customPreferenceAdapter(value) { newValue ->
+                modePreferences.update(activeDrawerMode) { profile -> update(profile, newValue) }
+            }
         Column {
             DrawerLayoutPreference(drawerListAdapter, drawerTabsAdapter)
             ExpandAndShrink(visible = drawerListAdapter.state.value && !drawerTabsAdapter.state.value) {
@@ -206,8 +219,8 @@ fun AppDrawerPreferences(
             )
         }
         PreferenceGroup(heading = stringResource(id = R.string.grid)) {
-            val drawerColumnsAdapter = prefs2.drawerColumns.getAdapter()
-            val drawerColumnsUnfoldedAdapter = prefs2.drawerColumnsUnfolded.getAdapter()
+            val drawerColumnsAdapter = modeAdapter(modeProfile.drawerColumns) { profile, value -> profile.copy(drawerColumns = value) }
+            val drawerColumnsUnfoldedAdapter = modeAdapter(modeProfile.drawerColumnsUnfolded) { profile, value -> profile.copy(drawerColumnsUnfolded = value) }
             if (isFoldable) {
                 SliderPreference(
                     label = stringResource(id = R.string.state_folded, stringResource(id = R.string.app_drawer_columns)),
@@ -258,11 +271,11 @@ fun AppDrawerPreferences(
                 showAsPercentage = true,
             )
         }
-        val showDrawerLabels = prefs2.showIconLabelsInDrawer.getAdapter()
+        val showDrawerLabels = modeAdapter(modeProfile.showLabels) { profile, value -> profile.copy(showLabels = value) }
         PreferenceGroup(heading = stringResource(id = R.string.icons)) {
             SliderPreference(
                 label = stringResource(id = R.string.icon_sizes),
-                adapter = prefs2.drawerIconSizeFactor.getAdapter(),
+                adapter = modeAdapter(modeProfile.drawerIconSize) { profile, value -> profile.copy(drawerIconSize = value) },
                 step = 0.1f,
                 valueRange = 0.5F..1.5F,
                 showAsPercentage = true,
@@ -276,7 +289,7 @@ fun AppDrawerPreferences(
             ) {
                 SliderPreference(
                     label = stringResource(id = R.string.label_size),
-                    adapter = prefs2.drawerIconLabelSizeFactor.getAdapter(),
+                    adapter = modeAdapter(modeProfile.labelSize) { profile, value -> profile.copy(labelSize = value) },
                     step = 0.1F,
                     valueRange = 0.5F..1.5F,
                     showAsPercentage = true,
