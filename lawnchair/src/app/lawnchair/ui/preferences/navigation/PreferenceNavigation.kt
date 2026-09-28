@@ -21,6 +21,7 @@ import app.lawnchair.backup.ui.CreateBackupScreen
 import app.lawnchair.backup.ui.restoreBackupGraph
 import app.lawnchair.backup.ui.restoreNovaBackupGraph
 import app.lawnchair.preferences.BasePreferenceManager
+import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences.preferenceManager
 import app.lawnchair.ui.preferences.LocalIsExpandedScreen
 import app.lawnchair.ui.preferences.about.About
@@ -337,37 +338,38 @@ fun PreferenceNavigation(
             val gridOption = com.android.launcher3.InvariantDeviceProfile.INSTANCE.get(context).closestProfile
             val modePreferences = app.lawnchair.prime.drawer.PrimeDrawerModePreferences(context)
             val profile = modePreferences.get(gridOption, mode)
+            val prefs2 = preferenceManager2()
             val current = if (route.colorKey == "text") {
-                profile.defaultDrawerTextColor
+                profile.defaultDrawerTextColor?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default
             } else {
-                profile.defaultDrawerBackgroundColor
+                profile.appDrawerBackgroundColor
             }
             PrimeColorSelection(
                 label = route.label,
-                appliedColor = current?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default,
+                appliedColor = current,
                 onApply = { option ->
-                    val resolved = when (option) {
-                        ColorOption.Default -> null
-                        else -> option.colorPreferenceEntry.lightColor(context)
-                    }
-                    modePreferences.update(
-                        gridOption,
-                        mode,
-                        { currentProfile ->
-                            if (route.colorKey == "text") {
-                                currentProfile.copy(defaultDrawerTextColor = resolved)
-                            } else {
-                                currentProfile.copy(defaultDrawerBackgroundColor = resolved)
-                            }
-                        },
-                        {},
-                    )
-                    if (mode == app.lawnchair.prime.drawer.PrimeDrawerMode.TABS) {
-                        if (route.colorKey == "text") {
-                            repository.setDefaultDrawerColors(textColor = resolved)
-                        } else {
-                            repository.setDefaultDrawerColors(backgroundColor = resolved)
+                    if (route.colorKey == "text") {
+                        val resolved = when (option) {
+                            ColorOption.Default -> null
+                            else -> option.colorPreferenceEntry.lightColor(context)
                         }
+                        modePreferences.update(
+                            gridOption,
+                            mode,
+                            { currentProfile -> currentProfile.copy(defaultDrawerTextColor = resolved) },
+                            {},
+                        )
+                        if (mode == app.lawnchair.prime.drawer.PrimeDrawerMode.TABS) {
+                            repository.setDefaultDrawerColors(textColor = resolved)
+                        }
+                    } else {
+                        modePreferences.update(
+                            gridOption,
+                            mode,
+                            { currentProfile -> currentProfile.copy(appDrawerBackgroundColor = option) },
+                            {},
+                        )
+                        prefs2.appDrawerBackgroundColor.getAdapter().onChange(option)
                     }
                 },
             )
