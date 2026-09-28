@@ -98,7 +98,7 @@ internal constructor(
         withPrimeIconShape(shape) {
             createBadgedIconBitmap(
                 drawable,
-                IconOptions().setUser(getUserInfo(user)),
+                BaseIconFactory.IconOptions().setUser(getUserInfo(user)),
             )
         }
 
