@@ -332,11 +332,15 @@ fun PreferenceNavigation(
             val route: PrimeDrawerDefaultColor = backStackEntry.toRoute()
             val context = LocalContext.current
             val repository = PrimeDrawerTabsRepository(context)
-            val configuration = repository.getConfiguration()
+            val mode = app.lawnchair.prime.drawer.PrimeDrawerMode.entries
+                .first { it.storageKey == route.modeKey }
+            val gridOption = com.android.launcher3.InvariantDeviceProfile.INSTANCE.get(context).closestProfile
+            val modePreferences = app.lawnchair.prime.drawer.PrimeDrawerModePreferences(context)
+            val profile = modePreferences.get(gridOption, mode)
             val current = if (route.colorKey == "text") {
-                configuration.defaultDrawerTextColor
+                profile.defaultDrawerTextColor
             } else {
-                configuration.defaultDrawerBackgroundColor
+                profile.defaultDrawerBackgroundColor
             }
             PrimeColorSelection(
                 label = route.label,
@@ -346,10 +350,24 @@ fun PreferenceNavigation(
                         ColorOption.Default -> null
                         else -> option.colorPreferenceEntry.lightColor(context)
                     }
-                    if (route.colorKey == "text") {
-                        repository.setDefaultDrawerColors(textColor = resolved)
-                    } else {
-                        repository.setDefaultDrawerColors(backgroundColor = resolved)
+                    modePreferences.update(
+                        gridOption,
+                        mode,
+                        { currentProfile ->
+                            if (route.colorKey == "text") {
+                                currentProfile.copy(defaultDrawerTextColor = resolved)
+                            } else {
+                                currentProfile.copy(defaultDrawerBackgroundColor = resolved)
+                            }
+                        },
+                        {},
+                    )
+                    if (mode == app.lawnchair.prime.drawer.PrimeDrawerMode.TABS) {
+                        if (route.colorKey == "text") {
+                            repository.setDefaultDrawerColors(textColor = resolved)
+                        } else {
+                            repository.setDefaultDrawerColors(backgroundColor = resolved)
+                        }
                     }
                 },
             )
