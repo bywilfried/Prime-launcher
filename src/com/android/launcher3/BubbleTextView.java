@@ -1788,39 +1788,6 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     }
 
 
-    private static final class PrimeMaskedDrawable extends DrawableWrapper {
-        private final IconShape mShape;
-        private final Path mPath = new Path();
-
-        PrimeMaskedDrawable(Drawable drawable, IconShape shape) {
-            super(drawable);
-            mShape = shape;
-        }
-
-        @Override
-        public void draw(Canvas canvas) {
-            Rect bounds = getBounds();
-            mPath.set(mShape.getMaskPath());
-            android.graphics.Matrix matrix = new android.graphics.Matrix();
-            matrix.setRectToRect(
-                    new RectF(0f, 0f, 100f, 100f),
-                    new RectF(bounds),
-                    android.graphics.Matrix.ScaleToFit.FILL);
-            mPath.transform(matrix);
-            int save = canvas.save();
-            canvas.clipPath(mPath);
-            super.draw(canvas);
-            canvas.restoreToCount(save);
-        }
-
-        @Override
-        protected void onBoundsChange(Rect bounds) {
-            super.onBoundsChange(bounds);
-            Drawable drawable = getDrawable();
-            if (drawable != null) drawable.setBounds(bounds);
-        }
-    }
-
     private String getAppLabelPluralString(String appName, int notificationCount) {
         MessageFormat icuCountFormat = new MessageFormat(
                 getResources().getString(R.string.dotted_app_label),
