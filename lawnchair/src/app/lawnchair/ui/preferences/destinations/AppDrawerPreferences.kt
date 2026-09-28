@@ -248,8 +248,8 @@ fun AppDrawerPreferences(
             )
         }
         PreferenceGroup(heading = stringResource(id = R.string.grid)) {
-            val drawerColumnsAdapter = modePreference("drawerColumns", { it.drawerColumns }) { profile, value -> profile.copy(drawerColumns = value) }.getAdapter()
-            val drawerColumnsUnfoldedAdapter = modePreference("drawerColumnsUnfolded", { it.drawerColumnsUnfolded }) { profile, value -> profile.copy(drawerColumnsUnfolded = value) }.getAdapter()
+            val drawerColumnsAdapter = modePreference(key = "drawerColumns", read = { it.drawerColumns }, write = { profile, value -> profile.copy(drawerColumns = value) }).getAdapter()
+            val drawerColumnsUnfoldedAdapter = modePreference(key = "drawerColumnsUnfolded", read = { it.drawerColumnsUnfolded }, write = { profile, value -> profile.copy(drawerColumnsUnfolded = value) }).getAdapter()
             if (isFoldable) {
                 SliderPreference(
                     label = stringResource(id = R.string.state_folded, stringResource(id = R.string.app_drawer_columns)),
@@ -300,11 +300,11 @@ fun AppDrawerPreferences(
                 showAsPercentage = true,
             )
         }
-        val showDrawerLabels = modePreference("showLabels", { it.showLabels }) { profile, value -> profile.copy(showLabels = value) }.getAdapter()
+        val showDrawerLabels = modePreference(key = "showLabels", read = { it.showLabels }, write = { profile, value -> profile.copy(showLabels = value) }).getAdapter()
         PreferenceGroup(heading = stringResource(id = R.string.icons)) {
             SliderPreference(
                 label = stringResource(id = R.string.icon_sizes),
-                adapter = modePreference("drawerIconSize", { it.drawerIconSize }) { profile, value -> profile.copy(drawerIconSize = value) }.getAdapter(),
+                adapter = modePreference(key = "drawerIconSize", read = { it.drawerIconSize }, write = { profile, value -> profile.copy(drawerIconSize = value) }).getAdapter(),
                 step = 0.1f,
                 valueRange = 0.5F..1.5F,
                 showAsPercentage = true,
@@ -318,7 +318,7 @@ fun AppDrawerPreferences(
             ) {
                 SliderPreference(
                     label = stringResource(id = R.string.label_size),
-                    adapter = modePreference("labelSize", { it.labelSize }) { profile, value -> profile.copy(labelSize = value) }.getAdapter(),
+                    adapter = modePreference(key = "labelSize", read = { it.labelSize }, write = { profile, value -> profile.copy(labelSize = value) }).getAdapter(),
                     step = 0.1F,
                     valueRange = 0.5F..1.5F,
                     showAsPercentage = true,
