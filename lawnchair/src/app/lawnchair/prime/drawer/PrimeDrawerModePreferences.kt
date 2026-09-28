@@ -81,7 +81,7 @@ class PrimeDrawerModePreferences(context: Context) {
             topPadding = legacy2.drawerPaddingTopFactor.firstCached(),
             rememberPosition = legacy2.rememberPosition.firstCached(),
             showScrollbar = legacy2.showScrollbar.firstCached(),
-            hideFolderApps = legacy.primeHideFolderApps.get(),
+            hideFolderApps = legacy.folderApps.get(),
             appDrawerBackgroundColor = legacy2.appDrawerBackgroundColor.firstCached(),
             defaultDrawerTextColor = tabsRepository.getConfiguration().defaultDrawerTextColor,
         )
@@ -128,7 +128,7 @@ class PrimeDrawerModePreferences(context: Context) {
         topPadding = optDouble("topPadding", legacy2.drawerPaddingTopFactor.firstCached().toDouble()).toFloat(),
         rememberPosition = optBoolean("rememberPosition", legacy2.rememberPosition.firstCached()),
         showScrollbar = optBoolean("showScrollbar", legacy2.showScrollbar.firstCached()),
-        hideFolderApps = optBoolean("hideFolderApps", legacy.primeHideFolderApps.get()),
+        hideFolderApps = optBoolean("hideFolderApps", legacy.folderApps.get()),
         appDrawerBackgroundColor = ColorOption.fromString(optString("appDrawerBackgroundColor", legacy2.appDrawerBackgroundColor.firstCached().toString())),
         defaultDrawerTextColor = if (has("defaultDrawerTextColor") && !isNull("defaultDrawerTextColor")) getInt("defaultDrawerTextColor") else tabsRepository.getConfiguration().defaultDrawerTextColor
     )
