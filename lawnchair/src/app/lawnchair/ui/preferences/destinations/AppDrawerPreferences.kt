@@ -97,6 +97,7 @@ fun AppDrawerPreferences(
         }
         val modePreferences = PrimeDrawerModePreferences(context)
         val modeProfile = modePreferences.get(activeDrawerMode)
+        @Composable
         fun <T> modeAdapter(value: T, update: (app.lawnchair.prime.drawer.PrimeDrawerModeProfile, T) -> app.lawnchair.prime.drawer.PrimeDrawerModeProfile) =
             customPreferenceAdapter(value) { newValue ->
                 modePreferences.update(activeDrawerMode) { profile -> update(profile, newValue) }
