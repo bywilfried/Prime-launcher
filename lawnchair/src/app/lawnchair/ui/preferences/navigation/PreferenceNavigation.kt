@@ -303,6 +303,9 @@ fun PreferenceNavigation(
                                 else -> o
                             },
                         )
+                        if (route.shapeKey == "folderChildIcon") {
+                            PrimeFolderLongPressHelper.refreshDrawerTabFolderVisualOverrides(route.tabId)
+                        }
                     } else {
                         val currentFolder = currentTab.folders.firstOrNull { it.id == route.folderId } ?: return@PrimeShapeSelection
                         val o = currentFolder.visualOverrides
@@ -315,6 +318,12 @@ fun PreferenceNavigation(
                                 else -> o
                             },
                         )
+                        if (route.shapeKey == "folderChildIcon") {
+                            PrimeFolderLongPressHelper.refreshDrawerFolderVisualOverrides(
+                                route.tabId,
+                                route.folderId,
+                            )
+                        }
                     }
                 },
             )
