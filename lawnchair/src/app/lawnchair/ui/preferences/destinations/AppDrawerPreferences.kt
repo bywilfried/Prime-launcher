@@ -33,6 +33,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -40,6 +42,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.lawnchair.preferences.PreferenceAdapter
+import app.lawnchair.preferences.PrefEntry
 import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences.preferenceManager
 import app.lawnchair.preferences2.preferenceManager2
@@ -97,12 +100,30 @@ fun AppDrawerPreferences(
         val modePreferences = PrimeDrawerModePreferences(context)
         val drawerGridOption = InvariantDeviceProfile.INSTANCE.get(context).closestProfile
         val modeProfile = modePreferences.get(drawerGridOption, activeDrawerMode)
+        val nativeDrawerOpacity = prefs.drawerOpacity.getAdapter()
+        val nativeRowHeight = prefs2.drawerCellHeightFactor.getAdapter()
+        val nativeHorizontalMargin = prefs2.drawerLeftRightMarginFactor.getAdapter()
+        val nativeTopPadding = prefs2.drawerPaddingTopFactor.getAdapter()
+        val nativeTwoLineLabels = prefs2.twoLineAllApps.getAdapter()
+        val nativeHideFolderApps = prefs.primeHideFolderApps.getAdapter()
+        val nativeRememberPosition = prefs2.rememberPosition.getAdapter()
+        val nativeShowScrollbar = prefs2.showScrollbar.getAdapter()
         fun <T> modePreference(
             key: String,
             read: (app.lawnchair.prime.drawer.PrimeDrawerModeProfile) -> T,
             write: (app.lawnchair.prime.drawer.PrimeDrawerModeProfile, T) -> app.lawnchair.prime.drawer.PrimeDrawerModeProfile,
             invalidate: (T) -> Unit = { ReloadHelper(context).reloadGrid() },
         ) = modePreferences.preference(drawerGridOption, activeDrawerMode, key, read, write, invalidate)
+        LaunchedEffect(activeDrawerMode) {
+            if (nativeDrawerOpacity.state.value != modeProfile.drawerOpacity) nativeDrawerOpacity.onChange(modeProfile.drawerOpacity)
+            if (nativeRowHeight.state.value != modeProfile.rowHeight) nativeRowHeight.onChange(modeProfile.rowHeight)
+            if (nativeHorizontalMargin.state.value != modeProfile.horizontalMargin) nativeHorizontalMargin.onChange(modeProfile.horizontalMargin)
+            if (nativeTopPadding.state.value != modeProfile.topPadding) nativeTopPadding.onChange(modeProfile.topPadding)
+            if (nativeTwoLineLabels.state.value != modeProfile.twoLineLabels) nativeTwoLineLabels.onChange(modeProfile.twoLineLabels)
+            if (nativeHideFolderApps.state.value != modeProfile.hideFolderApps) nativeHideFolderApps.onChange(modeProfile.hideFolderApps)
+            if (nativeRememberPosition.state.value != modeProfile.rememberPosition) nativeRememberPosition.onChange(modeProfile.rememberPosition)
+            if (nativeShowScrollbar.state.value != modeProfile.showScrollbar) nativeShowScrollbar.onChange(modeProfile.showScrollbar)
+        }
         Column {
             DrawerLayoutPreference(
                 activeMode = activeDrawerMode,
@@ -212,7 +233,7 @@ fun AppDrawerPreferences(
             )
             SliderPreference(
                 label = stringResource(id = R.string.background_opacity),
-                adapter = modePreference("drawerOpacity", { it.drawerOpacity }, { profile, value -> profile.copy(drawerOpacity = value) }, { ReloadHelper(context).recreate() }).getAdapter(),
+                adapter = modeBackedAdapter(modePreference("drawerOpacity", { it.drawerOpacity }, { profile, value -> profile.copy(drawerOpacity = value) }, { }), nativeDrawerOpacity),
                 step = 0.1f,
                 valueRange = 0F..1F,
                 showAsPercentage = true,
@@ -259,21 +280,21 @@ fun AppDrawerPreferences(
                 )
             }
             SliderPreference(
-                adapter = modePreference("rowHeight", { it.rowHeight }, { profile, value -> profile.copy(rowHeight = value) }).getAdapter(),
+                adapter = modeBackedAdapter(modePreference("rowHeight", { it.rowHeight }, { profile, value -> profile.copy(rowHeight = value) }, { }), nativeRowHeight),
                 label = stringResource(id = R.string.row_height_label),
                 valueRange = 0.3F..1.5F,
                 step = 0.1F,
                 showAsPercentage = true,
             )
             SliderPreference(
-                adapter = modePreference("horizontalMargin", { it.horizontalMargin }, { profile, value -> profile.copy(horizontalMargin = value) }).getAdapter(),
+                adapter = modeBackedAdapter(modePreference("horizontalMargin", { it.horizontalMargin }, { profile, value -> profile.copy(horizontalMargin = value) }, { }), nativeHorizontalMargin),
                 label = stringResource(id = R.string.app_drawer_indent_label),
                 valueRange = 0.0F..1.5F,
                 step = 0.05F,
                 showAsPercentage = true,
             )
             SliderPreference(
-                adapter = modePreference("topPadding", { it.topPadding }, { profile, value -> profile.copy(topPadding = value) }).getAdapter(),
+                adapter = modeBackedAdapter(modePreference("topPadding", { it.topPadding }, { profile, value -> profile.copy(topPadding = value) }, { }), nativeTopPadding),
                 label = stringResource(id = R.string.top_padding_label),
                 valueRange = 1.0F..2.0F,
                 step = 0.05F,
@@ -308,7 +329,7 @@ fun AppDrawerPreferences(
                 visible = showDrawerLabels.state.value,
             ) {
                 SwitchPreference(
-                    adapter = modePreference("twoLineLabels", { it.twoLineLabels }, { profile, value -> profile.copy(twoLineLabels = value) }, { value -> com.android.launcher3.LauncherPrefs.get(context).put(com.android.launcher3.LauncherPrefs.ENABLE_TWOLINE_ALLAPPS_TOGGLE, value) }).getAdapter(),
+                    adapter = modeBackedAdapter(modePreference("twoLineLabels", { it.twoLineLabels }, { profile, value -> profile.copy(twoLineLabels = value) }, { }), nativeTwoLineLabels),
                     label = stringResource(R.string.twoline_label),
                 )
             }
@@ -317,16 +338,16 @@ fun AppDrawerPreferences(
             SwitchPreference(
                 label = stringResource(id = R.string.apps_in_folder_label),
                 description = stringResource(id = R.string.apps_in_folder_description),
-                adapter = modePreference("hideFolderApps", { it.hideFolderApps }, { profile, value -> profile.copy(hideFolderApps = value) }, { ReloadHelper(context).recreate() }).getAdapter(),
+                adapter = modeBackedAdapter(modePreference("hideFolderApps", { it.hideFolderApps }, { profile, value -> profile.copy(hideFolderApps = value) }, { }), nativeHideFolderApps),
             )
             SwitchPreference(
                 label = stringResource(id = R.string.pref_all_apps_remember_position_title),
                 description = stringResource(id = R.string.pref_all_apps_remember_position_description),
-                adapter = modePreference("rememberPosition", { it.rememberPosition }, { profile, value -> profile.copy(rememberPosition = value) }).getAdapter(),
+                adapter = modeBackedAdapter(modePreference("rememberPosition", { it.rememberPosition }, { profile, value -> profile.copy(rememberPosition = value) }, { }), nativeRememberPosition),
             )
             SwitchPreference(
                 label = stringResource(id = R.string.pref_all_apps_show_scrollbar_title),
-                adapter = modePreference("showScrollbar", { it.showScrollbar }, { profile, value -> profile.copy(showScrollbar = value) }, { ReloadHelper(context).recreate() }).getAdapter(),
+                adapter = modeBackedAdapter(modePreference("showScrollbar", { it.showScrollbar }, { profile, value -> profile.copy(showScrollbar = value) }, { }), nativeShowScrollbar),
             )
         }
     }
@@ -428,3 +449,20 @@ private fun DrawerLayoutPreview(mode: PrimeDrawerMode) {
     }
 }
 
+
+@Composable
+private fun <T> modeBackedAdapter(
+    modePreference: PrefEntry<T>,
+    nativeAdapter: PreferenceAdapter<T>,
+): PreferenceAdapter<T> {
+    val modeAdapter = modePreference.getAdapter()
+    return remember(modeAdapter, nativeAdapter) {
+        object : PreferenceAdapter<T> {
+            override val state = modeAdapter.state
+            override fun onChange(newValue: T) {
+                modeAdapter.onChange(newValue)
+                nativeAdapter.onChange(newValue)
+            }
+        }
+    }
+}
