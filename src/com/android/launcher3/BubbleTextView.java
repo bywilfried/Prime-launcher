@@ -117,6 +117,7 @@ import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.WeakHashMap;
 
 import app.lawnchair.preferences2.PreferenceCacheExtensionsKt;
 import app.lawnchair.font.FontManager;
@@ -157,6 +158,38 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     private static final int BOLD_TEXT_ADJUSTMENT = FONT_WEIGHT_BOLD - FONT_WEIGHT_NORMAL;
 
     private static final int[] STATE_PRESSED = new int[]{android.R.attr.state_pressed};
+
+    private static final WeakHashMap<ItemInfoWithIcon, PrimeIconCacheEntry> PRIME_ICON_CACHE =
+            new WeakHashMap<>();
+
+    private static final class PrimeIconCacheEntry {
+        final BitmapInfo sourceBitmap;
+        final String shapeKey;
+        final int iconSize;
+        final boolean useTheme;
+        final BitmapInfo primeBitmap;
+
+        PrimeIconCacheEntry(
+                BitmapInfo sourceBitmap,
+                String shapeKey,
+                int iconSize,
+                boolean useTheme,
+                BitmapInfo primeBitmap) {
+            this.sourceBitmap = sourceBitmap;
+            this.shapeKey = shapeKey;
+            this.iconSize = iconSize;
+            this.useTheme = useTheme;
+            this.primeBitmap = primeBitmap;
+        }
+
+        boolean matches(ItemInfoWithIcon info, String requestedShapeKey, int requestedIconSize,
+                boolean requestedUseTheme) {
+            return sourceBitmap == info.bitmap
+                    && shapeKey.equals(requestedShapeKey)
+                    && iconSize == requestedIconSize
+                    && useTheme == requestedUseTheme;
+        }
+    }
 
     private float mScaleForReorderBounce = 1f;
 
@@ -1670,6 +1703,23 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         }
         final int flags = creationFlags;
 
+        PrimeIconCacheEntry cached;
+        synchronized (PRIME_ICON_CACHE) {
+            cached = PRIME_ICON_CACHE.get(info);
+        }
+        if (cached != null && cached.matches(info, shapeKey, iconSize, useTheme)) {
+            PrimeDebugLog.d("PrimeIconShape", "cache hit shape=" + shapeKey
+                    + " generation=" + generation + " info=" + info);
+            FastBitmapDrawable cachedDrawable = cached.primeBitmap.newIcon(launcher, flags);
+            if (isPrivateSpaceIcon) {
+                cachedDrawable.setAnimationEnabled(false);
+            }
+            mDotParams.appColor = cachedDrawable.getIconColor();
+            setIcon(cachedDrawable);
+            invalidate();
+            return;
+        }
+
         MODEL_EXECUTOR.execute(() -> {
             Pair<AdaptiveIconDrawable, Drawable> fullDrawable = Utilities.getFullDrawable(
                     launcher, info, iconSize, iconSize, useTheme);
@@ -1704,6 +1754,10 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             // and breaks complex shapes such as Meow or Complex Clover.
             PrimeDebugLog.d("PrimeIconShape", "bitmap ready shape=" + shapeKey + " generation="
                     + generation + " info=" + info);
+            synchronized (PRIME_ICON_CACHE) {
+                PRIME_ICON_CACHE.put(info, new PrimeIconCacheEntry(
+                        info.bitmap, shapeKey, iconSize, useTheme, primeBitmap));
+            }
             final FastBitmapDrawable primeDrawable = primeBitmap.newIcon(launcher, flags);
             if (isPrivateSpaceIcon) {
                 primeDrawable.setAnimationEnabled(false);
