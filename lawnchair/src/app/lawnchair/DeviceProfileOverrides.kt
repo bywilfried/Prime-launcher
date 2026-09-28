@@ -4,6 +4,7 @@ import android.content.Context
 import app.lawnchair.preferences.PreferenceManager
 import app.lawnchair.preferences2.PreferenceManager2
 import app.lawnchair.preferences2.firstCached
+import app.lawnchair.prime.drawer.PrimeDrawerModePreferences
 import com.android.launcher3.InvariantDeviceProfile
 import com.android.launcher3.InvariantDeviceProfile.INDEX_DEFAULT
 import com.android.launcher3.InvariantDeviceProfile.INDEX_LANDSCAPE
@@ -65,9 +66,10 @@ class DeviceProfileOverrides @Inject constructor(
         defaultGrid = defaultGrid,
         deviceType = deviceType,
         previewOverrides = previewOverrides ?: PreviewOverrides(),
+        drawerProfile = PrimeDrawerModePreferences(context).get(),
     )
 
-    fun getTextFactors() = TextFactors(preferenceManager2)
+    fun getTextFactors() = TextFactors(preferenceManager2, PrimeDrawerModePreferences(context).get())
     override fun close() {
         TODO("Not yet implemented")
     }
@@ -116,16 +118,17 @@ class DeviceProfileOverrides @Inject constructor(
             defaultGrid: InvariantDeviceProfile.GridOption,
             deviceType: Int,
             previewOverrides: PreviewOverrides,
+            drawerProfile: app.lawnchair.prime.drawer.PrimeDrawerModeProfile,
         ) : this(
-            numAllAppsColumns = prefs2.drawerColumns.firstCached(gridOption = defaultGrid),
+            numAllAppsColumns = drawerProfile.drawerColumns,
             numFolderRows = prefs.folderRows.get(defaultGrid),
             numFolderColumns = prefs2.folderColumns.firstCached(gridOption = defaultGrid),
 
             iconSizeFactor = prefs2.homeIconSizeFactor.firstCached(),
-            allAppsIconSizeFactor = prefs2.drawerIconSizeFactor.firstCached(),
+            allAppsIconSizeFactor = drawerProfile.drawerIconSize,
             allAppsIconTextSizeFactor =
-            if (prefs2.showIconLabelsInDrawer.firstCached()) {
-                prefs2.drawerIconLabelSizeFactor.firstCached()
+            if (drawerProfile.showLabels) {
+                drawerProfile.labelSize
             } else {
                 0f
             },
@@ -148,8 +151,8 @@ class DeviceProfileOverrides @Inject constructor(
                 -1
             },
             foldableDatabaseAllAppsColumns = if (deviceType == InvariantDeviceProfile.TYPE_MULTI_DISPLAY) {
-                val folded = prefs2.drawerColumns.firstCached(gridOption = defaultGrid)
-                val unfolded = prefs2.drawerColumnsUnfolded.firstCached(gridOption = defaultGrid)
+                val folded = drawerProfile.drawerColumns
+                val unfolded = drawerProfile.drawerColumnsUnfolded
                 folded.coerceAtLeast(unfolded)
             } else {
                 -1
@@ -205,13 +208,14 @@ class DeviceProfileOverrides @Inject constructor(
     ) {
         constructor(
             prefs2: PreferenceManager2,
+            drawerProfile: app.lawnchair.prime.drawer.PrimeDrawerModeProfile,
         ) : this(
             enableIconText = prefs2.showIconLabelsOnHomeScreen.firstCached(),
             iconTextSizeFactor = prefs2.homeIconLabelSizeFactor.firstCached(),
             enableIconTextFolder = prefs2.showIconLabelsOnHomeScreenFolder.firstCached(),
             iconFolderTextSizeFactor = prefs2.homeIconLabelFolderSizeFactor.firstCached(),
-            enableAllAppsIconText = prefs2.showIconLabelsInDrawer.firstCached(),
-            allAppsIconTextSizeFactor = prefs2.drawerIconLabelSizeFactor.firstCached(),
+            enableAllAppsIconText = drawerProfile.showLabels,
+            allAppsIconTextSizeFactor = drawerProfile.labelSize,
         )
 
         constructor(
