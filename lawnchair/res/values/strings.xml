@@ -1101,6 +1101,9 @@
     <string name="prime_show_empty_folders">Show empty folders</string>
     <string name="prime_show_empty_folders_description">Display empty folders in the app drawer when using the Tabs layout</string>
 
+    <string name="prime_diagnostic_logs">Prime diagnostic logs</string>
+    <string name="prime_diagnostic_logs_description">View icon shape diagnostics captured during this launcher session</string>
+    <string name="prime_diagnostic_logs_clear">Clear logs</string>
     <string name="prime_haptic_tuning">Haptic tuning</string>
     <string name="prime_haptic_tuning_description">Adjust haptic feedback for individual launcher interactions</string>
     <string name="prime_haptic_workspace">Workspace</string>
