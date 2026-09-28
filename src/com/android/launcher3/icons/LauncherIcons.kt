@@ -18,6 +18,7 @@ package com.android.launcher3.icons
 import android.content.Context
 import android.graphics.Path
 import android.graphics.Rect
+import android.graphics.RectF
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.os.UserHandle
 import com.android.launcher3.Flags
@@ -33,6 +34,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import java.util.concurrent.ConcurrentLinkedQueue
 import javax.inject.Inject
+import app.lawnchair.icons.shape.IconShape
 
 /**
  * Wrapper class to provide access to [BaseIconFactory] and also to provide pool of this class that
@@ -47,6 +49,8 @@ internal constructor(
     private var userCache: UserCache,
     @Assisted private val pool: ConcurrentLinkedQueue<LauncherIcons>,
 ) : BaseIconFactory(context, idp.fillResIconDpi, idp.iconBitmapSize), AutoCloseable {
+
+    private var primeIconShape: IconShape? = null
 
     init {
         mThemeController = themeManager.themeController
@@ -63,8 +67,29 @@ internal constructor(
     }
 
     override fun getShapePath(drawable: AdaptiveIconDrawable, iconBounds: Rect): Path {
+        primeIconShape?.let { shape ->
+            return Path(shape.getMaskPath()).apply {
+                val matrix = android.graphics.Matrix()
+                matrix.setRectToRect(
+                    RectF(0f, 0f, 100f, 100f),
+                    RectF(iconBounds),
+                    android.graphics.Matrix.ScaleToFit.FILL,
+                )
+                transform(matrix)
+            }
+        }
         if (!Flags.enableLauncherIconShapes()) return super.getShapePath(drawable, iconBounds)
         return themeManager.iconShape.getPath(iconBounds)
+    }
+
+    /** Runs icon creation with a view-local Prime mask without changing the global theme shape. */
+    fun <T> withPrimeIconShape(shape: IconShape, block: LauncherIcons.() -> T): T {
+        primeIconShape = shape
+        return try {
+            block()
+        } finally {
+            primeIconShape = null
+        }
     }
 
     override fun close() {
