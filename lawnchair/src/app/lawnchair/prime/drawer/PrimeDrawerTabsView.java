@@ -188,13 +188,9 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
     }
 
     private void updateStickyBackground(PrimeDrawerTabsConfiguration configuration) {
-        int backgroundColor = Themes.getAttrColor(getContext(), android.R.attr.colorBackground);
-        if (mHeaderParent != null
-                && mHeaderParent.getParent() instanceof ActivityAllAppsContainerView) {
-            backgroundColor = ((ActivityAllAppsContainerView<?>) mHeaderParent.getParent())
-                    .getPrimeDrawerOpaqueBackgroundColor();
-        }
-        setBackgroundColor(backgroundColor);
+        // The tab row must not paint another drawer background layer. Keeping it transparent
+        // lets the active drawer background show through without darkening or covering items.
+        setBackgroundColor(Color.TRANSPARENT);
     }
 
     private void selectTab(FloatingHeaderView parent, String tabId, int direction) {
