@@ -583,9 +583,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         if (mSkipUserBadge) {
             flags |= FLAG_SKIP_USER_BADGE;
         }
-        FastBitmapDrawable iconDrawable = mPrimeIconShape != null
-                ? info.newIcon(getContext(), flags, mPrimeIconShape.getMaskPath())
-                : info.newIcon(getContext(), flags);
+        FastBitmapDrawable iconDrawable = info.newIcon(getContext(), flags);
         mDotParams.appColor = iconDrawable.getIconColor();
         mDotParams.dotColor = Themes.getAttrColor(getContext(), R.attr.notificationDotColor);
         if (isPrivateSpaceIcon) {
@@ -1508,8 +1506,11 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         }
         icon.setBounds(0, 0, mIconSize, mIconSize);
 
-        icon.setBounds(0, 0, mIconSize, mIconSize);
-        updateIcon(icon);
+        Drawable displayedIcon = mPrimeIconShape != null
+                ? new PrimeMaskedDrawable(icon, mPrimeIconShape)
+                : icon;
+        displayedIcon.setBounds(0, 0, mIconSize, mIconSize);
+        updateIcon(displayedIcon);
 
         // If the current icon is a placeholder color, animate its update.
         if (mIcon != null
@@ -1619,11 +1620,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     /** Prime: applies a view-local mask by wrapping only the compound drawable. */
     public void setPrimeIconShape(@Nullable IconShape shape) {
         mPrimeIconShape = shape;
-        if (getTag() instanceof ItemInfoWithIcon info) {
-            setNonPendingIcon(info);
-        } else {
-            applyCompoundDrawables(getIconOrTransparentColor());
-        }
+        applyCompoundDrawables(getIconOrTransparentColor());
         invalidate();
     }
 
