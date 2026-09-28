@@ -304,8 +304,8 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
                                 || (privateProfileManager != null
                                         && privateProfileManager.isPrivateSpaceItem(adapterItem)));
                 icon.setSkipUserBadge(skipUserBadge);
-                // Resolve Prime shape before binding the normal icon so a cached Prime drawable
-                // can be displayed on the first frame instead of flashing Lawnchair's shape.
+                // Set the effective Prime shape before binding so the normal icon is drawn
+                // directly with the correct view-local mask on its first frame.
                 applyPrimeTabIconShape(icon);
                 icon.applyFromApplicationInfo(adapterItem.itemInfo);
                 applyPrimeTabIconOverrides(icon);
@@ -427,13 +427,16 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
     }
 
     private void applyPrimeTabIconShape(BubbleTextView icon) {
-        if (!PreferenceManager.getInstance(mActivityContext).getDrawerTabsEnabled().get()) return;
-        PrimeDrawerVisualOverrides overrides =
-                new PrimeDrawerTabsRepository(mActivityContext).getSelectedTabVisualOverrides();
-        if (overrides != null && overrides.getDrawerIconShape() != null) {
-            icon.setPrimeIconShapeForNextBind(IconShape.Companion.fromString(
-                    overrides.getDrawerIconShape(), icon.getContext()));
+        IconShape shape = null;
+        if (PreferenceManager.getInstance(mActivityContext).getDrawerTabsEnabled().get()) {
+            PrimeDrawerVisualOverrides overrides =
+                    new PrimeDrawerTabsRepository(mActivityContext).getSelectedTabVisualOverrides();
+            if (overrides != null && overrides.getDrawerIconShape() != null) {
+                shape = IconShape.Companion.fromString(
+                        overrides.getDrawerIconShape(), icon.getContext());
+            }
         }
+        icon.setPrimeIconShape(shape);
     }
 
     private void applyPrimeTabIconOverrides(BubbleTextView icon) {
