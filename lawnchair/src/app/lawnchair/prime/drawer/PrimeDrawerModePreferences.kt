@@ -10,7 +10,6 @@ import app.lawnchair.preferences2.ReloadHelper
 import app.lawnchair.preferences2.firstCached
 import com.android.launcher3.InvariantDeviceProfile
 import com.android.launcher3.LauncherPrefs
-import com.android.launcher3.LauncherPrefs.Companion.ENABLE_TWOLINE_ALLAPPS_TOGGLE
 import org.json.JSONObject
 
 /**
@@ -56,13 +55,13 @@ class PrimeDrawerModePreferences(context: Context) {
         key: String,
         read: (PrimeDrawerModeProfile) -> T,
         write: (PrimeDrawerModeProfile, T) -> PrimeDrawerModeProfile,
-        invalidate: () -> Unit = { ReloadHelper(context).reloadGrid() },
+        invalidate: (T) -> Unit = { ReloadHelper(context).reloadGrid() },
     ): PrefEntry<T> = CallbackPrefEntry(
         key = "$PREF_MODE_PROFILES/${mode.storageKey}/$key",
         defaultValue = read(legacyProfile(gridOption)),
         getter = { read(get(gridOption, mode)) },
         setter = { newValue ->
-            update(gridOption, mode, { profile -> write(profile, newValue) }, invalidate)
+            update(gridOption, mode, { profile -> write(profile, newValue) }, { invalidate(newValue) })
         },
     )
 
