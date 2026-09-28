@@ -1672,8 +1672,10 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                 primeBitmap = launcherIcons.createPrimeIconBitmap(
                         fullDrawable.first, info.user, shape);
             }
-            final FastBitmapDrawable primeDrawable = primeBitmap.newIcon(
-                    launcher, flags, shape.getMaskPath());
+            // The Prime bitmap is already rasterized with the selected shape. Do not pass a
+            // second mask here: doing so intersects the Prime silhouette with another icon mask
+            // and breaks complex shapes such as Meow or Complex Clover.
+            final FastBitmapDrawable primeDrawable = primeBitmap.newIcon(launcher, flags);
             if (isPrivateSpaceIcon) {
                 primeDrawable.setAnimationEnabled(false);
             }
