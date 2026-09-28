@@ -571,10 +571,43 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     public void applyIconAndLabel(ItemInfoWithIcon info) {
         FastBitmapDrawable oldIcon = mIcon;
         if (!canReuseIcon(info)) {
-            setNonPendingIcon(info);
+            if (!applyCachedPrimeIcon(info)) {
+                setNonPendingIcon(info);
+            }
         }
         applyLabel(info);
         maybeApplyProgressLevel(info, oldIcon);
+    }
+
+    private boolean applyCachedPrimeIcon(ItemInfoWithIcon info) {
+        if (mPrimeIconShape == null
+                || (mDisplay != DISPLAY_ALL_APPS && mDisplay != DISPLAY_FOLDER)) {
+            return false;
+        }
+        String shapeKey = mPrimeIconShape.toString();
+        boolean useTheme = shouldUseTheme();
+        PrimeIconCacheEntry cached;
+        synchronized (PRIME_ICON_CACHE) {
+            cached = PRIME_ICON_CACHE.get(info);
+        }
+        if (cached == null || !cached.matches(info, shapeKey, mIconSize, useTheme)) {
+            return false;
+        }
+        ActivityContext activityContext = ActivityContext.lookupContextNoThrow(getContext());
+        if (!(activityContext instanceof Launcher launcher)) {
+            return false;
+        }
+        int flags = useTheme ? FLAG_THEMED : 0;
+        if (mHideBadge || mDisplay == DISPLAY_SEARCH_RESULT_SMALL) flags |= FLAG_NO_BADGE;
+        if (mSkipUserBadge) flags |= FLAG_SKIP_USER_BADGE;
+        FastBitmapDrawable drawable = cached.primeBitmap.newIcon(launcher, flags);
+        if (Objects.equals(info.getTargetPackage(), PRIVATE_SPACE_PACKAGE)) {
+            drawable.setAnimationEnabled(false);
+        }
+        PrimeDebugLog.d("PrimeIconShape", "bind cache hit shape=" + shapeKey + " info=" + info);
+        mDotParams.appColor = drawable.getIconColor();
+        setIcon(drawable);
+        return true;
     }
 
     /**
@@ -1664,6 +1697,11 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     }
 
 
+
+    /** Prime: remembers the effective shape before an item is rebound. */
+    public void setPrimeIconShapeForNextBind(@Nullable IconShape shape) {
+        mPrimeIconShape = shape;
+    }
 
     /** Prime: applies a view-local mask by wrapping only the compound drawable. */
     public void setPrimeIconShape(@Nullable IconShape shape) {
