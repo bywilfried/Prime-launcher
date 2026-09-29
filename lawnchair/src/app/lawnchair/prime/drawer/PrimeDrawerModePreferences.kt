@@ -51,6 +51,21 @@ class PrimeDrawerModePreferences(context: Context) {
     fun hasStoredProfile(mode: PrimeDrawerMode): Boolean =
         readRoot().has(mode.storageKey)
 
+    fun reset(
+        gridOption: InvariantDeviceProfile.GridOption,
+        mode: PrimeDrawerMode,
+    ): PrimeDrawerModeProfile {
+        val profile = legacyProfile(gridOption).copy(
+            defaultDrawerTextColor = null,
+            defaultTabsColor = null,
+            workProfileTabsColor = null,
+        )
+        val root = readRoot()
+        root.put(mode.storageKey, profile.toJson())
+        prefs.edit { putString(PREF_MODE_PROFILES, root.toString()) }
+        return profile
+    }
+
     fun <T> preference(
         gridOption: InvariantDeviceProfile.GridOption,
         mode: PrimeDrawerMode,
