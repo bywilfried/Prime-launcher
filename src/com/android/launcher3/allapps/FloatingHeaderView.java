@@ -26,7 +26,6 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewParent;
 import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
@@ -370,38 +369,9 @@ public class FloatingHeaderView extends LinearLayout implements
             for (FloatingHeaderRow row : mAllRows) {
                 if (row instanceof PrimeDrawerTabsView && row.hasVisibleContent()) {
                     View primeTabsView = (View) row;
-                    ViewParent recyclerParent = mCurrentRV.getParent();
-                    if (!(recyclerParent instanceof ViewGroup)) {
-                        PrimeDebugLog.d(
-                                "PrimeTabsClip",
-                                "Skipping clip: recycler parent is not ready");
-                        break;
-                    }
-                    int headerToRecyclerY = getTop()
-                            - mCurrentRV.getTop()
-                            - ((ViewGroup) recyclerParent).getTop();
-                    int renderedTabBottom = primeTabsView.getTop()
-                            + Math.round(primeTabsView.getTranslationY())
-                            + primeTabsView.getHeight();
                     recyclerClipTop = Math.max(
                             recyclerClipTop,
-                            headerToRecyclerY + renderedTabBottom);
-                    PrimeDebugLog.d(
-                            "PrimeTabsClip",
-                            "headerTop=" + getTop()
-                                    + " headerY=" + getY()
-                                    + " headerTranslationY=" + getTranslationY()
-                                    + " rvTop=" + mCurrentRV.getTop()
-                                    + " rvY=" + mCurrentRV.getY()
-                                    + " rvParentTop=" + ((ViewGroup) recyclerParent).getTop()
-                                    + " tabY=" + primeTabsView.getY()
-                                    + " tabTop=" + primeTabsView.getTop()
-                                    + " tabTranslationY=" + primeTabsView.getTranslationY()
-                                    + " tabHeight=" + primeTabsView.getHeight()
-                                    + " renderedTabBottom=" + renderedTabBottom
-                                    + " headerToRvY=" + headerToRecyclerY
-                                    + " clipTop=" + recyclerClipTop
-                                    + " scroll=" + uncappedTranslationY);
+                            Math.round(primeTabsView.getY() + primeTabsView.getHeight()));
                     break;
                 }
             }
