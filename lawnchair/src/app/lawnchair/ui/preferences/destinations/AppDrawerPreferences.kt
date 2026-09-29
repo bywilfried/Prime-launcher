@@ -35,6 +35,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -86,6 +87,7 @@ fun AppDrawerPreferences(
     val context = LocalContext.current
     val resources = context.resources
     val isFoldable = InvariantDeviceProfile.deviceType == InvariantDeviceProfile.TYPE_MULTI_DISPLAY
+    var resetRevision = remember { mutableIntStateOf(0) }
 
     PreferenceLayout(
         label = stringResource(id = R.string.app_drawer_label),
@@ -101,6 +103,7 @@ fun AppDrawerPreferences(
         }
         val modePreferences = PrimeDrawerModePreferences(context)
         val drawerGridOption = InvariantDeviceProfile.INSTANCE.get(context).closestProfile
+        resetRevision.intValue
         val modeProfile = modePreferences.get(drawerGridOption, activeDrawerMode)
         val nativeDrawerOpacity = prefs.drawerOpacity.getAdapter()
         val nativeDrawerColumns = prefs2.drawerColumns.getAdapter()
@@ -156,6 +159,7 @@ fun AppDrawerPreferences(
                 onModeChange = { mode ->
                     drawerTabsAdapter.onChange(mode == PrimeDrawerMode.TABS)
                     drawerListAdapter.onChange(mode != PrimeDrawerMode.CADDY)
+                    resetRevision.intValue++
                     ReloadHelper(context).reloadGrid()
                 },
             )
