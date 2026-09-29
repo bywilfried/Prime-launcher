@@ -28,9 +28,14 @@ import app.lawnchair.predictions.NoPredictor
 import app.lawnchair.predictions.PredictionMode
 import app.lawnchair.predictions.SystemPredictor
 import app.lawnchair.preferences.PreferenceAdapter
+import app.lawnchair.preferences.PrefEntry
+import app.lawnchair.preferences.PreferenceAdapter
 import app.lawnchair.preferences.getAdapter
+import app.lawnchair.preferences.preferenceManager
 import app.lawnchair.preferences2.PreferenceManager2
 import app.lawnchair.preferences2.preferenceManager2
+import app.lawnchair.prime.drawer.PrimeDrawerMode
+import app.lawnchair.prime.drawer.PrimeDrawerModePreferences
 import app.lawnchair.ui.preferences.LocalIsExpandedScreen
 import app.lawnchair.ui.preferences.components.NavigationActionPreference
 import app.lawnchair.ui.preferences.components.PermissionDialog
@@ -43,6 +48,7 @@ import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
 import app.lawnchair.ui.preferences.navigation.DismissedPredictionApps
 import app.lawnchair.util.lifecycleState
+import com.android.launcher3.InvariantDeviceProfile
 import com.android.launcher3.R
 import com.android.launcher3.Utilities
 
@@ -56,14 +62,56 @@ fun PredictionsPreferences(
         modifier = modifier,
     ) {
         val context = LocalContext.current
+        val prefs = preferenceManager()
         val prefs2 = preferenceManager2()
-        val enableGlobalPredictionAdapter = prefs2.enableGlobalPrediction.getAdapter()
+        val activeDrawerMode = when {
+            prefs.drawerTabsEnabled.get() -> PrimeDrawerMode.TABS
+            prefs.drawerList.get() -> PrimeDrawerMode.DEFAULT
+            else -> PrimeDrawerMode.CADDY
+        }
+        val modePreferences = remember(context) { PrimeDrawerModePreferences(context) }
+        val gridOption = InvariantDeviceProfile.INSTANCE.get(context).closestProfile
+        val profile = modePreferences.get(gridOption, activeDrawerMode)
+
+        fun <T> modePreference(
+            key: String,
+            read: (app.lawnchair.prime.drawer.PrimeDrawerModeProfile) -> T,
+            write: (app.lawnchair.prime.drawer.PrimeDrawerModeProfile, T) -> app.lawnchair.prime.drawer.PrimeDrawerModeProfile,
+        ) = modePreferences.preference(gridOption, activeDrawerMode, key, read, write, {})
+
+        val nativeEnabled = prefs2.enableGlobalPrediction.getAdapter()
+        val nativeMode = prefs2.predictionMode.getAdapter()
+        val nativeWeighted = prefs2.lawnchairPredictorUseWeightedUsageStats.getAdapter()
+
+        LaunchedEffect(activeDrawerMode) {
+            if (nativeEnabled.state.value != profile.predictionsEnabled) nativeEnabled.onChange(profile.predictionsEnabled)
+            val storedMode = PredictionMode.fromString(profile.predictionMode)
+            if (nativeMode.state.value != storedMode) nativeMode.onChange(storedMode)
+            if (nativeWeighted.state.value != profile.predictionUseWeightedUsageStats) {
+                nativeWeighted.onChange(profile.predictionUseWeightedUsageStats)
+            }
+        }
+
+        val enabledAdapter = predictionModeBackedAdapter(
+            modePreference("predictionsEnabled", { it.predictionsEnabled }, { p, value -> p.copy(predictionsEnabled = value) }),
+            nativeEnabled,
+        )
+        val predictionModeAdapter = predictionModeBackedAdapter(
+            modePreference("predictionMode", { it.predictionMode }, { p, value -> p.copy(predictionMode = value) }),
+            nativeMode,
+            readNative = { PredictionMode.fromString(it) },
+            writeMode = { it.toString() },
+        )
+        val weightedAdapter = predictionModeBackedAdapter(
+            modePreference("predictionUseWeightedUsageStats", { it.predictionUseWeightedUsageStats }, { p, value -> p.copy(predictionUseWeightedUsageStats = value) }),
+            nativeWeighted,
+        )
 
         MainSwitchPreference(
-            adapter = enableGlobalPredictionAdapter,
+            adapter = enabledAdapter,
             label = stringResource(R.string.global_predictions_label),
         ) {
-            AppPredictionsFeature(context, prefs2)
+            AppPredictionsFeature(context, prefs2, predictionModeAdapter, weightedAdapter)
         }
     }
 }
@@ -72,6 +120,8 @@ fun PredictionsPreferences(
 private fun AppPredictionsFeature(
     context: Context,
     prefs2: PreferenceManager2,
+    predictionModeAdapter: PreferenceAdapter<PredictionMode>,
+    weightedUsageStatsAdapter: PreferenceAdapter<Boolean>,
 ) {
     val resources = LocalResources.current
     val appOps = remember { context.getSystemService(AppOpsManager::class.java) }
@@ -91,8 +141,6 @@ private fun AppPredictionsFeature(
         }
     }
 
-    val predictionModeAdapter = prefs2.predictionMode.getAdapter()
-    val weightedUsageStatsAdapter = prefs2.lawnchairPredictorUseWeightedUsageStats.getAdapter()
     val predictionModeEntries = rememberPredictionModeEntries(context)
     val dismissedPredictionAppsCount = rememberDismissedPredictionAppsCount(context)
     val dismissedPredictionAppsSubtitle = resources.getQuantityString(
@@ -225,5 +273,42 @@ fun SystemSuggestionsPreference() {
                 context.startActivity(intent)
             },
         )
+    }
+}
+
+
+@Composable
+private fun <T> predictionModeBackedAdapter(
+    modePreference: PrefEntry<T>,
+    nativeAdapter: PreferenceAdapter<T>,
+): PreferenceAdapter<T> {
+    val modeAdapter = androidx.compose.runtime.key(modePreference.key) { modePreference.getAdapter() }
+    return remember(modePreference.key, modeAdapter, nativeAdapter) {
+        object : PreferenceAdapter<T> {
+            override val state = modeAdapter.state
+            override fun onChange(newValue: T) {
+                modeAdapter.onChange(newValue)
+                nativeAdapter.onChange(newValue)
+            }
+        }
+    }
+}
+
+@Composable
+private fun <M, N> predictionModeBackedAdapter(
+    modePreference: PrefEntry<M>,
+    nativeAdapter: PreferenceAdapter<N>,
+    readNative: (M) -> N,
+    writeMode: (N) -> M,
+): PreferenceAdapter<N> {
+    val modeAdapter = androidx.compose.runtime.key(modePreference.key) { modePreference.getAdapter() }
+    return remember(modePreference.key, modeAdapter, nativeAdapter) {
+        object : PreferenceAdapter<N> {
+            override val state = androidx.compose.runtime.derivedStateOf { readNative(modeAdapter.state.value) }
+            override fun onChange(newValue: N) {
+                modeAdapter.onChange(writeMode(newValue))
+                nativeAdapter.onChange(newValue)
+            }
+        }
     }
 }
