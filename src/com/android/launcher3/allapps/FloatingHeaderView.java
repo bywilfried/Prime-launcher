@@ -372,10 +372,12 @@ public class FloatingHeaderView extends LinearLayout implements
                     int headerToRecyclerY = getTop()
                             - mCurrentRV.getTop()
                             - ((ViewGroup) mCurrentRV.getParent()).getTop();
+                    int renderedTabBottom = primeTabsView.getTop()
+                            + Math.round(primeTabsView.getTranslationY())
+                            + primeTabsView.getHeight();
                     recyclerClipTop = Math.max(
                             recyclerClipTop,
-                            headerToRecyclerY
-                                    + Math.round(primeTabsView.getY() + primeTabsView.getHeight()));
+                            headerToRecyclerY + renderedTabBottom);
                     PrimeDebugLog.log(
                             "PrimeTabsClip",
                             "headerTop=" + getTop()
@@ -388,6 +390,7 @@ public class FloatingHeaderView extends LinearLayout implements
                                     + " tabTop=" + primeTabsView.getTop()
                                     + " tabTranslationY=" + primeTabsView.getTranslationY()
                                     + " tabHeight=" + primeTabsView.getHeight()
+                                    + " renderedTabBottom=" + renderedTabBottom
                                     + " headerToRvY=" + headerToRecyclerY
                                     + " clipTop=" + recyclerClipTop
                                     + " scroll=" + uncappedTranslationY);
