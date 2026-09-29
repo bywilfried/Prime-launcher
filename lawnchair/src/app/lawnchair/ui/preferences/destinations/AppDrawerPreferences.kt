@@ -117,6 +117,9 @@ fun AppDrawerPreferences(
         val nativeHideFolderApps = prefs.folderApps.getAdapter()
         val nativeRememberPosition = prefs2.rememberPosition.getAdapter()
         val nativeShowScrollbar = prefs2.showScrollbar.getAdapter()
+        val nativePredictionsEnabled = prefs2.enableGlobalPrediction.getAdapter()
+        val nativePredictionMode = prefs2.predictionMode.getAdapter()
+        val nativePredictionWeightedUsage = prefs2.lawnchairPredictorUseWeightedUsageStats.getAdapter()
         fun <T> modePreference(
             key: String,
             read: (app.lawnchair.prime.drawer.PrimeDrawerModeProfile) -> T,
@@ -142,6 +145,10 @@ fun AppDrawerPreferences(
             if (nativeHideFolderApps.state.value != modeProfile.hideFolderApps) nativeHideFolderApps.onChange(modeProfile.hideFolderApps)
             if (nativeRememberPosition.state.value != modeProfile.rememberPosition) nativeRememberPosition.onChange(modeProfile.rememberPosition)
             if (nativeShowScrollbar.state.value != modeProfile.showScrollbar) nativeShowScrollbar.onChange(modeProfile.showScrollbar)
+            if (nativePredictionsEnabled.state.value != modeProfile.predictionsEnabled) nativePredictionsEnabled.onChange(modeProfile.predictionsEnabled)
+            val profilePredictionMode = app.lawnchair.predictions.PredictionMode.fromString(modeProfile.predictionMode)
+            if (nativePredictionMode.state.value != profilePredictionMode) nativePredictionMode.onChange(profilePredictionMode)
+            if (nativePredictionWeightedUsage.state.value != modeProfile.predictionUseWeightedUsageStats) nativePredictionWeightedUsage.onChange(modeProfile.predictionUseWeightedUsageStats)
         }
         Column {
             DrawerLayoutPreference(
@@ -409,6 +416,9 @@ fun AppDrawerPreferences(
                     nativeHideFolderApps.onChange(resetProfile.hideFolderApps)
                     nativeRememberPosition.onChange(resetProfile.rememberPosition)
                     nativeShowScrollbar.onChange(resetProfile.showScrollbar)
+                    nativePredictionsEnabled.onChange(resetProfile.predictionsEnabled)
+                    nativePredictionMode.onChange(app.lawnchair.predictions.PredictionMode.fromString(resetProfile.predictionMode))
+                    nativePredictionWeightedUsage.onChange(resetProfile.predictionUseWeightedUsageStats)
                     ReloadHelper(context).reloadGrid()
                 },
             )
