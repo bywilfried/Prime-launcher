@@ -33,7 +33,14 @@ class PrimeDrawerModePreferences(context: Context) {
     ): PrimeDrawerModeProfile {
         val root = readRoot()
         val stored = root.optJSONObject(mode.storageKey)
-        if (stored != null) return stored.toProfile(gridOption)
+        if (stored != null) {
+            val profile = stored.toProfile(gridOption)
+            return if (stored.has("predictionsEnabled")) {
+                profile
+            } else {
+                profile.copy(predictionsEnabled = mode != PrimeDrawerMode.TABS)
+            }
+        }
         return legacyProfile(gridOption).copy(predictionsEnabled = mode != PrimeDrawerMode.TABS)
     }
 
