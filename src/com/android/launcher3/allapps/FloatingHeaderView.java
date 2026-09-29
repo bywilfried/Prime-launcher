@@ -378,7 +378,7 @@ public class FloatingHeaderView extends LinearLayout implements
                     recyclerClipTop = Math.max(
                             recyclerClipTop,
                             headerToRecyclerY + renderedTabBottom);
-                    PrimeDebugLog.log(
+                    PrimeDebugLog.d(
                             "PrimeTabsClip",
                             "headerTop=" + getTop()
                                     + " headerY=" + getY()
