@@ -3,7 +3,6 @@ package app.lawnchair.prime.drawer
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
-import com.android.launcher3.InvariantDeviceProfile
 import com.android.launcher3.LauncherPrefs
 import com.android.launcher3.util.ComponentKey
 import com.android.launcher3.model.data.FolderInfo
@@ -19,11 +18,13 @@ import org.json.JSONObject
 class PrimeDrawerTabsRepository(context: Context) {
     private val prefs = LauncherPrefs.getPrefs(context)
     private val primePrefs = app.lawnchair.preferences.PreferenceManager.getInstance(context)
-    private val modePreferences = PrimeDrawerModePreferences(context)
-    private val gridOption = InvariantDeviceProfile.INSTANCE.get(context).closestProfile
-
-    private fun tabsModeTextColor(): Int? =
-        modePreferences.get(gridOption, PrimeDrawerMode.TABS).defaultDrawerTextColor
+    private fun tabsModeTextColor(): Int? {
+        val root = runCatching {
+            JSONObject(prefs.getString(PREF_MODE_PROFILES, "{}"))
+        }.getOrElse { JSONObject() }
+        val tabsProfile = root.optJSONObject(PrimeDrawerMode.TABS.storageKey) ?: return null
+        return tabsProfile.optIntOrNull("defaultDrawerTextColor")
+    }
 
     fun getConfiguration(): PrimeDrawerTabsConfiguration =
         decode(prefs.getString(PREF_CONFIGURATION, null))
@@ -573,6 +574,7 @@ class PrimeDrawerTabsRepository(context: Context) {
         const val UNCLASSIFIED_TAB_ID = "system_unclassified"
         const val PREF_CONFIGURATION = "prime_drawer_tabs_configuration"
         private const val PREF_HOME_FOLDER_OVERRIDES = "prime_home_folder_overrides"
+        private const val PREF_MODE_PROFILES = "prime_drawer_mode_profiles_v1"
         private const val CONFIG_VERSION = 1
     }
 }
