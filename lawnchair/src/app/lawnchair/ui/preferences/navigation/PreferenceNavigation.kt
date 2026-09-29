@@ -344,13 +344,14 @@ fun PreferenceNavigation(
             val current = when (route.colorKey) {
                 "text" -> profile.defaultDrawerTextColor?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default
                 "tabs" -> profile.defaultTabsColor?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default
+                "workTabs" -> profile.workProfileTabsColor?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default
                 else -> profile.appDrawerBackgroundColor
             }
             PrimeColorSelection(
                 label = route.label,
                 appliedColor = current,
                 onApply = { option ->
-                    if (route.colorKey == "text" || route.colorKey == "tabs") {
+                    if (route.colorKey == "text" || route.colorKey == "tabs" || route.colorKey == "workTabs") {
                         val resolved = when (option) {
                             ColorOption.Default -> null
                             else -> option.colorPreferenceEntry.lightColor(context)
@@ -359,12 +360,18 @@ fun PreferenceNavigation(
                             gridOption,
                             mode,
                             { currentProfile ->
-                                if (route.colorKey == "tabs") currentProfile.copy(defaultTabsColor = resolved)
-                                else currentProfile.copy(defaultDrawerTextColor = resolved)
+                                when (route.colorKey) {
+                                    "tabs" -> currentProfile.copy(defaultTabsColor = resolved)
+                                    "workTabs" -> currentProfile.copy(workProfileTabsColor = resolved)
+                                    else -> currentProfile.copy(defaultDrawerTextColor = resolved)
+                                }
                             },
                             {},
                         )
-                        if (route.colorKey == "text" && mode == app.lawnchair.prime.drawer.PrimeDrawerMode.TABS) {
+                        if (route.colorKey == "workTabs") {
+                            val nativeOption = resolved?.let { ColorOption.CustomColor(it) } ?: ColorOption.SystemAccent
+                            prefs2.workProfileTabBackgroundColor.getAdapter().onChange(nativeOption)
+                        } else if (route.colorKey == "text" && mode == app.lawnchair.prime.drawer.PrimeDrawerMode.TABS) {
                             repository.setDefaultDrawerColors(textColor = resolved)
                         } else {
                             ReloadHelper(context).reloadGrid()
