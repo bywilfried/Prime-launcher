@@ -228,7 +228,18 @@ fun AppDrawerPreferences(
                 },
             )
             if (drawerTabsAdapter.state.value) {
-                ColorPreference(preference = prefs2.drawerTabsColor)
+                val drawerTabsColorModel = ColorPreferenceModelList.INSTANCE.get(context)[prefs2.drawerTabsColor.key.name]
+                ColorPreference(
+                    label = stringResource(id = drawerTabsColorModel.labelRes),
+                    selectedColor = modeProfile.defaultTabsColor
+                        ?.let { app.lawnchair.theme.color.ColorOption.CustomColor(it) }
+                        ?: app.lawnchair.theme.color.ColorOption.Default,
+                    onClick = {
+                        navController.navigate(
+                            PrimeDrawerDefaultColor(activeDrawerMode.storageKey, "tabs", resources.getString(drawerTabsColorModel.labelRes)),
+                        )
+                    },
+                )
             }
             ColorPreference(
                 label = "Couleur du texte par défaut du drawer",
