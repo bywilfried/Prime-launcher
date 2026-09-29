@@ -209,14 +209,15 @@ fun PreferenceNavigation(
         }
         composable<PrimeHomeFolderAdvanced> { backStackEntry ->
             val route: PrimeHomeFolderAdvanced = backStackEntry.toRoute()
-            PrimeHomeFolderAdvancedPreference(route.folderId)
+            PrimeHomeFolderAdvancedPreference(route.folderId, route.drawer)
         }
         composable<PrimeHomeFolderShape> { backStackEntry ->
             val route: PrimeHomeFolderShape = backStackEntry.toRoute()
             val context = LocalContext.current
             val repository = PrimeDrawerTabsRepository(context)
             val prefs2 = preferenceManager2()
-            val stored = repository.getHomeFolderVisualOverrides(route.folderId)
+            val stored = if (route.drawer) repository.getDrawerFolderVisualOverrides(route.folderId)
+                else repository.getHomeFolderVisualOverrides(route.folderId)
             val current = when (route.shapeKey) {
                 "folderChildIcon" -> stored.childIconShape
                 else -> stored.shape
@@ -230,11 +231,20 @@ fun PreferenceNavigation(
                 selectedShape = selected,
                 onSelect = { shape ->
                     selected = shape ?: inherited
-                    val o = repository.getHomeFolderVisualOverrides(route.folderId)
-                    repository.setHomeFolderVisualOverrides(
-                        route.folderId,
-                        if (route.shapeKey == "folderChildIcon") o.copy(childIconShape = shape?.toString()) else o.copy(shape = shape?.toString()),
-                    )
+                    val o = if (route.drawer) repository.getDrawerFolderVisualOverrides(route.folderId)
+                        else repository.getHomeFolderVisualOverrides(route.folderId)
+                    val updated = if (route.shapeKey == "folderChildIcon") {
+                        o.copy(childIconShape = shape?.toString())
+                    } else {
+                        o.copy(shape = shape?.toString())
+                    }
+                    if (route.drawer) {
+                        repository.setDrawerFolderVisualOverrides(route.folderId, updated)
+                        PrimeFolderLongPressHelper.refreshDefaultDrawerFolderVisualOverrides(route.folderId)
+                    } else {
+                        repository.setHomeFolderVisualOverrides(route.folderId, updated)
+                        PrimeFolderLongPressHelper.refreshHomeFolderVisualOverrides(route.folderId)
+                    }
                 },
             )
         }
@@ -255,16 +265,20 @@ fun PreferenceNavigation(
                         ColorOption.Default -> null
                         else -> option.colorPreferenceEntry.lightColor(context)
                     }
-                    val o = repository.getHomeFolderVisualOverrides(route.folderId)
-                    repository.setHomeFolderVisualOverrides(
-                        route.folderId,
-                        when (route.colorKey) {
-                            "folderClosedText" -> o.copy(closedLabelColor = resolved)
-                            "folderText" -> o.copy(textColor = resolved)
-                            else -> o.copy(color = resolved)
-                        },
-                    )
-                    PrimeFolderLongPressHelper.refreshHomeFolderVisualOverrides(route.folderId)
+                    val o = if (route.drawer) repository.getDrawerFolderVisualOverrides(route.folderId)
+                        else repository.getHomeFolderVisualOverrides(route.folderId)
+                    val updated = when (route.colorKey) {
+                        "folderClosedText" -> o.copy(closedLabelColor = resolved)
+                        "folderText" -> o.copy(textColor = resolved)
+                        else -> o.copy(color = resolved)
+                    }
+                    if (route.drawer) {
+                        repository.setDrawerFolderVisualOverrides(route.folderId, updated)
+                        PrimeFolderLongPressHelper.refreshDefaultDrawerFolderVisualOverrides(route.folderId)
+                    } else {
+                        repository.setHomeFolderVisualOverrides(route.folderId, updated)
+                        PrimeFolderLongPressHelper.refreshHomeFolderVisualOverrides(route.folderId)
+                    }
                 },
             )
         }
