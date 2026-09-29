@@ -490,11 +490,14 @@ public final class PrimeFolderLongPressHelper {
     }
 
     public static void copyVisualOverridesToHome(Context context, FolderInfo sourceInfo, FolderInfo homeInfo) {
-        PrimeFolderRef ref = getPrimeRef(sourceInfo);
-        if (ref == null || homeInfo.id < 0) return;
+        if (homeInfo.id < 0) return;
         PrimeDrawerTabsRepository repository = new PrimeDrawerTabsRepository(context);
-        PrimeDrawerFolderVisualOverrides overrides =
-                repository.getResolvedFolderVisualOverrides(ref.tabId, ref.folderId);
+        PrimeFolderRef ref = getPrimeRef(sourceInfo);
+        PrimeDrawerFolderVisualOverrides overrides = ref != null
+                ? repository.getResolvedFolderVisualOverrides(ref.tabId, ref.folderId)
+                : sourceInfo.id >= 0
+                        ? repository.getDrawerFolderVisualOverrides(sourceInfo.id)
+                        : null;
         if (overrides != null) {
             repository.setHomeFolderVisualOverrides(homeInfo.id, overrides);
         }
