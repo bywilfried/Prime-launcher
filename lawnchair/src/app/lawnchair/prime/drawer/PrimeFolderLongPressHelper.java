@@ -47,6 +47,7 @@ public final class PrimeFolderLongPressHelper {
     private static final Map<FolderInfo, PrimeFolderRef> PRIME_FOLDERS = new WeakHashMap<>();
     private static final Map<Integer, WeakReference<FolderIcon>> HOME_FOLDER_ICONS = new java.util.HashMap<>();
     private static final Map<String, WeakReference<FolderIcon>> DRAWER_FOLDER_ICONS = new java.util.HashMap<>();
+    private static final Map<Integer, WeakReference<FolderIcon>> DEFAULT_DRAWER_FOLDER_ICONS = new java.util.HashMap<>();
     private final FolderIcon mIcon;
     private final int mTouchSlop;
     private float mDownX;
@@ -103,6 +104,27 @@ public final class PrimeFolderLongPressHelper {
             WeakReference<FolderIcon> reference = DRAWER_FOLDER_ICONS.get(key);
             icon = reference != null ? reference.get() : null;
             if (icon == null) DRAWER_FOLDER_ICONS.remove(key);
+        }
+        if (icon == null) return;
+        icon.post(() -> {
+            icon.refreshPrimeVisualOverrides();
+            icon.getFolder().applyPrimeVisualOverrides();
+        });
+    }
+
+    public static void registerDefaultDrawerFolderIcon(FolderIcon icon) {
+        if (icon == null || icon.mInfo == null || icon.mInfo.id < 0) return;
+        synchronized (DEFAULT_DRAWER_FOLDER_ICONS) {
+            DEFAULT_DRAWER_FOLDER_ICONS.put(icon.mInfo.id, new WeakReference<>(icon));
+        }
+    }
+
+    public static void refreshDefaultDrawerFolderVisualOverrides(int folderId) {
+        FolderIcon icon;
+        synchronized (DEFAULT_DRAWER_FOLDER_ICONS) {
+            WeakReference<FolderIcon> reference = DEFAULT_DRAWER_FOLDER_ICONS.get(folderId);
+            icon = reference != null ? reference.get() : null;
+            if (icon == null) DEFAULT_DRAWER_FOLDER_ICONS.remove(folderId);
         }
         if (icon == null) return;
         icon.post(() -> {
@@ -235,7 +257,8 @@ public final class PrimeFolderLongPressHelper {
         ActivityContext activity = ActivityContext.lookupContext(mIcon.getContext());
         if (activity == null) return;
         ArrayList<OptionsPopupView.OptionItem> items = new ArrayList<>();
-        items.add(option(mIcon.getContext().getString(R.string.prime_edit_folder), v -> {
+        items.add(option(mIcon.getContext().getString(R.string.prime_edit_folder),
+                mIcon.getContext().getDrawable(android.R.drawable.ic_menu_edit), v -> {
             // A Prime drawer FolderInfo can be the source object of a drag to Workspace and can
             // therefore still carry its drawer ref. The icon's actual location is authoritative:
             // once it lives on Workspace it must be edited as an independent Home folder.
@@ -256,10 +279,9 @@ public final class PrimeFolderLongPressHelper {
         mPopup = OptionsPopupView.show(activity, target, items, false);
     }
 
-    private OptionsPopupView.OptionItem option(String label, View.OnLongClickListener action) {
-        return new OptionsPopupView.OptionItem(
-                label, new ColorDrawable(android.graphics.Color.TRANSPARENT),
-                LauncherEvent.IGNORE, action);
+    private OptionsPopupView.OptionItem option(String label, android.graphics.drawable.Drawable icon,
+            View.OnLongClickListener action) {
+        return new OptionsPopupView.OptionItem(label, icon, LauncherEvent.IGNORE, action);
     }
 
     private void showFolderEditDialog() {
@@ -460,6 +482,9 @@ public final class PrimeFolderLongPressHelper {
         PrimeFolderRef ref = getPrimeRef(info);
         if (ref != null) {
             return repository.getResolvedFolderVisualOverrides(ref.tabId, ref.folderId);
+        }
+        if (info.container == ItemInfo.NO_ID && info.id >= 0) {
+            return repository.getDrawerFolderVisualOverrides(info.id);
         }
         return null;
     }
