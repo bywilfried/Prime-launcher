@@ -341,6 +341,7 @@ fun PreferenceNavigation(
             val profile = modePreferences.get(gridOption, mode)
             val prefs2 = preferenceManager2()
             val nativeDrawerBackgroundColor = prefs2.appDrawerBackgroundColor.getAdapter()
+            val nativeWorkProfileTabsColor = prefs2.workProfileTabBackgroundColor.getAdapter()
             val current = when (route.colorKey) {
                 "text" -> profile.defaultDrawerTextColor?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default
                 "tabs" -> profile.defaultTabsColor?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default
@@ -370,7 +371,7 @@ fun PreferenceNavigation(
                         )
                         if (route.colorKey == "workTabs") {
                             val nativeOption = resolved?.let { ColorOption.CustomColor(it) } ?: ColorOption.SystemAccent
-                            prefs2.workProfileTabBackgroundColor.getAdapter().onChange(nativeOption)
+                            nativeWorkProfileTabsColor.onChange(nativeOption)
                         } else if (route.colorKey == "text" && mode == app.lawnchair.prime.drawer.PrimeDrawerMode.TABS) {
                             repository.setDefaultDrawerColors(textColor = resolved)
                         } else {
