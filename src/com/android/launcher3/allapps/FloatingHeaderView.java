@@ -369,9 +369,18 @@ public class FloatingHeaderView extends LinearLayout implements
             for (FloatingHeaderRow row : mAllRows) {
                 if (row instanceof PrimeDrawerTabsView && row.hasVisibleContent()) {
                     View primeTabsView = (View) row;
-                    recyclerClipTop = Math.max(
-                            recyclerClipTop,
-                            Math.round(primeTabsView.getY() + primeTabsView.getHeight()));
+                    // Clip bounds are expressed in RecyclerView-local coordinates, while the
+                    // Prime tabs row is a child of this header. Measure both views in the same
+                    // window coordinate space, then convert the rendered tabs bottom back into
+                    // RecyclerView-local coordinates. getLocationInWindow() also accounts for
+                    // the counter-translation that keeps Prime tabs pinned while scrolling.
+                    int[] primeTabsLocation = new int[2];
+                    int[] recyclerLocation = new int[2];
+                    primeTabsView.getLocationInWindow(primeTabsLocation);
+                    mCurrentRV.getLocationInWindow(recyclerLocation);
+                    int primeTabsBottomInRecycler =
+                            primeTabsLocation[1] + primeTabsView.getHeight() - recyclerLocation[1];
+                    recyclerClipTop = Math.max(recyclerClipTop, primeTabsBottomInRecycler);
                     break;
                 }
             }
