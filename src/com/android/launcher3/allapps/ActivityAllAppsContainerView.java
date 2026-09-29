@@ -1357,7 +1357,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         }
     }
 
-    public void setPrimeDrawerSwipeListener(Consumer<Boolean> onSwipe) {
+    public void setPrimeDrawerSwipeListener(Predicate<Boolean> onSwipe) {
         if (mPrimeDrawerSwipeListener != null) {
             for (int type : new int[]{AdapterHolder.MAIN, AdapterHolder.WORK}) {
                 AllAppsRecyclerView rv = mAH.get(type).mRecyclerView;
@@ -1405,17 +1405,44 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 AllAppsRecyclerView rv = (AllAppsRecyclerView) recycler;
                 if (!horizontalSwipe || !validAppAreaGesture) return;
 
-                if (e.getActionMasked() == MotionEvent.ACTION_UP) {
+                if (e.getActionMasked() == MotionEvent.ACTION_MOVE) {
+                    float dx = e.getX() - downX;
+                    // Keep the app content attached to the finger. Header rows live outside this
+                    // RecyclerView, so search, predictions and Prime tabs remain stationary.
+                    rv.setTranslationX(Math.max(-rv.getWidth(), Math.min(rv.getWidth(), dx)));
+                } else if (e.getActionMasked() == MotionEvent.ACTION_UP) {
                     float dx = e.getX() - downX;
                     float threshold = Math.max(touchSlop * 3f, rv.getWidth() * 0.12f);
-                    if (Math.abs(dx) >= threshold) {
-                        onSwipe.accept(dx < 0);
-                    }
+                    boolean switchRequested = Math.abs(dx) >= threshold;
+                    boolean swipeLeft = dx < 0;
+
                     horizontalSwipe = false;
                     validAppAreaGesture = false;
+
+                    if (!switchRequested) {
+                        rv.animate().translationX(0f).setDuration(180L).start();
+                        return;
+                    }
+
+                    float exitX = swipeLeft ? -rv.getWidth() : rv.getWidth();
+                    rv.animate()
+                            .translationX(exitX)
+                            .setDuration(140L)
+                            .withEndAction(() -> {
+                                boolean switched = onSwipe.test(swipeLeft);
+                                if (switched) {
+                                    rv.setTranslationX(swipeLeft ? rv.getWidth() : -rv.getWidth());
+                                    rv.animate().translationX(0f).setDuration(180L).start();
+                                } else {
+                                    // There is no neighbouring category in this direction.
+                                    rv.animate().translationX(0f).setDuration(180L).start();
+                                }
+                            })
+                            .start();
                 } else if (e.getActionMasked() == MotionEvent.ACTION_CANCEL) {
                     horizontalSwipe = false;
                     validAppAreaGesture = false;
+                    rv.animate().translationX(0f).setDuration(180L).start();
                 }
             }
         };
