@@ -21,6 +21,7 @@ import org.json.JSONObject
  * independent, so editing Tabs cannot silently change Default or Caddy.
  */
 class PrimeDrawerModePreferences(context: Context) {
+    private val activeEntries = java.util.concurrent.ConcurrentHashMap<String, CallbackPrefEntry<*>>()
     private val context = context.applicationContext
     private val prefs = LauncherPrefs.getPrefs(this.context)
     private val legacy = PreferenceManager.getInstance(this.context)
@@ -67,6 +68,10 @@ class PrimeDrawerModePreferences(context: Context) {
         val root = readRoot()
         root.put(mode.storageKey, profile.toJson())
         prefs.edit { putString(PREF_MODE_PROFILES, root.toString()) }
+        val prefix = PREF_MODE_PROFILES + "/" + mode.storageKey + "/"
+        activeEntries.forEach { (entryKey, entry) ->
+            if (entryKey.startsWith(prefix)) entry.notifyChanged()
+        }
         return profile
     }
 
@@ -77,14 +82,20 @@ class PrimeDrawerModePreferences(context: Context) {
         read: (PrimeDrawerModeProfile) -> T,
         write: (PrimeDrawerModeProfile, T) -> PrimeDrawerModeProfile,
         invalidate: (T) -> Unit = { ReloadHelper(context).reloadGrid() },
-    ): PrefEntry<T> = CallbackPrefEntry(
-        key = "$PREF_MODE_PROFILES/${mode.storageKey}/$key",
-        defaultValue = read(legacyProfile(gridOption)),
-        getter = { read(get(gridOption, mode)) },
-        setter = { newValue ->
-            update(gridOption, mode, { profile -> write(profile, newValue) }, { invalidate(newValue) })
-        },
-    )
+    ): PrefEntry<T> {
+        val entryKey = "$PREF_MODE_PROFILES/${mode.storageKey}/$key"
+        @Suppress("UNCHECKED_CAST")
+        return activeEntries.getOrPut(entryKey) {
+            CallbackPrefEntry(
+                key = entryKey,
+                defaultValue = read(legacyProfile(gridOption)),
+                getter = { read(get(gridOption, mode)) },
+                setter = { newValue ->
+                    update(gridOption, mode, { profile -> write(profile, newValue) }, { invalidate(newValue) })
+                },
+            )
+        } as PrefEntry<T>
+    }
 
     private fun defaultProfile(grid: InvariantDeviceProfile.GridOption): PrimeDrawerModeProfile {
         fun floatResource(id: Int): Float = TypedValue().also {
