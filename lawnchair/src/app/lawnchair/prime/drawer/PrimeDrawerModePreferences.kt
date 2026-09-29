@@ -34,7 +34,7 @@ class PrimeDrawerModePreferences(context: Context) {
         val root = readRoot()
         val stored = root.optJSONObject(mode.storageKey)
         if (stored != null) return stored.toProfile(gridOption)
-        return legacyProfile(gridOption)
+        return legacyProfile(gridOption).copy(predictionsEnabled = mode != PrimeDrawerMode.TABS)
     }
 
     fun update(
@@ -56,7 +56,7 @@ class PrimeDrawerModePreferences(context: Context) {
         gridOption: InvariantDeviceProfile.GridOption,
         mode: PrimeDrawerMode,
     ): PrimeDrawerModeProfile {
-        val profile = defaultProfile(gridOption)
+        val profile = defaultProfile(gridOption).copy(predictionsEnabled = mode != PrimeDrawerMode.TABS)
         val root = readRoot()
         root.put(mode.storageKey, profile.toJson())
         prefs.edit { putString(PREF_MODE_PROFILES, root.toString()) }
