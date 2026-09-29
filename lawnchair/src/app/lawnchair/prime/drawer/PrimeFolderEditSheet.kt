@@ -115,9 +115,20 @@ object PrimeFolderEditSheet {
                     )
                 },
                 onDismiss = { sheet.close(true) },
+                onAdvanced = {
+                    sheet.close(false)
+                    icon.context.startActivity(
+                        PreferenceActivity.createIntent(
+                            icon.context,
+                            PrimeHomeFolderAdvanced(drawerFolderId, drawer = true),
+                        ),
+                    )
+                },
                 onDelete = {
                     CoroutineScope(Dispatchers.Main).launch {
                         FolderService.INSTANCE.get(icon.context).deleteFolderInfo(drawerFolderId)
+                        PrimeDrawerTabsRepository(icon.context)
+                            .deleteDrawerFolderVisualOverrides(drawerFolderId)
                         sheet.close(false)
                         ReloadHelper(icon.context).reloadGrid()
                     }
