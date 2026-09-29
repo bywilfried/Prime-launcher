@@ -341,16 +341,16 @@ fun PreferenceNavigation(
             val profile = modePreferences.get(gridOption, mode)
             val prefs2 = preferenceManager2()
             val nativeDrawerBackgroundColor = prefs2.appDrawerBackgroundColor.getAdapter()
-            val current = if (route.colorKey == "text") {
-                profile.defaultDrawerTextColor?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default
-            } else {
-                profile.appDrawerBackgroundColor
+            val current = when (route.colorKey) {
+                "text" -> profile.defaultDrawerTextColor?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default
+                "tabs" -> profile.defaultTabsColor?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default
+                else -> profile.appDrawerBackgroundColor
             }
             PrimeColorSelection(
                 label = route.label,
                 appliedColor = current,
                 onApply = { option ->
-                    if (route.colorKey == "text") {
+                    if (route.colorKey == "text" || route.colorKey == "tabs") {
                         val resolved = when (option) {
                             ColorOption.Default -> null
                             else -> option.colorPreferenceEntry.lightColor(context)
@@ -358,10 +358,13 @@ fun PreferenceNavigation(
                         modePreferences.update(
                             gridOption,
                             mode,
-                            { currentProfile -> currentProfile.copy(defaultDrawerTextColor = resolved) },
+                            { currentProfile ->
+                                if (route.colorKey == "tabs") currentProfile.copy(defaultTabsColor = resolved)
+                                else currentProfile.copy(defaultDrawerTextColor = resolved)
+                            },
                             {},
                         )
-                        if (mode == app.lawnchair.prime.drawer.PrimeDrawerMode.TABS) {
+                        if (route.colorKey == "text" && mode == app.lawnchair.prime.drawer.PrimeDrawerMode.TABS) {
                             repository.setDefaultDrawerColors(textColor = resolved)
                         } else {
                             ReloadHelper(context).reloadGrid()
