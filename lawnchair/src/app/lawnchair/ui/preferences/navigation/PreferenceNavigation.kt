@@ -252,7 +252,8 @@ fun PreferenceNavigation(
             val route: PrimeHomeFolderColor = backStackEntry.toRoute()
             val context = LocalContext.current
             val repository = PrimeDrawerTabsRepository(context)
-            val stored = repository.getHomeFolderVisualOverrides(route.folderId)
+            val stored = if (route.drawer) repository.getDrawerFolderVisualOverrides(route.folderId)
+                else repository.getHomeFolderVisualOverrides(route.folderId)
             PrimeColorSelection(
                 label = route.label,
                 appliedColor = when (route.colorKey) {
