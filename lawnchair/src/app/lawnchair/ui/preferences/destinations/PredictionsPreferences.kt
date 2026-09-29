@@ -29,7 +29,6 @@ import app.lawnchair.predictions.PredictionMode
 import app.lawnchair.predictions.SystemPredictor
 import app.lawnchair.preferences.PreferenceAdapter
 import app.lawnchair.preferences.PrefEntry
-import app.lawnchair.preferences.PreferenceAdapter
 import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences.preferenceManager
 import app.lawnchair.preferences2.PreferenceManager2
