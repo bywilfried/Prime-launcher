@@ -77,6 +77,7 @@ import app.lawnchair.ui.preferences.destinations.ShapePreference
 import app.lawnchair.ui.preferences.destinations.PrimeShapeSelection
 import app.lawnchair.icons.shape.IconShape
 import app.lawnchair.preferences2.preferenceManager2
+import app.lawnchair.preferences2.ReloadHelper
 import app.lawnchair.preferences2.firstCached
 import app.lawnchair.ui.preferences.destinations.SmartspacePreferences
 import com.android.launcher3.util.ComponentKey
@@ -362,6 +363,8 @@ fun PreferenceNavigation(
                         )
                         if (mode == app.lawnchair.prime.drawer.PrimeDrawerMode.TABS) {
                             repository.setDefaultDrawerColors(textColor = resolved)
+                        } else {
+                            ReloadHelper(context).reloadGrid()
                         }
                     } else {
                         modePreferences.update(
