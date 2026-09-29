@@ -85,6 +85,7 @@ class PrimeDrawerModePreferences(context: Context) {
             appDrawerBackgroundColor = legacy2.appDrawerBackgroundColor.firstCached(),
             defaultDrawerTextColor = tabsRepository.getConfiguration().defaultDrawerTextColor,
             defaultTabsColor = null,
+            workProfileTabsColor = null,
         )
     }
 
@@ -109,6 +110,7 @@ class PrimeDrawerModePreferences(context: Context) {
         put("appDrawerBackgroundColor", appDrawerBackgroundColor.toString())
         put("defaultDrawerTextColor", defaultDrawerTextColor ?: JSONObject.NULL)
         put("defaultTabsColor", defaultTabsColor ?: JSONObject.NULL)
+        put("workProfileTabsColor", workProfileTabsColor ?: JSONObject.NULL)
     }
 
     private fun JSONObject.toProfile(grid: InvariantDeviceProfile.GridOption) = PrimeDrawerModeProfile(
@@ -134,6 +136,7 @@ class PrimeDrawerModePreferences(context: Context) {
         appDrawerBackgroundColor = ColorOption.fromString(optString("appDrawerBackgroundColor", legacy2.appDrawerBackgroundColor.firstCached().toString())),
         defaultDrawerTextColor = if (has("defaultDrawerTextColor") && !isNull("defaultDrawerTextColor")) getInt("defaultDrawerTextColor") else tabsRepository.getConfiguration().defaultDrawerTextColor,
         defaultTabsColor = if (has("defaultTabsColor") && !isNull("defaultTabsColor")) getInt("defaultTabsColor") else null,
+        workProfileTabsColor = if (has("workProfileTabsColor") && !isNull("workProfileTabsColor")) getInt("workProfileTabsColor") else null,
     )
 
     companion object {
@@ -158,4 +161,5 @@ data class PrimeDrawerModeProfile(
     val appDrawerBackgroundColor: ColorOption,
     val defaultDrawerTextColor: Int?,
     val defaultTabsColor: Int?,
+    val workProfileTabsColor: Int?,
 )
