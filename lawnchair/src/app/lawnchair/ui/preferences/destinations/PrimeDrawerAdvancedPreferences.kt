@@ -17,6 +17,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import app.lawnchair.prime.drawer.PrimeDrawerFolderVisualOverrides
+import app.lawnchair.prime.drawer.PrimeDrawerMode
+import app.lawnchair.prime.drawer.PrimeDrawerModePreferences
+import com.android.launcher3.InvariantDeviceProfile
 import app.lawnchair.prime.drawer.PrimeDrawerTabsRepository
 import app.lawnchair.prime.drawer.PrimeFolderLongPressHelper
 import app.lawnchair.prime.drawer.PrimeDrawerVisualOverrides
@@ -87,41 +90,55 @@ fun PrimeDrawerFolderAdvancedPreference(tabId: String, folderId: String) {
 }
 
 @Composable
-fun PrimeHomeFolderAdvancedPreference(folderId: Int) {
+fun PrimeHomeFolderAdvancedPreference(folderId: Int, drawer: Boolean = false) {
     val context = LocalContext.current
     val repository = remember { PrimeDrawerTabsRepository(context) }
     val overrides = remember(folderId) {
-        mutableStateOf(repository.getHomeFolderVisualOverrides(folderId))
+        mutableStateOf(
+            if (drawer) repository.getDrawerFolderVisualOverrides(folderId)
+            else repository.getHomeFolderVisualOverrides(folderId),
+        )
     }
     fun update(value: PrimeDrawerFolderVisualOverrides) {
         overrides.value = value
-        repository.setHomeFolderVisualOverrides(folderId, value)
-        PrimeFolderLongPressHelper.refreshHomeFolderVisualOverrides(folderId)
+        if (drawer) {
+            repository.setDrawerFolderVisualOverrides(folderId, value)
+            PrimeFolderLongPressHelper.refreshDefaultDrawerFolderVisualOverrides(folderId)
+        } else {
+            repository.setHomeFolderVisualOverrides(folderId, value)
+            PrimeFolderLongPressHelper.refreshHomeFolderVisualOverrides(folderId)
+        }
     }
     val prefs = preferenceManager()
     val prefs2 = preferenceManager2()
     val value = overrides.value
-    val defaultTextColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurface.toArgb()
+    val defaultTextColor = if (drawer) {
+        val grid = InvariantDeviceProfile.INSTANCE.get(context).closestProfile
+        PrimeDrawerModePreferences(context).get(grid, PrimeDrawerMode.DEFAULT).defaultDrawerTextColor
+            ?: androidx.compose.material3.MaterialTheme.colorScheme.onSurface.toArgb()
+    } else {
+        androidx.compose.material3.MaterialTheme.colorScheme.onSurface.toArgb()
+    }
     val defaultFolderColor = app.lawnchair.util.resolveFolderBackgroundColor(context)
 
     PreferenceLayout(label = stringResource(id = R.string.folders_label), backArrowVisible = true) {
         PreferenceGroup(heading = "Dossier fermé") {
-            HomeFolderShapePreference(stringResource(id = R.string.folder_shape_label), value.shape, prefs2.folderShape.getAdapter().state.value, folderId, "folderShape")
-            HomeFolderColorPreference("Couleur de l’arrière-plan des icônes", value.color, defaultFolderColor, folderId, "folderColor")
+            HomeFolderShapePreference(stringResource(id = R.string.folder_shape_label), value.shape, prefs2.folderShape.getAdapter().state.value, folderId, "folderShape", drawer)
+            HomeFolderColorPreference("Couleur de l’arrière-plan des icônes", value.color, defaultFolderColor, folderId, "folderColor", drawer)
             NullableFloatSlider(stringResource(id = R.string.folder_preview_bg_opacity_label), value.previewOpacity, prefs2.folderPreviewBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, true) { update(value.copy(previewOpacity = it)) }
             NullableSwitch("Afficher le nom du dossier fermé", value.showFolderLabel, true) { update(value.copy(showFolderLabel = it)) }
-            HomeFolderColorPreference("Couleur du nom du dossier fermé", value.closedLabelColor, defaultTextColor, folderId, "folderClosedText")
+            HomeFolderColorPreference("Couleur du nom du dossier fermé", value.closedLabelColor, defaultTextColor, folderId, "folderClosedText", drawer)
         }
         PreferenceGroup(heading = "Dossier ouvert") {
             NullableFloatSlider(stringResource(id = R.string.folder_bg_opacity_label), value.backgroundOpacity, prefs2.folderBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, true) { update(value.copy(backgroundOpacity = it)) }
-            HomeFolderColorPreference("Couleur du texte dans le dossier ouvert", value.textColor, defaultTextColor, folderId, "folderText")
+            HomeFolderColorPreference("Couleur du texte dans le dossier ouvert", value.textColor, defaultTextColor, folderId, "folderText", drawer)
         }
         PreferenceGroup(heading = stringResource(id = R.string.grid)) {
             NullableIntSlider(stringResource(id = R.string.max_folder_columns), value.columns, prefs2.folderColumns.getAdapter().state.value, 2..5) { update(value.copy(columns = it)) }
             NullableIntSlider(stringResource(id = R.string.max_folder_rows), value.rows, prefs.folderRows.getAdapter().state.value, 2..5) { update(value.copy(rows = it)) }
         }
         PreferenceGroup(heading = "Icônes dans le dossier ouvert") {
-            HomeFolderShapePreference("Forme des icônes dans les dossiers", value.childIconShape, prefs2.iconShape.getAdapter().state.value, folderId, "folderChildIcon")
+            HomeFolderShapePreference("Forme des icônes dans les dossiers", value.childIconShape, prefs2.iconShape.getAdapter().state.value, folderId, "folderChildIcon", drawer)
             NullableSwitch(stringResource(id = R.string.show_labels), value.showLabels, prefs2.showIconLabelsOnHomeScreenFolder.getAdapter().state.value) { update(value.copy(showLabels = it)) }
             NullableFloatSlider(stringResource(id = R.string.label_size), value.labelSize, prefs2.homeIconLabelFolderSizeFactor.getAdapter().state.value, 0.5f..1.5f, 0.1f, true) { update(value.copy(labelSize = it)) }
         }
@@ -129,7 +146,7 @@ fun PrimeHomeFolderAdvancedPreference(folderId: Int) {
 }
 
 @Composable
-private fun HomeFolderShapePreference(label: String, value: String?, inherited: IconShape, folderId: Int, shapeKey: String) {
+private fun HomeFolderShapePreference(label: String, value: String?, inherited: IconShape, folderId: Int, shapeKey: String, drawer: Boolean = false) {
     val context = LocalContext.current
     val navController = LocalNavController.current
     val shape = value?.let { runCatching { IconShape.fromString(it, context) }.getOrNull() }
@@ -139,12 +156,12 @@ private fun HomeFolderShapePreference(label: String, value: String?, inherited: 
         modifier = Modifier.alpha(if (value == null) 0.55f else 1f),
         description = if (value == null) ({ Text("Par défaut") }) else ({ Text("Personnalisé") }),
         endWidget = { IconShapePreview(iconShape = effective) },
-        onClick = { navController.navigate(PrimeHomeFolderShape(folderId, shapeKey, label)) },
+        onClick = { navController.navigate(PrimeHomeFolderShape(folderId, shapeKey, label, drawer)) },
     )
 }
 
 @Composable
-private fun HomeFolderColorPreference(label: String, value: Int?, inherited: Int, folderId: Int, colorKey: String) {
+private fun HomeFolderColorPreference(label: String, value: Int?, inherited: Int, folderId: Int, colorKey: String, drawer: Boolean = false) {
     val navController = LocalNavController.current
     ColorPreference(
         label = label,
@@ -152,7 +169,7 @@ private fun HomeFolderColorPreference(label: String, value: Int?, inherited: Int
         modifier = Modifier.alpha(if (value == null) 0.55f else 1f),
         description = if (value == null) "Par défaut" else "Personnalisé",
         previewColor = ColorOption.CustomColor(value ?: inherited),
-        onClick = { navController.navigate(PrimeHomeFolderColor(folderId, label, colorKey)) },
+        onClick = { navController.navigate(PrimeHomeFolderColor(folderId, label, colorKey, drawer)) },
     )
 }
 
