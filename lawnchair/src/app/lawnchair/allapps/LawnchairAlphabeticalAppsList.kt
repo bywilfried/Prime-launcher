@@ -251,7 +251,11 @@ class LawnchairAlphabeticalAppsList<T>(
                     val folderInfo = FolderInfo().apply {
                         id = folderEntry.id
                         title = folderEntry.title
-                        resolvedApps.forEach { add(it) }
+                        // Drawer FolderService entries are projections too. Keep their children
+                        // workspace-ready just like Prime Tabs folders, otherwise Workspace's
+                        // external-folder copy drops raw AppInfo children and the resulting Home
+                        // folder is empty/removed immediately after the drop.
+                        resolvedApps.forEach { add(it.makeWorkspaceItem(context)) }
                     }
                     mAdapterItems.add(AdapterItem.asFolder(folderInfo))
                     position++
