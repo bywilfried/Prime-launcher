@@ -33,6 +33,8 @@ import android.view.accessibility.AccessibilityManager;
 import androidx.annotation.ColorInt;
 import androidx.annotation.VisibleForTesting;
 
+import app.lawnchair.preferences.PreferenceManager;
+
 import com.android.launcher3.Flags;
 import com.android.launcher3.R;
 import com.android.launcher3.Utilities;
@@ -130,7 +132,12 @@ public class AppsDividerView extends View implements FloatingHeaderRow {
 
     private void updateDividerType() {
         final DividerType dividerType;
-        if (!mTabsHidden) {
+        // Prime Tabs already provide the persistent separation/navigation below suggestions.
+        // Suppress Lawnchair's "All apps" divider entirely so neither its label nor its padding
+        // consumes vertical space between suggestions and the Prime category tabs.
+        boolean primeTabsEnabled = PreferenceManager.getInstance(getContext())
+                .getDrawerTabsEnabled().get();
+        if (primeTabsEnabled || !mTabsHidden) {
             dividerType = DividerType.NONE;
         } else {
             // Check how many sections above me.
