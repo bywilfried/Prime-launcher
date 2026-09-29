@@ -2,6 +2,11 @@ package app.lawnchair.prime.drawer
 
 import androidx.compose.runtime.getValue
 import app.lawnchair.data.folder.FolderEntry
+import app.lawnchair.data.folder.service.FolderService
+import app.lawnchair.preferences2.ReloadHelper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import app.lawnchair.ui.preferences.PreferenceActivity
 import app.lawnchair.ui.preferences.destinations.FolderEditSheet
 import app.lawnchair.ui.preferences.destinations.SelectAppsForDrawerFolder
@@ -74,6 +79,47 @@ object PrimeFolderEditSheet {
                     } else {
                         PrimeDrawerTabsRepository(icon.context).deleteHomeFolderVisualOverrides(icon.mInfo.id)
                         launcher.removeItem(icon, icon.mInfo, true)
+                    }
+                },
+            )
+        }
+    }
+
+    @JvmStatic
+    fun showDrawerFolder(icon: FolderIcon, drawerFolderId: Int) {
+        val launcher = Launcher.getLauncher(icon.context)
+        ComposeBottomSheet.show(launcher) {
+            val sheet = this
+            FolderEditSheet(
+                folderId = drawerFolderId,
+                initialTitle = icon.mInfo.title?.toString().orEmpty(),
+                itemCount = icon.mInfo.getContents().size,
+                onRename = { id, title ->
+                    val value = title.trim()
+                    if (value.isNotEmpty()) {
+                        CoroutineScope(Dispatchers.Main).launch {
+                            FolderService.INSTANCE.get(icon.context).renameFolderInfo(id, value)
+                            icon.mInfo.setTitle(value, null)
+                            icon.onTitleChanged(value)
+                            ReloadHelper(icon.context).reloadGrid()
+                        }
+                    }
+                },
+                onNavigate = {
+                    sheet.close(false)
+                    icon.context.startActivity(
+                        PreferenceActivity.createIntent(
+                            icon.context,
+                            app.lawnchair.ui.preferences.navigation.AppDrawerAppListToFolder(drawerFolderId),
+                        ),
+                    )
+                },
+                onDismiss = { sheet.close(true) },
+                onDelete = {
+                    CoroutineScope(Dispatchers.Main).launch {
+                        FolderService.INSTANCE.get(icon.context).deleteFolderInfo(drawerFolderId)
+                        sheet.close(false)
+                        ReloadHelper(icon.context).reloadGrid()
                     }
                 },
             )
