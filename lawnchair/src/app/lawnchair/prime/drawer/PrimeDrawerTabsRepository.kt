@@ -263,6 +263,26 @@ class PrimeDrawerTabsRepository(context: Context) {
         )
     }
 
+    fun getDrawerFolderVisualOverrides(folderId: Int): PrimeDrawerFolderVisualOverrides {
+        val root = runCatching { JSONObject(prefs.getString(PREF_DRAWER_FOLDER_OVERRIDES, "{}")) }
+            .getOrElse { JSONObject() }
+        return root.optJSONObject(folderId.toString()).toFolderVisualOverrides()
+    }
+
+    fun setDrawerFolderVisualOverrides(folderId: Int, overrides: PrimeDrawerFolderVisualOverrides) {
+        val root = runCatching { JSONObject(prefs.getString(PREF_DRAWER_FOLDER_OVERRIDES, "{}")) }
+            .getOrElse { JSONObject() }
+        root.put(folderId.toString(), overrides.toJson())
+        prefs.edit { putString(PREF_DRAWER_FOLDER_OVERRIDES, root.toString()) }
+    }
+
+    fun deleteDrawerFolderVisualOverrides(folderId: Int) {
+        val root = runCatching { JSONObject(prefs.getString(PREF_DRAWER_FOLDER_OVERRIDES, "{}")) }
+            .getOrElse { JSONObject() }
+        root.remove(folderId.toString())
+        prefs.edit { putString(PREF_DRAWER_FOLDER_OVERRIDES, root.toString()) }
+    }
+
     fun getHomeFolderVisualOverrides(folderId: Int): PrimeDrawerFolderVisualOverrides {
         val root = runCatching { JSONObject(prefs.getString(PREF_HOME_FOLDER_OVERRIDES, "{}")) }
             .getOrElse { JSONObject() }
@@ -574,6 +594,7 @@ class PrimeDrawerTabsRepository(context: Context) {
         const val UNCLASSIFIED_TAB_ID = "system_unclassified"
         const val PREF_CONFIGURATION = "prime_drawer_tabs_configuration"
         private const val PREF_HOME_FOLDER_OVERRIDES = "prime_home_folder_overrides"
+        private const val PREF_DRAWER_FOLDER_OVERRIDES = "prime_drawer_folder_overrides"
         private const val PREF_MODE_PROFILES = "prime_drawer_mode_profiles_v1"
         private const val CONFIG_VERSION = 1
     }
