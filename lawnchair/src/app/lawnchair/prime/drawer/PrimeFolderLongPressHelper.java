@@ -134,8 +134,12 @@ public final class PrimeFolderLongPressHelper {
 
     public static boolean shouldHandle(FolderIcon icon) {
         if (!icon.isInAppDrawer()) return true;
-        return PreferenceManager.getInstance(icon.getContext()).getDrawerTabsEnabled().get()
-                && getPrimeRef(icon.mInfo) != null;
+        // Tabs folders and Lawnchair's regular drawer folders share the same interaction layer.
+        // Caddy's generated category folders are handled separately because they are not persistent
+        // user folders and therefore cannot safely use the editor yet.
+        if (getPrimeRef(icon.mInfo) != null) return true;
+        return PreferenceManager.getInstance(icon.getContext()).getDrawerList().get()
+                && icon.mInfo.id >= 0;
     }
 
     public boolean onLongClick(View view) {
@@ -236,8 +240,12 @@ public final class PrimeFolderLongPressHelper {
             // therefore still carry its drawer ref. The icon's actual location is authoritative:
             // once it lives on Workspace it must be edited as an independent Home folder.
             PrimeFolderRef ref = isAttachedToAllApps() ? getPrimeRef(mIcon.mInfo) : null;
-            PrimeFolderEditSheet.show(mIcon, ref == null ? null : ref.tabId,
-                    ref == null ? null : ref.folderId);
+            if (isAttachedToAllApps() && ref == null && mIcon.mInfo.id >= 0) {
+                PrimeFolderEditSheet.showDrawerFolder(mIcon, mIcon.mInfo.id);
+            } else {
+                PrimeFolderEditSheet.show(mIcon, ref == null ? null : ref.tabId,
+                        ref == null ? null : ref.folderId);
+            }
             return true;
         }));
 
