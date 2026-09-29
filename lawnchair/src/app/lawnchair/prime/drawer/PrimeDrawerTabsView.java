@@ -637,8 +637,11 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         background.setShape(GradientDrawable.RECTANGLE);
         background.setCornerRadius(dp(20));
         if (selected) {
+            Integer modeTabColor = resolveModeTabColor();
             int defaultTabColor = resolveDefaultTabColor();
-            background.setColor(selectedColor != null ? selectedColor : defaultTabColor);
+            background.setColor(selectedColor != null
+                    ? selectedColor
+                    : modeTabColor != null ? modeTabColor : defaultTabColor);
         } else {
             background.setColor(0x00000000);
             background.setStroke(dp(1),
@@ -652,6 +655,15 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         params.setMarginEnd(dp(8));
         mTabsContainer.addView(pill, params);
         return pill;
+    }
+
+    @Nullable
+    private Integer resolveModeTabColor() {
+        com.android.launcher3.InvariantDeviceProfile.GridOption grid =
+                com.android.launcher3.InvariantDeviceProfile.INSTANCE.get(getContext()).closestProfile;
+        return new PrimeDrawerModePreferences(getContext())
+                .get(grid, PrimeDrawerMode.TABS)
+                .getDefaultTabsColor();
     }
 
     private int resolveDefaultTabColor() {
