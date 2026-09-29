@@ -423,6 +423,9 @@ fun AppDrawerPreferences(
                     nativePredictionsEnabled.onChange(resetProfile.predictionsEnabled)
                     nativePredictionMode.onChange(app.lawnchair.predictions.PredictionMode.fromString(resetProfile.predictionMode))
                     nativePredictionWeightedUsage.onChange(resetProfile.predictionUseWeightedUsageStats)
+                    // ColorPreference reads modeProfile directly rather than through a PreferenceAdapter.
+                    // Force this screen to re-read the freshly reset profile immediately.
+                    resetRevision.intValue++
                     ReloadHelper(context).reloadGrid()
                 },
             )
