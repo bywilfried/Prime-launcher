@@ -51,6 +51,7 @@ import java.util.Map;
 
 import app.lawnchair.preferences2.PreferenceManager2;
 import app.lawnchair.prime.drawer.PrimeDrawerTabsRepository;
+import app.lawnchair.prime.drawer.PrimeDrawerTabsView;
 import app.lawnchair.prime.drawer.PrimeDrawerVisualOverrides;
 
 public class FloatingHeaderView extends LinearLayout implements
@@ -362,7 +363,19 @@ public class FloatingHeaderView extends LinearLayout implements
             // Add back spacing that is otherwise covered by the tabs.
             clipTop += mTabsAdditionalPaddingTop;
         }
-        mRVClip.top = mTabsHidden || mFloatingRowsCollapsed ? clipTop : 0;
+        int recyclerClipTop = mTabsHidden || mFloatingRowsCollapsed ? clipTop : 0;
+        if (!mTabsHidden && !mFloatingRowsCollapsed) {
+            for (FloatingHeaderRow row : mAllRows) {
+                if (row instanceof PrimeDrawerTabsView && row.hasVisibleContent()) {
+                    View primeTabsView = (View) row;
+                    recyclerClipTop = Math.max(
+                            recyclerClipTop,
+                            Math.round(primeTabsView.getY() + primeTabsView.getHeight()));
+                    break;
+                }
+            }
+        }
+        mRVClip.top = recyclerClipTop;
         mHeaderClip.top = clipTop;
         // clipping on a draw might cause additional redraw
         setClipBounds(mHeaderClip);
