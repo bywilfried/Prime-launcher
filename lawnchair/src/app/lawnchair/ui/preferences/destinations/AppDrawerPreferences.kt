@@ -56,6 +56,7 @@ import app.lawnchair.ui.preferences.components.NavigationActionPreference
 import app.lawnchair.ui.preferences.components.colorpreference.ColorPreference
 import app.lawnchair.ui.preferences.components.colorpreference.ColorPreferenceModelList
 import app.lawnchair.ui.preferences.components.controls.SliderPreference
+import app.lawnchair.ui.preferences.components.controls.ClickablePreference
 import app.lawnchair.ui.preferences.components.controls.ListPreference
 import app.lawnchair.ui.preferences.components.controls.ListPreferenceEntry
 import app.lawnchair.ui.preferences.components.controls.SwitchPreference
@@ -384,6 +385,32 @@ fun AppDrawerPreferences(
             SwitchPreference(
                 label = stringResource(id = R.string.pref_all_apps_show_scrollbar_title),
                 adapter = modeBackedAdapter(modePreference("showScrollbar", { it.showScrollbar }, { profile, value -> profile.copy(showScrollbar = value) }, { }), nativeShowScrollbar),
+            )
+        }
+        PreferenceGroup {
+            ClickablePreference(
+                label = "Réinitialiser les réglages du mode",
+                subtitle = "Rétablit les réglages généraux de ce mode avec les valeurs Lawnchair par défaut.",
+                confirmationText = "Réinitialiser les réglages de ce mode ? Les catégories et dossiers ne seront pas modifiés.",
+                onClick = {
+                    val resetProfile = modePreferences.reset(drawerGridOption, activeDrawerMode)
+                    nativeDrawerBackgroundColor.onChange(resetProfile.appDrawerBackgroundColor)
+                    nativeWorkProfileTabsColor.onChange(app.lawnchair.theme.color.ColorOption.SystemAccent)
+                    nativeDrawerOpacity.onChange(resetProfile.drawerOpacity)
+                    nativeDrawerColumns.onChange(resetProfile.drawerColumns)
+                    nativeDrawerColumnsUnfolded.onChange(resetProfile.drawerColumnsUnfolded)
+                    nativeDrawerIconSize.onChange(resetProfile.drawerIconSize)
+                    nativeShowLabels.onChange(resetProfile.showLabels)
+                    nativeLabelSize.onChange(resetProfile.labelSize)
+                    nativeRowHeight.onChange(resetProfile.rowHeight)
+                    nativeHorizontalMargin.onChange(resetProfile.horizontalMargin)
+                    nativeTopPadding.onChange(resetProfile.topPadding)
+                    nativeTwoLineLabels.onChange(resetProfile.twoLineLabels)
+                    nativeHideFolderApps.onChange(resetProfile.hideFolderApps)
+                    nativeRememberPosition.onChange(resetProfile.rememberPosition)
+                    nativeShowScrollbar.onChange(resetProfile.showScrollbar)
+                    ReloadHelper(context).reloadGrid()
+                },
             )
         }
     }
