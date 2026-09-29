@@ -3,6 +3,7 @@ package app.lawnchair.prime.drawer
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import com.android.launcher3.InvariantDeviceProfile
 import com.android.launcher3.LauncherPrefs
 import com.android.launcher3.util.ComponentKey
 import com.android.launcher3.model.data.FolderInfo
@@ -18,6 +19,11 @@ import org.json.JSONObject
 class PrimeDrawerTabsRepository(context: Context) {
     private val prefs = LauncherPrefs.getPrefs(context)
     private val primePrefs = app.lawnchair.preferences.PreferenceManager.getInstance(context)
+    private val modePreferences = PrimeDrawerModePreferences(context)
+    private val gridOption = InvariantDeviceProfile.INSTANCE.get(context).closestProfile
+
+    private fun tabsModeTextColor(): Int? =
+        modePreferences.get(gridOption, PrimeDrawerMode.TABS).defaultDrawerTextColor
 
     fun getConfiguration(): PrimeDrawerTabsConfiguration =
         decode(prefs.getString(PREF_CONFIGURATION, null))
@@ -300,8 +306,8 @@ class PrimeDrawerTabsRepository(context: Context) {
             childIconShape = own.childIconShape ?: category.folderChildIconShape,
             shape = own.shape ?: category.folderShape,
             color = own.color ?: category.folderColor,
-            textColor = own.textColor ?: category.folderTextColor ?: getConfiguration().defaultDrawerTextColor,
-            closedLabelColor = own.closedLabelColor ?: category.drawerTextColor ?: getConfiguration().defaultDrawerTextColor,
+            textColor = own.textColor ?: category.folderTextColor ?: tabsModeTextColor(),
+            closedLabelColor = own.closedLabelColor ?: category.drawerTextColor ?: tabsModeTextColor(),
         )
     }
 
@@ -314,11 +320,11 @@ class PrimeDrawerTabsRepository(context: Context) {
             ?.takeUnless { it.isSystem }
             ?.visualOverrides ?: PrimeDrawerVisualOverrides()
         return selected.copy(
-            drawerTextColor = selected.drawerTextColor ?: configuration.defaultDrawerTextColor,
+            drawerTextColor = selected.drawerTextColor ?: tabsModeTextColor(),
         ).takeUnless { it == PrimeDrawerVisualOverrides() }
     }
 
-    fun setDefaultDrawerColors(textColor: Int? = getConfiguration().defaultDrawerTextColor,
+    fun setDefaultDrawerColors(textColor: Int? = tabsModeTextColor(),
                                backgroundColor: Int? = getConfiguration().defaultDrawerBackgroundColor) {
         saveConfiguration(getConfiguration().copy(
             defaultDrawerTextColor = textColor,
