@@ -1,6 +1,7 @@
 package app.lawnchair.prime.drawer
 
 import android.content.Context
+import android.util.TypedValue
 import androidx.core.content.edit
 import app.lawnchair.preferences.CallbackPrefEntry
 import app.lawnchair.preferences.PrefEntry
@@ -55,11 +56,7 @@ class PrimeDrawerModePreferences(context: Context) {
         gridOption: InvariantDeviceProfile.GridOption,
         mode: PrimeDrawerMode,
     ): PrimeDrawerModeProfile {
-        val profile = legacyProfile(gridOption).copy(
-            defaultDrawerTextColor = null,
-            defaultTabsColor = null,
-            workProfileTabsColor = null,
-        )
+        val profile = defaultProfile(gridOption)
         val root = readRoot()
         root.put(mode.storageKey, profile.toJson())
         prefs.edit { putString(PREF_MODE_PROFILES, root.toString()) }
@@ -81,6 +78,34 @@ class PrimeDrawerModePreferences(context: Context) {
             update(gridOption, mode, { profile -> write(profile, newValue) }, { invalidate(newValue) })
         },
     )
+
+    private fun defaultProfile(grid: InvariantDeviceProfile.GridOption): PrimeDrawerModeProfile {
+        fun floatResource(id: Int): Float = TypedValue().also {
+            context.resources.getValue(id, it, true)
+        }.float
+
+        return PrimeDrawerModeProfile(
+            drawerOpacity = .5f,
+            drawerColumns = grid.numAllAppsColumns,
+            drawerColumnsUnfolded = grid.numAllAppsColumns + 2,
+            drawerIconSize = floatResource(com.android.launcher3.R.dimen.config_default_drawer_icon_size_factor),
+            showLabels = context.resources.getBoolean(com.android.launcher3.R.bool.config_default_show_icon_labels_in_drawer),
+            labelSize = floatResource(com.android.launcher3.R.dimen.config_default_drawer_icon_label_size_factor),
+            twoLineLabels = context.resources.getBoolean(com.android.launcher3.R.bool.config_default_enable_two_line_allapps),
+            rowHeight = floatResource(com.android.launcher3.R.dimen.config_default_drawer_cell_height_factor),
+            horizontalMargin = floatResource(com.android.launcher3.R.dimen.config_default_drawer_left_right_factor),
+            topPadding = floatResource(com.android.launcher3.R.dimen.config_default_drawer_padding_top),
+            rememberPosition = context.resources.getBoolean(com.android.launcher3.R.bool.config_default_remember_position),
+            showScrollbar = context.resources.getBoolean(com.android.launcher3.R.bool.config_default_show_scrollbar),
+            hideFolderApps = true,
+            appDrawerBackgroundColor = ColorOption.fromString(
+                context.getString(com.android.launcher3.R.string.config_default_app_drawer_bg_color),
+            ),
+            defaultDrawerTextColor = null,
+            defaultTabsColor = null,
+            workProfileTabsColor = null,
+        )
+    }
 
     private fun legacyProfile(grid: InvariantDeviceProfile.GridOption): PrimeDrawerModeProfile {
         return PrimeDrawerModeProfile(
