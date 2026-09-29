@@ -365,7 +365,10 @@ public class FloatingHeaderView extends LinearLayout implements
             clipTop += mTabsAdditionalPaddingTop;
         }
         int recyclerClipTop = mTabsHidden || mFloatingRowsCollapsed ? clipTop : 0;
-        if (!mTabsHidden && !mFloatingRowsCollapsed) {
+        // Prime category tabs are independent from Lawnchair's Personal/Work tabs. Do not gate
+        // their clipping on mTabsHidden: on devices without a Work profile mTabsHidden is true,
+        // but Prime Tabs still need to protect the suggestions/category header from app rows.
+        if (!mFloatingRowsCollapsed) {
             for (FloatingHeaderRow row : mAllRows) {
                 if (row instanceof PrimeDrawerTabsView && row.hasVisibleContent()) {
                     View primeTabsView = (View) row;
