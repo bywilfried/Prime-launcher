@@ -384,6 +384,10 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
                 // LC-Note: Implement long-press support for folder type for purposes like showing popup
                 FolderIcon folderIcon = FolderIcon.inflateFolderAndIcon(
                         R.layout.all_apps_folder_icon, mActivityContext, container, folderInfo);
+                if (folderInfo.id >= 0
+                        && PrimeFolderLongPressHelper.shouldHandle(folderIcon)) {
+                    PrimeFolderLongPressHelper.registerDefaultDrawerFolderIcon(folderIcon);
+                }
                 PrimeDrawerFolderVisualOverrides folderOverrides =
                         PrimeFolderLongPressHelper.getVisualOverrides(mActivityContext, folderInfo);
                 if (folderOverrides != null && folderOverrides.getClosedLabelColor() != null) {
