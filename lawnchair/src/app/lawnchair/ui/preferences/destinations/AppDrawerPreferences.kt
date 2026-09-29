@@ -117,6 +117,7 @@ fun AppDrawerPreferences(
         val nativeHideFolderApps = prefs.folderApps.getAdapter()
         val nativeRememberPosition = prefs2.rememberPosition.getAdapter()
         val nativeShowScrollbar = prefs2.showScrollbar.getAdapter()
+        val nativeShowSuggestedApps = prefs2.showSuggestedAppsInDrawer.getAdapter()
         fun <T> modePreference(
             key: String,
             read: (app.lawnchair.prime.drawer.PrimeDrawerModeProfile) -> T,
@@ -142,6 +143,7 @@ fun AppDrawerPreferences(
             if (nativeHideFolderApps.state.value != modeProfile.hideFolderApps) nativeHideFolderApps.onChange(modeProfile.hideFolderApps)
             if (nativeRememberPosition.state.value != modeProfile.rememberPosition) nativeRememberPosition.onChange(modeProfile.rememberPosition)
             if (nativeShowScrollbar.state.value != modeProfile.showScrollbar) nativeShowScrollbar.onChange(modeProfile.showScrollbar)
+            if (nativeShowSuggestedApps.state.value != modeProfile.showSuggestedApps) nativeShowSuggestedApps.onChange(modeProfile.showSuggestedApps)
         }
         Column {
             DrawerLayoutPreference(
@@ -215,6 +217,13 @@ fun AppDrawerPreferences(
                 subtitle = resources.getQuantityString(R.plurals.apps_count, hiddenApps.size, hiddenApps.size),
             )
             SearchBarPreference(SearchRoute.DRAWER_SEARCH, showLabel = false)
+            SwitchPreference(
+                label = "Afficher les suggestions d’applications",
+                adapter = modeBackedAdapter(
+                    modePreference("showSuggestedApps", { it.showSuggestedApps }, { profile, value -> profile.copy(showSuggestedApps = value) }),
+                    nativeShowSuggestedApps,
+                ),
+            )
             NavigationActionPreference(
                 label = stringResource(R.string.suggestion_pref_screen_title),
                 destination = Predictions,
@@ -409,6 +418,7 @@ fun AppDrawerPreferences(
                     nativeHideFolderApps.onChange(resetProfile.hideFolderApps)
                     nativeRememberPosition.onChange(resetProfile.rememberPosition)
                     nativeShowScrollbar.onChange(resetProfile.showScrollbar)
+                    nativeShowSuggestedApps.onChange(resetProfile.showSuggestedApps)
                     ReloadHelper(context).reloadGrid()
                 },
             )
