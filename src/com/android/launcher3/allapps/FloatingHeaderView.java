@@ -36,6 +36,7 @@ import com.android.launcher3.BubbleTextView;
 import com.android.launcher3.Flags;
 import com.android.launcher3.Insettable;
 import com.android.launcher3.R;
+import com.android.launcher3.PrimeDebugLog;
 import com.android.launcher3.allapps.ActivityAllAppsContainerView.AdapterHolder;
 import com.android.launcher3.util.PluginManagerWrapper;
 import com.android.launcher3.views.ActivityContext;
@@ -375,6 +376,21 @@ public class FloatingHeaderView extends LinearLayout implements
                             recyclerClipTop,
                             headerToRecyclerY
                                     + Math.round(primeTabsView.getY() + primeTabsView.getHeight()));
+                    PrimeDebugLog.log(
+                            "PrimeTabsClip",
+                            "headerTop=" + getTop()
+                                    + " headerY=" + getY()
+                                    + " headerTranslationY=" + getTranslationY()
+                                    + " rvTop=" + mCurrentRV.getTop()
+                                    + " rvY=" + mCurrentRV.getY()
+                                    + " rvParentTop=" + ((ViewGroup) mCurrentRV.getParent()).getTop()
+                                    + " tabY=" + primeTabsView.getY()
+                                    + " tabTop=" + primeTabsView.getTop()
+                                    + " tabTranslationY=" + primeTabsView.getTranslationY()
+                                    + " tabHeight=" + primeTabsView.getHeight()
+                                    + " headerToRvY=" + headerToRecyclerY
+                                    + " clipTop=" + recyclerClipTop
+                                    + " scroll=" + uncappedTranslationY);
                     break;
                 }
             }
