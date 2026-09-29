@@ -193,7 +193,11 @@ class PrimeDrawerModePreferences(context: Context) {
         predictionUseWeightedUsageStats = optBoolean("predictionUseWeightedUsageStats", legacy2.lawnchairPredictorUseWeightedUsageStats.firstCached()),
         hideFolderApps = optBoolean("hideFolderApps", legacy.folderApps.get()),
         appDrawerBackgroundColor = ColorOption.fromString(optString("appDrawerBackgroundColor", legacy2.appDrawerBackgroundColor.firstCached().toString())),
-        defaultDrawerTextColor = if (has("defaultDrawerTextColor") && !isNull("defaultDrawerTextColor")) getInt("defaultDrawerTextColor") else tabsRepository.getConfiguration().defaultDrawerTextColor,
+        defaultDrawerTextColor = when {
+            has("defaultDrawerTextColor") && isNull("defaultDrawerTextColor") -> null
+            has("defaultDrawerTextColor") -> getInt("defaultDrawerTextColor")
+            else -> tabsRepository.getConfiguration().defaultDrawerTextColor
+        },
         defaultTabsColor = if (has("defaultTabsColor") && !isNull("defaultTabsColor")) getInt("defaultTabsColor") else null,
         workProfileTabsColor = if (has("workProfileTabsColor") && !isNull("workProfileTabsColor")) getInt("workProfileTabsColor") else null,
     )
