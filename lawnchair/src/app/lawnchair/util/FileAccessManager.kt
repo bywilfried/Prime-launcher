@@ -183,7 +183,7 @@ class FileAccessManager private constructor(private val context: Context) : Safe
     }
 
     private fun getCurrentAllFilesAccessState(): FileAccessState {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (isPlayStoreFlavor()) {
                 // MANAGE_EXTERNAL_STORAGE is disabled for Play Store releases
                 return FileAccessState.Denied
@@ -192,13 +192,10 @@ class FileAccessManager private constructor(private val context: Context) : Safe
             if (Environment.isExternalStorageManager()) {
                 return FileAccessState.Full
             }
+        } else if (checkPermission(Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            return FileAccessState.Full
         }
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            if (checkPermission(Manifest.permission.READ_EXTERNAL_STORAGE)) {
-                return FileAccessState.Full
-            }
-        }
         return FileAccessState.Denied
     }
 
