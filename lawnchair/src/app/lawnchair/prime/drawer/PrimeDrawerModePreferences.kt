@@ -97,6 +97,7 @@ class PrimeDrawerModePreferences(context: Context) {
             topPadding = floatResource(com.android.launcher3.R.dimen.config_default_drawer_padding_top),
             rememberPosition = context.resources.getBoolean(com.android.launcher3.R.bool.config_default_remember_position),
             showScrollbar = context.resources.getBoolean(com.android.launcher3.R.bool.config_default_show_scrollbar),
+            showSuggestedApps = context.resources.getBoolean(com.android.launcher3.R.bool.config_default_show_suggested_apps_at_drawer_top),
             hideFolderApps = true,
             appDrawerBackgroundColor = ColorOption.fromString(
                 context.getString(com.android.launcher3.R.string.config_default_app_drawer_bg_color),
@@ -121,6 +122,7 @@ class PrimeDrawerModePreferences(context: Context) {
             topPadding = legacy2.drawerPaddingTopFactor.firstCached(),
             rememberPosition = legacy2.rememberPosition.firstCached(),
             showScrollbar = legacy2.showScrollbar.firstCached(),
+            showSuggestedApps = legacy2.showSuggestedAppsInDrawer.firstCached(),
             hideFolderApps = legacy.folderApps.get(),
             appDrawerBackgroundColor = legacy2.appDrawerBackgroundColor.firstCached(),
             defaultDrawerTextColor = tabsRepository.getConfiguration().defaultDrawerTextColor,
@@ -146,6 +148,7 @@ class PrimeDrawerModePreferences(context: Context) {
         put("topPadding", topPadding.toDouble())
         put("rememberPosition", rememberPosition)
         put("showScrollbar", showScrollbar)
+        put("showSuggestedApps", showSuggestedApps)
         put("hideFolderApps", hideFolderApps)
         put("appDrawerBackgroundColor", appDrawerBackgroundColor.toString())
         put("defaultDrawerTextColor", defaultDrawerTextColor ?: JSONObject.NULL)
@@ -172,6 +175,7 @@ class PrimeDrawerModePreferences(context: Context) {
         topPadding = optDouble("topPadding", legacy2.drawerPaddingTopFactor.firstCached().toDouble()).toFloat(),
         rememberPosition = optBoolean("rememberPosition", legacy2.rememberPosition.firstCached()),
         showScrollbar = optBoolean("showScrollbar", legacy2.showScrollbar.firstCached()),
+        showSuggestedApps = optBoolean("showSuggestedApps", legacy2.showSuggestedAppsInDrawer.firstCached()),
         hideFolderApps = optBoolean("hideFolderApps", legacy.folderApps.get()),
         appDrawerBackgroundColor = ColorOption.fromString(optString("appDrawerBackgroundColor", legacy2.appDrawerBackgroundColor.firstCached().toString())),
         defaultDrawerTextColor = if (has("defaultDrawerTextColor") && !isNull("defaultDrawerTextColor")) getInt("defaultDrawerTextColor") else tabsRepository.getConfiguration().defaultDrawerTextColor,
@@ -197,6 +201,7 @@ data class PrimeDrawerModeProfile(
     val topPadding: Float,
     val rememberPosition: Boolean,
     val showScrollbar: Boolean,
+    val showSuggestedApps: Boolean,
     val hideFolderApps: Boolean,
     val appDrawerBackgroundColor: ColorOption,
     val defaultDrawerTextColor: Int?,
