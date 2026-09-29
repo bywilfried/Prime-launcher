@@ -28,4 +28,8 @@ class CallbackPrefEntry<T>(
     override fun removeListener(listener: PreferenceChangeListener) {
         listeners.remove(listener)
     }
+
+    fun notifyChanged() {
+        listeners.forEach(PreferenceChangeListener::onPreferenceChange)
+    }
 }
