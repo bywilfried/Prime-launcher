@@ -304,8 +304,8 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         }
     }
 
-    private void switchTabBySwipe(FloatingHeaderView parent, boolean swipeLeft) {
-        if (!mPrefs.getDrawerTabsEnabled().get() || !mPrefs.getDrawerTabsSwipeEnabled().get()) return;
+    private boolean switchTabBySwipe(FloatingHeaderView parent, boolean swipeLeft) {
+        if (!mPrefs.getDrawerTabsEnabled().get() || !mPrefs.getDrawerTabsSwipeEnabled().get()) return false;
 
         PrimeDrawerTabsConfiguration configuration = mRepository.getConfiguration();
         boolean hasUserTabs = false;
@@ -320,7 +320,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         for (PrimeDrawerTab tab : configuration.getTabs()) {
             if (isTabVisible(tab, hasUserTabs)) visibleTabs.add(tab);
         }
-        if (visibleTabs.size() < 2) return;
+        if (visibleTabs.size() < 2) return false;
 
         int currentIndex = 0;
         for (int i = 0; i < visibleTabs.size(); i++) {
@@ -331,9 +331,10 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         }
 
         int targetIndex = swipeLeft ? currentIndex + 1 : currentIndex - 1;
-        if (targetIndex < 0 || targetIndex >= visibleTabs.size()) return;
+        if (targetIndex < 0 || targetIndex >= visibleTabs.size()) return false;
 
         selectTab(parent, visibleTabs.get(targetIndex).getId(), swipeLeft ? 1 : -1);
+        return true;
     }
 
     private boolean isTabVisible(PrimeDrawerTab tab, boolean hasUserTabs) {
