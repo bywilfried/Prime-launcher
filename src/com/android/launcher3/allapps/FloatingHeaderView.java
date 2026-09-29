@@ -368,9 +368,13 @@ public class FloatingHeaderView extends LinearLayout implements
             for (FloatingHeaderRow row : mAllRows) {
                 if (row instanceof PrimeDrawerTabsView && row.hasVisibleContent()) {
                     View primeTabsView = (View) row;
+                    int headerToRecyclerY = getTop()
+                            - mCurrentRV.getTop()
+                            - ((ViewGroup) mCurrentRV.getParent()).getTop();
                     recyclerClipTop = Math.max(
                             recyclerClipTop,
-                            Math.round(primeTabsView.getY() + primeTabsView.getHeight()));
+                            headerToRecyclerY
+                                    + Math.round(primeTabsView.getY() + primeTabsView.getHeight()));
                     break;
                 }
             }
