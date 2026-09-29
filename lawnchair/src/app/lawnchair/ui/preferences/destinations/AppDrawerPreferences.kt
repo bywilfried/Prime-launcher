@@ -108,6 +108,7 @@ fun AppDrawerPreferences(
         val nativeShowLabels = prefs2.showIconLabelsInDrawer.getAdapter()
         val nativeLabelSize = prefs2.drawerIconLabelSizeFactor.getAdapter()
         val nativeDrawerBackgroundColor = prefs2.appDrawerBackgroundColor.getAdapter()
+        val nativeWorkProfileTabsColor = prefs2.workProfileTabBackgroundColor.getAdapter()
         val nativeRowHeight = prefs2.drawerCellHeightFactor.getAdapter()
         val nativeHorizontalMargin = prefs2.drawerLeftRightMarginFactor.getAdapter()
         val nativeTopPadding = prefs2.drawerPaddingTopFactor.getAdapter()
@@ -123,6 +124,10 @@ fun AppDrawerPreferences(
         ) = modePreferences.preference(drawerGridOption, activeDrawerMode, key, read, write, invalidate)
         LaunchedEffect(activeDrawerMode) {
             if (nativeDrawerBackgroundColor.state.value != modeProfile.appDrawerBackgroundColor) nativeDrawerBackgroundColor.onChange(modeProfile.appDrawerBackgroundColor)
+            val workTabsColor = modeProfile.workProfileTabsColor
+                ?.let { app.lawnchair.theme.color.ColorOption.CustomColor(it) }
+                ?: app.lawnchair.theme.color.ColorOption.SystemAccent
+            if (nativeWorkProfileTabsColor.state.value != workTabsColor) nativeWorkProfileTabsColor.onChange(workTabsColor)
             if (nativeDrawerOpacity.state.value != modeProfile.drawerOpacity) nativeDrawerOpacity.onChange(modeProfile.drawerOpacity)
             if (nativeDrawerColumns.state.value != modeProfile.drawerColumns) nativeDrawerColumns.onChange(modeProfile.drawerColumns)
             if (nativeDrawerColumnsUnfolded.state.value != modeProfile.drawerColumnsUnfolded) nativeDrawerColumnsUnfolded.onChange(modeProfile.drawerColumnsUnfolded)
@@ -259,7 +264,17 @@ fun AppDrawerPreferences(
                 valueRange = 0F..1F,
                 showAsPercentage = true,
             )
-            ColorPreference(preference = prefs2.workProfileTabBackgroundColor)
+            ColorPreference(
+                label = "Couleur des onglets Personnel / Travail",
+                selectedColor = modeProfile.workProfileTabsColor
+                    ?.let { app.lawnchair.theme.color.ColorOption.CustomColor(it) }
+                    ?: app.lawnchair.theme.color.ColorOption.Default,
+                onClick = {
+                    navController.navigate(
+                        PrimeDrawerDefaultColor(activeDrawerMode.storageKey, "workTabs", "Couleur des onglets Personnel / Travail"),
+                    )
+                },
+            )
             SwitchPreference(
                 label = stringResource(id = R.string.work_profile_tab_container_background_label),
                 adapter = prefs2.workProfileTabContainerBackground.getAdapter(),
