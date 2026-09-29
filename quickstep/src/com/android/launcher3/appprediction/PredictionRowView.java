@@ -31,6 +31,7 @@ import android.widget.LinearLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import app.lawnchair.preferences.PreferenceManager;
 import app.lawnchair.preferences2.PreferenceManager2;
 import com.android.launcher3.BubbleTextView;
 import com.android.launcher3.DeviceProfile;
@@ -78,6 +79,7 @@ public class PredictionRowView<T extends Context & ActivityContext>
     private boolean mPredictionUiUpdatePaused = false;
 
     private final PreferenceManager2 prefs2 = PreferenceManager2.getInstance(getContext());
+    private final PreferenceManager primePrefs = PreferenceManager.getInstance(getContext());
 
     public PredictionRowView(@NonNull Context context) {
         this(context, null);
@@ -286,6 +288,16 @@ public class PredictionRowView<T extends Context & ActivityContext>
 
     @Override
     public void setVerticalScroll(int scroll, boolean isScrolledOut) {
+        if (primePrefs.getDrawerTabsEnabled().get()) {
+            // In Prime Tabs mode, suggestions are part of the persistent navigation header:
+            // search -> suggestions -> category tabs. Keep this row fixed while the app list moves.
+            setTranslationY(0);
+            setAlpha(1);
+            if (getVisibility() != GONE) {
+                AlphaUpdateListener.updateVisibility(this);
+            }
+            return;
+        }
         if (!isScrolledOut) {
             setTranslationY(scroll);
         }
