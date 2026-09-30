@@ -68,6 +68,8 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
     private boolean mLongPressActive;
     private final int mTouchSlop;
     private FloatingHeaderView mHeaderParent;
+    private boolean mSwipeCommitInProgress;
+    private String mSwipePreviewTabId;
 
     public PrimeDrawerTabsView(Context context) {
         this(context, null);
@@ -95,8 +97,13 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                     .setPrimeDrawerSwipeListener(
                             () -> mPrefs.getDrawerTabsEnabled().get()
                                     && mPrefs.getDrawerTabsSwipeEnabled().get(),
-                            swipeLeft -> getSwipeTargetTabId(swipeLeft),
-                            swipeLeft -> switchTabBySwipe(parent, swipeLeft));
+                            swipeLeft -> {
+                                String targetTabId = getSwipeTargetTabId(swipeLeft);
+                                setSwipePreviewTab(targetTabId);
+                                return targetTabId;
+                            },
+                            swipeLeft -> commitSwipeTab(parent, swipeLeft),
+                            committed -> clearSwipePreview(committed));
         }
     }
 
@@ -117,6 +124,10 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         if (!PrimeDrawerTabsRepository.PREF_CONFIGURATION.equals(key) || mHeaderParent == null) return;
         post(() -> {
             refresh(mHeaderParent);
+            if (mSwipeCommitInProgress) {
+                mSwipeCommitInProgress = false;
+                return;
+            }
             mHeaderParent.onPrimeDrawerTabSelected();
         });
     }
@@ -195,6 +206,45 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         // The tab row must not paint another drawer background layer. Keeping it transparent
         // lets the active drawer background show through without darkening or covering items.
         setBackgroundColor(android.graphics.Color.TRANSPARENT);
+    }
+
+    private void setSwipePreviewTab(String tabId) {
+        if (tabId == null || tabId.equals(mSwipePreviewTabId)) return;
+        mSwipePreviewTabId = tabId;
+        updateSwipePillSelection(tabId);
+    }
+
+    private void clearSwipePreview(boolean committed) {
+        String selectedTabId = mRepository.getConfiguration().getSelectedTabId();
+        mSwipePreviewTabId = null;
+        updateSwipePillSelection(selectedTabId);
+        if (committed) ensureSelectedTabVisible(selectedTabId);
+    }
+
+    private void updateSwipePillSelection(String tabId) {
+        for (int i = 0; i < mTabsContainer.getChildCount(); i++) {
+            View child = mTabsContainer.getChildAt(i);
+            Object tag = child.getTag();
+            if (!(child instanceof TextView) || !(tag instanceof String)) continue;
+            boolean selected = tag.equals(tabId);
+            child.setSelected(selected);
+            child.setActivated(selected);
+            child.setAlpha(selected ? 1f : 0.72f);
+        }
+        ensureSelectedTabVisible(tabId);
+    }
+
+    private void commitSwipeTab(FloatingHeaderView parent, boolean swipeLeft) {
+        String targetTabId = getSwipeTargetTabId(swipeLeft);
+        if (targetTabId == null) return;
+        PrimeDrawerTabsConfiguration configuration = mRepository.getConfiguration();
+        if (targetTabId.equals(configuration.getSelectedTabId())) return;
+
+        // The preview already displays the destination page. Persist only the selection here;
+        // the container swaps to the rebuilt real list while the preview still covers it.
+        mSwipeCommitInProgress = true;
+        mRepository.setSelectedTab(targetTabId);
+        parent.onPrimeDrawerTabSelected(0);
     }
 
     private void selectTab(FloatingHeaderView parent, String tabId, int direction) {
