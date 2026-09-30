@@ -1388,7 +1388,6 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             private boolean previewStarted;
             private boolean swipeLeft;
             private AllAppsRecyclerView previewPage;
-            private android.widget.FrameLayout swipeRail;
             private LawnchairAlphabeticalAppsList<T> previewAppsList;
             private AdapterHolder previewHolder;
             private String previewTabId;
@@ -1419,14 +1418,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             private boolean ensurePreviewPage(AllAppsRecyclerView rv, String tabId) {
                 android.view.ViewParent parent = rv.getParent();
                 if (!(parent instanceof android.widget.FrameLayout)) return false;
-                android.widget.FrameLayout rail = (android.widget.FrameLayout) parent;
-                if (rail.getId() != R.id.prime_swipe_page_rail) return false;
-                android.view.ViewParent viewportParent = rail.getParent();
-                if (!(viewportParent instanceof android.widget.FrameLayout)) return false;
-                android.widget.FrameLayout viewport = (android.widget.FrameLayout) viewportParent;
+                android.widget.FrameLayout viewport = (android.widget.FrameLayout) parent;
                 if (viewport.getId() != R.id.apps_list_view_container) return false;
                 mPrimeSwipeViewport = viewport;
-                swipeRail = rail;
 
                 int type = rv == mAH.get(AdapterHolder.WORK).mRecyclerView
                         ? AdapterHolder.WORK : AdapterHolder.MAIN;
@@ -1467,7 +1461,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                             rv.getPaddingRight(), rv.getPaddingBottom());
                     Rect clip = rv.getClipBounds();
                     if (clip != null) previewPage.setClipBounds(new Rect(clip));
-                    swipeRail.addView(previewPage, new android.widget.FrameLayout.LayoutParams(
+                    viewport.addView(previewPage, new android.widget.FrameLayout.LayoutParams(
                             android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                             android.view.ViewGroup.LayoutParams.MATCH_PARENT));
                 }
@@ -1504,7 +1498,6 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     previewPage.layout(0, 0, width, height);
                 }
                 previewPage.setTranslationX(swipeLeft ? width : -width);
-                swipeRail.setTranslationX(0f);
                 // Prewarm off-screen, but do not expose a live RecyclerView before Prime has
                 // actually intercepted the horizontal gesture.
                 previewPage.setVisibility(INVISIBLE);
@@ -1521,7 +1514,6 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     previewPage.setTranslationX(0f);
                 }
                 rv.setTranslationX(0f);
-                if (swipeRail != null) swipeRail.setTranslationX(0f);
                 mPrimeSwipeBackgroundColor = null;
                 previewStarted = false;
                 invalidate();
@@ -1534,11 +1526,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 float clampedDx = Math.max(-width, Math.min(width, dx));
                 float progress = Math.min(1f, Math.abs(clampedDx) / width);
 
-                // Both pages have fixed positions on the rail; move the rail exactly once.
-                // The current page stays at x=0 and the adjacent page at +/- one page width.
-                rv.setTranslationX(0f);
-                previewPage.setTranslationX(swipeLeft ? width : -width);
-                if (swipeRail != null) swipeRail.setTranslationX(clampedDx);
+                rv.setTranslationX(clampedDx);
+                float targetStart = swipeLeft ? width : -width;
+                previewPage.setTranslationX(targetStart + clampedDx);
                 if (!PRIME_SWIPE_DIAG_FREEZE_BACKGROUND) {
                     mPrimeSwipeBackgroundColor =
                             ColorUtils.blendARGB(startBackground, targetBackground, progress);
