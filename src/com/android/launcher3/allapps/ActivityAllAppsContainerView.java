@@ -1389,6 +1389,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             private boolean swipeLeft;
             private AllAppsRecyclerView previewPage;
             private LawnchairAlphabeticalAppsList<T> previewAppsList;
+            private AdapterHolder previewHolder;
             private String previewTabId;
             private boolean previewDirectionLeft;
             private int startBackground;
@@ -1410,83 +1411,68 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 return mCachedBottomSheetBgColor;
             }
 
-            private boolean createPreviewPage(AllAppsRecyclerView rv, String tabId) {
+            private boolean ensurePreviewPage(AllAppsRecyclerView rv, String tabId) {
+                android.view.ViewParent parent = rv.getParent();
+                if (!(parent instanceof android.widget.FrameLayout)) return false;
+                android.widget.FrameLayout viewport = (android.widget.FrameLayout) parent;
+                if (viewport.getId() != R.id.apps_list_view_container) return false;
+                mPrimeSwipeViewport = viewport;
+
                 int type = rv == mAH.get(AdapterHolder.WORK).mRecyclerView
                         ? AdapterHolder.WORK : AdapterHolder.MAIN;
-                previewAppsList = new LawnchairAlphabeticalAppsList<>(
-                        mActivityContext,
-                        mAllAppsStore,
-                        type == AdapterHolder.WORK ? mWorkManager : null,
-                        type == AdapterHolder.MAIN ? mPrivateProfileManager : null);
 
-                // Attach the adapter before asking the preview list to rebuild for another tab.
-                AdapterHolder previewHolder = new AdapterHolder(type, previewAppsList);
-                previewAppsList.setPrimePreviewTabId(tabId);
-                Predicate<ItemInfo> matcher = type == AdapterHolder.WORK
-                        ? mWorkManager.getItemInfoMatcher() : mPersonalMatcher;
-                previewAppsList.updateItemFilter(matcher);
+                // Keep one real adjacent page alive across gestures. Only its filtered tab changes.
+                if (previewPage == null) {
+                    previewAppsList = new LawnchairAlphabeticalAppsList<>(
+                            mActivityContext,
+                            mAllAppsStore,
+                            type == AdapterHolder.WORK ? mWorkManager : null,
+                            type == AdapterHolder.MAIN ? mPrivateProfileManager : null);
+                    previewHolder = new AdapterHolder(type, previewAppsList);
+                    previewPage = new AllAppsRecyclerView(getContext());
+                    previewPage.setApps(previewAppsList);
+                    previewPage.setLayoutManager(previewHolder.mLayoutManager);
+                    previewPage.setAdapter(previewHolder.mAdapter);
+                    previewPage.setHasFixedSize(true);
+                    previewPage.setItemAnimator(null);
+                    previewPage.setRecycledViewPool(new RecyclerView.RecycledViewPool());
+                    previewPage.setPadding(
+                            rv.getPaddingLeft(), rv.getPaddingTop(),
+                            rv.getPaddingRight(), rv.getPaddingBottom());
+                    Rect clip = rv.getClipBounds();
+                    if (clip != null) previewPage.setClipBounds(new Rect(clip));
+                    viewport.addView(previewPage, new android.widget.FrameLayout.LayoutParams(
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT));
+                }
 
-                previewPage = new AllAppsRecyclerView(getContext());
-                previewPage.setApps(previewAppsList);
-                previewPage.setLayoutManager(previewHolder.mLayoutManager);
-                previewPage.setAdapter(previewHolder.mAdapter);
-                previewPage.setHasFixedSize(true);
-                previewPage.setItemAnimator(null);
-                previewPage.setPadding(
-                        rv.getPaddingLeft(), rv.getPaddingTop(),
-                        rv.getPaddingRight(), rv.getPaddingBottom());
-                Rect clip = rv.getClipBounds();
-                if (clip != null) previewPage.setClipBounds(new Rect(clip));
+                if (!tabId.equals(previewTabId)) {
+                    previewAppsList.setPrimePreviewTabId(tabId);
+                    Predicate<ItemInfo> matcher = type == AdapterHolder.WORK
+                            ? mWorkManager.getItemInfoMatcher() : mPersonalMatcher;
+                    previewAppsList.updateItemFilter(matcher);
+                    previewTabId = tabId;
+                }
 
                 int width = Math.max(1, rv.getWidth());
                 int height = Math.max(1, rv.getHeight());
-                int[] rvLocation = new int[2];
-                int[] containerLocation = new int[2];
-                rv.getLocationInWindow(rvLocation);
-                ActivityAllAppsContainerView.this.getLocationInWindow(containerLocation);
-                int left = rvLocation[0] - containerLocation[0];
-                int top = rvLocation[1] - containerLocation[1];
-
-                // The real RecyclerView permanently lives in this clipped viewport.
-                // Never reparent the active touch target during a gesture: Android sends it
-                // ACTION_CANCEL, which was clearing previewPage and caused the null-child crash.
-                android.view.ViewParent parent = rv.getParent();
-                if (!(parent instanceof android.widget.FrameLayout)) {
-                    return false;
-                }
-                android.widget.FrameLayout viewport = (android.widget.FrameLayout) parent;
-                if (viewport.getId() != R.id.apps_list_view_container) {
-                    return false;
-                }
-                mPrimeSwipeViewport = viewport;
-                mPrimeSwipeViewport.addView(previewPage, new android.widget.FrameLayout.LayoutParams(
-                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                        android.view.ViewGroup.LayoutParams.MATCH_PARENT));
-
-                // The preview is transient and deliberately owns a separate holder pool.
-                previewPage.setRecycledViewPool(new RecyclerView.RecycledViewPool());
                 previewPage.measure(
                         MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
                         MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
                 previewPage.layout(0, 0, width, height);
                 previewPage.setTranslationX(swipeLeft ? width : -width);
+                previewPage.setVisibility(VISIBLE);
                 return true;
             }
 
             private void clearPreview(AllAppsRecyclerView rv) {
+                // Keep the adjacent page attached and warm for the next gesture. Hiding it is
+                // enough; destroying/recreating the RecyclerView was the remaining source of
+                // visible reconstruction during slow swipes.
                 if (previewPage != null) {
-                    if (mPrimeSwipeViewport != null) {
-                        mPrimeSwipeViewport.removeView(previewPage);
-                    }
-                    previewPage.setAdapter(null);
-                    previewPage = null;
+                    previewPage.setVisibility(INVISIBLE);
+                    previewPage.setTranslationX(0f);
                 }
-                mPrimeSwipeViewport = null;
-                if (previewAppsList != null) {
-                    previewAppsList.disposePrimePreview();
-                    previewAppsList = null;
-                }
-                previewTabId = null;
                 rv.setTranslationX(0f);
                 mPrimeSwipeBackgroundColor = null;
                 previewStarted = false;
@@ -1580,7 +1566,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                                 previewDirectionLeft = directionLeft;
                                 startBackground = getBottomSheetBackgroundColor();
                                 targetBackground = resolvePreviewBackground(targetTabId);
-                                if (createPreviewPage(rv, targetTabId)) {
+                                if (ensurePreviewPage(rv, targetTabId)) {
                                     previewTabId = targetTabId;
                                 }
                             }
