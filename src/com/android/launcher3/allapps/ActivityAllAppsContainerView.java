@@ -1451,11 +1451,14 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 // Never reparent the active touch target during a gesture: Android sends it
                 // ACTION_CANCEL, which was clearing previewPage and caused the null-child crash.
                 android.view.ViewParent parent = rv.getParent();
-                if (!(parent instanceof android.widget.FrameLayout)
-                        || parent.getId() != R.id.apps_list_view_container) {
+                if (!(parent instanceof android.widget.FrameLayout)) {
                     return false;
                 }
-                mPrimeSwipeViewport = (android.widget.FrameLayout) parent;
+                android.widget.FrameLayout viewport = (android.widget.FrameLayout) parent;
+                if (viewport.getId() != R.id.apps_list_view_container) {
+                    return false;
+                }
+                mPrimeSwipeViewport = viewport;
                 mPrimeSwipeViewport.addView(previewPage, new android.widget.FrameLayout.LayoutParams(
                         android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                         android.view.ViewGroup.LayoutParams.MATCH_PARENT));
