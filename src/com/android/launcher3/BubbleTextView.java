@@ -1688,6 +1688,17 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         mPrimeIconShape = shape;
     }
 
+    /**
+     * Prime swipe diagnostic: apply a shaped variant only when it is already stable in cache.
+     * Never schedule a drawable replacement while a preview page is visible.
+     */
+    public void setPrimeIconShapeFromCacheOnly(@Nullable IconShape shape) {
+        mPrimeIconShape = shape;
+        ++mPrimeIconShapeRequestGeneration;
+        if (shape == null || !(getTag() instanceof ItemInfoWithIcon info)) return;
+        applyCachedPrimeIcon(info);
+    }
+
     /** Prime: rebuilds a variant only when no stable cached variant exists. */
     public void setPrimeIconShape(@Nullable IconShape shape) {
         mPrimeIconShape = shape;
