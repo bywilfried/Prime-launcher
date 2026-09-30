@@ -1394,6 +1394,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             private boolean previewDirectionLeft;
             private int startBackground;
             private int targetBackground;
+            // Diagnostic: freeze drawer background during the gesture. If the visible flicker
+            // disappears, the culprit is the scrim/background invalidation rather than either
+            // RecyclerView page.
+            private static final boolean PRIME_SWIPE_DIAG_FREEZE_BACKGROUND = true;
 
             private int resolvePreviewBackground(String tabId) {
                 PrimeDrawerVisualOverrides overrides =
@@ -1489,10 +1493,12 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 rv.setTranslationX(clampedDx);
                 float targetStart = swipeLeft ? width : -width;
                 previewPage.setTranslationX(targetStart + clampedDx);
-                mPrimeSwipeBackgroundColor =
-                        ColorUtils.blendARGB(startBackground, targetBackground, progress);
-                invalidate();
-                if (mScrimView != null) mScrimView.invalidate();
+                if (!PRIME_SWIPE_DIAG_FREEZE_BACKGROUND) {
+                    mPrimeSwipeBackgroundColor =
+                            ColorUtils.blendARGB(startBackground, targetBackground, progress);
+                    invalidate();
+                    if (mScrimView != null) mScrimView.invalidate();
+                }
             }
 
             private void finishPreview(AllAppsRecyclerView rv, boolean commit, float currentDx) {
@@ -1581,7 +1587,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                             if (targetTabId != null
                                     && targetTabId.equals(previewTabId)
                                     && previewPage != null) {
-                                mPrimeSwipeBackgroundColor = startBackground;
+                                if (!PRIME_SWIPE_DIAG_FREEZE_BACKGROUND) {
+                                    mPrimeSwipeBackgroundColor = startBackground;
+                                }
                                 previewStarted = true;
                                 setProgress(rv, dx);
                             }
