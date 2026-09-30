@@ -1387,6 +1387,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             private boolean swipeLeft;
             private AllAppsRecyclerView previewPage;
             private LawnchairAlphabeticalAppsList<T> previewAppsList;
+            private String previewTabId;
+            private boolean previewDirectionLeft;
             private int startBackground;
             private int targetBackground;
 
@@ -1447,6 +1449,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 // onAttachedToWindow(). Attach the preview before its first measure/layout;
                 // otherwise laying it out here makes the manager dereference a null mRv.
                 ActivityAllAppsContainerView.this.getOverlay().add(previewPage);
+                mAllAppsStore.registerIconContainer(previewPage);
+                previewPage.setRecycledViewPool(mAllAppsStore.getRecyclerViewPool());
                 previewPage.measure(
                         MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
                         MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
@@ -1457,6 +1461,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
 
             private void clearPreview(AllAppsRecyclerView rv) {
                 if (previewPage != null) {
+                    mAllAppsStore.unregisterIconContainer(previewPage);
                     ActivityAllAppsContainerView.this.getOverlay().remove(previewPage);
                     previewPage.setAdapter(null);
                     previewPage = null;
@@ -1465,6 +1470,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     previewAppsList.disposePrimePreview();
                     previewAppsList = null;
                 }
+                previewTabId = null;
                 rv.setTranslationX(0f);
                 mPrimeSwipeBackgroundColor = null;
                 previewStarted = false;
@@ -1533,20 +1539,42 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                         if (!validAppAreaGesture) return false;
                         float dx = e.getX() - downX;
                         float dy = e.getY() - downY;
+
+                        // Prepare the adjacent page as soon as horizontal intent appears, before
+                        // RecyclerView's touch slop is crossed. By the time Prime intercepts the
+                        // gesture there should be no adapter construction left on the critical
+                        // first swipe frame.
                         if (!horizontalSwipe
-                                && Math.abs(dx) > touchSlop * 1.5f
-                                && Math.abs(dx) > Math.abs(dy) * 1.25f) {
-                            horizontalSwipe = true;
-                            swipeLeft = dx < 0;
-                            String targetTabId = getPreviewTabId.apply(swipeLeft);
-                            if (targetTabId != null) {
+                                && Math.abs(dx) > 2f
+                                && Math.abs(dx) > Math.abs(dy)) {
+                            boolean directionLeft = dx < 0;
+                            String targetTabId = getPreviewTabId.apply(directionLeft);
+                            if (targetTabId != null
+                                    && (!targetTabId.equals(previewTabId)
+                                            || previewDirectionLeft != directionLeft)) {
+                                if (previewPage != null) clearPreview(rv);
+                                swipeLeft = directionLeft;
+                                previewDirectionLeft = directionLeft;
                                 startBackground = getBottomSheetBackgroundColor();
                                 targetBackground = resolvePreviewBackground(targetTabId);
                                 if (createPreviewPage(rv, targetTabId)) {
-                                    mPrimeSwipeBackgroundColor = startBackground;
-                                    previewStarted = true;
-                                    setProgress(rv, dx);
+                                    previewTabId = targetTabId;
                                 }
+                            }
+                        }
+
+                        if (!horizontalSwipe
+                                && Math.abs(dx) > touchSlop
+                                && Math.abs(dx) > Math.abs(dy) * 1.05f) {
+                            horizontalSwipe = true;
+                            swipeLeft = dx < 0;
+                            String targetTabId = getPreviewTabId.apply(swipeLeft);
+                            if (targetTabId != null
+                                    && targetTabId.equals(previewTabId)
+                                    && previewPage != null) {
+                                mPrimeSwipeBackgroundColor = startBackground;
+                                previewStarted = true;
+                                setProgress(rv, dx);
                             }
                         }
                         return horizontalSwipe;
