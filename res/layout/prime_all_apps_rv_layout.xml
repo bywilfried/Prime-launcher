@@ -7,16 +7,6 @@
     android:clipChildren="true"
     android:clipToPadding="true">
 
-    <!-- Permanent page rail: Prime moves this one container during a category drag. -->
-    <FrameLayout
-        android:id="@+id/prime_swipe_page_rail"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:clipChildren="false"
-        android:clipToPadding="false">
-
-        <include layout="@layout/all_apps_rv_layout" />
-
-    </FrameLayout>
+    <include layout="@layout/all_apps_rv_layout" />
 
 </FrameLayout>
