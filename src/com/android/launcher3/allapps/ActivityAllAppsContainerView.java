@@ -1387,11 +1387,16 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             private boolean validAppAreaGesture;
             private boolean previewStarted;
             private boolean swipeLeft;
+            private AllAppsRecyclerView leftPreviewPage;
+            private LawnchairAlphabeticalAppsList<T> leftPreviewAppsList;
+            private AdapterHolder leftPreviewHolder;
+            private String leftPreviewTabId;
+            private AllAppsRecyclerView rightPreviewPage;
+            private LawnchairAlphabeticalAppsList<T> rightPreviewAppsList;
+            private AdapterHolder rightPreviewHolder;
+            private String rightPreviewTabId;
             private AllAppsRecyclerView previewPage;
-            private LawnchairAlphabeticalAppsList<T> previewAppsList;
-            private AdapterHolder previewHolder;
             private String previewTabId;
-            private boolean previewDirectionLeft;
             private int startBackground;
             private int targetBackground;
             // Diagnostic: freeze drawer background during the gesture. If the visible flicker
@@ -1415,7 +1420,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 return mCachedBottomSheetBgColor;
             }
 
-            private boolean ensurePreviewPage(AllAppsRecyclerView rv, String tabId) {
+            private boolean preparePreviewPage(
+                    AllAppsRecyclerView rv, String tabId, boolean directionLeft) {
                 android.view.ViewParent parent = rv.getParent();
                 if (!(parent instanceof android.widget.FrameLayout)) return false;
                 android.widget.FrameLayout viewport = (android.widget.FrameLayout) parent;
@@ -1424,54 +1430,84 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
 
                 int type = rv == mAH.get(AdapterHolder.WORK).mRecyclerView
                         ? AdapterHolder.WORK : AdapterHolder.MAIN;
+                AllAppsRecyclerView page = directionLeft ? rightPreviewPage : leftPreviewPage;
+                LawnchairAlphabeticalAppsList<T> appsList =
+                        directionLeft ? rightPreviewAppsList : leftPreviewAppsList;
+                String preparedTabId = directionLeft ? rightPreviewTabId : leftPreviewTabId;
 
-                // Keep one real adjacent page alive across gestures. Only its filtered tab changes.
-                if (previewPage == null) {
-                    previewAppsList = new LawnchairAlphabeticalAppsList<>(
+                if (page == null) {
+                    appsList = new LawnchairAlphabeticalAppsList<>(
                             mActivityContext,
                             mAllAppsStore,
                             type == AdapterHolder.WORK ? mWorkManager : null,
                             type == AdapterHolder.MAIN ? mPrivateProfileManager : null);
-                    previewHolder = new AdapterHolder(type, previewAppsList);
-                    previewPage = new AllAppsRecyclerView(getContext());
-                    previewPage.setApps(previewAppsList);
-                    previewPage.setLayoutManager(previewHolder.mLayoutManager);
-                    previewPage.setAdapter(previewHolder.mAdapter);
-                    previewPage.setHasFixedSize(true);
-                    previewPage.setItemAnimator(null);
-                    previewPage.setRecycledViewPool(new RecyclerView.RecycledViewPool());
-                    previewPage.setPadding(
+                    AdapterHolder holder = new AdapterHolder(type, appsList);
+                    page = new AllAppsRecyclerView(getContext());
+                    page.setApps(appsList);
+                    page.setLayoutManager(holder.mLayoutManager);
+                    page.setAdapter(holder.mAdapter);
+                    page.setHasFixedSize(true);
+                    page.setItemAnimator(null);
+                    page.setRecycledViewPool(new RecyclerView.RecycledViewPool());
+                    page.setPadding(
                             rv.getPaddingLeft(), rv.getPaddingTop(),
                             rv.getPaddingRight(), rv.getPaddingBottom());
                     Rect clip = rv.getClipBounds();
-                    if (clip != null) previewPage.setClipBounds(new Rect(clip));
-                    viewport.addView(previewPage, new android.widget.FrameLayout.LayoutParams(
+                    if (clip != null) page.setClipBounds(new Rect(clip));
+                    viewport.addView(page, new android.widget.FrameLayout.LayoutParams(
                             android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                             android.view.ViewGroup.LayoutParams.MATCH_PARENT));
+                    if (directionLeft) {
+                        rightPreviewPage = page;
+                        rightPreviewAppsList = appsList;
+                        rightPreviewHolder = holder;
+                    } else {
+                        leftPreviewPage = page;
+                        leftPreviewAppsList = appsList;
+                        leftPreviewHolder = holder;
+                    }
                 }
 
-                if (!tabId.equals(previewTabId)) {
-                    // setPrimePreviewTabId() already rebuilds the filtered adapter items.
-                    // Calling updateItemFilter() here immediately triggered a second onAppsUpdated()
-                    // on the same MOVE, causing redundant DiffUtil/layout work just as the
-                    // horizontal gesture starts.
-                    previewAppsList.setPrimePreviewTabId(tabId);
-                    previewTabId = tabId;
+                if (!tabId.equals(preparedTabId)) {
+                    appsList.setPrimePreviewTabId(tabId);
+                    if (directionLeft) {
+                        rightPreviewTabId = tabId;
+                    } else {
+                        leftPreviewTabId = tabId;
+                    }
                 }
 
                 int width = Math.max(1, rv.getWidth());
                 int height = Math.max(1, rv.getHeight());
-                // The persistent preview is already laid out by the viewport. Do not force a
-                // synchronous RecyclerView measure/layout on every prepared swipe; PagedView's
-                // smooth path similarly moves already-laid-out pages during the drag.
-                if (previewPage.getWidth() != width || previewPage.getHeight() != height) {
-                    previewPage.measure(
+                if (page.getWidth() != width || page.getHeight() != height) {
+                    page.measure(
                             MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
                             MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
-                    previewPage.layout(0, 0, width, height);
+                    page.layout(0, 0, width, height);
                 }
-                previewPage.setTranslationX(swipeLeft ? width : -width);
-                previewPage.setVisibility(VISIBLE);
+                page.setTranslationX(directionLeft ? width : -width);
+                page.setVisibility(INVISIBLE);
+                return true;
+            }
+
+            private void prepareAdjacentPages(AllAppsRecyclerView rv) {
+                String leftTabId = getPreviewTabId.apply(false);
+                if (leftTabId != null) preparePreviewPage(rv, leftTabId, false);
+                String rightTabId = getPreviewTabId.apply(true);
+                if (rightTabId != null) preparePreviewPage(rv, rightTabId, true);
+            }
+
+            private boolean activatePreparedPage(AllAppsRecyclerView rv, boolean directionLeft) {
+                AllAppsRecyclerView page = directionLeft ? rightPreviewPage : leftPreviewPage;
+                String tabId = directionLeft ? rightPreviewTabId : leftPreviewTabId;
+                if (page == null || tabId == null) return false;
+                previewPage = page;
+                previewTabId = tabId;
+                startBackground = getBottomSheetBackgroundColor();
+                targetBackground = resolvePreviewBackground(tabId);
+                int width = Math.max(1, rv.getWidth());
+                page.setTranslationX(directionLeft ? width : -width);
+                page.setVisibility(VISIBLE);
                 return true;
             }
 
@@ -1483,6 +1519,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     previewPage.setVisibility(INVISIBLE);
                     previewPage.setTranslationX(0f);
                 }
+                previewPage = null;
+                previewTabId = null;
                 rv.setTranslationX(0f);
                 mPrimeSwipeBackgroundColor = null;
                 previewStarted = false;
@@ -1555,44 +1593,23 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                         previewStarted = false;
                         validAppAreaGesture = downX >= 0 && downX <= rv.getWidth()
                                 && downY >= 0 && downY <= rv.getHeight();
+                        if (validAppAreaGesture) {
+                            // Prepare both neighbors before horizontal intent is known. MOVE must
+                            // only activate and translate an already-built page, like PagedView.
+                            prepareAdjacentPages(rv);
+                        }
                         return false;
                     case MotionEvent.ACTION_MOVE:
                         if (!validAppAreaGesture) return false;
                         float dx = e.getX() - downX;
                         float dy = e.getY() - downY;
 
-                        // Prepare the adjacent page as soon as horizontal intent appears, before
-                        // RecyclerView's touch slop is crossed. By the time Prime intercepts the
-                        // gesture there should be no adapter construction left on the critical
-                        // first swipe frame.
-                        if (!horizontalSwipe
-                                && Math.abs(dx) > 2f
-                                && Math.abs(dx) > Math.abs(dy)) {
-                            boolean directionLeft = dx < 0;
-                            String targetTabId = getPreviewTabId.apply(directionLeft);
-                            if (targetTabId != null
-                                    && (!targetTabId.equals(previewTabId)
-                                            || previewDirectionLeft != directionLeft)) {
-                                if (previewPage != null) clearPreview(rv);
-                                swipeLeft = directionLeft;
-                                previewDirectionLeft = directionLeft;
-                                startBackground = getBottomSheetBackgroundColor();
-                                targetBackground = resolvePreviewBackground(targetTabId);
-                                if (ensurePreviewPage(rv, targetTabId)) {
-                                    previewTabId = targetTabId;
-                                }
-                            }
-                        }
-
                         if (!horizontalSwipe
                                 && Math.abs(dx) > touchSlop
                                 && Math.abs(dx) > Math.abs(dy) * 1.05f) {
                             horizontalSwipe = true;
                             swipeLeft = dx < 0;
-                            String targetTabId = getPreviewTabId.apply(swipeLeft);
-                            if (targetTabId != null
-                                    && targetTabId.equals(previewTabId)
-                                    && previewPage != null) {
+                            if (activatePreparedPage(rv, swipeLeft)) {
                                 if (!PRIME_SWIPE_DIAG_FREEZE_BACKGROUND) {
                                     mPrimeSwipeBackgroundColor = startBackground;
                                 }
@@ -1603,11 +1620,6 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                         return horizontalSwipe;
                     case MotionEvent.ACTION_UP:
                     case MotionEvent.ACTION_CANCEL:
-                        // A page can be prewarmed before Prime actually intercepts the gesture.
-                        // Dispose it when the touch ends as a normal RecyclerView gesture.
-                        if (!horizontalSwipe && previewPage != null) {
-                            clearPreview(rv);
-                        }
                         validAppAreaGesture = false;
                         return false;
                     default:
