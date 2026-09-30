@@ -1451,19 +1451,25 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 }
 
                 if (!tabId.equals(previewTabId)) {
+                    // setPrimePreviewTabId() already rebuilds the filtered adapter items.
+                    // Calling updateItemFilter() here immediately triggered a second onAppsUpdated()
+                    // on the same MOVE, causing redundant DiffUtil/layout work just as the
+                    // horizontal gesture starts.
                     previewAppsList.setPrimePreviewTabId(tabId);
-                    Predicate<ItemInfo> matcher = type == AdapterHolder.WORK
-                            ? mWorkManager.getItemInfoMatcher() : mPersonalMatcher;
-                    previewAppsList.updateItemFilter(matcher);
                     previewTabId = tabId;
                 }
 
                 int width = Math.max(1, rv.getWidth());
                 int height = Math.max(1, rv.getHeight());
-                previewPage.measure(
-                        MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
-                        MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
-                previewPage.layout(0, 0, width, height);
+                // The persistent preview is already laid out by the viewport. Do not force a
+                // synchronous RecyclerView measure/layout on every prepared swipe; PagedView's
+                // smooth path similarly moves already-laid-out pages during the drag.
+                if (previewPage.getWidth() != width || previewPage.getHeight() != height) {
+                    previewPage.measure(
+                            MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
+                            MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
+                    previewPage.layout(0, 0, width, height);
+                }
                 previewPage.setTranslationX(swipeLeft ? width : -width);
                 previewPage.setVisibility(VISIBLE);
                 return true;
