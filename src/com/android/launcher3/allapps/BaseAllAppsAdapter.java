@@ -50,6 +50,7 @@ import com.android.launcher3.model.data.FolderInfo;
 import com.android.launcher3.views.ActivityContext;
 
 import app.lawnchair.preferences.PreferenceManager;
+import app.lawnchair.allapps.LawnchairAlphabeticalAppsList;
 import app.lawnchair.prime.drawer.PrimeDrawerTabsRepository;
 import app.lawnchair.prime.drawer.PrimeDrawerFolderVisualOverrides;
 import app.lawnchair.prime.drawer.PrimeFolderLongPressHelper;
@@ -394,7 +395,7 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
                     folderIcon.getFolderName().setTextColor(folderOverrides.getClosedLabelColor());
                 } else {
                     PrimeDrawerVisualOverrides folderTabOverrides =
-                            new PrimeDrawerTabsRepository(mActivityContext).getSelectedTabVisualOverrides();
+                            getPrimeTabVisualOverrides();
                     if (folderTabOverrides != null && folderTabOverrides.getDrawerTextColor() != null) {
                         folderIcon.getFolderName().setTextColor(folderTabOverrides.getDrawerTextColor());
                     }
@@ -410,10 +411,19 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
         }
     }
 
+    private PrimeDrawerVisualOverrides getPrimeTabVisualOverrides() {
+        PrimeDrawerTabsRepository repository = new PrimeDrawerTabsRepository(mActivityContext);
+        if (mApps instanceof LawnchairAlphabeticalAppsList) {
+            String tabId = ((LawnchairAlphabeticalAppsList<?>) mApps).getPrimeEffectiveTabId();
+            return repository.getTabVisualOverrides(tabId);
+        }
+        return repository.getSelectedTabVisualOverrides();
+    }
+
     private void applyPrimeTabCellHeight(View view) {
         int defaultHeight = mActivityContext.getDeviceProfile().getAllAppsProfile().getCellHeightPx();
         PrimeDrawerVisualOverrides overrides =
-                new PrimeDrawerTabsRepository(mActivityContext).getSelectedTabVisualOverrides();
+                getPrimeTabVisualOverrides();
         float factor = overrides != null && overrides.getDrawerRowHeight() != null
                 ? overrides.getDrawerRowHeight() : 1f;
         ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
@@ -434,7 +444,7 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
         IconShape shape = null;
         if (PreferenceManager.getInstance(mActivityContext).getDrawerTabsEnabled().get()) {
             PrimeDrawerVisualOverrides overrides =
-                    new PrimeDrawerTabsRepository(mActivityContext).getSelectedTabVisualOverrides();
+                    getPrimeTabVisualOverrides();
             if (overrides != null && overrides.getDrawerIconShape() != null) {
                 shape = IconShape.Companion.fromString(
                         overrides.getDrawerIconShape(), icon.getContext());
@@ -446,7 +456,7 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
     private void applyPrimeTabIconOverrides(BubbleTextView icon) {
         if (!PreferenceManager.getInstance(mActivityContext).getDrawerTabsEnabled().get()) return;
         PrimeDrawerVisualOverrides overrides =
-                new PrimeDrawerTabsRepository(mActivityContext).getSelectedTabVisualOverrides();
+                getPrimeTabVisualOverrides();
         if (overrides == null) return;
 
         if (overrides.getShowLabels() != null) {
