@@ -1509,7 +1509,6 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 // enough; destroying/recreating the RecyclerView was the remaining source of
                 // visible reconstruction during slow swipes.
                 if (previewPage != null) {
-                    previewPage.suppressLayout(false);
                     previewPage.setVisibility(INVISIBLE);
                     previewPage.setTranslationX(0f);
                 }
@@ -1632,7 +1631,6 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                                 // from producing a second, unsynchronised grid under the finger.
                                 previewPage.stopScroll();
                                 previewPage.setVisibility(VISIBLE);
-                                previewPage.suppressLayout(true);
                                 previewStarted = true;
                                 setProgress(rv, dx);
                             }
