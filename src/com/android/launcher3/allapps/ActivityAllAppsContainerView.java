@@ -202,6 +202,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     protected RecyclerViewFastScroller mTouchHandler;
     @Nullable private RecyclerView.SimpleOnItemTouchListener mPrimeDrawerSwipeListener;
     @Nullable private Integer mPrimeSwipeBackgroundColor;
+    @Nullable private android.widget.FrameLayout mPrimeSwipeViewport;
 
     /** {@code true} when rendered view is in search state instead of the scroll state. */
     private boolean mIsSearching;
@@ -1446,28 +1447,58 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 int left = rvLocation[0] - containerLocation[0];
                 int top = rvLocation[1] - containerLocation[1];
 
-                // ScrollableLayoutManager receives its RecyclerView reference from
-                // onAttachedToWindow(). Attach the preview before its first measure/layout;
-                // otherwise laying it out here makes the manager dereference a null mRv.
-                ActivityAllAppsContainerView.this.getOverlay().add(previewPage);
-                // The preview is a transient second page, not another live AllApps icon
-                // container. Keeping it out of AllAppsStore avoids icon/cache refresh broadcasts
-                // invalidating both visible pages during the same swipe frame. Give it its own
-                // holder pool for the same reason.
+                // Put both pages in one real clipped viewport. ViewOverlay composites the
+                // preview in a separate layer, which produced the persistent double-render flash
+                // even when both RecyclerViews had perfectly synchronized translations.
+                android.view.ViewGroup rvParent = (android.view.ViewGroup) rv.getParent();
+                int rvIndex = rvParent.indexOfChild(rv);
+                android.view.ViewGroup.LayoutParams originalParams = rv.getLayoutParams();
+                rvParent.removeView(rv);
+
+                mPrimeSwipeViewport = new android.widget.FrameLayout(getContext());
+                mPrimeSwipeViewport.setClipChildren(true);
+                mPrimeSwipeViewport.setClipToPadding(true);
+                rvParent.addView(mPrimeSwipeViewport, rvIndex, originalParams);
+
+                android.widget.FrameLayout.LayoutParams pageParams =
+                        new android.widget.FrameLayout.LayoutParams(
+                                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                                android.view.ViewGroup.LayoutParams.MATCH_PARENT);
+                mPrimeSwipeViewport.addView(rv, pageParams);
+                mPrimeSwipeViewport.addView(previewPage, new android.widget.FrameLayout.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT));
+
+                // The preview is transient and deliberately owns a separate holder pool.
                 previewPage.setRecycledViewPool(new RecyclerView.RecycledViewPool());
                 previewPage.measure(
                         MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
                         MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
-                previewPage.layout(left, top, left + width, top + height);
+                previewPage.layout(0, 0, width, height);
                 previewPage.setTranslationX(swipeLeft ? width : -width);
                 return true;
             }
 
             private void clearPreview(AllAppsRecyclerView rv) {
                 if (previewPage != null) {
-                    ActivityAllAppsContainerView.this.getOverlay().remove(previewPage);
+                    if (mPrimeSwipeViewport != null) {
+                        mPrimeSwipeViewport.removeView(previewPage);
+                    }
                     previewPage.setAdapter(null);
                     previewPage = null;
+                }
+                if (mPrimeSwipeViewport != null) {
+                    android.view.ViewGroup viewportParent =
+                            (android.view.ViewGroup) mPrimeSwipeViewport.getParent();
+                    if (viewportParent != null) {
+                        int viewportIndex = viewportParent.indexOfChild(mPrimeSwipeViewport);
+                        android.view.ViewGroup.LayoutParams viewportParams =
+                                mPrimeSwipeViewport.getLayoutParams();
+                        mPrimeSwipeViewport.removeView(rv);
+                        viewportParent.removeView(mPrimeSwipeViewport);
+                        viewportParent.addView(rv, viewportIndex, viewportParams);
+                    }
+                    mPrimeSwipeViewport = null;
                 }
                 if (previewAppsList != null) {
                     previewAppsList.disposePrimePreview();
