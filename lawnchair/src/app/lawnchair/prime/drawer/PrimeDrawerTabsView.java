@@ -133,12 +133,15 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
     }
 
     private void refresh(FloatingHeaderView parent) {
+        refreshForConfiguration(parent, mRepository.getConfiguration());
+    }
+
+    private void refreshForConfiguration(
+            FloatingHeaderView parent, PrimeDrawerTabsConfiguration configuration) {
         boolean enabled = mPrefs.getDrawerTabsEnabled().get();
         setVisibility(enabled && !mIsScrolledOut ? VISIBLE : enabled ? INVISIBLE : GONE);
         mTabsContainer.removeAllViews();
         if (!enabled) return;
-
-        PrimeDrawerTabsConfiguration configuration = mRepository.getConfiguration();
         updateStickyBackground(configuration);
         List<PrimeDrawerTab> tabs = configuration.getTabs();
         boolean hasUserTabs = false;
@@ -222,16 +225,21 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
     }
 
     private void updateSwipePillSelection(String tabId) {
-        for (int i = 0; i < mTabsContainer.getChildCount(); i++) {
-            View child = mTabsContainer.getChildAt(i);
-            Object tag = child.getTag();
-            if (!(child instanceof TextView) || !(tag instanceof String)) continue;
-            boolean selected = tag.equals(tabId);
-            child.setSelected(selected);
-            child.setActivated(selected);
-            child.setAlpha(selected ? 1f : 0.72f);
+        PrimeDrawerTabsConfiguration configuration = mRepository.getConfiguration();
+        if (tabId.equals(configuration.getSelectedTabId())) {
+            refresh(mHeaderParent);
+            return;
         }
-        ensureSelectedTabVisible(tabId);
+
+        // Reuse the exact pill renderer so preview selection has the same fill/text treatment as
+        // a committed category, but do not persist selectedTabId.
+        PrimeDrawerTabsConfiguration previewConfiguration = configuration.copy(
+                configuration.getTabs(),
+                configuration.getDefaultTabId(),
+                tabId,
+                configuration.getDefaultDrawerTextColor(),
+                configuration.getDefaultDrawerBackgroundColor());
+        refreshForConfiguration(mHeaderParent, previewConfiguration);
     }
 
     private void commitSwipeTab(FloatingHeaderView parent, boolean swipeLeft) {
