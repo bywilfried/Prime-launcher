@@ -26,7 +26,7 @@
         android:visibility="gone" />
 
     <include
-        layout="@layout/all_apps_rv_layout"
+        layout="@layout/prime_all_apps_rv_layout"
         android:visibility="gone" />
 
     <com.android.launcher3.allapps.FloatingHeaderView
