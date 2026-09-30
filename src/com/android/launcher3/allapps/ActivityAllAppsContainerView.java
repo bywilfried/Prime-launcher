@@ -1406,7 +1406,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                         rvLocation[0], rvLocation[1],
                         rvLocation[0] + width, rvLocation[1] + height);
                 PixelCopy.request(
-                        mActivityContext.getActivity().getWindow(),
+                        mActivityContext.getWindow(),
                         source,
                         bitmap,
                         result -> {
