@@ -114,6 +114,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -1367,8 +1368,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
 
     public void setPrimeDrawerSwipeListener(
             BooleanSupplier isSwipeEnabled,
-            Predicate<Boolean> onPreview,
-            Consumer<Boolean> onCancelPreview) {
+            Function<Boolean, String> getPreviewTabId,
+            Consumer<Boolean> onCommit) {
         if (mPrimeDrawerSwipeListener != null) {
             for (int type : new int[]{AdapterHolder.MAIN, AdapterHolder.WORK}) {
                 AllAppsRecyclerView rv = mAH.get(type).mRecyclerView;
@@ -1384,64 +1385,98 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             private boolean validAppAreaGesture;
             private boolean previewStarted;
             private boolean swipeLeft;
-            private BitmapDrawable outgoingPage;
-            private int pageLeft;
-            private int pageTop;
+            private AllAppsRecyclerView previewPage;
+            private LawnchairAlphabeticalAppsList<T> previewAppsList;
             private int startBackground;
             private int targetBackground;
 
-            private void captureOutgoingPage(AllAppsRecyclerView rv) {
+            private int resolvePreviewBackground(String tabId) {
+                PrimeDrawerVisualOverrides overrides =
+                        new PrimeDrawerTabsRepository(getContext()).getTabVisualOverrides(tabId);
+                if (overrides != null
+                        && (overrides.getDrawerBackgroundColor() != null
+                                || overrides.getDrawerBackgroundOpacity() != null)) {
+                    int color = overrides.getDrawerBackgroundColor() != null
+                            ? overrides.getDrawerBackgroundColor() : mCachedBottomSheetBgColor;
+                    float alpha = overrides.getDrawerBackgroundOpacity() != null
+                            ? overrides.getDrawerBackgroundOpacity()
+                            : Color.alpha(mCachedBottomSheetBgColor) / 255f;
+                    return ColorUtils.setAlphaComponent(color, Math.round(alpha * 255));
+                }
+                return mCachedBottomSheetBgColor;
+            }
+
+            private boolean createPreviewPage(AllAppsRecyclerView rv, String tabId) {
+                int type = rv == mAH.get(AdapterHolder.WORK).mRecyclerView
+                        ? AdapterHolder.WORK : AdapterHolder.MAIN;
+                previewAppsList = new LawnchairAlphabeticalAppsList<>(
+                        mActivityContext,
+                        mAllAppsStore,
+                        type == AdapterHolder.WORK ? mWorkManager : null,
+                        type == AdapterHolder.MAIN ? mPrivateProfileManager : null);
+                previewAppsList.setPrimePreviewTabId(tabId);
+
+                AdapterHolder previewHolder = new AdapterHolder(type, previewAppsList);
+                Predicate<ItemInfo> matcher = type == AdapterHolder.WORK
+                        ? mWorkManager.getItemInfoMatcher() : mPersonalMatcher;
+                previewAppsList.updateItemFilter(matcher);
+
+                previewPage = new AllAppsRecyclerView(getContext());
+                previewPage.setApps(previewAppsList);
+                previewPage.setLayoutManager(previewHolder.mLayoutManager);
+                previewPage.setAdapter(previewHolder.mAdapter);
+                previewPage.setHasFixedSize(true);
+                previewPage.setItemAnimator(null);
+                previewPage.setPadding(
+                        rv.getPaddingLeft(), rv.getPaddingTop(),
+                        rv.getPaddingRight(), rv.getPaddingBottom());
+                Rect clip = rv.getClipBounds();
+                if (clip != null) previewPage.setClipBounds(new Rect(clip));
+
                 int width = Math.max(1, rv.getWidth());
                 int height = Math.max(1, rv.getHeight());
-                Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+                previewPage.measure(
+                        MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
+                        MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
 
                 int[] rvLocation = new int[2];
                 int[] containerLocation = new int[2];
                 rv.getLocationInWindow(rvLocation);
                 ActivityAllAppsContainerView.this.getLocationInWindow(containerLocation);
-                pageLeft = rvLocation[0] - containerLocation[0];
-                pageTop = rvLocation[1] - containerLocation[1];
+                int left = rvLocation[0] - containerLocation[0];
+                int top = rvLocation[1] - containerLocation[1];
+                previewPage.layout(left, top, left + width, top + height);
+                ActivityAllAppsContainerView.this.getOverlay().add(previewPage);
+                previewPage.setTranslationX(swipeLeft ? width : -width);
+                return true;
+            }
 
-                // RecyclerView children can contain hardware-backed icon bitmaps. Drawing the view
-                // into a software Canvas crashes on Android 11. PixelCopy captures the already
-                // rendered window instead and therefore preserves those hardware-backed icons.
-                Rect source = new Rect(
-                        rvLocation[0], rvLocation[1],
-                        rvLocation[0] + width, rvLocation[1] + height);
-                PixelCopy.request(
-                        mActivityContext.getWindow(),
-                        source,
-                        bitmap,
-                        result -> {
-                            if (result != PixelCopy.SUCCESS || !horizontalSwipe) {
-                                bitmap.recycle();
-                                return;
-                            }
-                            outgoingPage = new BitmapDrawable(getResources(), bitmap);
-                            outgoingPage.setBounds(
-                                    pageLeft, pageTop, pageLeft + width, pageTop + height);
-                            ActivityAllAppsContainerView.this.getOverlay().add(outgoingPage);
-                        },
-                        new android.os.Handler(android.os.Looper.getMainLooper()));
+            private void clearPreview(AllAppsRecyclerView rv) {
+                if (previewPage != null) {
+                    ActivityAllAppsContainerView.this.getOverlay().remove(previewPage);
+                    previewPage.setAdapter(null);
+                    previewPage = null;
+                }
+                if (previewAppsList != null) {
+                    previewAppsList.disposePrimePreview();
+                    previewAppsList = null;
+                }
+                rv.setTranslationX(0f);
+                mPrimeSwipeBackgroundColor = null;
+                previewStarted = false;
+                invalidate();
+                if (mScrimView != null) mScrimView.invalidate();
             }
 
             private void setProgress(AllAppsRecyclerView rv, float dx) {
-                if (!previewStarted) return;
+                if (!previewStarted || previewPage == null) return;
                 int width = Math.max(1, rv.getWidth());
                 float clampedDx = Math.max(-width, Math.min(width, dx));
                 float progress = Math.min(1f, Math.abs(clampedDx) / width);
 
-                if (outgoingPage != null) {
-                    int offset = Math.round(clampedDx);
-                    outgoingPage.setBounds(
-                            pageLeft + offset,
-                            pageTop,
-                            pageLeft + offset + width,
-                            pageTop + rv.getHeight());
-                }
-
+                rv.setTranslationX(clampedDx);
                 float targetStart = swipeLeft ? width : -width;
-                rv.setTranslationX(targetStart + clampedDx);
+                previewPage.setTranslationX(targetStart + clampedDx);
                 mPrimeSwipeBackgroundColor =
                         ColorUtils.blendARGB(startBackground, targetBackground, progress);
                 invalidate();
@@ -1461,19 +1496,12 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 animator.addListener(new AnimatorListenerAdapter() {
                     @Override
                     public void onAnimationEnd(Animator animation) {
-                        if (!commit) {
-                            onCancelPreview.accept(swipeLeft);
+                        if (commit) {
+                            // Keep the real adjacent page covering the viewport while the normal
+                            // Prime list commits its selected tab underneath it.
+                            onCommit.accept(swipeLeft);
                         }
-                        if (outgoingPage != null) {
-                            ActivityAllAppsContainerView.this.getOverlay().remove(outgoingPage);
-                            outgoingPage.getBitmap().recycle();
-                            outgoingPage = null;
-                        }
-                        rv.setTranslationX(0f);
-                        mPrimeSwipeBackgroundColor = null;
-                        previewStarted = false;
-                        invalidate();
-                        if (mScrimView != null) mScrimView.invalidate();
+                        clearPreview(rv);
                     }
                 });
                 animator.start();
@@ -1506,20 +1534,14 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                                 && Math.abs(dx) > Math.abs(dy) * 1.25f) {
                             horizontalSwipe = true;
                             swipeLeft = dx < 0;
-                            captureOutgoingPage(rv);
-                            startBackground = getBottomSheetBackgroundColor();
-                            if (onPreview.test(swipeLeft)) {
-                                targetBackground = getBottomSheetBackgroundColor();
-                                mPrimeSwipeBackgroundColor = startBackground;
-                                previewStarted = true;
-                                setProgress(rv, dx);
-                            } else {
-                                // The direction may have no adjacent tab. PixelCopy is asynchronous,
-                                // so there may be no drawable to remove yet.
-                                if (outgoingPage != null) {
-                                    ActivityAllAppsContainerView.this.getOverlay().remove(outgoingPage);
-                                    outgoingPage.getBitmap().recycle();
-                                    outgoingPage = null;
+                            String targetTabId = getPreviewTabId.apply(swipeLeft);
+                            if (targetTabId != null) {
+                                startBackground = getBottomSheetBackgroundColor();
+                                targetBackground = resolvePreviewBackground(targetTabId);
+                                if (createPreviewPage(rv, targetTabId)) {
+                                    mPrimeSwipeBackgroundColor = startBackground;
+                                    previewStarted = true;
+                                    setProgress(rv, dx);
                                 }
                             }
                         }
