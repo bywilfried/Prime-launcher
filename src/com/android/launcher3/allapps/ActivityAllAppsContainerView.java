@@ -1498,7 +1498,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     previewPage.layout(0, 0, width, height);
                 }
                 previewPage.setTranslationX(swipeLeft ? width : -width);
-                previewPage.setVisibility(VISIBLE);
+                // Prewarm off-screen, but do not expose a live RecyclerView before Prime has
+                // actually intercepted the horizontal gesture.
+                previewPage.setVisibility(INVISIBLE);
                 return true;
             }
 
@@ -1507,6 +1509,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 // enough; destroying/recreating the RecyclerView was the remaining source of
                 // visible reconstruction during slow swipes.
                 if (previewPage != null) {
+                    previewPage.suppressLayout(false);
                     previewPage.setVisibility(INVISIBLE);
                     previewPage.setTranslationX(0f);
                 }
@@ -1623,6 +1626,13 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                                 if (!PRIME_SWIPE_DIAG_FREEZE_BACKGROUND) {
                                     mPrimeSwipeBackgroundColor = startBackground;
                                 }
+                                // Consume the prepared layout before exposing the adjacent page.
+                                // During the drag this page is a frozen visual surface: only its
+                                // translation may change. This prevents late RecyclerView layouts
+                                // from producing a second, unsynchronised grid under the finger.
+                                previewPage.stopScroll();
+                                previewPage.setVisibility(VISIBLE);
+                                previewPage.suppressLayout(true);
                                 previewStarted = true;
                                 setProgress(rv, dx);
                             }
