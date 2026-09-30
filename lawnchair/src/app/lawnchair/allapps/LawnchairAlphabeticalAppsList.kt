@@ -46,6 +46,7 @@ class LawnchairAlphabeticalAppsList<T>(
     private val prefs2 = PreferenceManager2.getInstance(context)
     private val prefs = PreferenceManager.getInstance(context)
     private val primeTabsRepository = PrimeDrawerTabsRepository(context)
+    private var primePreviewTabId: String? = null
 
     private val viewModel = FolderViewModel(
         (context as? ComponentActivity)?.application ?: context.launcher.application,
@@ -79,6 +80,16 @@ class LawnchairAlphabeticalAppsList<T>(
         primeTabsRepository.unregisterConfigurationChangeListener(this)
     }
 
+    fun setPrimePreviewTabId(tabId: String?) {
+        primePreviewTabId = tabId
+        onAppsUpdated()
+    }
+
+    fun disposePrimePreview() {
+        context.launcher.deviceProfile.inv.removeOnChangeListener(this)
+        primeTabsRepository.unregisterConfigurationChangeListener(this)
+    }
+
     private fun observeFolders() {
         viewModel.folders.observeOnce(context as LifecycleOwner) { folders ->
             if (folders != null) {
@@ -97,7 +108,7 @@ class LawnchairAlphabeticalAppsList<T>(
             val isInPrimeTab = !prefs.drawerTabsEnabled.get() ||
                 primeTabsRepository.isAppInTab(
                     componentKey,
-                    primeTabsRepository.getConfiguration().selectedTabId,
+                    primePreviewTabId ?: primeTabsRepository.getConfiguration().selectedTabId,
                 )
             (itemFilter?.test(info) != false) && isVisible && isInPrimeTab
         }
@@ -114,7 +125,8 @@ class LawnchairAlphabeticalAppsList<T>(
         if (prefs.drawerTabsEnabled.get()) {
             var position = startPosition
             val configuration = primeTabsRepository.getConfiguration()
-            val selectedTab = configuration.tabs.firstOrNull { it.id == configuration.selectedTabId }
+            val effectiveTabId = primePreviewTabId ?: configuration.selectedTabId
+            val selectedTab = configuration.tabs.firstOrNull { it.id == effectiveTabId }
 
             if (selectedTab == null || selectedTab.isSystem) {
                 return super.addAppsWithSections(appList, position)
