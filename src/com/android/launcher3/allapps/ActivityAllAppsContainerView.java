@@ -46,6 +46,7 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
+import android.view.PixelCopy;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.os.Process;
@@ -1387,11 +1388,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             private int targetBackground;
 
             private void captureOutgoingPage(AllAppsRecyclerView rv) {
-                Bitmap bitmap = Bitmap.createBitmap(
-                        Math.max(1, rv.getWidth()), Math.max(1, rv.getHeight()), Bitmap.Config.ARGB_8888);
-                Canvas canvas = new Canvas(bitmap);
-                rv.draw(canvas);
-                outgoingPage = new BitmapDrawable(getResources(), bitmap);
+                int width = Math.max(1, rv.getWidth());
+                int height = Math.max(1, rv.getHeight());
+                Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 
                 int[] rvLocation = new int[2];
                 int[] containerLocation = new int[2];
@@ -1399,9 +1398,28 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 ActivityAllAppsContainerView.this.getLocationInWindow(containerLocation);
                 pageLeft = rvLocation[0] - containerLocation[0];
                 pageTop = rvLocation[1] - containerLocation[1];
-                outgoingPage.setBounds(
-                        pageLeft, pageTop, pageLeft + rv.getWidth(), pageTop + rv.getHeight());
-                ActivityAllAppsContainerView.this.getOverlay().add(outgoingPage);
+
+                // RecyclerView children can contain hardware-backed icon bitmaps. Drawing the view
+                // into a software Canvas crashes on Android 11. PixelCopy captures the already
+                // rendered window instead and therefore preserves those hardware-backed icons.
+                Rect source = new Rect(
+                        rvLocation[0], rvLocation[1],
+                        rvLocation[0] + width, rvLocation[1] + height);
+                PixelCopy.request(
+                        mActivityContext.getActivity().getWindow(),
+                        source,
+                        bitmap,
+                        result -> {
+                            if (result != PixelCopy.SUCCESS || !horizontalSwipe) {
+                                bitmap.recycle();
+                                return;
+                            }
+                            outgoingPage = new BitmapDrawable(getResources(), bitmap);
+                            outgoingPage.setBounds(
+                                    pageLeft, pageTop, pageLeft + width, pageTop + height);
+                            ActivityAllAppsContainerView.this.getOverlay().add(outgoingPage);
+                        },
+                        new android.os.Handler(android.os.Looper.getMainLooper()));
             }
 
             private void setProgress(AllAppsRecyclerView rv, float dx) {
