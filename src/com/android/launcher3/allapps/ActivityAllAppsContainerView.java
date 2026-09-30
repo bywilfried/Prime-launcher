@@ -1492,15 +1492,28 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
 
             private void prepareAdjacentPages(AllAppsRecyclerView rv) {
                 String leftTabId = getPreviewTabId.apply(false);
-                if (leftTabId != null) preparePreviewPage(rv, leftTabId, false);
+                if (leftTabId != null) {
+                    preparePreviewPage(rv, leftTabId, false);
+                } else {
+                    leftPreviewTabId = null;
+                    if (leftPreviewPage != null) leftPreviewPage.setVisibility(INVISIBLE);
+                }
                 String rightTabId = getPreviewTabId.apply(true);
-                if (rightTabId != null) preparePreviewPage(rv, rightTabId, true);
+                if (rightTabId != null) {
+                    preparePreviewPage(rv, rightTabId, true);
+                } else {
+                    rightPreviewTabId = null;
+                    if (rightPreviewPage != null) rightPreviewPage.setVisibility(INVISIBLE);
+                }
             }
 
             private boolean activatePreparedPage(AllAppsRecyclerView rv, boolean directionLeft) {
                 AllAppsRecyclerView page = directionLeft ? rightPreviewPage : leftPreviewPage;
                 String tabId = directionLeft ? rightPreviewTabId : leftPreviewTabId;
-                if (page == null || tabId == null) return false;
+                // Revalidate adjacency at activation time. A persistent slot can contain a page
+                // prepared for the previously selected category; never expose that stale page.
+                String currentTargetTabId = getPreviewTabId.apply(directionLeft);
+                if (page == null || tabId == null || !tabId.equals(currentTargetTabId)) return false;
                 previewPage = page;
                 previewTabId = tabId;
                 startBackground = getBottomSheetBackgroundColor();
