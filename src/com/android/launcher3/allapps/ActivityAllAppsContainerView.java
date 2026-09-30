@@ -1451,11 +1451,12 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 }
 
                 if (!tabId.equals(previewTabId)) {
-                    // setPrimePreviewTabId() already rebuilds the filtered adapter items.
-                    // Calling updateItemFilter() here immediately triggered a second onAppsUpdated()
-                    // on the same MOVE, causing redundant DiffUtil/layout work just as the
-                    // horizontal gesture starts.
-                    previewAppsList.setPrimePreviewTabId(tabId);
+                    // Configure the target tab and the normal MAIN/WORK predicate before the one
+                    // and only dataset rebuild. Without this, the preview list has a null filter
+                    // and briefly lays out the wrong category/all-apps population.
+                    Predicate<ItemInfo> previewFilter = type == AdapterHolder.WORK
+                            ? mWorkManager.getItemInfoMatcher() : mPersonalMatcher;
+                    previewAppsList.configurePrimePreview(tabId, previewFilter);
                     previewTabId = tabId;
                 }
 
