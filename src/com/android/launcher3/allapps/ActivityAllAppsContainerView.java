@@ -1390,7 +1390,6 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             private LawnchairAlphabeticalAppsList<T> previewAppsList;
             private String previewTabId;
             private boolean previewDirectionLeft;
-            private boolean previewReady;
             private int startBackground;
             private int targetBackground;
 
@@ -1451,31 +1450,21 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 // onAttachedToWindow(). Attach the preview before its first measure/layout;
                 // otherwise laying it out here makes the manager dereference a null mRv.
                 ActivityAllAppsContainerView.this.getOverlay().add(previewPage);
-                mAllAppsStore.registerIconContainer(previewPage);
-                previewPage.setRecycledViewPool(mAllAppsStore.getRecyclerViewPool());
+                // The preview is a transient second page, not another live AllApps icon
+                // container. Keeping it out of AllAppsStore avoids icon/cache refresh broadcasts
+                // invalidating both visible pages during the same swipe frame. Give it its own
+                // holder pool for the same reason.
+                previewPage.setRecycledViewPool(new RecyclerView.RecycledViewPool());
                 previewPage.measure(
                         MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
                         MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
                 previewPage.layout(left, top, left + width, top + height);
                 previewPage.setTranslationX(swipeLeft ? width : -width);
-                previewPage.setVisibility(INVISIBLE);
-                previewReady = false;
-                previewPage.postOnAnimation(() -> {
-                    if (previewPage == null || previewPage.getAdapter() == null) return;
-                    // Do not expose the prewarmed RecyclerView while its first icon cells are
-                    // still binding. It becomes visible only once a complete frame is ready.
-                    previewReady = true;
-                    if (previewStarted) {
-                        previewPage.setVisibility(VISIBLE);
-                        previewPage.invalidate();
-                    }
-                });
                 return true;
             }
 
             private void clearPreview(AllAppsRecyclerView rv) {
                 if (previewPage != null) {
-                    mAllAppsStore.unregisterIconContainer(previewPage);
                     ActivityAllAppsContainerView.this.getOverlay().remove(previewPage);
                     previewPage.setAdapter(null);
                     previewPage = null;
@@ -1485,7 +1474,6 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     previewAppsList = null;
                 }
                 previewTabId = null;
-                previewReady = false;
                 rv.setTranslationX(0f);
                 mPrimeSwipeBackgroundColor = null;
                 previewStarted = false;
@@ -1502,9 +1490,6 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 rv.setTranslationX(clampedDx);
                 float targetStart = swipeLeft ? width : -width;
                 previewPage.setTranslationX(targetStart + clampedDx);
-                if (previewReady && previewPage.getVisibility() != VISIBLE) {
-                    previewPage.setVisibility(VISIBLE);
-                }
                 mPrimeSwipeBackgroundColor =
                         ColorUtils.blendARGB(startBackground, targetBackground, progress);
                 invalidate();
@@ -1599,10 +1584,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                                     && previewPage != null) {
                                 mPrimeSwipeBackgroundColor = startBackground;
                                 previewStarted = true;
-                                // If prewarming has not produced a complete destination frame yet,
-                                // keep the source page stationary for this frame instead of showing
-                                // two partially-bound icon grids on top of each other.
-                                if (previewReady) setProgress(rv, dx);
+                                setProgress(rv, dx);
                             }
                         }
                         return horizontalSwipe;
