@@ -1388,6 +1388,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             private boolean previewStarted;
             private boolean swipeLeft;
             private AllAppsRecyclerView previewPage;
+            private android.widget.FrameLayout swipeRail;
             private LawnchairAlphabeticalAppsList<T> previewAppsList;
             private AdapterHolder previewHolder;
             private String previewTabId;
@@ -1421,6 +1422,24 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 android.widget.FrameLayout viewport = (android.widget.FrameLayout) parent;
                 if (viewport.getId() != R.id.apps_list_view_container) return false;
                 mPrimeSwipeViewport = viewport;
+
+                // Put both pages on one common rail. During ACTION_MOVE we translate this parent
+                // once, like PagedView scrolls a strip of already-laid-out children, instead of
+                // independently translating two RecyclerViews.
+                if (swipeRail == null) {
+                    int rvIndex = viewport.indexOfChild(rv);
+                    viewport.removeView(rv);
+                    swipeRail = new android.widget.FrameLayout(getContext());
+                    swipeRail.setClipChildren(false);
+                    swipeRail.setClipToPadding(false);
+                    viewport.addView(swipeRail, rvIndex,
+                            new android.widget.FrameLayout.LayoutParams(
+                                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                                    android.view.ViewGroup.LayoutParams.MATCH_PARENT));
+                    swipeRail.addView(rv, new android.widget.FrameLayout.LayoutParams(
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT));
+                }
 
                 int type = rv == mAH.get(AdapterHolder.WORK).mRecyclerView
                         ? AdapterHolder.WORK : AdapterHolder.MAIN;
@@ -1461,7 +1480,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                             rv.getPaddingRight(), rv.getPaddingBottom());
                     Rect clip = rv.getClipBounds();
                     if (clip != null) previewPage.setClipBounds(new Rect(clip));
-                    viewport.addView(previewPage, new android.widget.FrameLayout.LayoutParams(
+                    swipeRail.addView(previewPage, new android.widget.FrameLayout.LayoutParams(
                             android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                             android.view.ViewGroup.LayoutParams.MATCH_PARENT));
                 }
@@ -1498,6 +1517,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     previewPage.layout(0, 0, width, height);
                 }
                 previewPage.setTranslationX(swipeLeft ? width : -width);
+                swipeRail.setTranslationX(0f);
                 // Prewarm off-screen, but do not expose a live RecyclerView before Prime has
                 // actually intercepted the horizontal gesture.
                 previewPage.setVisibility(INVISIBLE);
@@ -1514,6 +1534,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     previewPage.setTranslationX(0f);
                 }
                 rv.setTranslationX(0f);
+                if (swipeRail != null) swipeRail.setTranslationX(0f);
                 mPrimeSwipeBackgroundColor = null;
                 previewStarted = false;
                 invalidate();
@@ -1526,9 +1547,11 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 float clampedDx = Math.max(-width, Math.min(width, dx));
                 float progress = Math.min(1f, Math.abs(clampedDx) / width);
 
-                rv.setTranslationX(clampedDx);
-                float targetStart = swipeLeft ? width : -width;
-                previewPage.setTranslationX(targetStart + clampedDx);
+                // Both pages have fixed positions on the rail; move the rail exactly once.
+                // The current page stays at x=0 and the adjacent page at +/- one page width.
+                rv.setTranslationX(0f);
+                previewPage.setTranslationX(swipeLeft ? width : -width);
+                if (swipeRail != null) swipeRail.setTranslationX(clampedDx);
                 if (!PRIME_SWIPE_DIAG_FREEZE_BACKGROUND) {
                     mPrimeSwipeBackgroundColor =
                             ColorUtils.blendARGB(startBackground, targetBackground, progress);
