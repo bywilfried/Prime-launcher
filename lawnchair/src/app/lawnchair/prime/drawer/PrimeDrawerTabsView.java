@@ -226,20 +226,34 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
 
     private void updateSwipePillSelection(String tabId) {
         PrimeDrawerTabsConfiguration configuration = mRepository.getConfiguration();
-        if (tabId.equals(configuration.getSelectedTabId())) {
-            refresh(mHeaderParent);
-            return;
-        }
 
-        // Reuse the exact pill renderer so preview selection has the same fill/text treatment as
-        // a committed category, but do not persist selectedTabId.
-        PrimeDrawerTabsConfiguration previewConfiguration = configuration.copy(
-                configuration.getTabs(),
-                configuration.getDefaultTabId(),
-                tabId,
-                configuration.getDefaultDrawerTextColor(),
-                configuration.getDefaultDrawerBackgroundColor());
-        refreshForConfiguration(mHeaderParent, previewConfiguration);
+        // Never rebuild the tab row for a transient swipe preview. Recreating every pill here can
+        // detach the view that is currently receiving a normal tap, making ACTION_UP/click appear
+        // unreliable after the swipe experiment was enabled.
+        for (int i = 0; i < mTabsContainer.getChildCount(); i++) {
+            View child = mTabsContainer.getChildAt(i);
+            Object tag = child.getTag();
+            if (!(child instanceof TextView) || !(tag instanceof String)) continue;
+
+            String childTabId = (String) tag;
+            PrimeDrawerTab childTab = null;
+            for (PrimeDrawerTab candidate : configuration.getTabs()) {
+                if (childTabId.equals(candidate.getId())) {
+                    childTab = candidate;
+                    break;
+                }
+            }
+            if (childTab == null) continue;
+            applyPillSelectionStyle(
+                    (TextView) child,
+                    childTabId.equals(tabId),
+                    childTab.getVisualOverrides().getTabColor());
+        }
+    }
+
+    private void applyPillSelectionStyle(
+            TextView pill, boolean selected, @Nullable Integer selectedColor) {
+        applyPillSelectionStyle(pill, selected, selectedColor);
     }
 
     private void commitSwipeTab(FloatingHeaderView parent, boolean swipeLeft) {
