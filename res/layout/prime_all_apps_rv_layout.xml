@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Stable clipped viewport for Prime category paging. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/apps_list_view_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipChildren="true"
+    android:clipToPadding="true">
+
+    <include layout="@layout/all_apps_rv_layout" />
+
+</FrameLayout>
