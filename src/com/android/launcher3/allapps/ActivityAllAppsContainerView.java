@@ -1369,7 +1369,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     public void setPrimeDrawerSwipeListener(
             BooleanSupplier isSwipeEnabled,
             Function<Boolean, String> getPreviewTabId,
-            Consumer<Boolean> onCommit) {
+            Consumer<Boolean> onCommit,
+            Consumer<Boolean> onPreviewFinished) {
         if (mPrimeDrawerSwipeListener != null) {
             for (int type : new int[]{AdapterHolder.MAIN, AdapterHolder.WORK}) {
                 AllAppsRecyclerView rv = mAH.get(type).mRecyclerView;
@@ -1507,11 +1508,18 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     @Override
                     public void onAnimationEnd(Animator animation) {
                         if (commit) {
-                            // Keep the real adjacent page covering the viewport while the normal
-                            // Prime list commits its selected tab underneath it.
+                            // Keep the adjacent page covering the viewport while the normal Prime
+                            // list commits underneath it. Remove the preview on the next frame so
+                            // the adapter refresh has been laid out before it becomes visible.
                             onCommit.accept(swipeLeft);
+                            rv.postOnAnimation(() -> {
+                                clearPreview(rv);
+                                onPreviewFinished.accept(true);
+                            });
+                        } else {
+                            clearPreview(rv);
+                            onPreviewFinished.accept(false);
                         }
-                        clearPreview(rv);
                     }
                 });
                 animator.start();
