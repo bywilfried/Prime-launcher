@@ -1419,27 +1419,14 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             private boolean ensurePreviewPage(AllAppsRecyclerView rv, String tabId) {
                 android.view.ViewParent parent = rv.getParent();
                 if (!(parent instanceof android.widget.FrameLayout)) return false;
-                android.widget.FrameLayout viewport = (android.widget.FrameLayout) parent;
+                android.widget.FrameLayout rail = (android.widget.FrameLayout) parent;
+                if (rail.getId() != R.id.prime_swipe_page_rail) return false;
+                android.view.ViewParent viewportParent = rail.getParent();
+                if (!(viewportParent instanceof android.widget.FrameLayout)) return false;
+                android.widget.FrameLayout viewport = (android.widget.FrameLayout) viewportParent;
                 if (viewport.getId() != R.id.apps_list_view_container) return false;
                 mPrimeSwipeViewport = viewport;
-
-                // Put both pages on one common rail. During ACTION_MOVE we translate this parent
-                // once, like PagedView scrolls a strip of already-laid-out children, instead of
-                // independently translating two RecyclerViews.
-                if (swipeRail == null) {
-                    int rvIndex = viewport.indexOfChild(rv);
-                    viewport.removeView(rv);
-                    swipeRail = new android.widget.FrameLayout(getContext());
-                    swipeRail.setClipChildren(false);
-                    swipeRail.setClipToPadding(false);
-                    viewport.addView(swipeRail, rvIndex,
-                            new android.widget.FrameLayout.LayoutParams(
-                                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                                    android.view.ViewGroup.LayoutParams.MATCH_PARENT));
-                    swipeRail.addView(rv, new android.widget.FrameLayout.LayoutParams(
-                            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                            android.view.ViewGroup.LayoutParams.MATCH_PARENT));
-                }
+                swipeRail = rail;
 
                 int type = rv == mAH.get(AdapterHolder.WORK).mRecyclerView
                         ? AdapterHolder.WORK : AdapterHolder.MAIN;
