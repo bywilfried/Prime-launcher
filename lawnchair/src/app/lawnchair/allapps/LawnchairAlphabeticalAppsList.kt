@@ -80,6 +80,9 @@ class LawnchairAlphabeticalAppsList<T>(
         primeTabsRepository.unregisterConfigurationChangeListener(this)
     }
 
+    fun getPrimeEffectiveTabId(): String =
+        primePreviewTabId ?: primeTabsRepository.getConfiguration().selectedTabId
+
     fun setPrimePreviewTabId(tabId: String?) {
         primePreviewTabId = tabId
         onAppsUpdated()
