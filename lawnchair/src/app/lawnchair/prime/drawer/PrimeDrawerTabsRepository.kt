@@ -332,18 +332,21 @@ class PrimeDrawerTabsRepository(context: Context) {
         )
     }
 
-    fun getSelectedTabVisualOverrides(): PrimeDrawerVisualOverrides? {
+    fun getTabVisualOverrides(tabId: String): PrimeDrawerVisualOverrides? {
         // Prime tab visuals belong exclusively to Tabs mode. Other drawer modes must keep
         // using their own global Lawnchair appearance preferences.
         if (!primePrefs.drawerTabsEnabled.get()) return null
         val configuration = getConfiguration()
-        val selected = configuration.tabs.firstOrNull { it.id == configuration.selectedTabId }
+        val selected = configuration.tabs.firstOrNull { it.id == tabId }
             ?.takeUnless { it.isSystem }
             ?.visualOverrides ?: PrimeDrawerVisualOverrides()
         return selected.copy(
             drawerTextColor = selected.drawerTextColor ?: tabsModeTextColor(),
         ).takeUnless { it == PrimeDrawerVisualOverrides() }
     }
+
+    fun getSelectedTabVisualOverrides(): PrimeDrawerVisualOverrides? =
+        getTabVisualOverrides(getConfiguration().selectedTabId)
 
     fun setDefaultDrawerColors(textColor: Int? = tabsModeTextColor(),
                                backgroundColor: Int? = getConfiguration().defaultDrawerBackgroundColor) {
