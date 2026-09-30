@@ -90,6 +90,15 @@ class LawnchairAlphabeticalAppsList<T>(
         onAppsUpdated()
     }
 
+    /**
+     * Configures a swipe preview atomically: install the target tab before rebuilding the
+     * normal All Apps predicate so the preview never lays out an unfiltered intermediate dataset.
+     */
+    fun configurePrimePreview(tabId: String, itemFilter: Predicate<ItemInfo>?) {
+        primePreviewTabId = tabId
+        updateItemFilter(itemFilter)
+    }
+
     fun disposePrimePreview() {
         context.launcher.deviceProfile.inv.removeOnChangeListener(this)
         primeTabsRepository.unregisterConfigurationChangeListener(this)
