@@ -1414,9 +1414,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                         mAllAppsStore,
                         type == AdapterHolder.WORK ? mWorkManager : null,
                         type == AdapterHolder.MAIN ? mPrivateProfileManager : null);
-                previewAppsList.setPrimePreviewTabId(tabId);
 
+                // Attach the adapter before asking the preview list to rebuild for another tab.
                 AdapterHolder previewHolder = new AdapterHolder(type, previewAppsList);
+                previewAppsList.setPrimePreviewTabId(tabId);
                 Predicate<ItemInfo> matcher = type == AdapterHolder.WORK
                         ? mWorkManager.getItemInfoMatcher() : mPersonalMatcher;
                 previewAppsList.updateItemFilter(matcher);
