@@ -92,7 +92,9 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         refresh(parent);
         if (parent.getParent() instanceof ActivityAllAppsContainerView) {
             ((ActivityAllAppsContainerView<?>) parent.getParent())
-                    .setPrimeDrawerSwipeListener(swipeLeft -> switchTabBySwipe(parent, swipeLeft));
+                    .setPrimeDrawerSwipeListener(
+                            swipeLeft -> switchTabBySwipe(parent, swipeLeft),
+                            swipeLeft -> switchTabBySwipe(parent, !swipeLeft));
         }
     }
 
