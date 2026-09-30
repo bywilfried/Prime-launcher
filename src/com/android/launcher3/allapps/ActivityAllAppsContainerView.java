@@ -1436,18 +1436,21 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
 
                 int width = Math.max(1, rv.getWidth());
                 int height = Math.max(1, rv.getHeight());
-                previewPage.measure(
-                        MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
-                        MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
-
                 int[] rvLocation = new int[2];
                 int[] containerLocation = new int[2];
                 rv.getLocationInWindow(rvLocation);
                 ActivityAllAppsContainerView.this.getLocationInWindow(containerLocation);
                 int left = rvLocation[0] - containerLocation[0];
                 int top = rvLocation[1] - containerLocation[1];
-                previewPage.layout(left, top, left + width, top + height);
+
+                // ScrollableLayoutManager receives its RecyclerView reference from
+                // onAttachedToWindow(). Attach the preview before its first measure/layout;
+                // otherwise laying it out here makes the manager dereference a null mRv.
                 ActivityAllAppsContainerView.this.getOverlay().add(previewPage);
+                previewPage.measure(
+                        MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
+                        MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
+                previewPage.layout(left, top, left + width, top + height);
                 previewPage.setTranslationX(swipeLeft ? width : -width);
                 return true;
             }
