@@ -1578,6 +1578,15 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                             }
                         }
                         return horizontalSwipe;
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        // A page can be prewarmed before Prime actually intercepts the gesture.
+                        // Dispose it when the touch ends as a normal RecyclerView gesture.
+                        if (!horizontalSwipe && previewPage != null) {
+                            clearPreview(rv);
+                        }
+                        validAppAreaGesture = false;
+                        return false;
                     default:
                         return false;
                 }
