@@ -35,6 +35,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Outline;
@@ -44,6 +45,7 @@ import android.graphics.Path.Direction;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.os.Process;
@@ -196,6 +198,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     protected boolean mUsingTabs;
     protected RecyclerViewFastScroller mTouchHandler;
     @Nullable private RecyclerView.SimpleOnItemTouchListener mPrimeDrawerSwipeListener;
+    @Nullable private Integer mPrimeSwipeBackgroundColor;
 
     /** {@code true} when rendered view is in search state instead of the scroll state. */
     private boolean mIsSearching;
@@ -970,6 +973,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     }
 
     int getBottomSheetBackgroundColor() {
+        if (mPrimeSwipeBackgroundColor != null) {
+            return mPrimeSwipeBackgroundColor;
+        }
         PrimeDrawerVisualOverrides overrides =
                 new PrimeDrawerTabsRepository(getContext()).getSelectedTabVisualOverrides();
         if (overrides != null
@@ -1357,7 +1363,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         }
     }
 
-    public void setPrimeDrawerSwipeListener(Predicate<Boolean> onSwipe) {
+    public void setPrimeDrawerSwipeListener(
+            Predicate<Boolean> onPreview, Consumer<Boolean> onCancelPreview) {
         if (mPrimeDrawerSwipeListener != null) {
             for (int type : new int[]{AdapterHolder.MAIN, AdapterHolder.WORK}) {
                 AllAppsRecyclerView rv = mAH.get(type).mRecyclerView;
@@ -1371,6 +1378,85 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             private float downY;
             private boolean horizontalSwipe;
             private boolean validAppAreaGesture;
+            private boolean previewStarted;
+            private boolean swipeLeft;
+            private BitmapDrawable outgoingPage;
+            private int pageLeft;
+            private int pageTop;
+            private int startBackground;
+            private int targetBackground;
+
+            private void captureOutgoingPage(AllAppsRecyclerView rv) {
+                Bitmap bitmap = Bitmap.createBitmap(
+                        Math.max(1, rv.getWidth()), Math.max(1, rv.getHeight()), Bitmap.Config.ARGB_8888);
+                Canvas canvas = new Canvas(bitmap);
+                rv.draw(canvas);
+                outgoingPage = new BitmapDrawable(getResources(), bitmap);
+
+                int[] rvLocation = new int[2];
+                int[] containerLocation = new int[2];
+                rv.getLocationInWindow(rvLocation);
+                ActivityAllAppsContainerView.this.getLocationInWindow(containerLocation);
+                pageLeft = rvLocation[0] - containerLocation[0];
+                pageTop = rvLocation[1] - containerLocation[1];
+                outgoingPage.setBounds(
+                        pageLeft, pageTop, pageLeft + rv.getWidth(), pageTop + rv.getHeight());
+                ActivityAllAppsContainerView.this.getOverlay().add(outgoingPage);
+            }
+
+            private void setProgress(AllAppsRecyclerView rv, float dx) {
+                if (!previewStarted) return;
+                int width = Math.max(1, rv.getWidth());
+                float clampedDx = Math.max(-width, Math.min(width, dx));
+                float progress = Math.min(1f, Math.abs(clampedDx) / width);
+
+                if (outgoingPage != null) {
+                    int offset = Math.round(clampedDx);
+                    outgoingPage.setBounds(
+                            pageLeft + offset,
+                            pageTop,
+                            pageLeft + offset + width,
+                            pageTop + rv.getHeight());
+                }
+
+                float targetStart = swipeLeft ? width : -width;
+                rv.setTranslationX(targetStart + clampedDx);
+                mPrimeSwipeBackgroundColor =
+                        ColorUtils.blendARGB(startBackground, targetBackground, progress);
+                invalidate();
+                if (mScrimView != null) mScrimView.invalidate();
+            }
+
+            private void finishPreview(AllAppsRecyclerView rv, boolean commit, float currentDx) {
+                int width = Math.max(1, rv.getWidth());
+                float from = Math.min(1f, Math.abs(currentDx) / width);
+                ValueAnimator animator = ValueAnimator.ofFloat(from, commit ? 1f : 0f);
+                animator.setDuration(180L);
+                animator.addUpdateListener(animation -> {
+                    float progress = (float) animation.getAnimatedValue();
+                    float dx = (swipeLeft ? -1f : 1f) * width * progress;
+                    setProgress(rv, dx);
+                });
+                animator.addListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        if (!commit) {
+                            onCancelPreview.accept(swipeLeft);
+                        }
+                        if (outgoingPage != null) {
+                            ActivityAllAppsContainerView.this.getOverlay().remove(outgoingPage);
+                            outgoingPage.getBitmap().recycle();
+                            outgoingPage = null;
+                        }
+                        rv.setTranslationX(0f);
+                        mPrimeSwipeBackgroundColor = null;
+                        previewStarted = false;
+                        invalidate();
+                        if (mScrimView != null) mScrimView.invalidate();
+                    }
+                });
+                animator.start();
+            }
 
             @Override
             public boolean onInterceptTouchEvent(@NonNull RecyclerView recycler, @NonNull MotionEvent e) {
@@ -1380,8 +1466,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                         downX = e.getX();
                         downY = e.getY();
                         horizontalSwipe = false;
-                        // FloatingHeaderView forwards header touches to the RecyclerView. Those
-                        // arrive outside its local viewport; reject them so search/tabs can scroll.
+                        previewStarted = false;
                         validAppAreaGesture = downX >= 0 && downX <= rv.getWidth()
                                 && downY >= 0 && downY <= rv.getHeight();
                         return false;
@@ -1393,6 +1478,19 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                                 && Math.abs(dx) > touchSlop * 1.5f
                                 && Math.abs(dx) > Math.abs(dy) * 1.25f) {
                             horizontalSwipe = true;
+                            swipeLeft = dx < 0;
+                            captureOutgoingPage(rv);
+                            startBackground = getBottomSheetBackgroundColor();
+                            if (onPreview.test(swipeLeft)) {
+                                targetBackground = getBottomSheetBackgroundColor();
+                                mPrimeSwipeBackgroundColor = startBackground;
+                                previewStarted = true;
+                                setProgress(rv, dx);
+                            } else {
+                                ActivityAllAppsContainerView.this.getOverlay().remove(outgoingPage);
+                                outgoingPage.getBitmap().recycle();
+                                outgoingPage = null;
+                            }
                         }
                         return horizontalSwipe;
                     default:
@@ -1406,43 +1504,18 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 if (!horizontalSwipe || !validAppAreaGesture) return;
 
                 if (e.getActionMasked() == MotionEvent.ACTION_MOVE) {
-                    float dx = e.getX() - downX;
-                    // Keep the app content attached to the finger. Header rows live outside this
-                    // RecyclerView, so search, predictions and Prime tabs remain stationary.
-                    rv.setTranslationX(Math.max(-rv.getWidth(), Math.min(rv.getWidth(), dx)));
+                    if (previewStarted) setProgress(rv, e.getX() - downX);
                 } else if (e.getActionMasked() == MotionEvent.ACTION_UP) {
                     float dx = e.getX() - downX;
                     float threshold = Math.max(touchSlop * 3f, rv.getWidth() * 0.12f);
-                    boolean switchRequested = Math.abs(dx) >= threshold;
-                    boolean swipeLeft = dx < 0;
-
+                    boolean commit = previewStarted && Math.abs(dx) >= threshold;
                     horizontalSwipe = false;
                     validAppAreaGesture = false;
-
-                    if (!switchRequested) {
-                        rv.animate().translationX(0f).setDuration(180L).start();
-                        return;
-                    }
-
-                    float exitX = swipeLeft ? -rv.getWidth() : rv.getWidth();
-                    rv.animate()
-                            .translationX(exitX)
-                            .setDuration(140L)
-                            .withEndAction(() -> {
-                                boolean switched = onSwipe.test(swipeLeft);
-                                if (switched) {
-                                    rv.setTranslationX(swipeLeft ? rv.getWidth() : -rv.getWidth());
-                                    rv.animate().translationX(0f).setDuration(180L).start();
-                                } else {
-                                    // There is no neighbouring category in this direction.
-                                    rv.animate().translationX(0f).setDuration(180L).start();
-                                }
-                            })
-                            .start();
+                    if (previewStarted) finishPreview(rv, commit, dx);
                 } else if (e.getActionMasked() == MotionEvent.ACTION_CANCEL) {
                     horizontalSwipe = false;
                     validAppAreaGesture = false;
-                    rv.animate().translationX(0f).setDuration(180L).start();
+                    if (previewStarted) finishPreview(rv, false, e.getX() - downX);
                 }
             }
         };
