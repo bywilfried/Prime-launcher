@@ -1365,7 +1365,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     }
 
     public void setPrimeDrawerSwipeListener(
-            Predicate<Boolean> onPreview, Consumer<Boolean> onCancelPreview) {
+            BooleanSupplier isSwipeEnabled,
+            Predicate<Boolean> onPreview,
+            Consumer<Boolean> onCancelPreview) {
         if (mPrimeDrawerSwipeListener != null) {
             for (int type : new int[]{AdapterHolder.MAIN, AdapterHolder.WORK}) {
                 AllAppsRecyclerView rv = mAH.get(type).mRecyclerView;
@@ -1481,6 +1483,12 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 AllAppsRecyclerView rv = (AllAppsRecyclerView) recycler;
                 switch (e.getActionMasked()) {
                     case MotionEvent.ACTION_DOWN:
+                        if (!isSwipeEnabled.getAsBoolean()) {
+                            validAppAreaGesture = false;
+                            horizontalSwipe = false;
+                            previewStarted = false;
+                            return false;
+                        }
                         downX = e.getX();
                         downY = e.getY();
                         horizontalSwipe = false;
@@ -1505,9 +1513,13 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                                 previewStarted = true;
                                 setProgress(rv, dx);
                             } else {
-                                ActivityAllAppsContainerView.this.getOverlay().remove(outgoingPage);
-                                outgoingPage.getBitmap().recycle();
-                                outgoingPage = null;
+                                // The direction may have no adjacent tab. PixelCopy is asynchronous,
+                                // so there may be no drawable to remove yet.
+                                if (outgoingPage != null) {
+                                    ActivityAllAppsContainerView.this.getOverlay().remove(outgoingPage);
+                                    outgoingPage.getBitmap().recycle();
+                                    outgoingPage = null;
+                                }
                             }
                         }
                         return horizontalSwipe;
