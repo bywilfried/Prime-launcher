@@ -1498,9 +1498,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     previewPage.layout(0, 0, width, height);
                 }
                 previewPage.setTranslationX(swipeLeft ? width : -width);
-                // Prewarm off-screen, but do not expose a live RecyclerView before Prime has
-                // actually intercepted the horizontal gesture.
-                previewPage.setVisibility(INVISIBLE);
+                previewPage.setVisibility(VISIBLE);
                 return true;
             }
 
@@ -1625,12 +1623,6 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                                 if (!PRIME_SWIPE_DIAG_FREEZE_BACKGROUND) {
                                     mPrimeSwipeBackgroundColor = startBackground;
                                 }
-                                // Consume the prepared layout before exposing the adjacent page.
-                                // During the drag this page is a frozen visual surface: only its
-                                // translation may change. This prevents late RecyclerView layouts
-                                // from producing a second, unsynchronised grid under the finger.
-                                previewPage.stopScroll();
-                                previewPage.setVisibility(VISIBLE);
                                 previewStarted = true;
                                 setProgress(rv, dx);
                             }
