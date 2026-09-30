@@ -1440,6 +1440,23 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     previewPage.setHasFixedSize(true);
                     previewPage.setItemAnimator(null);
                     previewPage.setRecycledViewPool(new RecyclerView.RecycledViewPool());
+
+                    // The swipe page must use exactly the same grid geometry as the live page.
+                    // A standalone AdapterHolder does not go through the normal container setup /
+                    // device-profile path, so explicitly mirror the effective column count before
+                    // its first layout. Otherwise the two translated RecyclerViews can expose
+                    // visibly different row/column geometry at their shared edge.
+                    int previewColumns = mActivityContext.getDeviceProfile()
+                            .getAllAppsProfile().getNumColumns();
+                    PrimeDrawerVisualOverrides previewOverrides =
+                            new PrimeDrawerTabsRepository(getContext())
+                                    .getTabVisualOverrides(tabId);
+                    if (previewOverrides != null && previewOverrides.getDrawerColumns() != null) {
+                        previewColumns = previewOverrides.getDrawerColumns();
+                    }
+                    previewHolder.mAdapter.setAppsPerRow(previewColumns);
+                    previewAppsList.setNumAppsPerRowAllApps(previewColumns);
+
                     previewPage.setPadding(
                             rv.getPaddingLeft(), rv.getPaddingTop(),
                             rv.getPaddingRight(), rv.getPaddingBottom());
@@ -1451,6 +1468,17 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 }
 
                 if (!tabId.equals(previewTabId)) {
+                    int previewColumns = mActivityContext.getDeviceProfile()
+                            .getAllAppsProfile().getNumColumns();
+                    PrimeDrawerVisualOverrides previewOverrides =
+                            new PrimeDrawerTabsRepository(getContext())
+                                    .getTabVisualOverrides(tabId);
+                    if (previewOverrides != null && previewOverrides.getDrawerColumns() != null) {
+                        previewColumns = previewOverrides.getDrawerColumns();
+                    }
+                    previewHolder.mAdapter.setAppsPerRow(previewColumns);
+                    previewAppsList.setNumAppsPerRowAllApps(previewColumns);
+
                     // Configure the target tab and the normal MAIN/WORK predicate before the one
                     // and only dataset rebuild. Without this, the preview list has a null filter
                     // and briefly lays out the wrong category/all-apps population.
