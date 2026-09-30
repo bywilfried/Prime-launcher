@@ -1446,8 +1446,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     // device-profile path, so explicitly mirror the effective column count before
                     // its first layout. Otherwise the two translated RecyclerViews can expose
                     // visibly different row/column geometry at their shared edge.
-                    int previewColumns = mActivityContext.getDeviceProfile()
-                            .getAllAppsProfile().getNumColumns();
+                    int previewColumns = mActivityContext.getDeviceProfile().numShownAllAppsColumns;
                     PrimeDrawerVisualOverrides previewOverrides =
                             new PrimeDrawerTabsRepository(getContext())
                                     .getTabVisualOverrides(tabId);
@@ -1468,8 +1467,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 }
 
                 if (!tabId.equals(previewTabId)) {
-                    int previewColumns = mActivityContext.getDeviceProfile()
-                            .getAllAppsProfile().getNumColumns();
+                    int previewColumns = mActivityContext.getDeviceProfile().numShownAllAppsColumns;
                     PrimeDrawerVisualOverrides previewOverrides =
                             new PrimeDrawerTabsRepository(getContext())
                                     .getTabVisualOverrides(tabId);
