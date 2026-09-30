@@ -95,8 +95,8 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                     .setPrimeDrawerSwipeListener(
                             () -> mPrefs.getDrawerTabsEnabled().get()
                                     && mPrefs.getDrawerTabsSwipeEnabled().get(),
-                            swipeLeft -> switchTabBySwipe(parent, swipeLeft),
-                            swipeLeft -> switchTabBySwipe(parent, !swipeLeft));
+                            swipeLeft -> getSwipeTargetTabId(swipeLeft),
+                            swipeLeft -> switchTabBySwipe(parent, swipeLeft));
         }
     }
 
@@ -306,6 +306,39 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             refresh(parent);
             parent.onPrimeDrawerTabSelected();
         }
+    }
+
+    private String getSwipeTargetTabId(boolean swipeLeft) {
+        if (!mPrefs.getDrawerTabsEnabled().get() || !mPrefs.getDrawerTabsSwipeEnabled().get()) {
+            return null;
+        }
+
+        PrimeDrawerTabsConfiguration configuration = mRepository.getConfiguration();
+        boolean hasUserTabs = false;
+        for (PrimeDrawerTab tab : configuration.getTabs()) {
+            if (!tab.isSystem()) {
+                hasUserTabs = true;
+                break;
+            }
+        }
+
+        List<PrimeDrawerTab> visibleTabs = new ArrayList<>();
+        for (PrimeDrawerTab tab : configuration.getTabs()) {
+            if (isTabVisible(tab, hasUserTabs)) visibleTabs.add(tab);
+        }
+        if (visibleTabs.size() < 2) return null;
+
+        int currentIndex = 0;
+        for (int i = 0; i < visibleTabs.size(); i++) {
+            if (visibleTabs.get(i).getId().equals(configuration.getSelectedTabId())) {
+                currentIndex = i;
+                break;
+            }
+        }
+
+        int targetIndex = swipeLeft ? currentIndex + 1 : currentIndex - 1;
+        if (targetIndex < 0 || targetIndex >= visibleTabs.size()) return null;
+        return visibleTabs.get(targetIndex).getId();
     }
 
     private boolean switchTabBySwipe(FloatingHeaderView parent, boolean swipeLeft) {
