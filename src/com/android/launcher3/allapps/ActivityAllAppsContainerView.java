@@ -797,7 +797,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         View oldView = getAppsRecyclerViewContainer();
         int index = indexOfChild(oldView);
         removeView(oldView);
-        int layout = showTabs ? R.layout.all_apps_tabs : R.layout.all_apps_rv_layout;
+        int layout = showTabs ? R.layout.all_apps_tabs : R.layout.prime_all_apps_rv_layout;
         final View rvContainer = getLayoutInflater().inflate(layout, this, false);
         addView(rvContainer, index);
         if (showTabs) {
@@ -1447,24 +1447,15 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 int left = rvLocation[0] - containerLocation[0];
                 int top = rvLocation[1] - containerLocation[1];
 
-                // Put both pages in one real clipped viewport. ViewOverlay composites the
-                // preview in a separate layer, which produced the persistent double-render flash
-                // even when both RecyclerViews had perfectly synchronized translations.
-                android.view.ViewGroup rvParent = (android.view.ViewGroup) rv.getParent();
-                int rvIndex = rvParent.indexOfChild(rv);
-                android.view.ViewGroup.LayoutParams originalParams = rv.getLayoutParams();
-                rvParent.removeView(rv);
-
-                mPrimeSwipeViewport = new android.widget.FrameLayout(getContext());
-                mPrimeSwipeViewport.setClipChildren(true);
-                mPrimeSwipeViewport.setClipToPadding(true);
-                rvParent.addView(mPrimeSwipeViewport, rvIndex, originalParams);
-
-                android.widget.FrameLayout.LayoutParams pageParams =
-                        new android.widget.FrameLayout.LayoutParams(
-                                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                                android.view.ViewGroup.LayoutParams.MATCH_PARENT);
-                mPrimeSwipeViewport.addView(rv, pageParams);
+                // The real RecyclerView permanently lives in this clipped viewport.
+                // Never reparent the active touch target during a gesture: Android sends it
+                // ACTION_CANCEL, which was clearing previewPage and caused the null-child crash.
+                android.view.ViewParent parent = rv.getParent();
+                if (!(parent instanceof android.widget.FrameLayout)
+                        || parent.getId() != R.id.apps_list_view_container) {
+                    return false;
+                }
+                mPrimeSwipeViewport = (android.widget.FrameLayout) parent;
                 mPrimeSwipeViewport.addView(previewPage, new android.widget.FrameLayout.LayoutParams(
                         android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                         android.view.ViewGroup.LayoutParams.MATCH_PARENT));
@@ -1487,19 +1478,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     previewPage.setAdapter(null);
                     previewPage = null;
                 }
-                if (mPrimeSwipeViewport != null) {
-                    android.view.ViewGroup viewportParent =
-                            (android.view.ViewGroup) mPrimeSwipeViewport.getParent();
-                    if (viewportParent != null) {
-                        int viewportIndex = viewportParent.indexOfChild(mPrimeSwipeViewport);
-                        android.view.ViewGroup.LayoutParams viewportParams =
-                                mPrimeSwipeViewport.getLayoutParams();
-                        mPrimeSwipeViewport.removeView(rv);
-                        viewportParent.removeView(mPrimeSwipeViewport);
-                        viewportParent.addView(rv, viewportIndex, viewportParams);
-                    }
-                    mPrimeSwipeViewport = null;
-                }
+                mPrimeSwipeViewport = null;
                 if (previewAppsList != null) {
                     previewAppsList.disposePrimePreview();
                     previewAppsList = null;
@@ -1690,7 +1669,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
      * hidden while searching.
      */
     public ViewGroup getAppsRecyclerViewContainer() {
-        return mViewPager != null ? mViewPager : findViewById(R.id.apps_list_view);
+        return mViewPager != null ? mViewPager : findViewById(R.id.apps_list_view_container);
     }
 
     /** The RV for search results, which is hidden while A-Z apps are visible. */
