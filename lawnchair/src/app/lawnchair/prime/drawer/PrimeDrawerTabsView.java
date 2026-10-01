@@ -508,6 +508,10 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                 mRowDownX = event.getRawX();
                 mRowDownY = event.getRawY();
                 mRowHorizontalScroll = false;
+                // This row owns horizontal navigation of the category strip. Claim the touch
+                // sequence immediately so the surrounding drawer cannot reinterpret the same
+                // drag as a page swipe before HorizontalScrollView crosses its own touch slop.
+                getParent().requestDisallowInterceptTouchEvent(true);
                 return false;
             case MotionEvent.ACTION_MOVE:
                 float dx = event.getRawX() - mRowDownX;
@@ -521,9 +525,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                 return false;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                if (mRowHorizontalScroll) {
-                    getParent().requestDisallowInterceptTouchEvent(false);
-                }
+                getParent().requestDisallowInterceptTouchEvent(false);
                 mRowHorizontalScroll = false;
                 return false;
             default:
