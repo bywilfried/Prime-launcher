@@ -48,6 +48,26 @@ class LawnchairAlphabeticalAppsList<T>(
     private val primeTabsRepository = PrimeDrawerTabsRepository(context)
     private var primePreviewTabId: String? = null
 
+    /**
+     * Immutable description of Prime's resolved category ordering.
+     *
+     * It deliberately contains model identities only: no View, ViewHolder or RecyclerView state.
+     * Preview and live can therefore materialize the same category projection independently while
+     * sharing one deterministic ordering decision.
+     */
+    data class PrimePreparedContent(
+        val tabId: String,
+        val orderedItemKeys: List<String>,
+    )
+
+    private var primePreparedContent: PrimePreparedContent? = null
+
+    fun getPrimePreparedContent(): PrimePreparedContent? = primePreparedContent
+
+    fun setPrimePreparedContent(content: PrimePreparedContent?) {
+        primePreparedContent = content
+    }
+
     private val viewModel = FolderViewModel(
         (context as? ComponentActivity)?.application ?: context.launcher.application,
     )
@@ -187,6 +207,14 @@ class LawnchairAlphabeticalAppsList<T>(
             }
 
             val customIndex = selectedTab.customOrder.withIndex().associate { it.value to it.index }
+            fun preparedIndex(key: String): Int? {
+                val prepared = primePreparedContent
+                if (prepared == null || prepared.tabId != effectiveTabId) return null
+                val index = prepared.orderedItemKeys.indexOf(key)
+                return index.takeIf { it >= 0 }
+            }
+            fun customOrPreparedIndex(key: String): Int =
+                preparedIndex(key) ?: customIndex[key] ?: Int.MAX_VALUE
             fun addFolders(folders: List<Triple<app.lawnchair.prime.drawer.PrimeDrawerFolder, FolderInfo, List<AppInfo>>>) {
                 folders.forEach { (_, folderInfo, _) ->
                     mAdapterItems.add(AdapterItem.asFolder(folderInfo))
@@ -198,12 +226,12 @@ class LawnchairAlphabeticalAppsList<T>(
                 "end" -> {
                     if (selectedTab.sortMode == "custom") {
                         remainingApps = remainingApps.sortedBy { app ->
-                            app?.toComponentKey()?.toString()?.let { customIndex[it] } ?: Int.MAX_VALUE
+                            app?.toComponentKey()?.toString()?.let(::customOrPreparedIndex) ?: Int.MAX_VALUE
                         }
                     }
                     position = super.addAppsWithSections(remainingApps, position)
                     val orderedFolders = if (selectedTab.sortMode == "custom") {
-                        folderItems.sortedBy { (folder) -> customIndex["folder:" + folder.id] ?: Int.MAX_VALUE }
+                        folderItems.sortedBy { (folder) -> customOrPreparedIndex("folder:" + folder.id) }
                     } else {
                         folderItems.sortedBy { (folder) -> folder.title.lowercase() }
                     }
@@ -218,7 +246,7 @@ class LawnchairAlphabeticalAppsList<T>(
                     }
                     val mixedItems = (appItems + projectedFolders).sortedWith(
                         if (selectedTab.sortMode == "custom") {
-                            compareBy { item -> customIndex[item.first] ?: Int.MAX_VALUE }
+                            compareBy { item -> customOrPreparedIndex(item.first) }
                         } else {
                             compareBy(String.CASE_INSENSITIVE_ORDER) { item -> item.second }
                         },
@@ -230,18 +258,30 @@ class LawnchairAlphabeticalAppsList<T>(
                 }
                 else -> {
                     val orderedFolders = if (selectedTab.sortMode == "custom") {
-                        folderItems.sortedBy { (folder) -> customIndex["folder:" + folder.id] ?: Int.MAX_VALUE }
+                        folderItems.sortedBy { (folder) -> customOrPreparedIndex("folder:" + folder.id) }
                     } else {
                         folderItems.sortedBy { (folder) -> folder.title.lowercase() }
                     }
                     addFolders(orderedFolders)
                     if (selectedTab.sortMode == "custom") {
                         remainingApps = remainingApps.sortedBy { app ->
-                            app?.toComponentKey()?.toString()?.let { customIndex[it] } ?: Int.MAX_VALUE
+                            app?.toComponentKey()?.toString()?.let(::customOrPreparedIndex) ?: Int.MAX_VALUE
                         }
                     }
                     return super.addAppsWithSections(remainingApps, position)
                 }
+            }
+            if (primePreparedContent == null || primePreparedContent?.tabId != effectiveTabId) {
+                val resolvedOrder = mAdapterItems.drop(startPosition).mapNotNull { item ->
+                    when (val info = item.itemInfo) {
+                        is AppInfo -> info.toComponentKey().toString()
+                        is FolderInfo -> selectedTab.folders.firstOrNull { folder ->
+                            folder.title == info.title?.toString()
+                        }?.let { "folder:" + it.id }
+                        else -> null
+                    }
+                }
+                primePreparedContent = PrimePreparedContent(effectiveTabId, resolvedOrder.toList())
             }
             return position
         }
