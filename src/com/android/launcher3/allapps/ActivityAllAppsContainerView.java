@@ -1519,18 +1519,33 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
 
                 int width = Math.max(1, rv.getWidth());
                 int height = Math.max(1, rv.getHeight());
+                // The destination tab can change the container's horizontal margin at commit.
+                // Predict that final parent geometry now, otherwise the preview is laid out using
+                // tab A's margin and visibly shifts sideways when tab B's override is applied.
+                PrimeDrawerVisualOverrides targetGeometryOverrides =
+                        new PrimeDrawerTabsRepository(getContext()).getTabVisualOverrides(tabId);
+                float targetMarginFactor = targetGeometryOverrides != null
+                                && targetGeometryOverrides.getDrawerHorizontalMargin() != null
+                        ? targetGeometryOverrides.getDrawerHorizontalMargin() : 1f;
+                int targetContainerSide =
+                        Math.round(mActivityContext.getDeviceProfile().allAppsLeftRightMargin
+                                * targetMarginFactor);
+                int currentContainerSide = getPaddingLeft();
+                int sideDelta = targetContainerSide - currentContainerSide;
+                int targetLeft = rv.getLeft() + sideDelta;
+                int targetRight = rv.getRight() - sideDelta;
+                int targetWidth = Math.max(1, targetRight - targetLeft);
                 // The persistent preview is already laid out by the viewport. Do not force a
                 // synchronous RecyclerView measure/layout on every prepared swipe; PagedView's
                 // smooth path similarly moves already-laid-out pages during the drag.
-                if (previewPage.getWidth() != width || previewPage.getHeight() != height) {
+                if (previewPage.getWidth() != targetWidth || previewPage.getHeight() != height) {
                     previewPage.measure(
-                            MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
+                            MeasureSpec.makeMeasureSpec(targetWidth, MeasureSpec.EXACTLY),
                             MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
                 }
-                // Match the live RecyclerView's exact rectangle inside the shared viewport.
-                // Do not assume its origin is (0, 0): even a small parent-relative offset becomes
-                // visible as a left/right icon jump when the translated preview is handed off.
-                previewPage.layout(rv.getLeft(), rv.getTop(), rv.getRight(), rv.getBottom());
+                // Match the rectangle the live RecyclerView will have after B's container margin
+                // is applied, rather than the current rectangle inherited from A.
+                previewPage.layout(targetLeft, rv.getTop(), targetRight, rv.getBottom());
                 previewPage.setTranslationY(rv.getTranslationY());
                 // Horizontal motion is expressed entirely by setProgress(). The live page's
                 // translation must not become part of the preview's base position.
