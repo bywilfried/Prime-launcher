@@ -1397,7 +1397,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             // Diagnostic: freeze drawer background during the gesture. If the visible flicker
             // disappears, the culprit is the scrim/background invalidation rather than either
             // RecyclerView page.
-            private static final boolean PRIME_SWIPE_DIAG_FREEZE_BACKGROUND = true;
+            private static final boolean PRIME_SWIPE_DIAG_FREEZE_BACKGROUND = false;
 
             private int resolvePreviewBackground(String tabId) {
                 PrimeDrawerVisualOverrides overrides =
