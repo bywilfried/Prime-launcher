@@ -1479,8 +1479,12 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     previewPage.setPadding(
                             rv.getPaddingLeft(), rv.getPaddingTop(),
                             rv.getPaddingRight(), rv.getPaddingBottom());
+                    previewPage.setClipToPadding(rv.getClipToPadding());
+                    previewPage.setOverScrollMode(rv.getOverScrollMode());
                     Rect liveClip = rv.getClipBounds();
                     previewPage.setClipBounds(liveClip != null ? new Rect(liveClip) : null);
+                    previewPage.setTranslationX(0f);
+                    previewPage.setTranslationY(0f);
 
                     int previewColumns = mActivityContext.getDeviceProfile().numShownAllAppsColumns;
                     PrimeDrawerVisualOverrides previewOverrides =
@@ -1522,9 +1526,13 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     previewPage.measure(
                             MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
                             MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
-                    previewPage.layout(0, 0, width, height);
                 }
-                previewPage.setTranslationX(swipeLeft ? width : -width);
+                // Match the live RecyclerView's exact rectangle inside the shared viewport.
+                // Do not assume its origin is (0, 0): even a small parent-relative offset becomes
+                // visible as a left/right icon jump when the translated preview is handed off.
+                previewPage.layout(rv.getLeft(), rv.getTop(), rv.getRight(), rv.getBottom());
+                previewPage.setTranslationY(rv.getTranslationY());
+                previewPage.setTranslationX((swipeLeft ? width : -width) + rv.getTranslationX());
                 previewPage.setVisibility(VISIBLE);
                 return true;
             }
