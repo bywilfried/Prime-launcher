@@ -2535,7 +2535,7 @@ public class Launcher extends StatefulActivity<LauncherState>
                         ? Math.round(defaultIconSize * overrides.getDrawerIconSize())
                         : defaultIconSize;
                 for (AppInfo app : apps) {
-                    if (repository.isAppInTab(app.toComponentKey(), tab.getId())) {
+                    if (repository.isAppInTab(app.toComponentKey(), tab.getId(), configuration)) {
                         BubbleTextView.warmPrimeIconCache(
                                 this, app, shape, iconSize, useTheme);
                     }
