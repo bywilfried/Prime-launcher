@@ -1482,6 +1482,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     // and briefly lays out the wrong category/all-apps population.
                     Predicate<ItemInfo> previewFilter = type == AdapterHolder.WORK
                             ? mWorkManager.getItemInfoMatcher() : mPersonalMatcher;
+                    // Hide the old tab while RecyclerView swaps to the new filtered dataset.
+                    previewPage.setVisibility(INVISIBLE);
                     previewAppsList.configurePrimePreview(tabId, previewFilter);
                     previewTabId = tabId;
 
@@ -1489,6 +1491,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     // LayoutManager anchor. Always present a newly selected category from its top.
                     previewPage.stopScroll();
                     previewPage.scrollToTop();
+                    previewPage.requestLayout();
                 }
 
                 int width = Math.max(1, rv.getWidth());
@@ -1503,7 +1506,17 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     previewPage.layout(0, 0, width, height);
                 }
                 previewPage.setTranslationX(swipeLeft ? width : -width);
-                previewPage.setVisibility(VISIBLE);
+                // Do not expose a newly invalidated dataset before RecyclerView has produced its
+                // first target children. A warm/same-tab preview remains immediately available.
+                if (!previewPage.isLayoutRequested() || previewPage.getChildCount() > 0) {
+                    previewPage.setVisibility(VISIBLE);
+                } else {
+                    previewPage.postOnAnimation(() -> {
+                        if (previewPage != null && tabId.equals(previewTabId)) {
+                            previewPage.setVisibility(VISIBLE);
+                        }
+                    });
+                }
                 return true;
             }
 
