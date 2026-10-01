@@ -18,6 +18,8 @@
 
 package com.android.launcher3;
 
+import static com.android.launcher3.util.Executors.MODEL_EXECUTOR;
+
 import app.lawnchair.prime.drawer.PrimeDrawerTabsRepository;
 
 import static android.content.pm.ActivityInfo.CONFIG_UI_MODE;
@@ -2501,9 +2503,45 @@ public class Launcher extends StatefulActivity<LauncherState>
     public void bindAllApplications(AppInfo[] apps, int flags,
             Map<PackageUserKey, Integer> packageUserKeytoUidMap) {
         mModelCallbacks.bindAllApplications(apps, flags, packageUserKeytoUidMap);
+        warmPrimeDrawerIcons(apps);
         if (Utilities.ATLEAST_S) {
             Trace.endAsyncSection(DISPLAY_ALL_APPS_TRACE_METHOD_NAME, SINGLE_TRACE_COOKIE);
         }
+    }
+
+    private void warmPrimeDrawerIcons(AppInfo[] apps) {
+        if (!app.lawnchair.preferences.PreferenceManager.getInstance(this)
+                .getDrawerTabsEnabled().get() || apps.length == 0) {
+            return;
+        }
+        final PrimeDrawerTabsRepository repository = new PrimeDrawerTabsRepository(this);
+        final app.lawnchair.prime.drawer.PrimeDrawerTabsConfiguration configuration =
+                repository.getConfiguration();
+        final int defaultIconSize =
+                getDeviceProfile().getAllAppsProfile().getIconSizePx();
+        final boolean useTheme = app.lawnchair.preferences.PreferenceManager.getInstance(this)
+                .getDrawerThemedIcons().get();
+
+        MODEL_EXECUTOR.execute(() -> {
+            for (app.lawnchair.prime.drawer.PrimeDrawerTab tab : configuration.getTabs()) {
+                app.lawnchair.prime.drawer.PrimeDrawerVisualOverrides overrides =
+                        repository.getTabVisualOverrides(tab.getId());
+                if (overrides == null || overrides.getDrawerIconShape() == null) continue;
+
+                app.lawnchair.icons.shape.IconShape shape =
+                        app.lawnchair.icons.shape.IconShape.Companion.fromString(
+                                overrides.getDrawerIconShape(), this);
+                int iconSize = overrides.getDrawerIconSize() != null
+                        ? Math.round(defaultIconSize * overrides.getDrawerIconSize())
+                        : defaultIconSize;
+                for (AppInfo app : apps) {
+                    if (repository.isAppInTab(app.toComponentKey(), tab.getId())) {
+                        BubbleTextView.warmPrimeIconCache(
+                                this, app, shape, iconSize, useTheme);
+                    }
+                }
+            }
+        });
     }
 
     /**
