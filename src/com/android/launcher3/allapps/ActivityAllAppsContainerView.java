@@ -1659,7 +1659,29 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 if (!horizontalSwipe || !validAppAreaGesture) return;
 
                 if (e.getActionMasked() == MotionEvent.ACTION_MOVE) {
-                    if (previewStarted) setProgress(rv, e.getRawX() - downX);
+                    float dx = e.getRawX() - downX;
+                    if (previewStarted && Math.abs(dx) > 2f) {
+                        boolean directionLeft = dx < 0;
+                        if (directionLeft != swipeLeft) {
+                            String targetTabId = getPreviewTabId.apply(directionLeft);
+                            if (targetTabId != null) {
+                                swipeLeft = directionLeft;
+                                previewDirectionLeft = directionLeft;
+                                startBackground = getBottomSheetBackgroundColor();
+                                targetBackground = resolvePreviewBackground(targetTabId);
+                                if (ensurePreviewPage(rv, targetTabId)) {
+                                    previewTabId = targetTabId;
+                                }
+                            } else {
+                                // There is no page beyond this edge. Keep the current page as the
+                                // gesture origin instead of exposing an empty stale preview.
+                                previewPage.setVisibility(INVISIBLE);
+                                rv.setTranslationX(0f);
+                                return;
+                            }
+                        }
+                    }
+                    if (previewStarted) setProgress(rv, dx);
                 } else if (e.getActionMasked() == MotionEvent.ACTION_UP) {
                     float dx = e.getRawX() - downX;
                     float threshold = Math.max(touchSlop * 3f, rv.getWidth() * 0.12f);
