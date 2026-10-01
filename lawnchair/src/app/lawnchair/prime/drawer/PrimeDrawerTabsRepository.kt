@@ -356,8 +356,14 @@ class PrimeDrawerTabsRepository(context: Context) {
         ))
     }
 
-    fun isAppInTab(componentKey: ComponentKey, tabId: String): Boolean {
-        val configuration = getConfiguration()
+    fun isAppInTab(componentKey: ComponentKey, tabId: String): Boolean =
+        isAppInTab(componentKey, tabId, getConfiguration())
+
+    fun isAppInTab(
+        componentKey: ComponentKey,
+        tabId: String,
+        configuration: PrimeDrawerTabsConfiguration,
+    ): Boolean {
         return when (tabId) {
             ALL_TAB_ID -> true
             UNCLASSIFIED_TAB_ID -> configuration.tabs
