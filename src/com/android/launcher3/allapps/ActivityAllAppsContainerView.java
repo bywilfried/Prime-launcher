@@ -1591,9 +1591,29 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                             // Keep the preview covering the viewport while the selected category
                             // is committed, then expose the rebuilt live page on the next frame.
                             onCommit.accept(swipeLeft);
-                            rv.postOnAnimation(() -> {
-                                clearPreview(rv);
-                                onPreviewFinished.accept(true);
+                            // Keep the fully-arrived preview visible until the live RecyclerView
+                            // has completed the layout requested by its category refresh. Exposing
+                            // it one frame too early produces the visible icon/grid jump at handoff.
+                            rv.post(() -> {
+                                if (rv.isLayoutRequested()) {
+                                    rv.getViewTreeObserver().addOnPreDrawListener(
+                                            new android.view.ViewTreeObserver.OnPreDrawListener() {
+                                                @Override
+                                                public boolean onPreDraw() {
+                                                    if (!rv.getViewTreeObserver().isAlive()) {
+                                                        return true;
+                                                    }
+                                                    rv.getViewTreeObserver().removeOnPreDrawListener(this);
+                                                    clearPreview(rv);
+                                                    onPreviewFinished.accept(true);
+                                                    return true;
+                                                }
+                                            });
+                                    rv.invalidate();
+                                } else {
+                                    clearPreview(rv);
+                                    onPreviewFinished.accept(true);
+                                }
                             });
                         } else {
                             clearPreview(rv);
