@@ -478,15 +478,16 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
             icon.setMaxLines(overrides.getTwoLineLabels() ? 2 : 1);
         }
         if (overrides.getDrawerIconShape() != null) {
-            if (mApps instanceof LawnchairAlphabeticalAppsList
-                    && ((LawnchairAlphabeticalAppsList<?>) mApps).isPrimePreview()) {
-                // DIAGNOSTIC: keep the normal bound drawable on the moving preview. This isolates
-                // the cost of Prime custom icon shaping from page/filter/layout work.
-                return;
-            }
             IconShape shape = IconShape.Companion.fromString(
                     overrides.getDrawerIconShape(), icon.getContext());
-            icon.setPrimeIconShape(shape);
+            if (mApps instanceof LawnchairAlphabeticalAppsList
+                    && ((LawnchairAlphabeticalAppsList<?>) mApps).isPrimePreview()) {
+                // Keep swipe previews stable: use a Prime variant only when it is already cached,
+                // never schedule an asynchronous drawable replacement while the page is moving.
+                icon.setPrimeIconShapeFromCacheOnly(shape);
+            } else {
+                icon.setPrimeIconShape(shape);
+            }
         }
     }
 
