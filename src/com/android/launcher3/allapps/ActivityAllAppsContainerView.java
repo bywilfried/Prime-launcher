@@ -1532,7 +1532,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 // visible as a left/right icon jump when the translated preview is handed off.
                 previewPage.layout(rv.getLeft(), rv.getTop(), rv.getRight(), rv.getBottom());
                 previewPage.setTranslationY(rv.getTranslationY());
-                previewPage.setTranslationX((swipeLeft ? width : -width) + rv.getTranslationX());
+                // Horizontal motion is expressed entirely by setProgress(). The live page's
+                // translation must not become part of the preview's base position.
+                previewPage.setTranslationX(swipeLeft ? width : -width);
                 previewPage.setVisibility(VISIBLE);
                 return true;
             }
@@ -1604,6 +1606,11 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     @Override
                     public void onAnimationEnd(Animator animation) {
                         transitionRunning = false;
+                        if (commit && previewPage != null) {
+                            // Snap the arrived page to the exact parent origin before handoff.
+                            // Avoid carrying a sub-pixel animator remainder into the covered frame.
+                            previewPage.setTranslationX(0f);
+                        }
                         if (commit) {
                             // Keep the preview covering the viewport while the selected category
                             // is committed, then expose the rebuilt live page on the next frame.
