@@ -1556,10 +1556,15 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 int width = Math.max(1, rv.getWidth());
                 float from = Math.min(1f, Math.abs(currentDx) / width);
                 ValueAnimator animator = ValueAnimator.ofFloat(from, commit ? 1f : 0f);
-                // Finish only the distance that is still missing. A nearly completed fast swipe
-                // must not pay the same 180 ms as a release close to the origin.
-                float remaining = commit ? (1f - from) : from;
-                animator.setDuration(Math.max(45L, Math.round(180L * remaining)));
+                // Once a page change is accepted, always give the remaining motion enough
+                // time to be perceived as the continuation of the finger-driven slide. The live
+                // destination still starts rebuilding immediately underneath this settle.
+                if (commit) {
+                    animator.setDuration(180L);
+                } else {
+                    // A cancelled gesture only has to travel back over the distance already moved.
+                    animator.setDuration(Math.max(60L, Math.round(180L * from)));
+                }
                 if (commit) {
                     // Persist/rebuild the destination immediately on release, underneath the
                     // already-visible preview, instead of waiting for the settle animation.
