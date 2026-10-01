@@ -1556,11 +1556,12 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 int width = Math.max(1, rv.getWidth());
                 float from = Math.min(1f, Math.abs(currentDx) / width);
                 ValueAnimator animator = ValueAnimator.ofFloat(from, commit ? 1f : 0f);
-                // Once a page change is accepted, always give the remaining motion enough
-                // time to be perceived as the continuation of the finger-driven slide. The live
-                // destination still starts rebuilding immediately underneath this settle.
+                // Keep the settle proportional to the remaining distance, but don't let a
+                // committed swipe collapse into an imperceptible snap near the threshold. This
+                // preserves the finger's momentum without imposing a fixed 180 ms on every release.
                 if (commit) {
-                    animator.setDuration(180L);
+                    float remaining = 1f - from;
+                    animator.setDuration(Math.max(90L, Math.round(220L * remaining)));
                 } else {
                     // A cancelled gesture only has to travel back over the distance already moved.
                     animator.setDuration(Math.max(60L, Math.round(180L * from)));
