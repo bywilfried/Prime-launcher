@@ -1352,25 +1352,32 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         public final int appsPerRow;
         public final int sideMarginPx;
         public final int topPaddingPx;
+        public final int viewportLeftPx;
+        public final int viewportWidthPx;
         @Nullable public final LawnchairAlphabeticalAppsList.PrimePreparedContent content;
 
-        PrimePreparedDrawerPage(String tabId, int appsPerRow, int sideMarginPx, int topPaddingPx) {
-            this(tabId, appsPerRow, sideMarginPx, topPaddingPx, null);
+        PrimePreparedDrawerPage(String tabId, int appsPerRow, int sideMarginPx,
+                int topPaddingPx, int viewportLeftPx, int viewportWidthPx) {
+            this(tabId, appsPerRow, sideMarginPx, topPaddingPx,
+                    viewportLeftPx, viewportWidthPx, null);
         }
 
         PrimePreparedDrawerPage(String tabId, int appsPerRow, int sideMarginPx, int topPaddingPx,
+                int viewportLeftPx, int viewportWidthPx,
                 @Nullable LawnchairAlphabeticalAppsList.PrimePreparedContent content) {
             this.tabId = tabId;
             this.appsPerRow = appsPerRow;
             this.sideMarginPx = sideMarginPx;
             this.topPaddingPx = topPaddingPx;
+            this.viewportLeftPx = viewportLeftPx;
+            this.viewportWidthPx = viewportWidthPx;
             this.content = content;
         }
 
         PrimePreparedDrawerPage withContent(
                 @Nullable LawnchairAlphabeticalAppsList.PrimePreparedContent content) {
-            return new PrimePreparedDrawerPage(
-                    tabId, appsPerRow, sideMarginPx, topPaddingPx, content);
+            return new PrimePreparedDrawerPage(tabId, appsPerRow, sideMarginPx, topPaddingPx,
+                    viewportLeftPx, viewportWidthPx, content);
         }
     }
 
@@ -1393,7 +1400,17 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             topPadding += getResources().getDimensionPixelSize(
                     R.dimen.all_apps_additional_top_padding_floating_search);
         }
-        return new PrimePreparedDrawerPage(tabId, appsPerRow, sideMargin, topPadding);
+        AllAppsRecyclerView liveRv = getActiveAppsRecyclerView();
+        int viewportLeft = liveRv != null ? liveRv.getLeft() : 0;
+        int viewportWidth = liveRv != null ? Math.max(1, liveRv.getWidth()) : 1;
+        if (liveRv != null) {
+            int currentSideMargin = getPaddingLeft();
+            int sideDelta = sideMargin - currentSideMargin;
+            viewportLeft += sideDelta;
+            viewportWidth = Math.max(1, viewportWidth - (sideDelta * 2));
+        }
+        return new PrimePreparedDrawerPage(
+                tabId, appsPerRow, sideMargin, topPadding, viewportLeft, viewportWidth);
     }
 
     private PrimePreparedDrawerPage preparePrimeSwipePage(String tabId) {
@@ -1582,12 +1599,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 // Predict that final parent geometry now, otherwise the preview is laid out using
                 // tab A's margin and visibly shifts sideways when tab B's override is applied.
                 PrimePreparedDrawerPage preparedPage = preparePrimeSwipePage(tabId);
-                int targetContainerSide = preparedPage.sideMarginPx;
-                int currentContainerSide = getPaddingLeft();
-                int sideDelta = targetContainerSide - currentContainerSide;
-                int targetLeft = rv.getLeft() + sideDelta;
-                int targetRight = rv.getRight() - sideDelta;
-                int targetWidth = Math.max(1, targetRight - targetLeft);
+                int targetLeft = preparedPage.viewportLeftPx;
+                int targetWidth = preparedPage.viewportWidthPx;
+                int targetRight = targetLeft + targetWidth;
                 // The persistent preview is already laid out by the viewport. Do not force a
                 // synchronous RecyclerView measure/layout on every prepared swipe; PagedView's
                 // smooth path similarly moves already-laid-out pages during the drag.
