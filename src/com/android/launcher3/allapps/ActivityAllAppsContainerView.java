@@ -1394,6 +1394,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             private String previewTabId;
             private boolean previewDirectionLeft;
             private boolean transitionRunning;
+            private boolean previewLayoutReady;
+            private boolean transitionPending;
+            private float pendingStartDx;
+            private AllAppsRecyclerView pendingRv;
             private int startBackground;
             private int targetBackground;
             // Diagnostic: freeze drawer background during the gesture. If the visible flicker
@@ -1484,12 +1488,20 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     // and briefly lays out the wrong category/all-apps population.
                     Predicate<ItemInfo> previewFilter = type == AdapterHolder.WORK
                             ? mWorkManager.getItemInfoMatcher() : mPersonalMatcher;
+                    previewLayoutReady = false;
                     previewAppsList.configurePrimePreview(tabId, previewFilter);
                     // A reused preview can retain the previous category's scroll position.
                     // Always present a newly targeted Prime category from its top edge.
                     previewPage.stopScroll();
                     previewPage.scrollToTop();
                     previewTabId = tabId;
+                    previewPage.post(() -> {
+                        if (previewPage == null || !tabId.equals(previewTabId)) return;
+                        previewLayoutReady = true;
+                        startPendingTransitionIfReady();
+                    });
+                } else if (!previewPage.isLayoutRequested()) {
+                    previewLayoutReady = true;
                 }
 
                 int width = Math.max(1, rv.getWidth());
@@ -1508,6 +1520,22 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 return true;
             }
 
+            private void startPendingTransitionIfReady() {
+                if (!transitionPending || !previewLayoutReady || pendingRv == null
+                        || transitionRunning || previewPage == null) {
+                    return;
+                }
+                AllAppsRecyclerView rv = pendingRv;
+                float startDx = pendingStartDx;
+                transitionPending = false;
+                pendingRv = null;
+                previewStarted = true;
+                transitionRunning = true;
+                rv.stopScroll();
+                setProgress(rv, startDx);
+                finishPreview(rv, true, startDx);
+            }
+
             private void clearPreview(AllAppsRecyclerView rv) {
                 // Keep the adjacent page attached and warm for the next gesture. Hiding it is
                 // enough; destroying/recreating the RecyclerView was the remaining source of
@@ -1519,6 +1547,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 rv.setTranslationX(0f);
                 mPrimeSwipeBackgroundColor = null;
                 previewStarted = false;
+                previewLayoutReady = false;
+                transitionPending = false;
+                pendingRv = null;
                 invalidate();
                 if (mScrimView != null) mScrimView.invalidate();
             }
@@ -1592,6 +1623,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                         horizontalSwipe = false;
                         previewStarted = false;
                         transitionRunning = false;
+                        previewLayoutReady = false;
+                        transitionPending = false;
+                        pendingRv = null;
                         validAppAreaGesture = e.getX() >= 0 && e.getX() <= rv.getWidth()
                                 && e.getY() >= 0 && e.getY() <= rv.getHeight();
                         return false;
@@ -1635,14 +1669,14 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                                 if (!PRIME_SWIPE_DIAG_FREEZE_BACKGROUND) {
                                     mPrimeSwipeBackgroundColor = startBackground;
                                 }
-                                previewStarted = true;
-                                transitionRunning = true;
-                                rv.stopScroll();
-                                setProgress(rv, dx);
-                                // One recognized gesture owns exactly one page transition. From
-                                // here the system completes A -> B; further finger movement cannot
-                                // reverse or retarget this same contact.
-                                finishPreview(rv, true, dx);
+                                // Lock the destination immediately, but do not spend the
+                                // animation budget while a large preview is still laying out.
+                                // The posted readiness callback starts this automatically as soon
+                                // as the prepared RecyclerView has completed its next UI turn.
+                                transitionPending = true;
+                                pendingRv = rv;
+                                pendingStartDx = dx;
+                                startPendingTransitionIfReady();
                             }
                         }
                         return horizontalSwipe;
