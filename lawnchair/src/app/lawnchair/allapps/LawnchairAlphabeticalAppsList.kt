@@ -273,13 +273,12 @@ class LawnchairAlphabeticalAppsList<T>(
             }
             if (primePreparedContent == null || primePreparedContent?.tabId != effectiveTabId) {
                 val resolvedOrder = mAdapterItems.drop(startPosition).mapNotNull { item ->
-                    when (val info = item.itemInfo) {
-                        is AppInfo -> info.toComponentKey().toString()
-                        is FolderInfo -> selectedTab.folders.firstOrNull { folder ->
-                            folder.title == info.title?.toString()
-                        }?.let { "folder:" + it.id }
-                        else -> null
-                    }
+                    item.itemInfo?.toComponentKey()?.toString()
+                        ?: item.folderInfo?.let { folderInfo ->
+                            selectedTab.folders.firstOrNull { folder ->
+                                folder.title == folderInfo.title?.toString()
+                            }?.let { "folder:" + it.id }
+                        }
                 }
                 primePreparedContent = PrimePreparedContent(effectiveTabId, resolvedOrder.toList())
             }
