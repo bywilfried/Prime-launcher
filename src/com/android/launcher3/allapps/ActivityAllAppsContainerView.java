@@ -1485,6 +1485,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     Predicate<ItemInfo> previewFilter = type == AdapterHolder.WORK
                             ? mWorkManager.getItemInfoMatcher() : mPersonalMatcher;
                     previewAppsList.configurePrimePreview(tabId, previewFilter);
+                    // A reused preview can retain the previous category's scroll position.
+                    // Always present a newly targeted Prime category from its top edge.
+                    previewPage.stopScroll();
+                    previewPage.scrollToTop();
                     previewTabId = tabId;
                 }
 
