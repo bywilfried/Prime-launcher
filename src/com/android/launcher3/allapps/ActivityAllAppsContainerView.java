@@ -1510,6 +1510,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     previewPage.setVisibility(INVISIBLE);
                     previewPage.setTranslationX(0f);
                 }
+                rv.setAlpha(1f);
                 rv.setTranslationX(0f);
                 mPrimeSwipeBackgroundColor = null;
                 previewStarted = false;
@@ -1523,6 +1524,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 float clampedDx = Math.max(-width, Math.min(width, dx));
                 float progress = Math.min(1f, Math.abs(clampedDx) / width);
 
+                // Diagnostic: while Prime owns the horizontal drag, draw only the incoming
+                // RecyclerView. If the slow-swipe double-grid artifact disappears, the defect is
+                // caused by simultaneous composition of the live and preview grids.
+                rv.setAlpha(0f);
                 rv.setTranslationX(clampedDx);
                 float targetStart = swipeLeft ? width : -width;
                 previewPage.setTranslationX(targetStart + clampedDx);
