@@ -1339,6 +1339,50 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         return getActiveAppsRecyclerView();
     }
 
+    /** Immutable geometry shared by Prime swipe preview and the live destination page. */
+    public static final class PrimePreparedPageGeometry {
+        public final String tabId;
+        public final int appsPerRow;
+        public final int sideMarginPx;
+        public final int topPaddingPx;
+
+        PrimePreparedPageGeometry(String tabId, int appsPerRow, int sideMarginPx, int topPaddingPx) {
+            this.tabId = tabId;
+            this.appsPerRow = appsPerRow;
+            this.sideMarginPx = sideMarginPx;
+            this.topPaddingPx = topPaddingPx;
+        }
+    }
+
+    /**
+     * Resolves the final geometry for a Prime tab once. Both the off-screen swipe page and the
+     * live RecyclerView consume this snapshot so they cannot independently interpret B's grid.
+     */
+    public PrimePreparedPageGeometry preparePrimePageGeometry(String tabId) {
+        DeviceProfile grid = mActivityContext.getDeviceProfile();
+        PrimeDrawerVisualOverrides overrides =
+                new PrimeDrawerTabsRepository(getContext()).getTabVisualOverrides(tabId);
+        int appsPerRow = overrides != null && overrides.getDrawerColumns() != null
+                ? overrides.getDrawerColumns() : grid.numShownAllAppsColumns;
+        float marginFactor = overrides != null && overrides.getDrawerHorizontalMargin() != null
+                ? overrides.getDrawerHorizontalMargin() : 1f;
+        float topFactor = overrides != null && overrides.getDrawerTopPadding() != null
+                ? overrides.getDrawerTopPadding() : 1f;
+        int sideMargin = Math.round(grid.allAppsLeftRightMargin * marginFactor);
+        int topPadding = Math.round(grid.allAppsPadding.top * topFactor);
+        if (isSearchBarFloating() && !grid.shouldShowAllAppsOnSheet()) {
+            topPadding += getResources().getDimensionPixelSize(
+                    R.dimen.all_apps_additional_top_padding_floating_search);
+        }
+        return new PrimePreparedPageGeometry(tabId, appsPerRow, sideMargin, topPadding);
+    }
+
+    public PrimePreparedPageGeometry prepareSelectedPrimePageGeometry() {
+        String tabId = new PrimeDrawerTabsRepository(getContext())
+                .getConfiguration().getSelectedTabId();
+        return preparePrimePageGeometry(tabId);
+    }
+
     /** Installs Prime horizontal tab swipes on the actual app-list area only. */
     public void applyPrimeDrawerVisualOverrides() {
         PrimeDrawerVisualOverrides overrides =
@@ -1352,18 +1396,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         }
 
         DeviceProfile grid = mActivityContext.getDeviceProfile();
-        float marginFactor = overrides != null && overrides.getDrawerHorizontalMargin() != null
-                ? overrides.getDrawerHorizontalMargin() : 1f;
-        float topFactor = overrides != null && overrides.getDrawerTopPadding() != null
-                ? overrides.getDrawerTopPadding() : 1f;
-        int sideMargin = Math.round(grid.allAppsLeftRightMargin * marginFactor);
-        int topPadding = Math.round(grid.allAppsPadding.top * topFactor);
-        if (isSearchBarFloating() && !grid.shouldShowAllAppsOnSheet()) {
-            topPadding += getResources().getDimensionPixelSize(
-                    R.dimen.all_apps_additional_top_padding_floating_search);
-        }
+        PrimePreparedPageGeometry geometry = prepareSelectedPrimePageGeometry();
         if (!grid.isVerticalBarLayout() || FeatureFlags.enableResponsiveWorkspace()) {
-            setPadding(sideMargin, topPadding, sideMargin, 0);
+            setPadding(geometry.sideMarginPx, geometry.topPaddingPx, geometry.sideMarginPx, 0);
         }
     }
 
@@ -1452,15 +1487,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     // device-profile path, so explicitly mirror the effective column count before
                     // its first layout. Otherwise the two translated RecyclerViews can expose
                     // visibly different row/column geometry at their shared edge.
-                    int previewColumns = mActivityContext.getDeviceProfile().numShownAllAppsColumns;
-                    PrimeDrawerVisualOverrides previewOverrides =
-                            new PrimeDrawerTabsRepository(getContext())
-                                    .getTabVisualOverrides(tabId);
-                    if (previewOverrides != null && previewOverrides.getDrawerColumns() != null) {
-                        previewColumns = previewOverrides.getDrawerColumns();
-                    }
-                    previewHolder.mAdapter.setAppsPerRow(previewColumns);
-                    previewAppsList.setNumAppsPerRowAllApps(previewColumns);
+                    PrimePreparedPageGeometry preparedGeometry =
+                            preparePrimePageGeometry(tabId);
+                    previewHolder.mAdapter.setAppsPerRow(preparedGeometry.appsPerRow);
+                    previewAppsList.setNumAppsPerRowAllApps(preparedGeometry.appsPerRow);
 
                     previewPage.setPadding(
                             rv.getPaddingLeft(), rv.getPaddingTop(),
@@ -1486,15 +1516,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     previewPage.setTranslationX(0f);
                     previewPage.setTranslationY(0f);
 
-                    int previewColumns = mActivityContext.getDeviceProfile().numShownAllAppsColumns;
-                    PrimeDrawerVisualOverrides previewOverrides =
-                            new PrimeDrawerTabsRepository(getContext())
-                                    .getTabVisualOverrides(tabId);
-                    if (previewOverrides != null && previewOverrides.getDrawerColumns() != null) {
-                        previewColumns = previewOverrides.getDrawerColumns();
-                    }
-                    previewHolder.mAdapter.setAppsPerRow(previewColumns);
-                    previewAppsList.setNumAppsPerRowAllApps(previewColumns);
+                    PrimePreparedPageGeometry preparedGeometry =
+                            preparePrimePageGeometry(tabId);
+                    previewHolder.mAdapter.setAppsPerRow(preparedGeometry.appsPerRow);
+                    previewAppsList.setNumAppsPerRowAllApps(preparedGeometry.appsPerRow);
 
                     // Configure the target tab and the normal MAIN/WORK predicate before the one
                     // and only dataset rebuild. Without this, the preview list has a null filter
@@ -1522,14 +1547,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 // The destination tab can change the container's horizontal margin at commit.
                 // Predict that final parent geometry now, otherwise the preview is laid out using
                 // tab A's margin and visibly shifts sideways when tab B's override is applied.
-                PrimeDrawerVisualOverrides targetGeometryOverrides =
-                        new PrimeDrawerTabsRepository(getContext()).getTabVisualOverrides(tabId);
-                float targetMarginFactor = targetGeometryOverrides != null
-                                && targetGeometryOverrides.getDrawerHorizontalMargin() != null
-                        ? targetGeometryOverrides.getDrawerHorizontalMargin() : 1f;
-                int targetContainerSide =
-                        Math.round(mActivityContext.getDeviceProfile().allAppsLeftRightMargin
-                                * targetMarginFactor);
+                PrimePreparedPageGeometry targetGeometry =
+                        preparePrimePageGeometry(tabId);
+                int targetContainerSide = targetGeometry.sideMarginPx;
                 int currentContainerSide = getPaddingLeft();
                 int sideDelta = targetContainerSide - currentContainerSide;
                 int targetLeft = rv.getLeft() + sideDelta;
