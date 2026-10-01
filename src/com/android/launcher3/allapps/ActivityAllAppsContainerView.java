@@ -1581,17 +1581,20 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                             previewStarted = false;
                             return false;
                         }
-                        downX = e.getX();
-                        downY = e.getY();
+                        // Track the gesture in screen coordinates. The RecyclerView itself is
+                        // translated during Prime swipe, so local MotionEvent X would move with
+                        // the view and feed that translation back into the next dx calculation.
+                        downX = e.getRawX();
+                        downY = e.getRawY();
                         horizontalSwipe = false;
                         previewStarted = false;
-                        validAppAreaGesture = downX >= 0 && downX <= rv.getWidth()
-                                && downY >= 0 && downY <= rv.getHeight();
+                        validAppAreaGesture = e.getX() >= 0 && e.getX() <= rv.getWidth()
+                                && e.getY() >= 0 && e.getY() <= rv.getHeight();
                         return false;
                     case MotionEvent.ACTION_MOVE:
                         if (!validAppAreaGesture) return false;
-                        float dx = e.getX() - downX;
-                        float dy = e.getY() - downY;
+                        float dx = e.getRawX() - downX;
+                        float dy = e.getRawY() - downY;
 
                         // Prepare the adjacent page as soon as horizontal intent appears, before
                         // RecyclerView's touch slop is crossed. By the time Prime intercepts the
@@ -1653,9 +1656,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 if (!horizontalSwipe || !validAppAreaGesture) return;
 
                 if (e.getActionMasked() == MotionEvent.ACTION_MOVE) {
-                    if (previewStarted) setProgress(rv, e.getX() - downX);
+                    if (previewStarted) setProgress(rv, e.getRawX() - downX);
                 } else if (e.getActionMasked() == MotionEvent.ACTION_UP) {
-                    float dx = e.getX() - downX;
+                    float dx = e.getRawX() - downX;
                     float threshold = Math.max(touchSlop * 3f, rv.getWidth() * 0.12f);
                     boolean commit = previewStarted && Math.abs(dx) >= threshold;
                     horizontalSwipe = false;
@@ -1664,7 +1667,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 } else if (e.getActionMasked() == MotionEvent.ACTION_CANCEL) {
                     horizontalSwipe = false;
                     validAppAreaGesture = false;
-                    if (previewStarted) finishPreview(rv, false, e.getX() - downX);
+                    if (previewStarted) finishPreview(rv, false, e.getRawX() - downX);
                 }
             }
         };
