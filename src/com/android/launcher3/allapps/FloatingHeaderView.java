@@ -470,16 +470,16 @@ public class FloatingHeaderView extends LinearLayout implements
         // and then shifting when the destination column count is applied at handoff.
         PrimeDrawerVisualOverrides primeOverrides =
                 new PrimeDrawerTabsRepository(getContext()).getSelectedTabVisualOverrides();
-        int appsPerRow = primeOverrides != null && primeOverrides.getDrawerColumns() != null
-                ? primeOverrides.getDrawerColumns()
-                : ActivityContext.lookupContext(getContext()).getDeviceProfile().numShownAllAppsColumns;
-        if (rv.getAdapter() instanceof BaseAllAppsAdapter) {
-            ((BaseAllAppsAdapter<?>) rv.getAdapter()).setAppsPerRow(appsPerRow);
-        }
-        rv.getApps().setNumAppsPerRowAllApps(appsPerRow);
-        rv.getApps().onAppsUpdated();
         ActivityAllAppsContainerView<?> container =
                 (ActivityAllAppsContainerView<?>) getParent();
+        ActivityAllAppsContainerView.PrimePreparedPageGeometry preparedGeometry =
+                container.prepareSelectedPrimePageGeometry();
+        if (rv.getAdapter() instanceof BaseAllAppsAdapter) {
+            ((BaseAllAppsAdapter<?>) rv.getAdapter())
+                    .setAppsPerRow(preparedGeometry.appsPerRow);
+        }
+        rv.getApps().setNumAppsPerRowAllApps(preparedGeometry.appsPerRow);
+        rv.getApps().onAppsUpdated();
         container.applyPrimeDrawerVisualOverrides();
         // onAppsUpdated() has already rebuilt/diffed the adapter items. Do not immediately
         // follow it with notifyDataSetChanged(): that forces a second full visible rebind exactly
