@@ -70,6 +70,8 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
     private FloatingHeaderView mHeaderParent;
     private boolean mSwipeCommitInProgress;
     private String mSwipePreviewTabId;
+    private int mSwipeTabsStartScrollX;
+    private int mSwipeTabsTargetScrollX;
 
     public PrimeDrawerTabsView(Context context) {
         this(context, null);
@@ -102,6 +104,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                                 setSwipePreviewTab(targetTabId);
                                 return targetTabId;
                             },
+                            progress -> updateSwipeTabsScroll(progress),
                             swipeLeft -> commitSwipeTab(parent, swipeLeft),
                             committed -> clearSwipePreview(committed));
         }
@@ -215,6 +218,27 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         if (tabId == null || tabId.equals(mSwipePreviewTabId)) return;
         mSwipePreviewTabId = tabId;
         updateSwipePillSelection(tabId);
+        mSwipeTabsStartScrollX = getScrollX();
+        mSwipeTabsTargetScrollX = getCenteredScrollX(tabId);
+    }
+
+    private int getCenteredScrollX(String tabId) {
+        View selected = mTabsContainer.findViewWithTag(tabId);
+        if (selected == null || getWidth() == 0) return getScrollX();
+
+        int viewportWidth = getWidth() - getPaddingLeft() - getPaddingRight();
+        int selectedCenter = selected.getLeft() + selected.getWidth() / 2;
+        int desiredScroll = selectedCenter - viewportWidth / 2 - getPaddingLeft();
+        int maxScroll = Math.max(0,
+                mTabsContainer.getWidth() + getPaddingLeft() + getPaddingRight() - getWidth());
+        return Math.max(0, Math.min(desiredScroll, maxScroll));
+    }
+
+    private void updateSwipeTabsScroll(float progress) {
+        if (mSwipePreviewTabId == null) return;
+        int scrollX = Math.round(mSwipeTabsStartScrollX
+                + (mSwipeTabsTargetScrollX - mSwipeTabsStartScrollX) * progress);
+        scrollTo(scrollX, 0);
     }
 
     private void clearSwipePreview(boolean committed) {
@@ -302,15 +326,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             View selected = mTabsContainer.findViewWithTag(tabId);
             if (selected == null || getWidth() == 0) return;
 
-            // Center the selected category instead of merely making it visible. Clamping to
-            // the scroll range naturally leaves the first/last pills as centered as possible.
-            int viewportWidth = getWidth() - getPaddingLeft() - getPaddingRight();
-            int selectedCenter = selected.getLeft() + selected.getWidth() / 2;
-            int desiredScroll = selectedCenter - viewportWidth / 2 - getPaddingLeft();
-
-            int maxScroll = Math.max(0,
-                    mTabsContainer.getWidth() + getPaddingLeft() + getPaddingRight() - getWidth());
-            desiredScroll = Math.max(0, Math.min(desiredScroll, maxScroll));
+            int desiredScroll = getCenteredScrollX(tabId);
             if (desiredScroll != getScrollX()) smoothScrollTo(desiredScroll, 0);
         });
     }
