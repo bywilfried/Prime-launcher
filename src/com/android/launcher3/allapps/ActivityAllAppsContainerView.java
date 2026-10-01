@@ -1473,6 +1473,15 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 }
 
                 if (!tabId.equals(previewTabId)) {
+                    // This preview is persistent, while the live holder can recompute its padding
+                    // after insets/search/private-space changes. Mirror the live viewport on every
+                    // destination preparation so both pages expose exactly the same rows at handoff.
+                    previewPage.setPadding(
+                            rv.getPaddingLeft(), rv.getPaddingTop(),
+                            rv.getPaddingRight(), rv.getPaddingBottom());
+                    Rect liveClip = rv.getClipBounds();
+                    previewPage.setClipBounds(liveClip != null ? new Rect(liveClip) : null);
+
                     int previewColumns = mActivityContext.getDeviceProfile().numShownAllAppsColumns;
                     PrimeDrawerVisualOverrides previewOverrides =
                             new PrimeDrawerTabsRepository(getContext())
