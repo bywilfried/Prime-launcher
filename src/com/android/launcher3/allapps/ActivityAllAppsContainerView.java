@@ -1538,7 +1538,20 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 // The persistent preview is already laid out by the viewport. Do not force a
                 // synchronous RecyclerView measure/layout on every prepared swipe; PagedView's
                 // smooth path similarly moves already-laid-out pages during the drag.
-                if (previewPage.getWidth() != targetWidth || previewPage.getHeight() != height) {
+                android.widget.FrameLayout.LayoutParams previewLp =
+                        (android.widget.FrameLayout.LayoutParams) previewPage.getLayoutParams();
+                // Persist B's predicted geometry in LayoutParams as well as the immediate layout.
+                // Otherwise a parent layout pass can restore MATCH_PARENT using A's current
+                // content bounds and reintroduce a small directional handoff shift.
+                previewLp.width = targetWidth;
+                previewLp.height = height;
+                previewLp.leftMargin = targetLeft;
+                previewLp.topMargin = rv.getTop();
+                previewLp.rightMargin = 0;
+                previewLp.bottomMargin = 0;
+                previewPage.setLayoutParams(previewLp);
+                if (previewPage.getMeasuredWidth() != targetWidth
+                        || previewPage.getMeasuredHeight() != height) {
                     previewPage.measure(
                             MeasureSpec.makeMeasureSpec(targetWidth, MeasureSpec.EXACTLY),
                             MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
