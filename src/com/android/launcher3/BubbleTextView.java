@@ -161,15 +161,60 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     // Prime render variants are separate from IconCache so Home/global icons are never replaced.
     // The key is stable across RecyclerView/AppInfo recreation; the source bitmap identity
     // invalidates an entry when Lawnchair refreshes the underlying app icon.
-    private static final HashMap<String, PrimeIconCacheEntry> PRIME_ICON_CACHE = new HashMap<>();
+    private static final class PrimeIconRenderCache {
+        private static final HashMap<String, PrimeIconCacheEntry> CACHE = new HashMap<>();
 
-    private static final class PrimeIconCacheEntry {
-        final Object sourceBitmap;
-        final BitmapInfo primeBitmap;
+        private static final class PrimeIconCacheEntry {
+            final Object sourceBitmap;
+            final BitmapInfo primeBitmap;
 
-        PrimeIconCacheEntry(Object sourceBitmap, BitmapInfo primeBitmap) {
-            this.sourceBitmap = sourceBitmap;
-            this.primeBitmap = primeBitmap;
+            PrimeIconCacheEntry(Object sourceBitmap, BitmapInfo primeBitmap) {
+                this.sourceBitmap = sourceBitmap;
+                this.primeBitmap = primeBitmap;
+            }
+        }
+
+        @Nullable
+        static String key(ItemInfoWithIcon info, IconShape shape, int iconSize, boolean useTheme) {
+            Object stableId = info.getStableId();
+            if (stableId == null || shape == null) return null;
+            return stableId + "|" + shape + "|" + iconSize + "|" + useTheme;
+        }
+
+        @Nullable
+        static BitmapInfo get(ItemInfoWithIcon info, IconShape shape, int iconSize,
+                boolean useTheme) {
+            String key = key(info, shape, iconSize, useTheme);
+            PrimeIconCacheEntry cached;
+            synchronized (CACHE) {
+                cached = key == null ? null : CACHE.get(key);
+            }
+            return cached != null && cached.sourceBitmap == info.bitmap.icon
+                    ? cached.primeBitmap : null;
+        }
+
+        @Nullable
+        static BitmapInfo renderAndCache(Launcher launcher, ItemInfoWithIcon info,
+                IconShape shape, int iconSize, boolean useTheme) {
+            BitmapInfo cached = get(info, shape, iconSize, useTheme);
+            if (cached != null) return cached;
+
+            Pair<AdaptiveIconDrawable, Drawable> fullDrawable = Utilities.getFullDrawable(
+                    launcher, info, iconSize, iconSize, useTheme);
+            if (fullDrawable == null || fullDrawable.first == null) return null;
+
+            final BitmapInfo primeBitmap;
+            try (LauncherIcons launcherIcons = LauncherIcons.obtain(launcher)) {
+                primeBitmap = launcherIcons.createPrimeIconBitmap(
+                        fullDrawable.first, info.user, shape);
+            }
+            String key = key(info, shape, iconSize, useTheme);
+            if (key != null) {
+                synchronized (CACHE) {
+                    CACHE.put(key, new PrimeIconCacheEntry(info.bitmap.icon, primeBitmap));
+                }
+            }
+            return primeBitmap;
         }
     }
 
@@ -560,13 +605,6 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         maybeApplyProgressLevel(info, oldIcon);
     }
 
-    private String getPrimeIconCacheKey(ItemInfoWithIcon info, IconShape shape, int iconSize,
-            boolean useTheme) {
-        Object stableId = info.getStableId();
-        if (stableId == null || shape == null) return null;
-        return stableId + "|" + shape + "|" + iconSize + "|" + useTheme;
-    }
-
     private boolean applyCachedPrimeIcon(ItemInfoWithIcon info) {
         if (mPrimeIconShape == null
                 || (mDisplay != DISPLAY_ALL_APPS && mDisplay != DISPLAY_FOLDER
@@ -574,12 +612,9 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             return false;
         }
         boolean useTheme = shouldUseTheme();
-        String key = getPrimeIconCacheKey(info, mPrimeIconShape, mIconSize, useTheme);
-        PrimeIconCacheEntry cached;
-        synchronized (PRIME_ICON_CACHE) {
-            cached = key == null ? null : PRIME_ICON_CACHE.get(key);
-        }
-        if (cached == null || cached.sourceBitmap != info.bitmap.icon) return false;
+        BitmapInfo cached = PrimeIconRenderCache.get(
+                info, mPrimeIconShape, mIconSize, useTheme);
+        if (cached == null) return false;
         ActivityContext activityContext = ActivityContext.lookupContextNoThrow(getContext());
         if (!(activityContext instanceof Launcher launcher)) return false;
 
@@ -589,7 +624,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                 ? info.bitmap.creationFlags : useTheme ? FLAG_THEMED : 0;
         if (mHideBadge || mDisplay == DISPLAY_SEARCH_RESULT_SMALL) flags |= FLAG_NO_BADGE;
         if (mSkipUserBadge) flags |= FLAG_SKIP_USER_BADGE;
-        FastBitmapDrawable drawable = cached.primeBitmap.newIcon(launcher, flags);
+        FastBitmapDrawable drawable = cached.newIcon(launcher, flags);
         if (isPrivateSpaceIcon) drawable.setAnimationEnabled(false);
         mDotParams.appColor = drawable.getIconColor();
         setIcon(drawable);
@@ -1715,7 +1750,6 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
 
         final int iconSize = mIconSize;
         final boolean useTheme = shouldUseTheme();
-        final String cacheKey = getPrimeIconCacheKey(info, shape, iconSize, useTheme);
         final boolean isPrivateSpaceIcon = Objects.equals(
                 info.getTargetPackage(), PRIVATE_SPACE_PACKAGE);
         int creationFlags = isPrivateSpaceIcon
@@ -1724,12 +1758,9 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         if (mSkipUserBadge) creationFlags |= FLAG_SKIP_USER_BADGE;
         final int flags = creationFlags;
 
-        PrimeIconCacheEntry cached;
-        synchronized (PRIME_ICON_CACHE) {
-            cached = cacheKey == null ? null : PRIME_ICON_CACHE.get(cacheKey);
-        }
-        if (cached != null && cached.sourceBitmap == info.bitmap.icon) {
-            FastBitmapDrawable drawable = cached.primeBitmap.newIcon(launcher, flags);
+        BitmapInfo cached = PrimeIconRenderCache.get(info, shape, iconSize, useTheme);
+        if (cached != null) {
+            FastBitmapDrawable drawable = cached.newIcon(launcher, flags);
             if (isPrivateSpaceIcon) drawable.setAnimationEnabled(false);
             mDotParams.appColor = drawable.getIconColor();
             setIcon(drawable);
@@ -1738,21 +1769,9 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         }
 
         MODEL_EXECUTOR.execute(() -> {
-            Pair<AdaptiveIconDrawable, Drawable> fullDrawable = Utilities.getFullDrawable(
-                    launcher, info, iconSize, iconSize, useTheme);
-            if (fullDrawable == null || fullDrawable.first == null) return;
-
-            final BitmapInfo primeBitmap;
-            try (LauncherIcons launcherIcons = LauncherIcons.obtain(launcher)) {
-                primeBitmap = launcherIcons.createPrimeIconBitmap(
-                        fullDrawable.first, info.user, shape);
-            }
-            if (cacheKey != null) {
-                synchronized (PRIME_ICON_CACHE) {
-                    PRIME_ICON_CACHE.put(cacheKey,
-                            new PrimeIconCacheEntry(info.bitmap.icon, primeBitmap));
-                }
-            }
+            final BitmapInfo primeBitmap = PrimeIconRenderCache.renderAndCache(
+                    launcher, info, shape, iconSize, useTheme);
+            if (primeBitmap == null) return;
             final FastBitmapDrawable primeDrawable = primeBitmap.newIcon(launcher, flags);
             if (isPrivateSpaceIcon) primeDrawable.setAnimationEnabled(false);
             MAIN_EXECUTOR.execute(() -> {
