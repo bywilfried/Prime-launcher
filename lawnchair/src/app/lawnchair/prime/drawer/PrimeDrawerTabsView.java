@@ -72,6 +72,9 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
     private String mSwipePreviewTabId;
     private int mSwipeTabsStartScrollX;
     private int mSwipeTabsTargetScrollX;
+    private float mRowDownX;
+    private float mRowDownY;
+    private boolean mRowHorizontalScroll;
 
     public PrimeDrawerTabsView(Context context) {
         this(context, null);
@@ -226,11 +229,24 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         View selected = mTabsContainer.findViewWithTag(tabId);
         if (selected == null || getWidth() == 0) return getScrollX();
 
+        int maxScroll = Math.max(0,
+                mTabsContainer.getWidth() + getPaddingLeft() + getPaddingRight() - getWidth());
+
+        // For the rightmost category, reveal the end of the row instead of centering the pill.
+        // The trailing "+" action must remain visible next to the selected last category.
+        boolean isLastTab = true;
+        for (int i = mTabsContainer.indexOfChild(selected) + 1;
+                i < mTabsContainer.getChildCount(); i++) {
+            if (mTabsContainer.getChildAt(i).getTag() instanceof String) {
+                isLastTab = false;
+                break;
+            }
+        }
+        if (isLastTab) return maxScroll;
+
         int viewportWidth = getWidth() - getPaddingLeft() - getPaddingRight();
         int selectedCenter = selected.getLeft() + selected.getWidth() / 2;
         int desiredScroll = selectedCenter - viewportWidth / 2 - getPaddingLeft();
-        int maxScroll = Math.max(0,
-                mTabsContainer.getWidth() + getPaddingLeft() + getPaddingRight() - getWidth());
         return Math.max(0, Math.min(desiredScroll, maxScroll));
     }
 
@@ -484,7 +500,32 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
     }
 
     private boolean handleRowTouch(MotionEvent event) {
-        return false;
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                mRowDownX = event.getRawX();
+                mRowDownY = event.getRawY();
+                mRowHorizontalScroll = false;
+                return false;
+            case MotionEvent.ACTION_MOVE:
+                float dx = event.getRawX() - mRowDownX;
+                float dy = event.getRawY() - mRowDownY;
+                if (!mRowHorizontalScroll
+                        && Math.abs(dx) > mTouchSlop
+                        && Math.abs(dx) > Math.abs(dy)) {
+                    mRowHorizontalScroll = true;
+                    getParent().requestDisallowInterceptTouchEvent(true);
+                }
+                return false;
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
+                if (mRowHorizontalScroll) {
+                    getParent().requestDisallowInterceptTouchEvent(false);
+                }
+                mRowHorizontalScroll = false;
+                return false;
+            default:
+                return false;
+        }
     }
 
     private void reorderDraggedTab(float rawX) {
