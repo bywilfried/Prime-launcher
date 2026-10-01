@@ -1533,11 +1533,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 int currentContainerSide = getPaddingLeft();
                 int sideDelta = targetContainerSide - currentContainerSide;
                 int targetLeft = rv.getLeft() + sideDelta;
-                // The Prime margin override is container padding, not a RecyclerView width
-                // override. Keep the preview's own measured width identical to the live RV and
-                // only predict the parent-relative horizontal displacement.
-                int targetWidth = width;
-                int targetRight = targetLeft + targetWidth;
+                int targetRight = rv.getRight() - sideDelta;
+                int targetWidth = Math.max(1, targetRight - targetLeft);
                 // The persistent preview is already laid out by the viewport. Do not force a
                 // synchronous RecyclerView measure/layout on every prepared swipe; PagedView's
                 // smooth path similarly moves already-laid-out pages during the drag.
