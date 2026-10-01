@@ -628,7 +628,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         if (isPrivateSpaceIcon) drawable.setAnimationEnabled(false);
         mDotParams.appColor = drawable.getIconColor();
         setIcon(drawable);
-        PrimeDebugLog.d("PrimeIconShape", "stable cache hit key=" + key);
+        PrimeDebugLog.d("PrimeIconShape", "stable cache hit");
         return true;
     }
 
