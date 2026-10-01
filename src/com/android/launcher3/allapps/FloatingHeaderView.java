@@ -463,7 +463,11 @@ public class FloatingHeaderView extends LinearLayout implements
         rv.animate().cancel();
         rv.setTranslationX(0f);
         rv.setAlpha(1f);
-        rv.getApps().onAppsUpdated();
+
+        // Resolve and install the destination grid before rebuilding its adapter items.
+        // Prime's swipe preview already follows this order. Keeping the live page on the same
+        // sequence prevents it from being rebuilt once with the previous tab's column geometry
+        // and then shifting when the destination column count is applied at handoff.
         PrimeDrawerVisualOverrides primeOverrides =
                 new PrimeDrawerTabsRepository(getContext()).getSelectedTabVisualOverrides();
         int appsPerRow = primeOverrides != null && primeOverrides.getDrawerColumns() != null
@@ -473,6 +477,7 @@ public class FloatingHeaderView extends LinearLayout implements
             ((BaseAllAppsAdapter<?>) rv.getAdapter()).setAppsPerRow(appsPerRow);
         }
         rv.getApps().setNumAppsPerRowAllApps(appsPerRow);
+        rv.getApps().onAppsUpdated();
         ActivityAllAppsContainerView<?> container =
                 (ActivityAllAppsContainerView<?>) getParent();
         container.applyPrimeDrawerVisualOverrides();
