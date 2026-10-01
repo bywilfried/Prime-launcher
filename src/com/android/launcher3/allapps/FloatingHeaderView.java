@@ -476,16 +476,11 @@ public class FloatingHeaderView extends LinearLayout implements
         ActivityAllAppsContainerView<?> container =
                 (ActivityAllAppsContainerView<?>) getParent();
         container.applyPrimeDrawerVisualOverrides();
-        // Prime category visual overrides are external to AdapterItem content. Apps shared
-        // between tabs can otherwise survive DiffUtil without being rebound and keep the
-        // previous tab's styling.
-        if (rv.getAdapter() != null) {
-            rv.getAdapter().notifyDataSetChanged();
-        }
-        // Keep the live refresh deterministic for currently attached app cells. A full adapter
-        // rebind first restores the normal Lawnchair drawable via applyFromApplicationInfo(), while
-        // the Prime shape is rebuilt asynchronously. Reapply the current category override directly
-        // to attached BubbleTextViews, mirroring the folder override refresh path.
+        // onAppsUpdated() has already rebuilt/diffed the adapter items. Do not immediately
+        // follow it with notifyDataSetChanged(): that forces a second full visible rebind exactly
+        // when a Prime swipe lands, and its cost grows noticeably on larger categories.
+        // Items newly bound by the diff receive the current overrides normally; cells that survive
+        // the diff are updated directly below.
         if (rv.getAdapter() instanceof BaseAllAppsAdapter) {
             BaseAllAppsAdapter<?> adapter = (BaseAllAppsAdapter<?>) rv.getAdapter();
             for (int i = 0; i < rv.getChildCount(); i++) {
