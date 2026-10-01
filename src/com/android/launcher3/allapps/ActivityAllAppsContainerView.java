@@ -1339,14 +1339,20 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         return getActiveAppsRecyclerView();
     }
 
-    /** Immutable geometry shared by Prime swipe preview and the live destination page. */
-    public static final class PrimePreparedPageGeometry {
+    /**
+     * Immutable prepared state for a Prime drawer destination.
+     *
+     * This intentionally starts with the deterministic page geometry. The same object is retained
+     * from preview preparation through the live handoff; later preparation stages can add the
+     * filtered/ordered content without changing that ownership model.
+     */
+    public static final class PrimePreparedDrawerPage {
         public final String tabId;
         public final int appsPerRow;
         public final int sideMarginPx;
         public final int topPaddingPx;
 
-        PrimePreparedPageGeometry(String tabId, int appsPerRow, int sideMarginPx, int topPaddingPx) {
+        PrimePreparedDrawerPage(String tabId, int appsPerRow, int sideMarginPx, int topPaddingPx) {
             this.tabId = tabId;
             this.appsPerRow = appsPerRow;
             this.sideMarginPx = sideMarginPx;
@@ -1354,11 +1360,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         }
     }
 
-    /**
-     * Resolves the final geometry for a Prime tab once. Both the off-screen swipe page and the
-     * live RecyclerView consume this snapshot so they cannot independently interpret B's grid.
-     */
-    public PrimePreparedPageGeometry preparePrimePageGeometry(String tabId) {
+    @Nullable private PrimePreparedDrawerPage mPrimePreparedSwipePage;
+
+    /** Resolves one immutable destination snapshot for preview and live handoff. */
+    private PrimePreparedDrawerPage buildPrimePreparedDrawerPage(String tabId) {
         DeviceProfile grid = mActivityContext.getDeviceProfile();
         PrimeDrawerVisualOverrides overrides =
                 new PrimeDrawerTabsRepository(getContext()).getTabVisualOverrides(tabId);
@@ -1374,13 +1379,20 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             topPadding += getResources().getDimensionPixelSize(
                     R.dimen.all_apps_additional_top_padding_floating_search);
         }
-        return new PrimePreparedPageGeometry(tabId, appsPerRow, sideMargin, topPadding);
+        return new PrimePreparedDrawerPage(tabId, appsPerRow, sideMargin, topPadding);
     }
 
-    public PrimePreparedPageGeometry prepareSelectedPrimePageGeometry() {
+    private PrimePreparedDrawerPage preparePrimeSwipePage(String tabId) {
+        if (mPrimePreparedSwipePage == null || !tabId.equals(mPrimePreparedSwipePage.tabId)) {
+            mPrimePreparedSwipePage = buildPrimePreparedDrawerPage(tabId);
+        }
+        return mPrimePreparedSwipePage;
+    }
+
+    public PrimePreparedDrawerPage prepareSelectedPrimeDrawerPage() {
         String tabId = new PrimeDrawerTabsRepository(getContext())
                 .getConfiguration().getSelectedTabId();
-        return preparePrimePageGeometry(tabId);
+        return preparePrimeSwipePage(tabId);
     }
 
     /** Installs Prime horizontal tab swipes on the actual app-list area only. */
@@ -1396,9 +1408,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         }
 
         DeviceProfile grid = mActivityContext.getDeviceProfile();
-        PrimePreparedPageGeometry geometry = prepareSelectedPrimePageGeometry();
+        PrimePreparedDrawerPage preparedPage = prepareSelectedPrimeDrawerPage();
         if (!grid.isVerticalBarLayout() || FeatureFlags.enableResponsiveWorkspace()) {
-            setPadding(geometry.sideMarginPx, geometry.topPaddingPx, geometry.sideMarginPx, 0);
+            setPadding(preparedPage.sideMarginPx, preparedPage.topPaddingPx,
+                    preparedPage.sideMarginPx, 0);
         }
     }
 
@@ -1487,10 +1500,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     // device-profile path, so explicitly mirror the effective column count before
                     // its first layout. Otherwise the two translated RecyclerViews can expose
                     // visibly different row/column geometry at their shared edge.
-                    PrimePreparedPageGeometry preparedGeometry =
-                            preparePrimePageGeometry(tabId);
-                    previewHolder.mAdapter.setAppsPerRow(preparedGeometry.appsPerRow);
-                    previewAppsList.setNumAppsPerRowAllApps(preparedGeometry.appsPerRow);
+                    PrimePreparedDrawerPage preparedPage =
+                            preparePrimeSwipePage(tabId);
+                    previewHolder.mAdapter.setAppsPerRow(preparedPage.appsPerRow);
+                    previewAppsList.setNumAppsPerRowAllApps(preparedPage.appsPerRow);
 
                     previewPage.setPadding(
                             rv.getPaddingLeft(), rv.getPaddingTop(),
@@ -1516,10 +1529,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     previewPage.setTranslationX(0f);
                     previewPage.setTranslationY(0f);
 
-                    PrimePreparedPageGeometry preparedGeometry =
-                            preparePrimePageGeometry(tabId);
-                    previewHolder.mAdapter.setAppsPerRow(preparedGeometry.appsPerRow);
-                    previewAppsList.setNumAppsPerRowAllApps(preparedGeometry.appsPerRow);
+                    PrimePreparedDrawerPage preparedPage =
+                            preparePrimeSwipePage(tabId);
+                    previewHolder.mAdapter.setAppsPerRow(preparedPage.appsPerRow);
+                    previewAppsList.setNumAppsPerRowAllApps(preparedPage.appsPerRow);
 
                     // Configure the target tab and the normal MAIN/WORK predicate before the one
                     // and only dataset rebuild. Without this, the preview list has a null filter
@@ -1547,9 +1560,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 // The destination tab can change the container's horizontal margin at commit.
                 // Predict that final parent geometry now, otherwise the preview is laid out using
                 // tab A's margin and visibly shifts sideways when tab B's override is applied.
-                PrimePreparedPageGeometry targetGeometry =
-                        preparePrimePageGeometry(tabId);
-                int targetContainerSide = targetGeometry.sideMarginPx;
+                PrimePreparedDrawerPage preparedPage = preparePrimeSwipePage(tabId);
+                int targetContainerSide = preparedPage.sideMarginPx;
                 int currentContainerSide = getPaddingLeft();
                 int sideDelta = targetContainerSide - currentContainerSide;
                 int targetLeft = rv.getLeft() + sideDelta;
