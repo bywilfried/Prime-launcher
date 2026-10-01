@@ -268,7 +268,7 @@ class LawnchairAlphabeticalAppsList<T>(
                             app?.toComponentKey()?.toString()?.let(::customOrPreparedIndex) ?: Int.MAX_VALUE
                         }
                     }
-                    return super.addAppsWithSections(remainingApps, position)
+                    position = super.addAppsWithSections(remainingApps, position)
                 }
             }
             if (primePreparedContent == null || primePreparedContent?.tabId != effectiveTabId) {
