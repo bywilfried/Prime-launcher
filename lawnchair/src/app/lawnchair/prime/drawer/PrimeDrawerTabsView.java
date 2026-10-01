@@ -123,11 +123,18 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         if (!PrimeDrawerTabsRepository.PREF_CONFIGURATION.equals(key) || mHeaderParent == null) return;
         post(() -> {
-            refresh(mHeaderParent);
             if (mSwipeCommitInProgress) {
+                // The swipe preview already selected the destination pill. Do not rebuild the
+                // whole tab row when persistence echoes the committed selection back to us:
+                // that transient refresh can make the pill visually lag behind the page.
                 mSwipeCommitInProgress = false;
+                String selectedTabId = mRepository.getConfiguration().getSelectedTabId();
+                mSwipePreviewTabId = selectedTabId;
+                updateSwipePillSelection(selectedTabId);
+                ensureSelectedTabVisible(selectedTabId);
                 return;
             }
+            refresh(mHeaderParent);
             mHeaderParent.onPrimeDrawerTabSelected();
         });
     }
@@ -219,9 +226,17 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
 
     private void clearSwipePreview(boolean committed) {
         String selectedTabId = mRepository.getConfiguration().getSelectedTabId();
+        if (committed) {
+            // Keep the destination pill latched through the preview -> live-page handoff.
+            // Clearing the transient selection here can briefly restore the old pill while the
+            // repository preference callback is still being delivered.
+            mSwipePreviewTabId = selectedTabId;
+            updateSwipePillSelection(selectedTabId);
+            ensureSelectedTabVisible(selectedTabId);
+            return;
+        }
         mSwipePreviewTabId = null;
         updateSwipePillSelection(selectedTabId);
-        if (committed) ensureSelectedTabVisible(selectedTabId);
     }
 
     private void updateSwipePillSelection(String tabId) {
