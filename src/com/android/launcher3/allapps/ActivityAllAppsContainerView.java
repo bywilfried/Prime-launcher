@@ -1619,6 +1619,23 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 }
             }
 
+            private void alignPreviewToLiveFirstCell(AllAppsRecyclerView rv) {
+                if (previewPage == null || previewPage.getChildCount() == 0
+                        || rv.getChildCount() == 0) {
+                    return;
+                }
+                View previewChild = previewPage.getChildAt(0);
+                View liveChild = rv.getChildAt(0);
+                int[] previewLocation = new int[2];
+                int[] liveLocation = new int[2];
+                previewChild.getLocationOnScreen(previewLocation);
+                liveChild.getLocationOnScreen(liveLocation);
+                float correction = liveLocation[0] - previewLocation[0];
+                if (Math.abs(correction) < rv.getWidth() / 4f) {
+                    previewPage.setTranslationX(previewPage.getTranslationX() + correction);
+                }
+            }
+
             private void finishPreview(AllAppsRecyclerView rv, boolean commit, float currentDx) {
                 int width = Math.max(1, rv.getWidth());
                 float from = Math.min(1f, Math.abs(currentDx) / width);
@@ -1656,8 +1673,15 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                                                         return true;
                                                     }
                                                     rv.getViewTreeObserver().removeOnPreDrawListener(this);
-                                                    clearPreview(rv);
-                                                    onPreviewFinished.accept(true);
+                                                    // The final grid is now laid out but still
+                                                    // covered by the preview. Match their actual
+                                                    // first-cell X before revealing it, avoiding
+                                                    // the last few pixels of handoff shift.
+                                                    alignPreviewToLiveFirstCell(rv);
+                                                    rv.postOnAnimation(() -> {
+                                                        clearPreview(rv);
+                                                        onPreviewFinished.accept(true);
+                                                    });
                                                     return true;
                                                 }
                                             });
