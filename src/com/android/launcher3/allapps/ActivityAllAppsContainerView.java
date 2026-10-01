@@ -1484,6 +1484,11 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                             ? mWorkManager.getItemInfoMatcher() : mPersonalMatcher;
                     previewAppsList.configurePrimePreview(tabId, previewFilter);
                     previewTabId = tabId;
+
+                    // A persistent preview RecyclerView can retain the previous tab's vertical
+                    // LayoutManager anchor. Always present a newly selected category from its top.
+                    previewPage.stopScroll();
+                    previewPage.scrollToTop();
                 }
 
                 int width = Math.max(1, rv.getWidth());
@@ -1618,6 +1623,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                                 && Math.abs(dx) > touchSlop
                                 && Math.abs(dx) > Math.abs(dy) * 1.05f) {
                             horizontalSwipe = true;
+                            // Prime now owns this pointer stream. Stop any RecyclerView vertical
+                            // motion that may have started before horizontal intent crossed slop.
+                            rv.stopScroll();
                             swipeLeft = dx < 0;
                             String targetTabId = getPreviewTabId.apply(swipeLeft);
                             if (targetTabId != null
