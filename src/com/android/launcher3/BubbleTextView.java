@@ -1718,6 +1718,13 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
 
 
 
+    /** Prime: fills the exact drawer render cache without creating or binding a View. */
+    public static void warmPrimeIconCache(Launcher launcher, ItemInfoWithIcon info,
+            @Nullable IconShape shape, int iconSize, boolean useTheme) {
+        if (shape == null || iconSize <= 0) return;
+        PrimeIconRenderCache.renderAndCache(launcher, info, shape, iconSize, useTheme);
+    }
+
     /** Prime: primes the effective shape before an item bind without clipping its bitmap. */
     public void setPrimeIconShapeForNextBind(@Nullable IconShape shape) {
         mPrimeIconShape = shape;
