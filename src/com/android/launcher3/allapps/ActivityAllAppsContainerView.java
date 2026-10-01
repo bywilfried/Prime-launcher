@@ -1556,7 +1556,15 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 int width = Math.max(1, rv.getWidth());
                 float from = Math.min(1f, Math.abs(currentDx) / width);
                 ValueAnimator animator = ValueAnimator.ofFloat(from, commit ? 1f : 0f);
-                animator.setDuration(180L);
+                // Finish only the distance that is still missing. A nearly completed fast swipe
+                // must not pay the same 180 ms as a release close to the origin.
+                float remaining = commit ? (1f - from) : from;
+                animator.setDuration(Math.max(45L, Math.round(180L * remaining)));
+                if (commit) {
+                    // Persist/rebuild the destination immediately on release, underneath the
+                    // already-visible preview, instead of waiting for the settle animation.
+                    onCommit.accept(swipeLeft);
+                }
                 animator.addUpdateListener(animation -> {
                     float progress = (float) animation.getAnimatedValue();
                     float dx = (swipeLeft ? -1f : 1f) * width * progress;
@@ -1566,11 +1574,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     @Override
                     public void onAnimationEnd(Animator animation) {
                         if (commit) {
-                            // Keep the adjacent page covering the viewport while the normal Prime
-                            // list commits underneath it. Remove the preview on the next frame so
-                            // the adapter refresh has been laid out before it becomes visible.
-                            onCommit.accept(swipeLeft);
-
+                            // The destination was committed as soon as the finger was released.
                             // The preview is already the destination page at x=0. Keep it covering
                             // the live RecyclerView until that RecyclerView has actually completed
                             // the post-commit layout. A fixed one-frame delay can expose the live
