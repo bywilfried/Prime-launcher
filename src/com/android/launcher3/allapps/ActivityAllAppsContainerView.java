@@ -1570,10 +1570,26 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                             // list commits underneath it. Remove the preview on the next frame so
                             // the adapter refresh has been laid out before it becomes visible.
                             onCommit.accept(swipeLeft);
-                            rv.postOnAnimation(() -> {
-                                clearPreview(rv);
-                                onPreviewFinished.accept(true);
-                            });
+
+                            // The preview is already the destination page at x=0. Keep it covering
+                            // the live RecyclerView until that RecyclerView has actually completed
+                            // the post-commit layout. A fixed one-frame delay can expose the live
+                            // list while its adapter/filter is still rebuilding, causing the
+                            // visible pause and small icon shift after release.
+                            rv.getViewTreeObserver().addOnPreDrawListener(
+                                    new android.view.ViewTreeObserver.OnPreDrawListener() {
+                                        @Override
+                                        public boolean onPreDraw() {
+                                            if (!rv.getViewTreeObserver().isAlive()) return true;
+                                            rv.getViewTreeObserver().removeOnPreDrawListener(this);
+                                            rv.setTranslationX(0f);
+                                            clearPreview(rv);
+                                            onPreviewFinished.accept(true);
+                                            return true;
+                                        }
+                                    });
+                            rv.requestLayout();
+                            rv.invalidate();
                         } else {
                             clearPreview(rv);
                             onPreviewFinished.accept(false);
