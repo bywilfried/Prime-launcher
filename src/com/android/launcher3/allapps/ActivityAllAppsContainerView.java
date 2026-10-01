@@ -1351,12 +1351,25 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         public final int appsPerRow;
         public final int sideMarginPx;
         public final int topPaddingPx;
+        @Nullable public final LawnchairAlphabeticalAppsList.PrimePreparedContent content;
 
         PrimePreparedDrawerPage(String tabId, int appsPerRow, int sideMarginPx, int topPaddingPx) {
+            this(tabId, appsPerRow, sideMarginPx, topPaddingPx, null);
+        }
+
+        PrimePreparedDrawerPage(String tabId, int appsPerRow, int sideMarginPx, int topPaddingPx,
+                @Nullable LawnchairAlphabeticalAppsList.PrimePreparedContent content) {
             this.tabId = tabId;
             this.appsPerRow = appsPerRow;
             this.sideMarginPx = sideMarginPx;
             this.topPaddingPx = topPaddingPx;
+            this.content = content;
+        }
+
+        PrimePreparedDrawerPage withContent(
+                @Nullable LawnchairAlphabeticalAppsList.PrimePreparedContent content) {
+            return new PrimePreparedDrawerPage(
+                    tabId, appsPerRow, sideMarginPx, topPaddingPx, content);
         }
     }
 
@@ -1541,6 +1554,13 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                             ? mWorkManager.getItemInfoMatcher() : mPersonalMatcher;
                     previewLayoutReady = false;
                     previewAppsList.configurePrimePreview(tabId, previewFilter);
+                    // Capture the exact model ordering materialized by the preview. The selected
+                    // live list receives this immutable ordering at commit, so it does not make a
+                    // second independent custom-order decision for the same destination.
+                    PrimePreparedDrawerPage preparedPageWithContent =
+                            preparePrimeSwipePage(tabId).withContent(
+                                    previewAppsList.getPrimePreparedContent());
+                    mPrimePreparedSwipePage = preparedPageWithContent;
                     // A reused preview can retain the previous category's scroll position.
                     // Always present a newly targeted Prime category from its top edge.
                     previewPage.stopScroll();
