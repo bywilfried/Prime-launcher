@@ -1392,6 +1392,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             private AdapterHolder previewHolder;
             private String previewTabId;
             private boolean previewDirectionLeft;
+            private boolean transitionRunning;
             private int startBackground;
             private int targetBackground;
             // Diagnostic: freeze drawer background during the gesture. If the visible flicker
@@ -1547,6 +1548,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 animator.addListener(new AnimatorListenerAdapter() {
                     @Override
                     public void onAnimationEnd(Animator animation) {
+                        transitionRunning = false;
                         if (commit) {
                             // Keep the adjacent page covering the viewport while the normal Prime
                             // list commits underneath it. Remove the preview on the next frame so
@@ -1583,6 +1585,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                         downY = e.getRawY();
                         horizontalSwipe = false;
                         previewStarted = false;
+                        transitionRunning = false;
                         validAppAreaGesture = e.getX() >= 0 && e.getX() <= rv.getWidth()
                                 && e.getY() >= 0 && e.getY() <= rv.getHeight();
                         return false;
@@ -1627,7 +1630,13 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                                     mPrimeSwipeBackgroundColor = startBackground;
                                 }
                                 previewStarted = true;
+                                transitionRunning = true;
+                                rv.stopScroll();
                                 setProgress(rv, dx);
+                                // One recognized gesture owns exactly one page transition. From
+                                // here the system completes A -> B; further finger movement cannot
+                                // reverse or retarget this same contact.
+                                finishPreview(rv, true, dx);
                             }
                         }
                         return horizontalSwipe;
@@ -1650,19 +1659,15 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 AllAppsRecyclerView rv = (AllAppsRecyclerView) recycler;
                 if (!horizontalSwipe || !validAppAreaGesture) return;
 
-                if (e.getActionMasked() == MotionEvent.ACTION_MOVE) {
-                    if (previewStarted) setProgress(rv, e.getRawX() - downX);
-                } else if (e.getActionMasked() == MotionEvent.ACTION_UP) {
-                    float dx = e.getRawX() - downX;
-                    float threshold = Math.max(touchSlop * 3f, rv.getWidth() * 0.12f);
-                    boolean commit = previewStarted && Math.abs(dx) >= threshold;
+                if (e.getActionMasked() == MotionEvent.ACTION_UP
+                        || e.getActionMasked() == MotionEvent.ACTION_CANCEL) {
+                    // Once recognized, the automatic transition is independent from the rest of
+                    // this touch sequence. UP/CANCEL only releases gesture ownership.
                     horizontalSwipe = false;
                     validAppAreaGesture = false;
-                    if (previewStarted) finishPreview(rv, commit, dx);
-                } else if (e.getActionMasked() == MotionEvent.ACTION_CANCEL) {
-                    horizontalSwipe = false;
-                    validAppAreaGesture = false;
-                    if (previewStarted) finishPreview(rv, false, e.getRawX() - downX);
+                    if (!transitionRunning && previewStarted) {
+                        finishPreview(rv, false, e.getRawX() - downX);
+                    }
                 }
             }
         };
