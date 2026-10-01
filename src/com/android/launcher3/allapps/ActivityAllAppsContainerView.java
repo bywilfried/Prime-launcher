@@ -125,6 +125,7 @@ import app.lawnchair.font.FontManager;
 import app.lawnchair.preferences.PreferenceManager;
 import app.lawnchair.preferences2.PreferenceManager2;
 import app.lawnchair.prime.drawer.PrimeDrawerTabsRepository;
+import app.lawnchair.prime.drawer.PrimeDrawerTabsView;
 import app.lawnchair.prime.drawer.PrimeDrawerVisualOverrides;
 import app.lawnchair.theme.color.tokens.ColorTokens;
 import app.lawnchair.util.LawnchairUtilsKt;
@@ -1776,6 +1777,27 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                         pendingRv = null;
                         validAppAreaGesture = e.getX() >= 0 && e.getX() <= rv.getWidth()
                                 && e.getY() >= 0 && e.getY() <= rv.getHeight();
+                        // The Prime category strip has its own HorizontalScrollView gesture.
+                        // RecyclerView can geometrically extend underneath the floating header, so
+                        // an event over that row may still reach this listener. Exclude the row in
+                        // screen coordinates before Prime starts preparing/intercepting a page swipe.
+                        PrimeDrawerTabsView primeTabs =
+                                mHeader != null
+                                        ? mHeader.findFixedRowByType(PrimeDrawerTabsView.class)
+                                        : null;
+                        if (validAppAreaGesture && primeTabs != null
+                                && primeTabs.getVisibility() == View.VISIBLE) {
+                            int[] tabsLocation = new int[2];
+                            primeTabs.getLocationOnScreen(tabsLocation);
+                            float rawX = e.getRawX();
+                            float rawY = e.getRawY();
+                            if (rawX >= tabsLocation[0]
+                                    && rawX <= tabsLocation[0] + primeTabs.getWidth()
+                                    && rawY >= tabsLocation[1]
+                                    && rawY <= tabsLocation[1] + primeTabs.getHeight()) {
+                                validAppAreaGesture = false;
+                            }
+                        }
                         return false;
                     case MotionEvent.ACTION_MOVE:
                         if (!validAppAreaGesture) return false;
