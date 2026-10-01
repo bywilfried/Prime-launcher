@@ -1544,6 +1544,14 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             private void finishPreview(AllAppsRecyclerView rv, boolean commit, float currentDx) {
                 int width = Math.max(1, rv.getWidth());
                 float from = Math.min(1f, Math.abs(currentDx) / width);
+
+                // Commit as soon as the destination is locked. The preview remains on top while
+                // the live RecyclerView rebuilds underneath, giving expensive categories the
+                // entire transition duration instead of starting their refresh after arrival.
+                if (commit) {
+                    onCommit.accept(swipeLeft);
+                }
+
                 ValueAnimator animator = ValueAnimator.ofFloat(from, commit ? 1f : 0f);
                 animator.setDuration(180L);
                 animator.addUpdateListener(animation -> {
@@ -1556,10 +1564,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     public void onAnimationEnd(Animator animation) {
                         transitionRunning = false;
                         if (commit) {
-                            // Keep the adjacent page covering the viewport while the normal Prime
-                            // list commits underneath it. Remove the preview on the next frame so
-                            // the adapter refresh has been laid out before it becomes visible.
-                            onCommit.accept(swipeLeft);
+                            // The live page has been rebuilding behind the preview throughout the
+                            // animation. Keep one final frame of coverage before exposing it.
                             rv.postOnAnimation(() -> {
                                 clearPreview(rv);
                                 onPreviewFinished.accept(true);
