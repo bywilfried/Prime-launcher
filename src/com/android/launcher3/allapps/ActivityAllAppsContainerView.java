@@ -1370,6 +1370,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     public void setPrimeDrawerSwipeListener(
             BooleanSupplier isSwipeEnabled,
             Function<Boolean, String> getPreviewTabId,
+            Consumer<Float> onTransitionProgress,
             Consumer<Boolean> onCommit,
             Consumer<Boolean> onPreviewFinished) {
         if (mPrimeDrawerSwipeListener != null) {
@@ -1524,6 +1525,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 float clampedDx = Math.max(-width, Math.min(width, dx));
                 float progress = Math.min(1f, Math.abs(clampedDx) / width);
 
+                onTransitionProgress.accept(progress);
                 rv.setTranslationX(clampedDx);
                 float targetStart = swipeLeft ? width : -width;
                 previewPage.setTranslationX(targetStart + clampedDx);
