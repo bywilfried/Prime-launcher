@@ -302,18 +302,11 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             View selected = mTabsContainer.findViewWithTag(tabId);
             if (selected == null || getWidth() == 0) return;
 
-            int margin = dp(12);
-            int viewportLeft = getScrollX() + getPaddingLeft();
-            int viewportRight = getScrollX() + getWidth() - getPaddingRight();
-            int targetLeft = selected.getLeft() - margin;
-            int targetRight = selected.getRight() + margin;
-
-            int desiredScroll = getScrollX();
-            if (targetLeft < viewportLeft) {
-                desiredScroll -= viewportLeft - targetLeft;
-            } else if (targetRight > viewportRight) {
-                desiredScroll += targetRight - viewportRight;
-            }
+            // Center the selected category instead of merely making it visible. Clamping to
+            // the scroll range naturally leaves the first/last pills as centered as possible.
+            int viewportWidth = getWidth() - getPaddingLeft() - getPaddingRight();
+            int selectedCenter = selected.getLeft() + selected.getWidth() / 2;
+            int desiredScroll = selectedCenter - viewportWidth / 2 - getPaddingLeft();
 
             int maxScroll = Math.max(0,
                     mTabsContainer.getWidth() + getPaddingLeft() + getPaddingRight() - getWidth());
