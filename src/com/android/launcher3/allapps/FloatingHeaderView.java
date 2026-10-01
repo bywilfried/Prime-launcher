@@ -472,13 +472,13 @@ public class FloatingHeaderView extends LinearLayout implements
                 new PrimeDrawerTabsRepository(getContext()).getSelectedTabVisualOverrides();
         ActivityAllAppsContainerView<?> container =
                 (ActivityAllAppsContainerView<?>) getParent();
-        ActivityAllAppsContainerView.PrimePreparedPageGeometry preparedGeometry =
-                container.prepareSelectedPrimePageGeometry();
+        ActivityAllAppsContainerView.PrimePreparedDrawerPage preparedPage =
+                container.prepareSelectedPrimeDrawerPage();
         if (rv.getAdapter() instanceof BaseAllAppsAdapter) {
             ((BaseAllAppsAdapter<?>) rv.getAdapter())
-                    .setAppsPerRow(preparedGeometry.appsPerRow);
+                    .setAppsPerRow(preparedPage.appsPerRow);
         }
-        rv.getApps().setNumAppsPerRowAllApps(preparedGeometry.appsPerRow);
+        rv.getApps().setNumAppsPerRowAllApps(preparedPage.appsPerRow);
         rv.getApps().onAppsUpdated();
         container.applyPrimeDrawerVisualOverrides();
         // onAppsUpdated() has already rebuilt/diffed the adapter items. Do not immediately
