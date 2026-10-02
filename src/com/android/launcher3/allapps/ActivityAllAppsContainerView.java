@@ -1438,6 +1438,15 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         return mPrimePreparedSwipePage;
     }
 
+    /** Applies the destination container geometry before its persistent page starts moving. */
+    private void applyPreparedPrimePageGeometry(PrimePreparedDrawerPage preparedPage) {
+        DeviceProfile grid = mActivityContext.getDeviceProfile();
+        if (!grid.isVerticalBarLayout() || FeatureFlags.enableResponsiveWorkspace()) {
+            setPadding(preparedPage.sideMarginPx, preparedPage.topPaddingPx,
+                    preparedPage.sideMarginPx, 0);
+        }
+    }
+
     public PrimePreparedDrawerPage prepareSelectedPrimeDrawerPage() {
         String tabId = new PrimeDrawerTabsRepository(getContext())
                 .getConfiguration().getSelectedTabId();
@@ -1552,6 +1561,11 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     // visibly different row/column geometry at their shared edge.
                     PrimePreparedDrawerPage preparedPage =
                             preparePrimeSwipePage(tabId);
+                    // B must be laid out inside B's final container geometry before any visible
+                    // horizontal motion. Previously the page content was prepared for B while its
+                    // parent still used A's side/top geometry, so the same persistent page could
+                    // visibly settle when the parent caught up.
+                    applyPreparedPrimePageGeometry(preparedPage);
                     previewAdapter.setAppsPerRow(preparedPage.appsPerRow);
                     previewAdapter.setPrimePreparedVisualOverrides(
                             preparedPage.visualOverrides);
