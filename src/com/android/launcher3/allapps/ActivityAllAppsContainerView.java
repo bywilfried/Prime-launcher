@@ -58,6 +58,7 @@ import android.view.CrossWindowBlurListeners;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
+import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
@@ -1643,6 +1644,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         class PrimeSwipeTouchListener extends RecyclerView.SimpleOnItemTouchListener {
             private float downX;
             private float downY;
+            private VelocityTracker velocityTracker;
             private boolean horizontalSwipe;
             private boolean validAppAreaGesture;
             private boolean previewStarted;
@@ -1855,7 +1857,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
 
             private void startPendingTransitionIfReady() {
                 if (!transitionPending || !previewLayoutReady || pendingRv == null
-                        || transitionRunning || previewPage == null) {
+                        || previewPage == null) {
                     return;
                 }
                 AllAppsRecyclerView rv = pendingRv;
@@ -1863,11 +1865,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 transitionPending = false;
                 pendingRv = null;
                 previewStarted = true;
-                transitionRunning = true;
                 rv.stopScroll();
                 appendPrimeSwipeDebug("START dx=" + startDx, rv, previewPage);
                 setProgress(rv, startDx);
-                finishPreview(rv, true, startDx);
             }
 
             private void clearPreview(AllAppsRecyclerView rv) {
@@ -2011,6 +2011,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                         // the view and feed that translation back into the next dx calculation.
                         downX = e.getRawX();
                         downY = e.getRawY();
+                        if (velocityTracker != null) velocityTracker.recycle();
+                        velocityTracker = VelocityTracker.obtain();
+                        velocityTracker.addMovement(e);
                         horizontalSwipe = false;
                         previewStarted = false;
                         transitionRunning = false;
@@ -2043,6 +2046,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                         return false;
                     case MotionEvent.ACTION_MOVE:
                         if (!validAppAreaGesture) return false;
+                        if (velocityTracker != null) velocityTracker.addMovement(e);
                         float dx = e.getRawX() - downX;
                         float dy = e.getRawY() - downY;
 
@@ -2091,6 +2095,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                                 startPendingTransitionIfReady();
                             }
                         }
+                        if (horizontalSwipe && previewStarted && !transitionRunning) {
+                            setProgress(rv, dx);
+                        }
                         return horizontalSwipe;
                     case MotionEvent.ACTION_UP:
                     case MotionEvent.ACTION_CANCEL:
@@ -2111,14 +2118,41 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 AllAppsRecyclerView rv = (AllAppsRecyclerView) recycler;
                 if (!horizontalSwipe || !validAppAreaGesture) return;
 
+                if (velocityTracker != null) velocityTracker.addMovement(e);
+                if (e.getActionMasked() == MotionEvent.ACTION_MOVE) {
+                    if (previewStarted && !transitionRunning) {
+                        setProgress(rv, e.getRawX() - downX);
+                    }
+                    return;
+                }
                 if (e.getActionMasked() == MotionEvent.ACTION_UP
                         || e.getActionMasked() == MotionEvent.ACTION_CANCEL) {
-                    // Once recognized, the automatic transition is independent from the rest of
-                    // this touch sequence. UP/CANCEL only releases gesture ownership.
+                    float dx = e.getRawX() - downX;
+                    float velocityX = 0f;
+                    if (velocityTracker != null) {
+                        velocityTracker.computeCurrentVelocity(1000);
+                        velocityX = velocityTracker.getXVelocity();
+                        velocityTracker.recycle();
+                        velocityTracker = null;
+                    }
+                    boolean sameDirectionVelocity =
+                            swipeLeft ? velocityX < 0f : velocityX > 0f;
+                    boolean commit = e.getActionMasked() == MotionEvent.ACTION_UP
+                            && previewStarted
+                            && (Math.abs(dx) >= rv.getWidth() * 0.33f
+                                    || (sameDirectionVelocity && Math.abs(velocityX) >= 900f));
                     horizontalSwipe = false;
                     validAppAreaGesture = false;
-                    if (!transitionRunning && previewStarted) {
-                        finishPreview(rv, false, e.getRawX() - downX);
+                    transitionPending = false;
+                    pendingRv = null;
+                    if (previewStarted && !transitionRunning) {
+                        transitionRunning = true;
+                        appendPrimeSwipeDebug("RELEASE commit=" + commit
+                                + " vx=" + Math.round(velocityX), rv, previewPage);
+                        finishPreview(rv, commit, dx);
+                    } else if (!previewStarted && previewPage != null) {
+                        clearPreview(rv);
+                        onPreviewFinished.accept(false);
                     }
                 }
             }
