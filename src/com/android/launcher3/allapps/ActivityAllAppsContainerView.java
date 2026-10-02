@@ -1619,10 +1619,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             private AllAppsRecyclerView pendingRv;
             private int startBackground;
             private int targetBackground;
-            // Diagnostic: freeze drawer background during the gesture. If the visible flicker
-            // disappears, the culprit is the scrim/background invalidation rather than either
-            // RecyclerView page.
-            private static final boolean PRIME_SWIPE_DIAG_FREEZE_BACKGROUND = true;
+            // Keep the drawer background synchronized with the same A -> B progress as the
+            // persistent pages. The previous diagnostic freeze is no longer needed now that the
+            // post-promotion rebind causing the visible shift has been removed.
+            private static final boolean PRIME_SWIPE_DIAG_FREEZE_BACKGROUND = false;
 
             private int resolvePreviewBackground(String tabId) {
                 PrimeDrawerVisualOverrides overrides =
