@@ -335,6 +335,9 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             ensureSelectedTabVisible(tabId);
             return;
         }
+        if (parent.getParent() instanceof ActivityAllAppsContainerView) {
+            ((ActivityAllAppsContainerView<?>) parent.getParent()).resetPrimePersistentSwipePage();
+        }
         mRepository.setSelectedTab(tabId);
         refresh(parent);
         parent.onPrimeDrawerTabSelected(direction);
