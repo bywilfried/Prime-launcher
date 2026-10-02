@@ -475,8 +475,9 @@ public class FloatingHeaderView extends LinearLayout implements
         ActivityAllAppsContainerView.PrimePreparedDrawerPage preparedPage =
                 container.prepareSelectedPrimeDrawerPage();
         if (rv.getAdapter() instanceof BaseAllAppsAdapter) {
-            ((BaseAllAppsAdapter<?>) rv.getAdapter())
-                    .setAppsPerRow(preparedPage.appsPerRow);
+            BaseAllAppsAdapter<?> adapter = (BaseAllAppsAdapter<?>) rv.getAdapter();
+            adapter.setAppsPerRow(preparedPage.appsPerRow);
+            adapter.setPrimePreparedVisualOverrides(preparedPage.visualOverrides);
         }
         rv.getApps().setNumAppsPerRowAllApps(preparedPage.appsPerRow);
         if (rv.getApps() instanceof app.lawnchair.allapps.LawnchairAlphabeticalAppsList) {
