@@ -1527,6 +1527,19 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         mPrimeCanonicalRecyclerView = null;
     }
 
+    /**
+     * Returns the physical Prime page that is currently visible. Direct tab navigation must
+     * refresh this page instead of resurrecting the canonical holder after a swipe promotion.
+     */
+    @Nullable
+    public AllAppsRecyclerView getPrimeVisibleRecyclerView(@Nullable AllAppsRecyclerView fallback) {
+        if (mPrimePromotedRecyclerView != null
+                && mPrimePromotedRecyclerView.getVisibility() == VISIBLE) {
+            return mPrimePromotedRecyclerView;
+        }
+        return fallback;
+    }
+
     /** Resolves one immutable destination snapshot for preview and live handoff. */
     private PrimePreparedDrawerPage buildPrimePreparedDrawerPage(String tabId) {
         DeviceProfile grid = mActivityContext.getDeviceProfile();
