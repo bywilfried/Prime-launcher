@@ -848,11 +848,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         mAdditionalHeaderRows.forEach(row -> mHeader.onPluginDisconnected(row));
 
         boolean hideSearchBar = isAppDrawerSearchBarHidden();
-        PrimeDrawerTabsView primeTabs = mHeader.findFixedRowByType(PrimeDrawerTabsView.class);
-        boolean hasPrimeTabs = primeTabs != null && primeTabs.hasVisibleContent();
         // Search visibility must not own the Prime category row. Even without Personal/Work tabs,
         // keep the header alive whenever Prime Tabs has visible content.
-        boolean keepHeader = !hideSearchBar || mUsingTabs || hasPrimeTabs;
+        boolean keepHeader = shouldKeepAllAppsHeaderVisible();
         mHeader.setVisibility(keepHeader ? View.VISIBLE : View.GONE);
         boolean tabsHidden = !mUsingTabs;
         mHeader.setup(
@@ -907,7 +905,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     }
 
     protected void updateHeaderScroll(int scrolledOffset) {
-        if (isAppDrawerSearchBarHidden() && !mUsingTabs)
+        if (!shouldKeepAllAppsHeaderVisible())
             return;
         
         // Check if tab container background should be shown
@@ -1090,6 +1088,14 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
 
     private boolean isAppDrawerSearchBarHidden() {
         return PreferenceCacheExtensionsKt.firstCached(pref2.getHideAppDrawerSearchBar());
+    }
+
+    private boolean shouldKeepAllAppsHeaderVisible() {
+        if (!isAppDrawerSearchBarHidden() || mUsingTabs) {
+            return true;
+        }
+        PrimeDrawerTabsView primeTabs = mHeader.findFixedRowByType(PrimeDrawerTabsView.class);
+        return primeTabs != null && primeTabs.hasVisibleContent();
     }
 
     private void layoutBelowSearchContainer(View v, boolean includeTabsMargin) {
@@ -2351,9 +2357,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         } else {
             getSearchRecyclerView().setVisibility(GONE);
             getAppsRecyclerViewContainer().setVisibility(VISIBLE);
-            // Keep the empty header shell hidden when search is off and there are no tabs.
-            mHeader.setVisibility(
-                    (isAppDrawerSearchBarHidden() && !mUsingTabs) ? View.GONE : View.VISIBLE);
+            // Prime Tabs is a fixed header row too; hiding search must not hide that row.
+            mHeader.setVisibility(shouldKeepAllAppsHeaderVisible() ? View.VISIBLE : View.GONE);
         }
         if (mHeader.isSetUp()) {
             mHeader.setActiveRV(getCurrentPage());
