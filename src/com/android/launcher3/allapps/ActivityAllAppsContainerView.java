@@ -202,6 +202,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     protected boolean mUsingTabs;
     protected RecyclerViewFastScroller mTouchHandler;
     @Nullable private RecyclerView.SimpleOnItemTouchListener mPrimeDrawerSwipeListener;
+    @Nullable private PrimeTabTransitionController mPrimeTabTransitionController;
     @Nullable private Integer mPrimeSwipeBackgroundColor;
     @Nullable private android.widget.FrameLayout mPrimeSwipeViewport;
 
@@ -1611,6 +1612,20 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         }
     }
 
+    private interface PrimeTabTransitionController {
+        boolean animateTo(String tabId, boolean moveLeft, Runnable onCommit);
+    }
+
+    /**
+     * Animates a direct Prime tab click through the same prepared persistent-page transition used
+     * by horizontal swipe. Non-adjacent tabs are still one A -> B transition.
+     */
+    public boolean animatePrimeTabSelection(
+            @NonNull String tabId, boolean moveLeft, @NonNull Runnable onCommit) {
+        return mPrimeTabTransitionController != null
+                && mPrimeTabTransitionController.animateTo(tabId, moveLeft, onCommit);
+    }
+
     public void setPrimeDrawerSwipeListener(
             BooleanSupplier isSwipeEnabled,
             Function<Boolean, String> getPreviewTabId,
@@ -2107,6 +2122,50 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     }
                 }
             }
+        };
+
+        mPrimeTabTransitionController = (tabId, moveLeft, directCommit) -> {
+            if (transitionRunning || transitionPending || tabId == null) return false;
+            AllAppsRecyclerView fallback = mAH.get(AdapterHolder.MAIN).mRecyclerView;
+            AllAppsRecyclerView rv = getPrimeVisibleRecyclerView(fallback);
+            if (rv == null || rv.getWidth() == 0) return false;
+
+            swipeLeft = moveLeft;
+            previewDirectionLeft = moveLeft;
+            startBackground = getBottomSheetBackgroundColor();
+            targetBackground = resolvePreviewBackground(tabId);
+            if (!ensurePreviewPage(rv, tabId) || previewPage == null) return false;
+
+            previewTabId = tabId;
+            previewStarted = true;
+            transitionRunning = true;
+            rv.stopScroll();
+            if (!PRIME_SWIPE_DIAG_FREEZE_BACKGROUND) {
+                mPrimeSwipeBackgroundColor = startBackground;
+            }
+            setProgress(rv, 0f);
+
+            int width = Math.max(1, rv.getWidth());
+            ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f);
+            animator.setDuration(220L);
+            animator.addUpdateListener(animation -> {
+                float progress = (float) animation.getAnimatedValue();
+                setProgress(rv, (moveLeft ? -1f : 1f) * width * progress);
+            });
+            animator.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    transitionRunning = false;
+                    if (previewPage == null) return;
+                    previewPage.setTranslationX(0f);
+                    appendPrimeSwipeDebug("DIRECT_ARRIVED " + tabId, rv, previewPage);
+                    directCommit.run();
+                    promoteArrivedPage(rv);
+                    onPreviewFinished.accept(true);
+                }
+            });
+            animator.start();
+            return true;
         };
 
         for (int type : new int[]{AdapterHolder.MAIN, AdapterHolder.WORK}) {
