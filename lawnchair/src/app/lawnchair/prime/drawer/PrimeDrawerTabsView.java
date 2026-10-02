@@ -345,9 +345,23 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             ensureSelectedTabVisible(tabId);
             return;
         }
-        // Keep whichever persistent page is currently visible. After a swipe it is the
-        // promoted destination itself; resurrecting the canonical holder here splits visual/icon
-        // state between two owners and breaks subsequent mixed swipe + direct navigation.
+        if (parent.getParent() instanceof ActivityAllAppsContainerView) {
+            ActivityAllAppsContainerView<?> container =
+                    (ActivityAllAppsContainerView<?>) parent.getParent();
+            // direction > 0 means the destination is to the right in tab order, so pages move
+            // left. The destination may be several tabs away; it is still prepared as one direct
+            // neighbor and intermediate categories are never animated.
+            boolean moveLeft = direction > 0;
+            setSwipePreviewTab(tabId);
+            boolean started = container.animatePrimeTabSelection(tabId, moveLeft, () -> {
+                mSwipeCommitInProgress = true;
+                mRepository.setSelectedTab(tabId);
+                refresh(parent);
+            });
+            if (started) return;
+        }
+
+        // Fallback for a not-yet-laid-out drawer: preserve the validated synchronous behavior.
         mRepository.setSelectedTab(tabId);
         refresh(parent);
         parent.onPrimeDrawerTabSelected(direction);
