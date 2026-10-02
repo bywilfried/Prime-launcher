@@ -490,8 +490,14 @@ public class FloatingHeaderView extends LinearLayout implements
         }
         rv.getApps().setNumAppsPerRowAllApps(preparedPage.appsPerRow);
         if (rv.getApps() instanceof app.lawnchair.allapps.LawnchairAlphabeticalAppsList) {
-            ((app.lawnchair.allapps.LawnchairAlphabeticalAppsList<?>) rv.getApps())
-                    .setPrimePreparedContent(preparedPage.content);
+            app.lawnchair.allapps.LawnchairAlphabeticalAppsList<?> primeApps =
+                    (app.lawnchair.allapps.LawnchairAlphabeticalAppsList<?>) rv.getApps();
+            // A page promoted by swipe is still marked as a preview for that destination.
+            // Direct navigation keeps this physical page visible, so return its model to live
+            // selection mode before rebuilding; otherwise primePreviewTabId keeps filtering the
+            // previous swiped category even though the pill/grid/background follow the new tab.
+            primeApps.clearPrimePreviewTabIdForLiveSelection();
+            primeApps.setPrimePreparedContent(preparedPage.content);
         }
         rv.getApps().onAppsUpdated();
         container.applyPrimeDrawerVisualOverrides();
