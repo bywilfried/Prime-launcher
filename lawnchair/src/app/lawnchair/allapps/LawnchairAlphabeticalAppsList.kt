@@ -124,6 +124,7 @@ class LawnchairAlphabeticalAppsList<T>(
      */
     fun clearPrimePreviewTabIdForLiveSelection() {
         primePreviewTabId = null
+        primePreparedContent = null
     }
 
     /**
