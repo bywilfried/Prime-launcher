@@ -1988,6 +1988,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                             onPreviewFinished.accept(true);
                         } else {
                             clearPreview(rv);
+                            // An aborted Nova swipe must fully release the transition lock. Without
+                            // this reset, the next gesture is rejected even though A is visible again.
+                            transitionRunning = false;
                             onPreviewFinished.accept(false);
                         }
                     }
