@@ -1433,11 +1433,34 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     .append(" l=").append(icon.getLeft())
                     .append(" x=").append(icon.getX())
                     .append(" sx=").append(iconLoc[0])
+                    .append(" sy=").append(iconLoc[1])
                     .append(" w=").append(icon.getWidth())
+                    .append(" h=").append(icon.getHeight())
+                    .append(" pl=").append(icon.getPaddingLeft())
+                    .append(" pr=").append(icon.getPaddingRight())
+                    .append(" scrollX=").append(icon.getScrollX())
                     .append(" tx=").append(icon.getTranslationX())
                     .append(" scale=").append(icon.getScaleX())
-                    .append(" pivot=").append(icon.getPivotX())
-                    .append('}');
+                    .append(" pivot=").append(icon.getPivotX());
+            if (icon instanceof com.android.launcher3.BubbleTextView) {
+                android.graphics.drawable.Drawable[] drawables =
+                        ((com.android.launcher3.BubbleTextView) icon).getCompoundDrawables();
+                android.graphics.drawable.Drawable drawable =
+                        drawables != null && drawables.length > 1 ? drawables[1] : null;
+                if (drawable != null) {
+                    Rect bounds = drawable.getBounds();
+                    mPrimeSwipeDebugLog.append(" drawable{id=")
+                            .append(Integer.toHexString(System.identityHashCode(drawable)))
+                            .append(" b=").append(bounds.left).append(',')
+                            .append(bounds.top).append(',')
+                            .append(bounds.right).append(',')
+                            .append(bounds.bottom)
+                            .append(" iw=").append(drawable.getIntrinsicWidth())
+                            .append(" ih=").append(drawable.getIntrinsicHeight())
+                            .append('}');
+                }
+            }
+            mPrimeSwipeDebugLog.append('}');
         }
         mPrimeSwipeDebugLog.append('}');
     }
@@ -1829,6 +1852,17 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 invalidate();
                 if (mScrimView != null) mScrimView.invalidate();
                 appendPrimeSwipeDebug("PROMOTED", arrivedPage, previewPage);
+                tracePrimePostPromotion(arrivedPage, previewPage, 0);
+            }
+
+            private void tracePrimePostPromotion(AllAppsRecyclerView activePage,
+                    AllAppsRecyclerView sparePage, int frame) {
+                if (frame >= 8 || activePage != mPrimePromotedRecyclerView) return;
+                activePage.postOnAnimation(() -> {
+                    if (activePage != mPrimePromotedRecyclerView) return;
+                    appendPrimeSwipeDebug("POST_PROMOTE frame=" + frame, activePage, sparePage);
+                    tracePrimePostPromotion(activePage, sparePage, frame + 1);
+                });
             }
 
             private void setProgress(AllAppsRecyclerView rv, float dx) {
