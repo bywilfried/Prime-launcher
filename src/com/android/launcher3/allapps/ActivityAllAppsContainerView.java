@@ -1471,7 +1471,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             private boolean swipeLeft;
             private AllAppsRecyclerView previewPage;
             private LawnchairAlphabeticalAppsList<T> previewAppsList;
-            private AdapterHolder previewHolder;
+            private BaseAllAppsAdapter<?> previewAdapter;
             private String previewTabId;
             private boolean previewDirectionLeft;
             private boolean transitionRunning;
@@ -1519,11 +1519,12 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                             mAllAppsStore,
                             type == AdapterHolder.WORK ? mWorkManager : null,
                             type == AdapterHolder.MAIN ? mPrivateProfileManager : null);
-                    previewHolder = new AdapterHolder(type, previewAppsList);
+                    AdapterHolder createdHolder = new AdapterHolder(type, previewAppsList);
+                    previewAdapter = createdHolder.mAdapter;
                     previewPage = new AllAppsRecyclerView(getContext());
                     previewPage.setApps(previewAppsList);
-                    previewPage.setLayoutManager(previewHolder.mLayoutManager);
-                    previewPage.setAdapter(previewHolder.mAdapter);
+                    previewPage.setLayoutManager(createdHolder.mLayoutManager);
+                    previewPage.setAdapter(previewAdapter);
                     previewPage.setHasFixedSize(true);
                     previewPage.setItemAnimator(null);
                     previewPage.setRecycledViewPool(new RecyclerView.RecycledViewPool());
@@ -1535,8 +1536,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     // visibly different row/column geometry at their shared edge.
                     PrimePreparedDrawerPage preparedPage =
                             preparePrimeSwipePage(tabId);
-                    previewHolder.mAdapter.setAppsPerRow(preparedPage.appsPerRow);
-                    previewHolder.mAdapter.setPrimePreparedVisualOverrides(
+                    previewAdapter.setAppsPerRow(preparedPage.appsPerRow);
+                    previewAdapter.setPrimePreparedVisualOverrides(
                             preparedPage.visualOverrides);
                     previewAppsList.setNumAppsPerRowAllApps(preparedPage.appsPerRow);
 
@@ -1548,6 +1549,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     viewport.addView(previewPage, new android.widget.FrameLayout.LayoutParams(
                             android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                             android.view.ViewGroup.LayoutParams.MATCH_PARENT));
+                    // Either physical page can become active after a commit, so both must own
+                    // the same swipe listener. This is what makes the arrived RecyclerView a real
+                    // persistent page rather than a visual overlay over the old live page.
+                    previewPage.addOnItemTouchListener(mPrimeDrawerSwipeListener);
                 }
 
                 if (!tabId.equals(previewTabId)) {
@@ -1566,8 +1571,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
 
                     PrimePreparedDrawerPage preparedPage =
                             preparePrimeSwipePage(tabId);
-                    previewHolder.mAdapter.setAppsPerRow(preparedPage.appsPerRow);
-                    previewHolder.mAdapter.setPrimePreparedVisualOverrides(
+                    previewAdapter.setAppsPerRow(preparedPage.appsPerRow);
+                    previewAdapter.setPrimePreparedVisualOverrides(
                             preparedPage.visualOverrides);
                     previewAppsList.setNumAppsPerRowAllApps(preparedPage.appsPerRow);
 
