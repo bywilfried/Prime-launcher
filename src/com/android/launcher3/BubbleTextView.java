@@ -256,6 +256,9 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     private FastBitmapDrawable mIcon;
     private IconShape mPrimeIconShape;
     private int mPrimeIconShapeRequestGeneration;
+    // Prime swipe diagnostic: records the last code path that replaced this view's icon.
+    private String mPrimeLastIconSetReason = "init";
+    private long mPrimeLastIconSetUptime;
     private DeviceProfile mDeviceProfile;
     private boolean mCenterVertically;
 
@@ -627,6 +630,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         FastBitmapDrawable drawable = cached.newIcon(launcher, flags);
         if (isPrivateSpaceIcon) drawable.setAnimationEnabled(false);
         mDotParams.appColor = drawable.getIconColor();
+        mPrimeLastIconSetReason = "prime-cache";
         setIcon(drawable);
         PrimeDebugLog.d("PrimeIconShape", "stable cache hit");
         return true;
@@ -685,6 +689,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         if (isPrivateSpaceIcon) {
             iconDrawable.setAnimationEnabled(false);
         }
+        mPrimeLastIconSetReason = "normal";
         setIcon(iconDrawable);
     }
 
@@ -1556,6 +1561,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
      * Sets the icon for this view based on the layout direction.
      */
     protected void setIcon(FastBitmapDrawable icon) {
+        mPrimeLastIconSetUptime = android.os.SystemClock.uptimeMillis();
         if (mIsIconVisible) {
             applyCompoundDrawables(icon);
         }
@@ -1627,6 +1633,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     @Override
     public void reapplyItemInfo(ItemInfoWithIcon info) {
         if (getTag() == info) {
+            mPrimeLastIconSetReason = "highres-reapply";
             mIconLoadRequest = null;
             mDisableRelayout = true;
             mHighResUpdateInProgress = true;
@@ -1770,6 +1777,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             FastBitmapDrawable drawable = cached.newIcon(launcher, flags);
             if (isPrivateSpaceIcon) drawable.setAnimationEnabled(false);
             mDotParams.appColor = drawable.getIconColor();
+            mPrimeLastIconSetReason = "prime-shape-cache";
             setIcon(drawable);
             invalidate();
             return;
@@ -1785,10 +1793,20 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                 if (generation != mPrimeIconShapeRequestGeneration
                         || mPrimeIconShape != shape || getTag() != info) return;
                 mDotParams.appColor = primeDrawable.getIconColor();
+                mPrimeLastIconSetReason = "prime-shape-async";
                 setIcon(primeDrawable);
                 invalidate();
             });
         });
+    }
+
+    /** Prime swipe diagnostic: last path that replaced the compound icon drawable. */
+    public String getPrimeLastIconSetReason() {
+        return mPrimeLastIconSetReason;
+    }
+
+    public long getPrimeLastIconSetUptime() {
+        return mPrimeLastIconSetUptime;
     }
 
     /** Prime: updates the rendered icon bounds for per-category drawer overrides. */
