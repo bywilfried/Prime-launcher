@@ -322,11 +322,11 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         PrimeDrawerTabsConfiguration configuration = mRepository.getConfiguration();
         if (targetTabId.equals(configuration.getSelectedTabId())) return;
 
-        // The preview already displays the destination page. Persist only the selection here;
-        // the container swaps to the rebuilt real list while the preview still covers it.
+        // The arrived RecyclerView is promoted to the active Prime page by the container.
+        // Persist only the selection here: rebuilding the old live RecyclerView would recreate
+        // the preview->live handoff that persistent pages are specifically meant to remove.
         mSwipeCommitInProgress = true;
         mRepository.setSelectedTab(targetTabId);
-        parent.onPrimeDrawerTabSelected(0);
     }
 
     private void selectTab(FloatingHeaderView parent, String tabId, int direction) {
