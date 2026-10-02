@@ -85,6 +85,7 @@ class LawnchairAlphabeticalAppsList<T>(
         try {
             prefs2.hiddenApps.onEach(launchIn = context.launcher.lifecycleScope) {
                 hiddenApps = it
+                primePreparedContent = null
                 onAppsUpdated()
             }
         } catch (t: Throwable) {
@@ -96,6 +97,7 @@ class LawnchairAlphabeticalAppsList<T>(
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
         if (key == PrimeDrawerTabsRepository.PREF_CONFIGURATION) {
+            primePreparedContent = null
             onAppsUpdated()
         }
     }
@@ -244,6 +246,9 @@ class LawnchairAlphabeticalAppsList<T>(
                         }
                     }
                 }
+                // The prepared projection is a one-shot handoff contract. Once live has
+                // materialized it, later model/config updates must resolve fresh content.
+                primePreparedContent = null
                 return position
             }
 
