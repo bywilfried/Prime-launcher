@@ -1508,7 +1508,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         // grid/background overrides correctly follow the newly selected tab.
         if (mPrimeCanonicalRecyclerView.getApps() instanceof LawnchairAlphabeticalAppsList) {
             ((LawnchairAlphabeticalAppsList<?>) mPrimeCanonicalRecyclerView.getApps())
-                    .setPrimePreviewTabId(null);
+                    .clearPrimePreviewTabIdForLiveSelection();
         }
 
         mPrimePromotedRecyclerView = null;
