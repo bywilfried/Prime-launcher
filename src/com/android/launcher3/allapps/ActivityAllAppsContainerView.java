@@ -1424,7 +1424,34 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     .append(" c0x=").append(first.getX())
                     .append(" c0sx=").append(childLoc[0]);
         }
+        View icon = findPrimeDebugIcon(rv);
+        if (icon != null) {
+            int[] iconLoc = new int[2];
+            icon.getLocationOnScreen(iconLoc);
+            mPrimeSwipeDebugLog.append(" icon{id=")
+                    .append(Integer.toHexString(System.identityHashCode(icon)))
+                    .append(" l=").append(icon.getLeft())
+                    .append(" x=").append(icon.getX())
+                    .append(" sx=").append(iconLoc[0])
+                    .append(" w=").append(icon.getWidth())
+                    .append(" tx=").append(icon.getTranslationX())
+                    .append(" scale=").append(icon.getScaleX())
+                    .append(" pivot=").append(icon.getPivotX())
+                    .append('}');
+        }
         mPrimeSwipeDebugLog.append('}');
+    }
+
+    @Nullable
+    private View findPrimeDebugIcon(View root) {
+        if (root instanceof com.android.launcher3.BubbleTextView) return root;
+        if (!(root instanceof android.view.ViewGroup)) return null;
+        android.view.ViewGroup group = (android.view.ViewGroup) root;
+        for (int i = 0; i < group.getChildCount(); i++) {
+            View found = findPrimeDebugIcon(group.getChildAt(i));
+            if (found != null) return found;
+        }
+        return null;
     }
 
     public String getPrimeSwipeDebugLog() {
