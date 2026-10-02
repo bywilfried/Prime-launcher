@@ -26,8 +26,15 @@ class PrimeDrawerTabsRepository(context: Context) {
         return tabsProfile.optIntOrNull("defaultDrawerTextColor")
     }
 
-    fun getConfiguration(): PrimeDrawerTabsConfiguration =
-        decode(prefs.getString(PREF_CONFIGURATION, null))
+    fun getConfiguration(): PrimeDrawerTabsConfiguration {
+        val configuration = decode(prefs.getString(PREF_CONFIGURATION, null))
+        val selectedTabId = prefs.getString(PREF_SELECTED_TAB, null)
+        return if (selectedTabId != null && configuration.tabs.any { it.id == selectedTabId }) {
+            configuration.copy(selectedTabId = selectedTabId)
+        } else {
+            configuration
+        }
+    }
 
     fun getTab(tabId: String): PrimeDrawerTab? =
         getConfiguration().tabs.firstOrNull { it.id == tabId }
@@ -94,7 +101,10 @@ class PrimeDrawerTabsRepository(context: Context) {
     fun setSelectedTab(tabId: String) {
         val configuration = getConfiguration()
         if (configuration.tabs.none { it.id == tabId }) return
-        saveConfiguration(configuration.copy(selectedTabId = tabId))
+        // Selection is transient UI state, not a structural drawer configuration change.
+        // Keeping it in its own preference prevents every configuration observer from rebuilding
+        // both app pages after a persistent-page swipe has already materialized its destination.
+        prefs.edit { putString(PREF_SELECTED_TAB, tabId) }
     }
 
     fun setTabApps(tabId: String, apps: Set<ComponentKey>) {
@@ -602,6 +612,7 @@ class PrimeDrawerTabsRepository(context: Context) {
         const val ALL_TAB_ID = "system_all"
         const val UNCLASSIFIED_TAB_ID = "system_unclassified"
         const val PREF_CONFIGURATION = "prime_drawer_tabs_configuration"
+        const val PREF_SELECTED_TAB = "prime_drawer_tabs_selected_tab"
         private const val PREF_HOME_FOLDER_OVERRIDES = "prime_home_folder_overrides"
         private const val PREF_DRAWER_FOLDER_OVERRIDES = "prime_drawer_folder_overrides"
         private const val PREF_MODE_PROFILES = "prime_drawer_mode_profiles_v1"
