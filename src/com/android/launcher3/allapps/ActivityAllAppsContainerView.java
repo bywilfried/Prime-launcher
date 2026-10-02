@@ -1387,6 +1387,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     @Nullable private PrimePreparedDrawerPage mPrimePreparedSwipePage;
     @Nullable private AllAppsRecyclerView mPrimePromotedRecyclerView;
     @Nullable private AllAppsRecyclerView mPrimeCanonicalRecyclerView;
+    @Nullable private AllAppsRecyclerView mPrimeDirectSelectionSparePage;
+    private int mPrimeDirectSelectionGeneration;
     private final StringBuilder mPrimeSwipeDebugLog = new StringBuilder();
 
     private void appendPrimeSwipeDebug(String event, @Nullable AllAppsRecyclerView active,
@@ -1511,6 +1513,16 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     .clearPrimePreviewTabIdForLiveSelection();
         }
 
+        // A direct click makes the canonical holder active again. If the last swipe had
+        // promoted the standalone page, that exact page becomes the spare for the next swipe.
+        // The swipe listener consumes this generation change before preparing its next target, so
+        // it can never keep the now-active canonical RecyclerView as both A and B.
+        if (mPrimePromotedRecyclerView != mPrimeCanonicalRecyclerView) {
+            mPrimeDirectSelectionSparePage = mPrimePromotedRecyclerView;
+        } else {
+            mPrimeDirectSelectionSparePage = null;
+        }
+        mPrimeDirectSelectionGeneration++;
         mPrimePromotedRecyclerView = null;
         mPrimeCanonicalRecyclerView = null;
     }
@@ -1619,6 +1631,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             private AllAppsRecyclerView pendingRv;
             private int startBackground;
             private int targetBackground;
+            private int directSelectionGeneration = mPrimeDirectSelectionGeneration;
             // Keep the drawer background synchronized with the same A -> B progress as the
             // persistent pages. The previous diagnostic freeze is no longer needed now that the
             // post-promotion rebind causing the visible shift has been removed.
@@ -1641,6 +1654,26 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             }
 
             private boolean ensurePreviewPage(AllAppsRecyclerView rv, String tabId) {
+                if (directSelectionGeneration != mPrimeDirectSelectionGeneration) {
+                    directSelectionGeneration = mPrimeDirectSelectionGeneration;
+                    AllAppsRecyclerView directSpare = mPrimeDirectSelectionSparePage;
+                    if (directSpare != null && directSpare != rv) {
+                        previewPage = directSpare;
+                        if (directSpare.getApps() instanceof LawnchairAlphabeticalAppsList) {
+                            previewAppsList =
+                                    (LawnchairAlphabeticalAppsList<T>) directSpare.getApps();
+                        }
+                        if (directSpare.getAdapter() instanceof BaseAllAppsAdapter) {
+                            previewAdapter = (BaseAllAppsAdapter<?>) directSpare.getAdapter();
+                        }
+                    }
+                    previewTabId = null;
+                    previewLayoutReady = false;
+                    previewStarted = false;
+                    transitionPending = false;
+                    pendingRv = null;
+                    mPrimeDirectSelectionSparePage = null;
+                }
                 android.view.ViewParent parent = rv.getParent();
                 if (!(parent instanceof android.widget.FrameLayout)) return false;
                 android.widget.FrameLayout viewport = (android.widget.FrameLayout) parent;
