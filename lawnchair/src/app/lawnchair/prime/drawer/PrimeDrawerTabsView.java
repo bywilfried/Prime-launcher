@@ -133,11 +133,17 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                 && !PrimeDrawerTabsRepository.PREF_SELECTED_TAB.equals(key))
                 || mHeaderParent == null) return;
         post(() -> {
-            if (mSwipeCommitInProgress) {
-                // The swipe preview already moved and styled the existing pills. Rebuilding the
-                // whole row here detaches them at handoff and adds avoidable latency/jitter.
+            if (mSwipeCommitInProgress
+                    && PrimeDrawerTabsRepository.PREF_SELECTED_TAB.equals(key)) {
+                // The persistent destination page is already live. A swipe selection change must
+                // update only the pill state; rebuilding app content here recreates the handoff.
                 mSwipeCommitInProgress = false;
                 updateSwipePillSelection(mRepository.getConfiguration().getSelectedTabId());
+                return;
+            }
+            if (PrimeDrawerTabsRepository.PREF_SELECTED_TAB.equals(key)) {
+                // Direct tab clicks refresh synchronously in selectTab(). Do not run a second
+                // asynchronous refresh for the same selection change.
                 return;
             }
             refresh(mHeaderParent);
