@@ -499,6 +499,9 @@ public class FloatingHeaderView extends LinearLayout implements
                     adapter.reapplyPrimeTabIconOverrides((BubbleTextView) child);
                 }
             }
+            // Prepared visuals are only pinned for this atomic handoff. Future ordinary updates
+            // must resolve the then-current selected tab rather than retaining an old snapshot.
+            adapter.setPrimePreparedVisualOverrides(null);
         }
         Boolean rememberPosition = primeOverrides != null ? primeOverrides.getRememberPosition() : null;
         boolean shouldRememberPosition = rememberPosition != null
