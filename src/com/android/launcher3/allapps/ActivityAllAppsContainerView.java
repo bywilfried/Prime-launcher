@@ -1385,6 +1385,22 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     }
 
     @Nullable private PrimePreparedDrawerPage mPrimePreparedSwipePage;
+    @Nullable private AllAppsRecyclerView mPrimePromotedRecyclerView;
+    @Nullable private AllAppsRecyclerView mPrimeCanonicalRecyclerView;
+
+    /**
+     * Leaves persistent-page swipe mode before a direct tab selection. Direct selections still
+     * use Lawnchair's canonical holder; swipe commits instead keep the arrived physical page.
+     */
+    public void resetPrimePersistentSwipePage() {
+        if (mPrimePromotedRecyclerView == null || mPrimeCanonicalRecyclerView == null) return;
+        mPrimePromotedRecyclerView.setVisibility(INVISIBLE);
+        mPrimePromotedRecyclerView.setTranslationX(0f);
+        mPrimeCanonicalRecyclerView.setVisibility(VISIBLE);
+        mPrimeCanonicalRecyclerView.setTranslationX(0f);
+        mPrimePromotedRecyclerView = null;
+        mPrimeCanonicalRecyclerView = null;
+    }
 
     /** Resolves one immutable destination snapshot for preview and live handoff. */
     private PrimePreparedDrawerPage buildPrimePreparedDrawerPage(String tabId) {
@@ -1668,6 +1684,12 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
 
                 oldActivePage.setTranslationX(0f);
                 oldActivePage.setVisibility(INVISIBLE);
+
+                mPrimePromotedRecyclerView = arrivedPage;
+                mPrimeCanonicalRecyclerView =
+                        oldActivePage == mAH.get(AdapterHolder.MAIN).mRecyclerView
+                                || oldActivePage == mAH.get(AdapterHolder.WORK).mRecyclerView
+                                ? oldActivePage : mPrimeCanonicalRecyclerView;
 
                 // Swap roles instead of swapping pixels: the exact RecyclerView that the user
                 // watched arrive remains on screen. The previous active page becomes the spare
