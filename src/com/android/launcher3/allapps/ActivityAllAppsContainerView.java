@@ -1501,6 +1501,16 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         mPrimePromotedRecyclerView.setTranslationX(0f);
         mPrimeCanonicalRecyclerView.setVisibility(VISIBLE);
         mPrimeCanonicalRecyclerView.setTranslationX(0f);
+
+        // The canonical holder may have served as the off-screen swipe preview after the last
+        // promotion. Restore it to live-selection mode before a direct tab click refreshes it;
+        // otherwise its fixed preview tab keeps filtering apps for the previous destination while
+        // grid/background overrides correctly follow the newly selected tab.
+        if (mPrimeCanonicalRecyclerView.getApps() instanceof LawnchairAlphabeticalAppsList) {
+            ((LawnchairAlphabeticalAppsList<?>) mPrimeCanonicalRecyclerView.getApps())
+                    .setPrimePreviewTabId(null);
+        }
+
         mPrimePromotedRecyclerView = null;
         mPrimeCanonicalRecyclerView = null;
     }
