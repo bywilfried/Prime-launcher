@@ -848,8 +848,12 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         mAdditionalHeaderRows.forEach(row -> mHeader.onPluginDisconnected(row));
 
         boolean hideSearchBar = isAppDrawerSearchBarHidden();
-        // Keep personal/work tabs visible when search is off; only hide the empty header shell.
-        mHeader.setVisibility((hideSearchBar && !mUsingTabs) ? View.GONE : View.VISIBLE);
+        PrimeDrawerTabsView primeTabs = mHeader.findFixedRowByType(PrimeDrawerTabsView.class);
+        boolean hasPrimeTabs = primeTabs != null && primeTabs.hasVisibleContent();
+        // Search visibility must not own the Prime category row. Even without Personal/Work tabs,
+        // keep the header alive whenever Prime Tabs has visible content.
+        boolean keepHeader = !hideSearchBar || mUsingTabs || hasPrimeTabs;
+        mHeader.setVisibility(keepHeader ? View.VISIBLE : View.GONE);
         boolean tabsHidden = !mUsingTabs;
         mHeader.setup(
                 mAH.get(AdapterHolder.MAIN).mRecyclerView,
@@ -858,7 +862,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 getCurrentPage(),
                 tabsHidden);
 
-        int padding = (hideSearchBar && !mUsingTabs) ? 0 : mHeader.getMaxTranslation();
+        int padding = keepHeader ? mHeader.getMaxTranslation() : 0;
         mAH.forEach(adapterHolder -> {
             adapterHolder.mPadding.top = padding;
             adapterHolder.applyPadding();
