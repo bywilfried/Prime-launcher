@@ -1387,6 +1387,54 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     @Nullable private PrimePreparedDrawerPage mPrimePreparedSwipePage;
     @Nullable private AllAppsRecyclerView mPrimePromotedRecyclerView;
     @Nullable private AllAppsRecyclerView mPrimeCanonicalRecyclerView;
+    private final StringBuilder mPrimeSwipeDebugLog = new StringBuilder();
+
+    private void appendPrimeSwipeDebug(String event, @Nullable AllAppsRecyclerView active,
+            @Nullable AllAppsRecyclerView adjacent) {
+        long t = android.os.SystemClock.uptimeMillis();
+        mPrimeSwipeDebugLog.append(t).append(' ').append(event);
+        appendPrimeSwipeViewDebug(" A", active);
+        appendPrimeSwipeViewDebug(" B", adjacent);
+        mPrimeSwipeDebugLog.append('\n');
+        if (mPrimeSwipeDebugLog.length() > 24000) {
+            mPrimeSwipeDebugLog.delete(0, mPrimeSwipeDebugLog.length() - 18000);
+        }
+    }
+
+    private void appendPrimeSwipeViewDebug(String label, @Nullable AllAppsRecyclerView rv) {
+        if (rv == null) {
+            mPrimeSwipeDebugLog.append(label).append("=null");
+            return;
+        }
+        int[] loc = new int[2];
+        rv.getLocationOnScreen(loc);
+        mPrimeSwipeDebugLog.append(label)
+                .append("{id=").append(Integer.toHexString(System.identityHashCode(rv)))
+                .append(" l=").append(rv.getLeft())
+                .append(" w=").append(rv.getWidth())
+                .append(" tx=").append(rv.getTranslationX())
+                .append(" sx=").append(loc[0])
+                .append(" pl=").append(rv.getPaddingLeft())
+                .append(" pr=").append(rv.getPaddingRight());
+        View first = rv.getChildCount() > 0 ? rv.getChildAt(0) : null;
+        if (first != null) {
+            int[] childLoc = new int[2];
+            first.getLocationOnScreen(childLoc);
+            mPrimeSwipeDebugLog.append(" c0l=").append(first.getLeft())
+                    .append(" c0x=").append(first.getX())
+                    .append(" c0sx=").append(childLoc[0]);
+        }
+        mPrimeSwipeDebugLog.append('}');
+    }
+
+    public String getPrimeSwipeDebugLog() {
+        return mPrimeSwipeDebugLog.length() == 0
+                ? "Aucun swipe Prime enregistré." : mPrimeSwipeDebugLog.toString();
+    }
+
+    public void clearPrimeSwipeDebugLog() {
+        mPrimeSwipeDebugLog.setLength(0);
+    }
 
     /**
      * Leaves persistent-page swipe mode before a direct tab selection. Direct selections still
@@ -1655,6 +1703,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 previewPage.setTranslationY(rv.getTranslationY());
                 previewPage.setTranslationX(swipeLeft ? width : -width);
                 previewPage.setVisibility(VISIBLE);
+                appendPrimeSwipeDebug("PREPARE " + tabId, rv, previewPage);
                 return true;
             }
 
@@ -1670,6 +1719,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 previewStarted = true;
                 transitionRunning = true;
                 rv.stopScroll();
+                appendPrimeSwipeDebug("START dx=" + startDx, rv, previewPage);
                 setProgress(rv, startDx);
                 finishPreview(rv, true, startDx);
             }
@@ -1731,6 +1781,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 mPrimeSwipeBackgroundColor = null;
                 invalidate();
                 if (mScrimView != null) mScrimView.invalidate();
+                appendPrimeSwipeDebug("PROMOTED", arrivedPage, previewPage);
             }
 
             private void setProgress(AllAppsRecyclerView rv, float dx) {
@@ -1743,6 +1794,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 rv.setTranslationX(clampedDx);
                 float targetStart = swipeLeft ? width : -width;
                 previewPage.setTranslationX(targetStart + clampedDx);
+                appendPrimeSwipeDebug("FRAME p=" + Math.round(progress * 1000f)
+                        + " dx=" + clampedDx, rv, previewPage);
                 if (!PRIME_SWIPE_DIAG_FREEZE_BACKGROUND) {
                     mPrimeSwipeBackgroundColor =
                             ColorUtils.blendARGB(startBackground, targetBackground, progress);
@@ -1771,7 +1824,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                             // then promote this exact RecyclerView; there is no preview->live reveal
                             // and therefore no handoff frame in which the grid can shift.
                             previewPage.setTranslationX(0f);
+                            appendPrimeSwipeDebug("ARRIVED", rv, previewPage);
                             onCommit.accept(swipeLeft);
+                            appendPrimeSwipeDebug("COMMITTED", rv, previewPage);
                             promoteArrivedPage(rv);
                             onPreviewFinished.accept(true);
                         } else {
