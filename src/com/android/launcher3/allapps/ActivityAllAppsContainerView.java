@@ -1886,6 +1886,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 mPrimeSwipeBackgroundColor = null;
                 previewStarted = false;
                 previewLayoutReady = false;
+                // The physical spare page stays warm, but its destination is no longer considered
+                // prepared. Otherwise a second swipe toward the same tab skips ensurePreviewPage()
+                // and waits forever for a readiness callback that was cleared with this preview.
+                previewTabId = null;
                 transitionPending = false;
                 pendingRv = null;
                 invalidate();
