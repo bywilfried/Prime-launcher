@@ -1401,14 +1401,12 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     R.dimen.all_apps_additional_top_padding_floating_search);
         }
         AllAppsRecyclerView liveRv = getActiveAppsRecyclerView();
+        // Container side margin and RecyclerView bounds are separate layout layers. setPadding()
+        // changes the container's content area; the RecyclerView itself remains MATCH_PARENT in
+        // apps_list_view_container and keeps AdapterHolder's allAppsPadding. Do not shrink/offset
+        // the preview RecyclerView a second time for the same destination margin.
         int viewportLeft = liveRv != null ? liveRv.getLeft() : 0;
         int viewportWidth = liveRv != null ? Math.max(1, liveRv.getWidth()) : 1;
-        if (liveRv != null) {
-            int currentSideMargin = getPaddingLeft();
-            int sideDelta = sideMargin - currentSideMargin;
-            viewportLeft += sideDelta;
-            viewportWidth = Math.max(1, viewportWidth - (sideDelta * 2));
-        }
         return new PrimePreparedDrawerPage(
                 tabId, appsPerRow, sideMargin, topPadding, viewportLeft, viewportWidth);
     }
