@@ -1600,41 +1600,21 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 }
 
                 int width = Math.max(1, rv.getWidth());
-                int height = Math.max(1, rv.getHeight());
-                // The destination tab can change the container's horizontal margin at commit.
-                // Predict that final parent geometry now, otherwise the preview is laid out using
-                // tab A's margin and visibly shifts sideways when tab B's override is applied.
-                PrimePreparedDrawerPage preparedPage = preparePrimeSwipePage(tabId);
-                int targetLeft = preparedPage.viewportLeftPx;
-                int targetWidth = preparedPage.viewportWidthPx;
-                int targetRight = targetLeft + targetWidth;
-                // The persistent preview is already laid out by the viewport. Do not force a
-                // synchronous RecyclerView measure/layout on every prepared swipe; PagedView's
-                // smooth path similarly moves already-laid-out pages during the drag.
+                // Keep preview and live in one identical local coordinate system. The page's
+                // off-screen side is represented only by translation; its base bounds remain
+                // MATCH_PARENT exactly like the live RecyclerView. Mixing a predicted B layout
+                // rectangle with a direction-dependent translation made the handoff error change
+                // sign between left and right swipes.
                 android.widget.FrameLayout.LayoutParams previewLp =
                         (android.widget.FrameLayout.LayoutParams) previewPage.getLayoutParams();
-                // Persist B's predicted geometry in LayoutParams as well as the immediate layout.
-                // Otherwise a parent layout pass can restore MATCH_PARENT using A's current
-                // content bounds and reintroduce a small directional handoff shift.
-                previewLp.width = targetWidth;
-                previewLp.height = height;
-                previewLp.leftMargin = targetLeft;
-                previewLp.topMargin = rv.getTop();
+                previewLp.width = android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+                previewLp.height = android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+                previewLp.leftMargin = 0;
+                previewLp.topMargin = 0;
                 previewLp.rightMargin = 0;
                 previewLp.bottomMargin = 0;
                 previewPage.setLayoutParams(previewLp);
-                if (previewPage.getMeasuredWidth() != targetWidth
-                        || previewPage.getMeasuredHeight() != height) {
-                    previewPage.measure(
-                            MeasureSpec.makeMeasureSpec(targetWidth, MeasureSpec.EXACTLY),
-                            MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
-                }
-                // Match the rectangle the live RecyclerView will have after B's container margin
-                // is applied, rather than the current rectangle inherited from A.
-                previewPage.layout(targetLeft, rv.getTop(), targetRight, rv.getBottom());
                 previewPage.setTranslationY(rv.getTranslationY());
-                // Horizontal motion is expressed entirely by setProgress(). The live page's
-                // translation must not become part of the preview's base position.
                 previewPage.setTranslationX(swipeLeft ? width : -width);
                 previewPage.setVisibility(VISIBLE);
                 return true;
