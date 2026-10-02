@@ -72,6 +72,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
     private FloatingHeaderView mHeaderParent;
     private boolean mSwipeCommitInProgress;
     private String mSwipePreviewTabId;
+    private boolean mSwipePreviewPillSelected;
     private int mSwipeTabsStartScrollX;
     private int mSwipeTabsTargetScrollX;
     private float mRowDownX;
@@ -233,7 +234,10 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
     private void setSwipePreviewTab(String tabId) {
         if (tabId == null || tabId.equals(mSwipePreviewTabId)) return;
         mSwipePreviewTabId = tabId;
-        updateSwipePillSelection(tabId);
+        mSwipePreviewPillSelected = false;
+        // Keep A visually selected while the destination is only a preview. The pill switches
+        // to B only after the page transition crosses its midpoint.
+        updateSwipePillSelection(mRepository.getConfiguration().getSelectedTabId());
         mSwipeTabsStartScrollX = getScrollX();
         mSwipeTabsTargetScrollX = getCenteredScrollX(tabId);
     }
@@ -268,11 +272,20 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         int scrollX = Math.round(mSwipeTabsStartScrollX
                 + (mSwipeTabsTargetScrollX - mSwipeTabsStartScrollX) * progress);
         scrollTo(scrollX, 0);
+
+        boolean selectPreview = progress >= 0.5f;
+        if (selectPreview != mSwipePreviewPillSelected) {
+            mSwipePreviewPillSelected = selectPreview;
+            updateSwipePillSelection(selectPreview
+                    ? mSwipePreviewTabId
+                    : mRepository.getConfiguration().getSelectedTabId());
+        }
     }
 
     private void clearSwipePreview(boolean committed) {
         String selectedTabId = mRepository.getConfiguration().getSelectedTabId();
         mSwipePreviewTabId = null;
+        mSwipePreviewPillSelected = false;
         updateSwipePillSelection(selectedTabId);
         if (committed) ensureSelectedTabVisible(selectedTabId);
     }
