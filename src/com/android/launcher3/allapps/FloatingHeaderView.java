@@ -453,8 +453,17 @@ public class FloatingHeaderView extends LinearLayout implements
     }
 
     public void onPrimeDrawerTabSelected(int direction) {
-        refreshPrimeRecyclerView(mMainRV, direction);
-        refreshPrimeRecyclerView(mWorkRV, direction);
+        ActivityAllAppsContainerView<?> container =
+                getParent() instanceof ActivityAllAppsContainerView
+                        ? (ActivityAllAppsContainerView<?>) getParent() : null;
+        AllAppsRecyclerView main = container != null
+                ? container.getPrimeVisibleRecyclerView(mMainRV) : mMainRV;
+        refreshPrimeRecyclerView(main, direction);
+        // The promoted page belongs to the currently active profile. Keep the ordinary work
+        // holder refresh only when it is a distinct page.
+        if (mWorkRV != main) {
+            refreshPrimeRecyclerView(mWorkRV, direction);
+        }
     }
 
     private void refreshPrimeRecyclerView(@Nullable AllAppsRecyclerView rv, int direction) {
