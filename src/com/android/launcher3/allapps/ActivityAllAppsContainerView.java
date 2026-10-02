@@ -1354,16 +1354,18 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         public final int topPaddingPx;
         public final int viewportLeftPx;
         public final int viewportWidthPx;
+        @Nullable public final PrimeDrawerVisualOverrides visualOverrides;
         @Nullable public final LawnchairAlphabeticalAppsList.PrimePreparedContent content;
 
         PrimePreparedDrawerPage(String tabId, int appsPerRow, int sideMarginPx,
                 int topPaddingPx, int viewportLeftPx, int viewportWidthPx) {
             this(tabId, appsPerRow, sideMarginPx, topPaddingPx,
-                    viewportLeftPx, viewportWidthPx, null);
+                    viewportLeftPx, viewportWidthPx, null, null);
         }
 
         PrimePreparedDrawerPage(String tabId, int appsPerRow, int sideMarginPx, int topPaddingPx,
                 int viewportLeftPx, int viewportWidthPx,
+                @Nullable PrimeDrawerVisualOverrides visualOverrides,
                 @Nullable LawnchairAlphabeticalAppsList.PrimePreparedContent content) {
             this.tabId = tabId;
             this.appsPerRow = appsPerRow;
@@ -1371,13 +1373,14 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             this.topPaddingPx = topPaddingPx;
             this.viewportLeftPx = viewportLeftPx;
             this.viewportWidthPx = viewportWidthPx;
+            this.visualOverrides = visualOverrides;
             this.content = content;
         }
 
         PrimePreparedDrawerPage withContent(
                 @Nullable LawnchairAlphabeticalAppsList.PrimePreparedContent content) {
             return new PrimePreparedDrawerPage(tabId, appsPerRow, sideMarginPx, topPaddingPx,
-                    viewportLeftPx, viewportWidthPx, content);
+                    viewportLeftPx, viewportWidthPx, visualOverrides, content);
         }
     }
 
@@ -1408,7 +1411,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         int viewportLeft = liveRv != null ? liveRv.getLeft() : 0;
         int viewportWidth = liveRv != null ? Math.max(1, liveRv.getWidth()) : 1;
         return new PrimePreparedDrawerPage(
-                tabId, appsPerRow, sideMargin, topPadding, viewportLeft, viewportWidth);
+                tabId, appsPerRow, sideMargin, topPadding, viewportLeft, viewportWidth,
+                overrides, null);
     }
 
     private PrimePreparedDrawerPage preparePrimeSwipePage(String tabId) {
@@ -1532,6 +1536,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     PrimePreparedDrawerPage preparedPage =
                             preparePrimeSwipePage(tabId);
                     previewHolder.mAdapter.setAppsPerRow(preparedPage.appsPerRow);
+                    previewHolder.mAdapter.setPrimePreparedVisualOverrides(
+                            preparedPage.visualOverrides);
                     previewAppsList.setNumAppsPerRowAllApps(preparedPage.appsPerRow);
 
                     previewPage.setPadding(
@@ -1561,6 +1567,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     PrimePreparedDrawerPage preparedPage =
                             preparePrimeSwipePage(tabId);
                     previewHolder.mAdapter.setAppsPerRow(preparedPage.appsPerRow);
+                    previewHolder.mAdapter.setPrimePreparedVisualOverrides(
+                            preparedPage.visualOverrides);
                     previewAppsList.setNumAppsPerRowAllApps(preparedPage.appsPerRow);
 
                     // Configure the target tab and the normal MAIN/WORK predicate before the one
@@ -1684,23 +1692,6 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 }
             }
 
-            private void alignPreviewToLiveFirstCell(AllAppsRecyclerView rv) {
-                if (previewPage == null || previewPage.getChildCount() == 0
-                        || rv.getChildCount() == 0) {
-                    return;
-                }
-                View previewChild = previewPage.getChildAt(0);
-                View liveChild = rv.getChildAt(0);
-                int[] previewLocation = new int[2];
-                int[] liveLocation = new int[2];
-                previewChild.getLocationOnScreen(previewLocation);
-                liveChild.getLocationOnScreen(liveLocation);
-                float correction = liveLocation[0] - previewLocation[0];
-                if (Math.abs(correction) < rv.getWidth() / 4f) {
-                    previewPage.setTranslationX(previewPage.getTranslationX() + correction);
-                }
-            }
-
             private void finishPreview(AllAppsRecyclerView rv, boolean commit, float currentDx) {
                 int width = Math.max(1, rv.getWidth());
                 float from = Math.min(1f, Math.abs(currentDx) / width);
@@ -1738,11 +1729,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                                                         return true;
                                                     }
                                                     rv.getViewTreeObserver().removeOnPreDrawListener(this);
-                                                    // The final grid is now laid out but still
-                                                    // covered by the preview. Match their actual
-                                                    // first-cell X before revealing it, avoiding
-                                                    // the last few pixels of handoff shift.
-                                                    alignPreviewToLiveFirstCell(rv);
+                                                    // Preview and live now consume the same prepared
+                                                    // projection and cell visuals. Reveal the live
+                                                    // page without a handoff translation correction.
                                                     rv.postOnAnimation(() -> {
                                                         clearPreview(rv);
                                                         onPreviewFinished.accept(true);
