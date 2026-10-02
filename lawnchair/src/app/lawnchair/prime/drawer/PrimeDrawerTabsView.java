@@ -129,7 +129,9 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        if (!PrimeDrawerTabsRepository.PREF_CONFIGURATION.equals(key) || mHeaderParent == null) return;
+        if ((!PrimeDrawerTabsRepository.PREF_CONFIGURATION.equals(key)
+                && !PrimeDrawerTabsRepository.PREF_SELECTED_TAB.equals(key))
+                || mHeaderParent == null) return;
         post(() -> {
             if (mSwipeCommitInProgress) {
                 // The swipe preview already moved and styled the existing pills. Rebuilding the
