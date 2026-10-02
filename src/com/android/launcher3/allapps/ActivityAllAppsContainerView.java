@@ -1443,8 +1443,13 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     .append(" scale=").append(icon.getScaleX())
                     .append(" pivot=").append(icon.getPivotX());
             if (icon instanceof com.android.launcher3.BubbleTextView) {
+                com.android.launcher3.BubbleTextView bubble =
+                        (com.android.launcher3.BubbleTextView) icon;
+                mPrimeSwipeDebugLog.append(" iconSet=")
+                        .append(bubble.getPrimeLastIconSetReason())
+                        .append('@').append(bubble.getPrimeLastIconSetUptime());
                 android.graphics.drawable.Drawable[] drawables =
-                        ((com.android.launcher3.BubbleTextView) icon).getCompoundDrawables();
+                        bubble.getCompoundDrawables();
                 android.graphics.drawable.Drawable drawable =
                         drawables != null && drawables.length > 1 ? drawables[1] : null;
                 if (drawable != null) {
