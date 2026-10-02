@@ -1640,7 +1640,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         }
 
         final int touchSlop = android.view.ViewConfiguration.get(getContext()).getScaledTouchSlop();
-        mPrimeDrawerSwipeListener = new RecyclerView.SimpleOnItemTouchListener() {
+        class PrimeSwipeTouchListener extends RecyclerView.SimpleOnItemTouchListener {
             private float downX;
             private float downY;
             private boolean horizontalSwipe;
@@ -2122,51 +2122,56 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     }
                 }
             }
-        };
+            boolean animateDirectTab(String tabId, boolean moveLeft, Runnable directCommit) {
+                if (transitionRunning || transitionPending || tabId == null) return false;
+                AllAppsRecyclerView fallback = mAH.get(AdapterHolder.MAIN).mRecyclerView;
+                AllAppsRecyclerView rv = getPrimeVisibleRecyclerView(fallback);
+                if (rv == null || rv.getWidth() == 0) return false;
 
-        mPrimeTabTransitionController = (tabId, moveLeft, directCommit) -> {
-            if (transitionRunning || transitionPending || tabId == null) return false;
-            AllAppsRecyclerView fallback = mAH.get(AdapterHolder.MAIN).mRecyclerView;
-            AllAppsRecyclerView rv = getPrimeVisibleRecyclerView(fallback);
-            if (rv == null || rv.getWidth() == 0) return false;
+                swipeLeft = moveLeft;
+                previewDirectionLeft = moveLeft;
+                startBackground = getBottomSheetBackgroundColor();
+                targetBackground = resolvePreviewBackground(tabId);
+                if (!ensurePreviewPage(rv, tabId) || previewPage == null) return false;
 
-            swipeLeft = moveLeft;
-            previewDirectionLeft = moveLeft;
-            startBackground = getBottomSheetBackgroundColor();
-            targetBackground = resolvePreviewBackground(tabId);
-            if (!ensurePreviewPage(rv, tabId) || previewPage == null) return false;
-
-            previewTabId = tabId;
-            previewStarted = true;
-            transitionRunning = true;
-            rv.stopScroll();
-            if (!PRIME_SWIPE_DIAG_FREEZE_BACKGROUND) {
-                mPrimeSwipeBackgroundColor = startBackground;
-            }
-            setProgress(rv, 0f);
-
-            int width = Math.max(1, rv.getWidth());
-            ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f);
-            animator.setDuration(220L);
-            animator.addUpdateListener(animation -> {
-                float progress = (float) animation.getAnimatedValue();
-                setProgress(rv, (moveLeft ? -1f : 1f) * width * progress);
-            });
-            animator.addListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    transitionRunning = false;
-                    if (previewPage == null) return;
-                    previewPage.setTranslationX(0f);
-                    appendPrimeSwipeDebug("DIRECT_ARRIVED " + tabId, rv, previewPage);
-                    directCommit.run();
-                    promoteArrivedPage(rv);
-                    onPreviewFinished.accept(true);
+                previewTabId = tabId;
+                previewStarted = true;
+                transitionRunning = true;
+                rv.stopScroll();
+                if (!PRIME_SWIPE_DIAG_FREEZE_BACKGROUND) {
+                    mPrimeSwipeBackgroundColor = startBackground;
                 }
-            });
-            animator.start();
-            return true;
-        };
+                setProgress(rv, 0f);
+
+                int width = Math.max(1, rv.getWidth());
+                ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f);
+                animator.setDuration(220L);
+                animator.addUpdateListener(animation -> {
+                    float progress = (float) animation.getAnimatedValue();
+                    setProgress(rv, (moveLeft ? -1f : 1f) * width * progress);
+                });
+                animator.addListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        transitionRunning = false;
+                        if (previewPage == null) return;
+                        previewPage.setTranslationX(0f);
+                        appendPrimeSwipeDebug("DIRECT_ARRIVED " + tabId, rv, previewPage);
+                        directCommit.run();
+                        promoteArrivedPage(rv);
+                        onPreviewFinished.accept(true);
+                    }
+                });
+                animator.start();
+                return true;
+        
+            }
+
+        }
+
+        PrimeSwipeTouchListener primeSwipeTouchListener = new PrimeSwipeTouchListener();
+        mPrimeDrawerSwipeListener = primeSwipeTouchListener;
+        mPrimeTabTransitionController = primeSwipeTouchListener::animateDirectTab;
 
         for (int type : new int[]{AdapterHolder.MAIN, AdapterHolder.WORK}) {
             AllAppsRecyclerView rv = mAH.get(type).mRecyclerView;
