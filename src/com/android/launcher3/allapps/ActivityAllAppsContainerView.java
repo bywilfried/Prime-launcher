@@ -1601,6 +1601,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
 
                     PrimePreparedDrawerPage preparedPage =
                             preparePrimeSwipePage(tabId);
+                    // Persistent pages alternate roles after every commit, so destination geometry
+                    // must also be installed when reusing the former active page as the new spare.
+                    applyPreparedPrimePageGeometry(preparedPage);
                     previewAdapter.setAppsPerRow(preparedPage.appsPerRow);
                     previewAdapter.setPrimePreparedVisualOverrides(
                             preparedPage.visualOverrides);
