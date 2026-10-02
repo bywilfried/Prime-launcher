@@ -345,9 +345,9 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             ensureSelectedTabVisible(tabId);
             return;
         }
-        if (parent.getParent() instanceof ActivityAllAppsContainerView) {
-            ((ActivityAllAppsContainerView<?>) parent.getParent()).resetPrimePersistentSwipePage();
-        }
+        // Keep whichever persistent page is currently visible. After a swipe it is the
+        // promoted destination itself; resurrecting the canonical holder here splits visual/icon
+        // state between two owners and breaks subsequent mixed swipe + direct navigation.
         mRepository.setSelectedTab(tabId);
         refresh(parent);
         parent.onPrimeDrawerTabSelected(direction);
