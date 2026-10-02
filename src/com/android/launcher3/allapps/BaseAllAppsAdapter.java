@@ -94,6 +94,12 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
             VIEW_TYPE_PRIVATE_SPACE_SYS_APPS_DIVIDER;
 
     protected final SearchAdapterProvider<?> mAdapterProvider;
+    @Nullable private PrimeDrawerVisualOverrides mPrimePreparedVisualOverrides;
+
+    /** Pins Prime cell rendering to the same immutable destination snapshot as the swipe preview. */
+    public void setPrimePreparedVisualOverrides(@Nullable PrimeDrawerVisualOverrides overrides) {
+        mPrimePreparedVisualOverrides = overrides;
+    }
 
     /**
      * ViewHolder for each icon.
@@ -412,6 +418,9 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
     }
 
     private PrimeDrawerVisualOverrides getPrimeTabVisualOverrides() {
+        if (mPrimePreparedVisualOverrides != null) {
+            return mPrimePreparedVisualOverrides;
+        }
         PrimeDrawerTabsRepository repository = new PrimeDrawerTabsRepository(mActivityContext);
         if (mApps instanceof LawnchairAlphabeticalAppsList) {
             String tabId = ((LawnchairAlphabeticalAppsList<?>) mApps).getPrimeEffectiveTabId();
