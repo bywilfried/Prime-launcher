@@ -118,6 +118,15 @@ class LawnchairAlphabeticalAppsList<T>(
     }
 
     /**
+     * Returns a persistent swipe page to live-selection mode without rebuilding it for the
+     * previously selected tab. A direct tab click immediately performs the one destination
+     * rebuild after persisting its new selection.
+     */
+    fun clearPrimePreviewTabIdForLiveSelection() {
+        primePreviewTabId = null
+    }
+
+    /**
      * Configures a swipe preview atomically: install the target tab before rebuilding the
      * normal All Apps predicate so the preview never lays out an unfiltered intermediate dataset.
      */
