@@ -1703,11 +1703,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     previewPage.stopScroll();
                     previewPage.scrollToTop();
                     previewTabId = tabId;
-                    previewPage.post(() -> {
-                        if (previewPage == null || !tabId.equals(previewTabId)) return;
-                        previewLayoutReady = true;
-                        startPendingTransitionIfReady();
-                    });
+                    waitForPrimePreviewLayoutStable(tabId, -1, -1, 0);
                 } else if (!previewPage.isLayoutRequested()) {
                     previewLayoutReady = true;
                 }
@@ -1732,6 +1728,30 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 previewPage.setVisibility(VISIBLE);
                 appendPrimeSwipeDebug("PREPARE " + tabId, rv, previewPage);
                 return true;
+            }
+
+            private void waitForPrimePreviewLayoutStable(
+                    String tabId, int previousIconLeft, int previousIconWidth, int stablePasses) {
+                if (previewPage == null || !tabId.equals(previewTabId)) return;
+                previewPage.postOnAnimation(() -> {
+                    if (previewPage == null || !tabId.equals(previewTabId)) return;
+                    View icon = findPrimeDebugIcon(previewPage);
+                    int iconLeft = icon != null ? icon.getLeft() : -1;
+                    int iconWidth = icon != null ? icon.getWidth() : -1;
+                    boolean layoutSettled = !previewPage.isLayoutRequested()
+                            && iconWidth > 0
+                            && iconLeft == previousIconLeft
+                            && iconWidth == previousIconWidth;
+                    int nextStablePasses = layoutSettled ? stablePasses + 1 : 0;
+                    appendPrimeSwipeDebug("SETTLE pass=" + nextStablePasses, pendingRv, previewPage);
+                    if (nextStablePasses >= 2) {
+                        previewLayoutReady = true;
+                        startPendingTransitionIfReady();
+                    } else {
+                        waitForPrimePreviewLayoutStable(
+                                tabId, iconLeft, iconWidth, nextStablePasses);
+                    }
+                });
             }
 
             private void startPendingTransitionIfReady() {
