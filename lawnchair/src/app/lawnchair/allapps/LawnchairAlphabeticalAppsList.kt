@@ -55,9 +55,14 @@ class LawnchairAlphabeticalAppsList<T>(
      * Preview and live can therefore materialize the same category projection independently while
      * sharing one deterministic ordering decision.
      */
+    data class PrimePreparedItem(
+        val key: String,
+        val folderId: String? = null,
+    )
+
     data class PrimePreparedContent(
         val tabId: String,
-        val orderedItemKeys: List<String>,
+        val orderedItems: List<PrimePreparedItem>,
     )
 
     private var primePreparedContent: PrimePreparedContent? = null
@@ -210,7 +215,7 @@ class LawnchairAlphabeticalAppsList<T>(
             fun preparedIndex(key: String): Int? {
                 val prepared = primePreparedContent
                 if (prepared == null || prepared.tabId != effectiveTabId) return null
-                val index = prepared.orderedItemKeys.indexOf(key)
+                val index = prepared.orderedItems.indexOfFirst { it.key == key }
                 return index.takeIf { it >= 0 }
             }
             fun customOrPreparedIndex(key: String): Int =
@@ -220,6 +225,26 @@ class LawnchairAlphabeticalAppsList<T>(
                     mAdapterItems.add(AdapterItem.asFolder(folderInfo))
                     position++
                 }
+            }
+
+            val prepared = primePreparedContent
+            if (!isPrimePreview() && prepared != null && prepared.tabId == effectiveTabId) {
+                val foldersById = folderItems.associateBy { it.first.id }
+                prepared.orderedItems.forEach { preparedItem ->
+                    val folderId = preparedItem.folderId
+                    if (folderId != null) {
+                        foldersById[folderId]?.let { (_, folderInfo, _) ->
+                            mAdapterItems.add(AdapterItem.asFolder(folderInfo))
+                            position++
+                        }
+                    } else {
+                        visibleAppsByKey[preparedItem.key]?.let { app ->
+                            mAdapterItems.add(AdapterItem.asApp(app))
+                            position++
+                        }
+                    }
+                }
+                return position
             }
 
             when (selectedTab.folderPlacement) {
@@ -272,15 +297,19 @@ class LawnchairAlphabeticalAppsList<T>(
                 }
             }
             if (primePreparedContent == null || primePreparedContent?.tabId != effectiveTabId) {
-                val resolvedOrder = mAdapterItems.drop(startPosition).mapNotNull { item ->
-                    item.itemInfo?.toComponentKey()?.toString()
-                        ?: item.folderInfo?.let { folderInfo ->
-                            selectedTab.folders.firstOrNull { folder ->
-                                folder.title == folderInfo.title?.toString()
-                            }?.let { "folder:" + it.id }
-                        }
+                val folderIdsByInfo = folderItems.associate { (folder, folderInfo, _) ->
+                    folderInfo to folder.id
                 }
-                primePreparedContent = PrimePreparedContent(effectiveTabId, resolvedOrder.toList())
+                val resolvedItems = mAdapterItems.drop(startPosition).mapNotNull { item ->
+                    item.itemInfo?.toComponentKey()?.toString()?.let { key ->
+                        PrimePreparedItem(key)
+                    } ?: item.folderInfo?.let { folderInfo ->
+                        folderIdsByInfo[folderInfo]?.let { folderId ->
+                            PrimePreparedItem("folder:" + folderId, folderId)
+                        }
+                    }
+                }
+                primePreparedContent = PrimePreparedContent(effectiveTabId, resolvedItems.toList())
             }
             return position
         }
