@@ -354,9 +354,11 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             boolean moveLeft = direction > 0;
             setSwipePreviewTab(tabId);
             boolean started = container.animatePrimeTabSelection(tabId, moveLeft, () -> {
+                // The prepared destination page is already the final page, exactly like a swipe
+                // commit. Persist selection only; refreshing here would rebuild the outgoing page
+                // during the handoff and undo the persistent-page guarantee.
                 mSwipeCommitInProgress = true;
                 mRepository.setSelectedTab(tabId);
-                refresh(parent);
             });
             if (started) return;
         }
