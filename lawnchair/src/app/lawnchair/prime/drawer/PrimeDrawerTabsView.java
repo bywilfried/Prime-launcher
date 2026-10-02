@@ -183,7 +183,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             final String tabId = tab.getId();
             Integer tabColor = tab.getVisualOverrides().getTabColor();
             TextView pill = addPill(label, tabId.equals(configuration.getSelectedTabId()), tabColor, () ->
-                    selectTab(parent, tabId, 0));
+                    selectTab(parent, tabId, getDirectTabDirection(tabId)));
             pill.setTag(tabId);
             pill.setOnTouchListener((v, event) -> {
                 mLastTouchRawX = event.getRawX();
@@ -337,6 +337,33 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         // the preview->live handoff that persistent pages are specifically meant to remove.
         mSwipeCommitInProgress = true;
         mRepository.setSelectedTab(targetTabId);
+    }
+
+    private int getDirectTabDirection(String targetTabId) {
+        PrimeDrawerTabsConfiguration configuration = mRepository.getConfiguration();
+        boolean hasUserTabs = false;
+        for (PrimeDrawerTab tab : configuration.getTabs()) {
+            if (!tab.isSystem()) {
+                hasUserTabs = true;
+                break;
+            }
+        }
+
+        int currentIndex = -1;
+        int targetIndex = -1;
+        int visibleIndex = 0;
+        for (PrimeDrawerTab tab : configuration.getTabs()) {
+            if (!isTabVisible(tab, hasUserTabs)) continue;
+            if (tab.getId().equals(configuration.getSelectedTabId())) {
+                currentIndex = visibleIndex;
+            }
+            if (tab.getId().equals(targetTabId)) {
+                targetIndex = visibleIndex;
+            }
+            visibleIndex++;
+        }
+        if (currentIndex < 0 || targetIndex < 0 || currentIndex == targetIndex) return 0;
+        return targetIndex > currentIndex ? 1 : -1;
     }
 
     private void selectTab(FloatingHeaderView parent, String tabId, int direction) {
