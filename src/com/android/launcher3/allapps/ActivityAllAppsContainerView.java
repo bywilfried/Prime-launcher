@@ -1659,6 +1659,41 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 if (mScrimView != null) mScrimView.invalidate();
             }
 
+            private void promoteArrivedPage(AllAppsRecyclerView oldActivePage) {
+                if (previewPage == null) return;
+
+                AllAppsRecyclerView arrivedPage = previewPage;
+                arrivedPage.setTranslationX(0f);
+                arrivedPage.setVisibility(VISIBLE);
+
+                oldActivePage.setTranslationX(0f);
+                oldActivePage.setVisibility(INVISIBLE);
+
+                // Swap roles instead of swapping pixels: the exact RecyclerView that the user
+                // watched arrive remains on screen. The previous active page becomes the spare
+                // page and will be reconfigured off-screen for the next destination.
+                previewPage = oldActivePage;
+                if (oldActivePage.getApps() instanceof LawnchairAlphabeticalAppsList) {
+                    previewAppsList =
+                            (LawnchairAlphabeticalAppsList<T>) oldActivePage.getApps();
+                } else {
+                    previewAppsList = null;
+                }
+                if (oldActivePage.getAdapter() instanceof BaseAllAppsAdapter) {
+                    previewAdapter = (BaseAllAppsAdapter<?>) oldActivePage.getAdapter();
+                } else {
+                    previewAdapter = null;
+                }
+                previewTabId = null;
+                previewLayoutReady = false;
+                previewStarted = false;
+                transitionPending = false;
+                pendingRv = null;
+                mPrimeSwipeBackgroundColor = null;
+                invalidate();
+                if (mScrimView != null) mScrimView.invalidate();
+            }
+
             private void setProgress(AllAppsRecyclerView rv, float dx) {
                 if (!previewStarted || previewPage == null) return;
                 int width = Math.max(1, rv.getWidth());
@@ -1693,43 +1728,13 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     public void onAnimationEnd(Animator animation) {
                         transitionRunning = false;
                         if (commit && previewPage != null) {
-                            // Snap the arrived page to the exact parent origin before handoff.
-                            // Avoid carrying a sub-pixel animator remainder into the covered frame.
+                            // The arrived page is already the final visual page. Persist selection,
+                            // then promote this exact RecyclerView; there is no preview->live reveal
+                            // and therefore no handoff frame in which the grid can shift.
                             previewPage.setTranslationX(0f);
-                        }
-                        if (commit) {
-                            // Keep the preview covering the viewport while the selected category
-                            // is committed, then expose the rebuilt live page on the next frame.
                             onCommit.accept(swipeLeft);
-                            // Keep the fully-arrived preview visible until the live RecyclerView
-                            // has completed the layout requested by its category refresh. Exposing
-                            // it one frame too early produces the visible icon/grid jump at handoff.
-                            rv.post(() -> {
-                                if (rv.isLayoutRequested()) {
-                                    rv.getViewTreeObserver().addOnPreDrawListener(
-                                            new android.view.ViewTreeObserver.OnPreDrawListener() {
-                                                @Override
-                                                public boolean onPreDraw() {
-                                                    if (!rv.getViewTreeObserver().isAlive()) {
-                                                        return true;
-                                                    }
-                                                    rv.getViewTreeObserver().removeOnPreDrawListener(this);
-                                                    // Preview and live now consume the same prepared
-                                                    // projection and cell visuals. Reveal the live
-                                                    // page without a handoff translation correction.
-                                                    rv.postOnAnimation(() -> {
-                                                        clearPreview(rv);
-                                                        onPreviewFinished.accept(true);
-                                                    });
-                                                    return true;
-                                                }
-                                            });
-                                    rv.invalidate();
-                                } else {
-                                    clearPreview(rv);
-                                    onPreviewFinished.accept(true);
-                                }
-                            });
+                            promoteArrivedPage(rv);
+                            onPreviewFinished.accept(true);
                         } else {
                             clearPreview(rv);
                             onPreviewFinished.accept(false);
