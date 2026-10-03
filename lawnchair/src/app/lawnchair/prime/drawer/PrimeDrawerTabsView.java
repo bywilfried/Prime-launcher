@@ -319,22 +319,20 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
 
     private void applyPillSelectionStyle(
             TextView pill, boolean selected, @Nullable Integer selectedColor) {
-        pill.setTextColor(Themes.getAttrColor(
-                getContext(), selected ? android.R.attr.colorBackground : android.R.attr.textColorPrimary));
-
         GradientDrawable background = new GradientDrawable();
         background.setShape(GradientDrawable.RECTANGLE);
         background.setCornerRadius(dp(24));
         if (selected) {
             Integer modeTabColor = resolveModeTabColor();
-            int defaultTabColor = resolveDefaultTabColor();
-            background.setColor(selectedColor != null
+            int activeColor = selectedColor != null
                     ? selectedColor
-                    : modeTabColor != null ? modeTabColor : defaultTabColor);
+                    : modeTabColor != null ? modeTabColor : resolveDefaultTabColor();
+            background.setColor(activeColor);
+            pill.setTextColor(androidx.core.graphics.ColorUtils.calculateLuminance(activeColor) > 0.5
+                    ? 0xFF111111 : 0xFFFFFFFF);
         } else {
-            background.setColor(0x00000000);
-            background.setStroke(dp(1),
-                    Themes.getAttrColor(getContext(), android.R.attr.textColorSecondary));
+            background.setColor(resolveInactiveTabColor());
+            pill.setTextColor(Themes.getAttrColor(getContext(), android.R.attr.textColorPrimary));
         }
         pill.setBackground(background);
     }
