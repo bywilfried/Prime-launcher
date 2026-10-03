@@ -965,7 +965,13 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
     private int resolveDefaultTabColor() {
         PreferenceManager2 prefs2 = PreferenceManager2.getInstance(getContext());
         app.lawnchair.theme.color.ColorOption option = prefs2.getDrawerTabsColorBlocking();
-        if (option == app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
+        if (option == app.lawnchair.theme.color.ColorOption.Default.INSTANCE
+                || option == app.lawnchair.theme.color.ColorOption.SystemAccent.INSTANCE) {
+            // drawerTabsColor historically defaulted to SystemAccent. Existing installs can still
+            // carry that persisted legacy value even after the preference became an override,
+            // which masks the new Tabs master color (and commonly leaves the selected pill red).
+            // Treat the legacy/default SystemAccent value as inheritance; explicit per-category
+            // and Tabs-mode colors still keep their higher-priority override semantics.
             option = prefs2.getTabsColorBlocking();
         }
         if (option == app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
