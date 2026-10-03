@@ -451,6 +451,7 @@
     <string name="colors">Colors</string>
     <string name="accent_color">Accent color</string>
     <string name="tabs_color">Tabs color</string>
+    <string name="inactive_tabs_color">Inactive tabs color</string>
 
     <string name="swatches">Swatches</string>
 
