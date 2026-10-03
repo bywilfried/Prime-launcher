@@ -133,7 +133,7 @@ fun AppDrawerPreferences(
             if (nativeDrawerBackgroundColor.state.value != modeProfile.appDrawerBackgroundColor) nativeDrawerBackgroundColor.onChange(modeProfile.appDrawerBackgroundColor)
             val workTabsColor = modeProfile.workProfileTabsColor
                 ?.let { app.lawnchair.theme.color.ColorOption.CustomColor(it) }
-                ?: app.lawnchair.theme.color.ColorOption.SystemAccent
+                ?: app.lawnchair.theme.color.ColorOption.Default
             if (nativeWorkProfileTabsColor.state.value != workTabsColor) nativeWorkProfileTabsColor.onChange(workTabsColor)
             if (nativeDrawerOpacity.state.value != modeProfile.drawerOpacity) nativeDrawerOpacity.onChange(modeProfile.drawerOpacity)
             if (nativeDrawerColumns.state.value != modeProfile.drawerColumns) nativeDrawerColumns.onChange(modeProfile.drawerColumns)
@@ -406,7 +406,7 @@ fun AppDrawerPreferences(
                 onClick = {
                     val resetProfile = modePreferences.reset(drawerGridOption, activeDrawerMode)
                     nativeDrawerBackgroundColor.onChange(resetProfile.appDrawerBackgroundColor)
-                    nativeWorkProfileTabsColor.onChange(app.lawnchair.theme.color.ColorOption.SystemAccent)
+                    nativeWorkProfileTabsColor.onChange(app.lawnchair.theme.color.ColorOption.Default)
                     nativeDrawerOpacity.onChange(resetProfile.drawerOpacity)
                     nativeDrawerColumns.onChange(resetProfile.drawerColumns)
                     nativeDrawerColumnsUnfolded.onChange(resetProfile.drawerColumnsUnfolded)
