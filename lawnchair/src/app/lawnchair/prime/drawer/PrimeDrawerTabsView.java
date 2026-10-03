@@ -327,6 +327,12 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             int activeColor = selectedColor != null
                     ? selectedColor
                     : modeTabColor != null ? modeTabColor : resolveDefaultTabColor();
+            appendPrimeSwipeDebug("TAB_COLOR source="
+                    + (selectedColor != null ? "category" : modeTabColor != null ? "mode" : "master/theme")
+                    + " category=" + selectedColor
+                    + " mode=" + modeTabColor
+                    + " resolved=" + String.format("#%08X", activeColor),
+                    null, null);
             background.setColor(activeColor);
             pill.setTextColor(androidx.core.graphics.ColorUtils.calculateLuminance(activeColor) > 0.5
                     ? 0xFF111111 : 0xFFFFFFFF);
@@ -932,6 +938,12 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             int activeColor = selectedColor != null
                     ? selectedColor
                     : modeTabColor != null ? modeTabColor : resolveDefaultTabColor();
+            appendPrimeSwipeDebug("TAB_COLOR source="
+                    + (selectedColor != null ? "category" : modeTabColor != null ? "mode" : "master/theme")
+                    + " category=" + selectedColor
+                    + " mode=" + modeTabColor
+                    + " resolved=" + String.format("#%08X", activeColor),
+                    null, null);
             background.setColor(activeColor);
             pill.setTextColor(androidx.core.graphics.ColorUtils.calculateLuminance(activeColor) > 0.5
                     ? 0xFF111111 : 0xFFFFFFFF);
