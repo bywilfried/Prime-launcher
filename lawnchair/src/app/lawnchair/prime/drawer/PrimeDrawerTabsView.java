@@ -321,7 +321,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             TextView pill, boolean selected, @Nullable Integer selectedColor) {
         GradientDrawable background = new GradientDrawable();
         background.setShape(GradientDrawable.RECTANGLE);
-        background.setCornerRadius(dp(24));
+        background.setCornerRadius(dp(16));
         if (selected) {
             Integer modeTabColor = resolveModeTabColor();
             int activeColor = selectedColor != null
@@ -921,12 +921,12 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         pill.setText(label);
         pill.setGravity(Gravity.CENTER);
         pill.setMinHeight(dp(48));
-        pill.setMinWidth(compactAction ? dp(44) : dp(88));
+        pill.setMinWidth(compactAction ? dp(40) : dp(88));
         pill.setPadding(compactAction ? dp(10) : dp(18), 0, compactAction ? dp(10) : dp(18), 0);
 
         GradientDrawable background = new GradientDrawable();
         background.setShape(GradientDrawable.RECTANGLE);
-        background.setCornerRadius(dp(24));
+        background.setCornerRadius(dp(16));
         if (selected) {
             Integer modeTabColor = resolveModeTabColor();
             int activeColor = selectedColor != null
@@ -944,7 +944,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         pill.setOnClickListener(v -> action.run());
 
         LinearLayout.LayoutParams params =
-                new LinearLayout.LayoutParams(compactAction ? dp(44) : LayoutParams.WRAP_CONTENT, dp(48));
+                new LinearLayout.LayoutParams(compactAction ? dp(40) : LayoutParams.WRAP_CONTENT, dp(48));
         params.setMarginEnd(dp(8));
         mTabsContainer.addView(pill, params);
         return pill;
@@ -986,7 +986,8 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         PreferenceManager2 prefs2 = PreferenceManager2.getInstance(getContext());
         app.lawnchair.theme.color.ColorOption option = prefs2.getInactiveTabsColorBlocking();
         if (option == app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
-            return 0x00000000;
+            return app.lawnchair.theme.color.tokens.ColorTokens.AllAppsTabBackground
+                    .resolveColor(getContext());
         }
         if (option instanceof app.lawnchair.theme.color.ColorOption.CustomColor) {
             return ((app.lawnchair.theme.color.ColorOption.CustomColor) option).getColor();
