@@ -360,6 +360,7 @@ fun PreferenceNavigation(
             val current = when (route.colorKey) {
                 "text" -> profile.defaultDrawerTextColor?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default
                 "tabs" -> profile.defaultTabsColor?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default
+                "inactiveTabs" -> profile.defaultInactiveTabsColor?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default
                 "workTabs" -> profile.workProfileTabsColor?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default
                 else -> profile.appDrawerBackgroundColor
             }
@@ -367,7 +368,7 @@ fun PreferenceNavigation(
                 label = route.label,
                 appliedColor = current,
                 onApply = { option ->
-                    if (route.colorKey == "text" || route.colorKey == "tabs" || route.colorKey == "workTabs") {
+                    if (route.colorKey == "text" || route.colorKey == "tabs" || route.colorKey == "inactiveTabs" || route.colorKey == "workTabs") {
                         val resolved = when (option) {
                             ColorOption.Default -> null
                             else -> option.colorPreferenceEntry.lightColor(context)
@@ -378,6 +379,7 @@ fun PreferenceNavigation(
                             { currentProfile ->
                                 when (route.colorKey) {
                                     "tabs" -> currentProfile.copy(defaultTabsColor = resolved)
+                                    "inactiveTabs" -> currentProfile.copy(defaultInactiveTabsColor = resolved)
                                     "workTabs" -> currentProfile.copy(workProfileTabsColor = resolved)
                                     else -> currentProfile.copy(defaultDrawerTextColor = resolved)
                                 }
