@@ -968,6 +968,10 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         if (option == app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
             option = prefs2.getTabsColorBlocking();
         }
+        if (option == app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
+            return app.lawnchair.theme.color.tokens.ColorTokens.AllAppsTabBackgroundSelected
+                    .resolveColor(getContext());
+        }
         if (option instanceof app.lawnchair.theme.color.ColorOption.CustomColor) {
             return ((app.lawnchair.theme.color.ColorOption.CustomColor) option).getColor();
         }
