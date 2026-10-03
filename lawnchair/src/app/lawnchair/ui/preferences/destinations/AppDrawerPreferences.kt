@@ -257,6 +257,17 @@ fun AppDrawerPreferences(
                         )
                     },
                 )
+                ColorPreference(
+                    label = "Couleur des onglets inactifs",
+                    selectedColor = modeProfile.defaultInactiveTabsColor
+                        ?.let { app.lawnchair.theme.color.ColorOption.CustomColor(it) }
+                        ?: app.lawnchair.theme.color.ColorOption.Default,
+                    onClick = {
+                        navController.navigate(
+                            PrimeDrawerDefaultColor(activeDrawerMode.storageKey, "inactiveTabs", "Couleur des onglets inactifs"),
+                        )
+                    },
+                )
             }
             ColorPreference(
                 label = "Couleur du texte par défaut du drawer",
