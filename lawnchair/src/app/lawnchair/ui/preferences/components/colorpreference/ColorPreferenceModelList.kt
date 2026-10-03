@@ -42,7 +42,7 @@ class ColorPreferenceModelList @Inject constructor(
             ColorPreferenceModel(
                 prefObject = prefs.tabsColor,
                 labelRes = R.string.tabs_color,
-                dynamicEntries = dynamicColors,
+                dynamicEntries = dynamicColorsWithDefault,
             ),
         )
         registerModel(
@@ -56,7 +56,7 @@ class ColorPreferenceModelList @Inject constructor(
             ColorPreferenceModel(
                 prefObject = prefs.drawerTabsColor,
                 labelRes = R.string.prime_tabs_color,
-                dynamicEntries = dynamicColors,
+                dynamicEntries = dynamicColorsWithDefault,
             ),
         )
         registerModel(
@@ -70,7 +70,7 @@ class ColorPreferenceModelList @Inject constructor(
             ColorPreferenceModel(
                 prefObject = prefs.workProfileTabBackgroundColor,
                 labelRes = R.string.work_profile_tab_background_label,
-                dynamicEntries = dynamicColors,
+                dynamicEntries = dynamicColorsWithDefault,
             ),
         )
         registerModel(
