@@ -193,6 +193,7 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
         PreferenceGroup(heading = stringResource(id = R.string.colors)) {
             ThemePreference()
             ColorPreference(preference = prefs2.accentColor)
+            ColorPreference(preference = prefs2.tabsColor)
             ExpandAndShrink(visible = showColorStyle) {
                 ColorStylePreference(prefs2.colorStyle.getAdapter())
             }
