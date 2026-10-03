@@ -235,6 +235,16 @@ class PreferenceManager2 @Inject constructor(
         defaultValue = ColorOption.SystemAccent,
     )
 
+    val inactiveTabsColor = preference(
+        key = stringPreferencesKey(name = "inactive_tabs_color"),
+        parse = ColorOption::fromString,
+        save = ColorOption::toString,
+        onSet = { reloadHelper.recreate() },
+        defaultValue = ColorOption.Default,
+    )
+
+    fun getInactiveTabsColorBlocking(): ColorOption = inactiveTabsColor.firstCached(this)
+
     val drawerTabsColor = preference(
         key = stringPreferencesKey(name = "prime_drawer_tabs_color"),
         parse = ColorOption::fromString,
