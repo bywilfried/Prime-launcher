@@ -245,6 +245,8 @@ class PreferenceManager2 @Inject constructor(
 
     fun getDrawerTabsColorBlocking(): ColorOption = drawerTabsColor.firstCached(this)
 
+    fun getTabsColorBlocking(): ColorOption = tabsColor.firstCached(this)
+
     val appDrawerBackgroundColor = preference(
         key = stringPreferencesKey(name = "app_drawer_bg_color"),
         parse = ColorOption::fromString,
