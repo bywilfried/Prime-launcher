@@ -232,7 +232,7 @@ class PreferenceManager2 @Inject constructor(
         parse = ColorOption::fromString,
         save = ColorOption::toString,
         onSet = { reloadHelper.recreate() },
-        defaultValue = ColorOption.SystemAccent,
+        defaultValue = ColorOption.Default,
     )
 
     val inactiveTabsColor = preference(
