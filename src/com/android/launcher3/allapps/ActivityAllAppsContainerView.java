@@ -2110,6 +2110,12 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                                 startPendingTransitionIfReady();
                             }
                         }
+                        if (horizontalSwipe && transitionPending && !previewStarted) {
+                            // Readiness can complete between MOVE events. Keep the pending offset
+                            // synchronized with the finger so START uses its current position
+                            // instead of the touch-slop crossing position from an older frame.
+                            pendingStartDx = dx;
+                        }
                         if (horizontalSwipe && previewStarted && !transitionRunning) {
                             setProgress(rv, dx);
                         }
