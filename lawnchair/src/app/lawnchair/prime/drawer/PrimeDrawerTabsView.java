@@ -317,6 +317,19 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         }
     }
 
+    private void recordActiveTabColorSource(@Nullable Integer categoryColor,
+            @Nullable Integer modeColor, int resolvedColor) {
+        if (mHeaderParent == null
+                || !(mHeaderParent.getParent() instanceof ActivityAllAppsContainerView)) return;
+        String source = categoryColor != null
+                ? "category" : modeColor != null ? "mode" : "master/theme";
+        ((ActivityAllAppsContainerView<?>) mHeaderParent.getParent()).recordPrimeSwipeDebugEvent(
+                "TAB_COLOR source=" + source
+                        + " category=" + categoryColor
+                        + " mode=" + modeColor
+                        + " resolved=" + String.format("#%08X", resolvedColor));
+    }
+
     private void applyPillSelectionStyle(
             TextView pill, boolean selected, @Nullable Integer selectedColor) {
         GradientDrawable background = new GradientDrawable();
@@ -327,6 +340,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             int activeColor = selectedColor != null
                     ? selectedColor
                     : modeTabColor != null ? modeTabColor : resolveDefaultTabColor();
+            recordActiveTabColorSource(selectedColor, modeTabColor, activeColor);
             background.setColor(activeColor);
             pill.setTextColor(androidx.core.graphics.ColorUtils.calculateLuminance(activeColor) > 0.5
                     ? 0xFF111111 : 0xFFFFFFFF);
@@ -932,6 +946,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             int activeColor = selectedColor != null
                     ? selectedColor
                     : modeTabColor != null ? modeTabColor : resolveDefaultTabColor();
+            recordActiveTabColorSource(selectedColor, modeTabColor, activeColor);
             background.setColor(activeColor);
             pill.setTextColor(androidx.core.graphics.ColorUtils.calculateLuminance(activeColor) > 0.5
                     ? 0xFF111111 : 0xFFFFFFFF);
