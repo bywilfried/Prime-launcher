@@ -226,12 +226,21 @@ class PreferenceManager2 @Inject constructor(
         onSet = { reloadHelper.recreate() },
     )
 
+    /** Master color inherited by drawer tab families unless they override it. */
+    val tabsColor = preference(
+        key = stringPreferencesKey(name = "tabs_color"),
+        parse = ColorOption::fromString,
+        save = ColorOption::toString,
+        onSet = { reloadHelper.recreate() },
+        defaultValue = ColorOption.SystemAccent,
+    )
+
     val drawerTabsColor = preference(
         key = stringPreferencesKey(name = "prime_drawer_tabs_color"),
         parse = ColorOption::fromString,
         save = ColorOption::toString,
         onSet = { reloadHelper.recreate() },
-        defaultValue = ColorOption.SystemAccent,
+        defaultValue = ColorOption.Default,
     )
 
     fun getDrawerTabsColorBlocking(): ColorOption = drawerTabsColor.firstCached(this)
@@ -255,7 +264,7 @@ class PreferenceManager2 @Inject constructor(
         parse = ColorOption::fromString,
         save = ColorOption::toString,
         onSet = { reloadHelper.recreate() },
-        defaultValue = ColorOption.SystemAccent,
+        defaultValue = ColorOption.Default,
     )
 
     val workProfileTabContainerBackground = preference(
