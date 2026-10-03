@@ -993,6 +993,13 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
     }
 
     private int resolveInactiveTabColor() {
+        com.android.launcher3.InvariantDeviceProfile.GridOption grid =
+                com.android.launcher3.InvariantDeviceProfile.INSTANCE.get(getContext()).closestProfile;
+        Integer modeOverride = new PrimeDrawerModePreferences(getContext())
+                .get(grid, PrimeDrawerMode.TABS)
+                .getDefaultInactiveTabsColor();
+        if (modeOverride != null) return modeOverride;
+
         PreferenceManager2 prefs2 = PreferenceManager2.getInstance(getContext());
         app.lawnchair.theme.color.ColorOption option = prefs2.getInactiveTabsColorBlocking();
         if (option == app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
