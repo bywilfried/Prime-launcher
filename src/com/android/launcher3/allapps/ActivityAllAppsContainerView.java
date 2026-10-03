@@ -1849,18 +1849,16 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     View icon = findPrimeDebugIcon(previewPage);
                     int iconLeft = icon != null ? icon.getLeft() : -1;
                     int iconWidth = icon != null ? icon.getWidth() : -1;
-                    boolean layoutSettled = !previewPage.isLayoutRequested()
-                            && iconWidth > 0
-                            && iconLeft == previousIconLeft
-                            && iconWidth == previousIconWidth;
-                    int nextStablePasses = layoutSettled ? stablePasses + 1 : 0;
-                    appendPrimeSwipeDebug("SETTLE pass=" + nextStablePasses, pendingRv, previewPage);
-                    if (nextStablePasses >= 2) {
+                    boolean layoutUsable = !previewPage.isLayoutRequested() && iconWidth > 0;
+                    appendPrimeSwipeDebug("READY usable=" + layoutUsable, pendingRv, previewPage);
+                    if (layoutUsable) {
+                        // Nova-style tracking must start on the first usable destination layout.
+                        // Waiting for two identical post-layout frames made the page visibly lag
+                        // behind the finger even though B was already materialized and drawable.
                         previewLayoutReady = true;
                         startPendingTransitionIfReady();
                     } else {
-                        waitForPrimePreviewLayoutStable(
-                                tabId, iconLeft, iconWidth, nextStablePasses);
+                        waitForPrimePreviewLayoutStable(tabId, iconLeft, iconWidth, 0);
                     }
                 });
             }
