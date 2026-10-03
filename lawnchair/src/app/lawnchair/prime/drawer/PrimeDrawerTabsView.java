@@ -923,24 +923,24 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         pill.setText(label);
         pill.setGravity(Gravity.CENTER);
         pill.setMinHeight(dp(48));
-        pill.setMinWidth(compactAction ? dp(44) : dp(96));
+        pill.setMinWidth(compactAction ? dp(44) : dp(88));
         pill.setPadding(compactAction ? dp(10) : dp(18), 0, compactAction ? dp(10) : dp(18), 0);
-        pill.setTextColor(Themes.getAttrColor(
-                getContext(), selected ? android.R.attr.colorBackground : android.R.attr.textColorPrimary));
 
         GradientDrawable background = new GradientDrawable();
         background.setShape(GradientDrawable.RECTANGLE);
-        background.setCornerRadius(dp(20));
+        background.setCornerRadius(dp(24));
         if (selected) {
             Integer modeTabColor = resolveModeTabColor();
-            int defaultTabColor = resolveDefaultTabColor();
-            background.setColor(selectedColor != null
+            int activeColor = selectedColor != null
                     ? selectedColor
-                    : modeTabColor != null ? modeTabColor : defaultTabColor);
+                    : modeTabColor != null ? modeTabColor : resolveDefaultTabColor();
+            background.setColor(activeColor);
+            pill.setTextColor(androidx.core.graphics.ColorUtils.calculateLuminance(activeColor) > 0.5
+                    ? 0xFF111111 : 0xFFFFFFFF);
         } else {
-            background.setColor(0x00000000);
-            background.setStroke(dp(1),
-                    Themes.getAttrColor(getContext(), android.R.attr.textColorSecondary));
+            int inactiveColor = resolveInactiveTabColor();
+            background.setColor(inactiveColor);
+            pill.setTextColor(Themes.getAttrColor(getContext(), android.R.attr.textColorPrimary));
         }
         pill.setBackground(background);
         pill.setOnClickListener(v -> action.run());
@@ -978,7 +978,33 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             }
             return 0xFF007FFF;
         }
+        if (option == app.lawnchair.theme.color.ColorOption.SystemAccent.INSTANCE) {
+            return option.getColorPreferenceEntry().getLightColor().invoke(getContext());
+        }
         return Themes.getAttrColor(getContext(), android.R.attr.colorAccent);
+    }
+
+    private int resolveInactiveTabColor() {
+        PreferenceManager2 prefs2 = PreferenceManager2.getInstance(getContext());
+        app.lawnchair.theme.color.ColorOption option = prefs2.getInactiveTabsColorBlocking();
+        if (option == app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
+            return 0x00000000;
+        }
+        if (option instanceof app.lawnchair.theme.color.ColorOption.CustomColor) {
+            return ((app.lawnchair.theme.color.ColorOption.CustomColor) option).getColor();
+        }
+        if (option == app.lawnchair.theme.color.ColorOption.WallpaperPrimary.INSTANCE) {
+            android.app.WallpaperColors colors = android.app.WallpaperManager.getInstance(getContext())
+                    .getWallpaperColors(android.app.WallpaperManager.FLAG_SYSTEM);
+            if (colors != null && colors.getPrimaryColor() != null) {
+                return colors.getPrimaryColor().toArgb();
+            }
+            return 0x00000000;
+        }
+        if (option == app.lawnchair.theme.color.ColorOption.SystemAccent.INSTANCE) {
+            return option.getColorPreferenceEntry().getLightColor().invoke(getContext());
+        }
+        return 0x00000000;
     }
 
     private int dp(int value) {
