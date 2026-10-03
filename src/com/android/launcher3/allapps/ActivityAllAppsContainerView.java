@@ -1403,6 +1403,11 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     private int mPrimeDirectSelectionGeneration;
     private final StringBuilder mPrimeSwipeDebugLog = new StringBuilder();
 
+    /** Adds non-RecyclerView Prime diagnostics to the same in-launcher swipe log. */
+    public void recordPrimeSwipeDebugEvent(@NonNull String event) {
+        appendPrimeSwipeDebug(event, null, null);
+    }
+
     private void appendPrimeSwipeDebug(String event, @Nullable AllAppsRecyclerView active,
             @Nullable AllAppsRecyclerView adjacent) {
         long t = android.os.SystemClock.uptimeMillis();
