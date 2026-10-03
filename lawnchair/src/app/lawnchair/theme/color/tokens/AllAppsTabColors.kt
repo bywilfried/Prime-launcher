@@ -16,10 +16,14 @@ object AllAppsTabColors {
         uiColorMode: UiColorMode,
     ): Int {
         val prefs2 = PreferenceManager2.getInstance(context)
-        val customColor = prefs2.workProfileTabBackgroundColor.firstCached()
+        val workColor = prefs2.workProfileTabBackgroundColor.firstCached()
             .colorPreferenceEntry.lightColor.invoke(context)
-        return if (customColor != 0) {
-            customColor
+        if (workColor != 0) return workColor
+
+        val masterColor = prefs2.tabsColor.firstCached()
+            .colorPreferenceEntry.lightColor.invoke(context)
+        return if (masterColor != 0) {
+            masterColor
         } else {
             ColorTokens.AllAppsTabBackgroundSelected.resolveColor(context, scheme, uiColorMode)
         }
