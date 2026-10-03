@@ -95,9 +95,18 @@ object ColorTokens {
 
     @JvmField val AllAppsScrimColor = StaticColorToken(0x404040).setAlpha(.40f)
 
-    @JvmField val AllAppsTabBackground = DayNightColorToken(Neutral1_100, Neutral1_800.setLStar(22.0))
+    // Prime/Lawnchair tab theme defaults. Keep these as dedicated theme tokens so every
+    // inheriting tab surface has explicit light/dark values and future custom themes can replace
+    // them without changing drawer code.
+    @JvmField val AllAppsTabBackground = DayNightColorToken(
+        Neutral1_200.setLStar(84.0),
+        Neutral1_700.setLStar(28.0),
+    )
 
-    @JvmField val AllAppsTabBackgroundSelected = DayNightColorToken(Accent1_600, Accent1_200)
+    @JvmField val AllAppsTabBackgroundSelected = DayNightColorToken(
+        Neutral1_400.setLStar(68.0),
+        Neutral1_900.setLStar(10.0),
+    )
 
     @JvmField val FocusHighlight = DayNightColorToken(Neutral1_0, Neutral1_700)
 
