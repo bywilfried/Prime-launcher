@@ -183,7 +183,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             }
             final String tabId = tab.getId();
             Integer tabColor = tab.getVisualOverrides().getTabColor();
-            TextView pill = addPill(label, tabId.equals(configuration.getSelectedTabId()), tabColor, () ->
+            TextView pill = addPill(label, tabId.equals(configuration.getSelectedTabId()), tabColor, false, () ->
                     selectTab(parent, tabId, getDirectTabDirection(tabId)));
             pill.setTag(tabId);
             pill.setOnTouchListener((v, event) -> {
@@ -221,7 +221,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                 return true;
             });
         }
-        addPill("+", false, null, () -> showCreateTabDialog(parent));
+        addPill("+", false, null, true, () -> showCreateTabDialog(parent));
         ensureSelectedTabVisible(configuration.getSelectedTabId());
     }
 
@@ -324,7 +324,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
 
         GradientDrawable background = new GradientDrawable();
         background.setShape(GradientDrawable.RECTANGLE);
-        background.setCornerRadius(dp(20));
+        background.setCornerRadius(dp(24));
         if (selected) {
             Integer modeTabColor = resolveModeTabColor();
             int defaultTabColor = resolveDefaultTabColor();
@@ -917,12 +917,14 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         dialog.show();
     }
 
-    private TextView addPill(String label, boolean selected, @Nullable Integer selectedColor, Runnable action) {
+    private TextView addPill(String label, boolean selected, @Nullable Integer selectedColor,
+            boolean compactAction, Runnable action) {
         TextView pill = new TextView(getContext());
         pill.setText(label);
         pill.setGravity(Gravity.CENTER);
-        pill.setMinHeight(dp(40));
-        pill.setPadding(dp(16), 0, dp(16), 0);
+        pill.setMinHeight(dp(48));
+        pill.setMinWidth(compactAction ? dp(44) : dp(96));
+        pill.setPadding(compactAction ? dp(10) : dp(18), 0, compactAction ? dp(10) : dp(18), 0);
         pill.setTextColor(Themes.getAttrColor(
                 getContext(), selected ? android.R.attr.colorBackground : android.R.attr.textColorPrimary));
 
@@ -944,7 +946,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         pill.setOnClickListener(v -> action.run());
 
         LinearLayout.LayoutParams params =
-                new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, dp(40));
+                new LinearLayout.LayoutParams(compactAction ? dp(44) : LayoutParams.WRAP_CONTENT, dp(48));
         params.setMarginEnd(dp(8));
         mTabsContainer.addView(pill, params);
         return pill;
@@ -960,8 +962,11 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
     }
 
     private int resolveDefaultTabColor() {
-        app.lawnchair.theme.color.ColorOption option = PreferenceManager2.getInstance(getContext())
-                .getDrawerTabsColorBlocking();
+        PreferenceManager2 prefs2 = PreferenceManager2.getInstance(getContext());
+        app.lawnchair.theme.color.ColorOption option = prefs2.getDrawerTabsColorBlocking();
+        if (option == app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
+            option = PreferenceCacheExtensionsKt.firstCached(prefs2.getTabsColor(), prefs2);
+        }
         if (option instanceof app.lawnchair.theme.color.ColorOption.CustomColor) {
             return ((app.lawnchair.theme.color.ColorOption.CustomColor) option).getColor();
         }
