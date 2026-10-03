@@ -952,11 +952,14 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
 
     @Nullable
     private Integer resolveModeTabColor() {
+        // A Tabs-mode color is an explicit override only. "Managed by Lawnchair" is stored as
+        // null and must continue to the global master Tabs color in resolveDefaultTabColor().
         com.android.launcher3.InvariantDeviceProfile.GridOption grid =
                 com.android.launcher3.InvariantDeviceProfile.INSTANCE.get(getContext()).closestProfile;
-        return new PrimeDrawerModePreferences(getContext())
+        Integer override = new PrimeDrawerModePreferences(getContext())
                 .get(grid, PrimeDrawerMode.TABS)
                 .getDefaultTabsColor();
+        return override;
     }
 
     private int resolveDefaultTabColor() {
@@ -979,7 +982,14 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         if (option == app.lawnchair.theme.color.ColorOption.SystemAccent.INSTANCE) {
             return option.getColorPreferenceEntry().getLightColor().invoke(getContext());
         }
-        return Themes.getAttrColor(getContext(), android.R.attr.colorAccent);
+        if (option == app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
+            // The global master itself should normally never be Default, but keep the final
+            // fallback in Lawnchair's tab token rather than Android's unrelated colorAccent.
+            return app.lawnchair.theme.color.tokens.ColorTokens.AllAppsTabBackgroundSelected
+                    .resolveColor(getContext());
+        }
+        return app.lawnchair.theme.color.tokens.ColorTokens.AllAppsTabBackgroundSelected
+                .resolveColor(getContext());
     }
 
     private int resolveInactiveTabColor() {
