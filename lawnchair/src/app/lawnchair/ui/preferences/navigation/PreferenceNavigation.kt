@@ -385,7 +385,7 @@ fun PreferenceNavigation(
                             {},
                         )
                         if (route.colorKey == "workTabs") {
-                            val nativeOption = resolved?.let { ColorOption.CustomColor(it) } ?: ColorOption.SystemAccent
+                            val nativeOption = resolved?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default
                             nativeWorkProfileTabsColor.onChange(nativeOption)
                         } else if (route.colorKey == "text" && mode == app.lawnchair.prime.drawer.PrimeDrawerMode.TABS) {
                             repository.setDefaultDrawerColors(textColor = resolved)
