@@ -194,6 +194,7 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
             ThemePreference()
             ColorPreference(preference = prefs2.accentColor)
             ColorPreference(preference = prefs2.tabsColor)
+            ColorPreference(preference = prefs2.inactiveTabsColor)
             ExpandAndShrink(visible = showColorStyle) {
                 ColorStylePreference(prefs2.colorStyle.getAdapter())
             }
