@@ -321,12 +321,17 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             @Nullable Integer modeColor, int resolvedColor) {
         if (mHeaderParent == null
                 || !(mHeaderParent.getParent() instanceof ActivityAllAppsContainerView)) return;
+        PreferenceManager2 prefs2 = PreferenceManager2.getInstance(getContext());
+        app.lawnchair.theme.color.ColorOption drawerOption = prefs2.getDrawerTabsColorBlocking();
+        app.lawnchair.theme.color.ColorOption masterOption = prefs2.getTabsColorBlocking();
         String source = categoryColor != null
                 ? "category" : modeColor != null ? "mode" : "master/theme";
         ((ActivityAllAppsContainerView<?>) mHeaderParent.getParent()).recordPrimeSwipeDebugEvent(
                 "TAB_COLOR source=" + source
                         + " category=" + categoryColor
                         + " mode=" + modeColor
+                        + " drawer=" + drawerOption
+                        + " master=" + masterOption
                         + " resolved=" + String.format("#%08X", resolvedColor));
     }
 
