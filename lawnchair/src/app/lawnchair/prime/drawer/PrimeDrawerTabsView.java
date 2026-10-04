@@ -1005,7 +1005,14 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             return 0xFF007FFF;
         }
         if (option == app.lawnchair.theme.color.ColorOption.SystemAccent.INSTANCE) {
-            return option.getColorPreferenceEntry().getLightColor().invoke(getContext());
+            boolean darkTheme = (getResources().getConfiguration().uiMode
+                    & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
+                    == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+            // Match the color shown by Lawnchair's picker. Using lightColor unconditionally
+            // made dark-theme System accent resolve to the wrong (red) palette entry.
+            return (darkTheme
+                    ? option.getColorPreferenceEntry().getDarkColor()
+                    : option.getColorPreferenceEntry().getLightColor()).invoke(getContext());
         }
         if (option == app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
             // The global master itself should normally never be Default, but keep the final
