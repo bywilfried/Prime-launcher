@@ -386,6 +386,16 @@ fun PreferenceNavigation(
                             },
                             {},
                         )
+                        if (route.colorKey == "tabs"
+                            && mode == app.lawnchair.prime.drawer.PrimeDrawerMode.TABS
+                            && option == ColorOption.Default
+                        ) {
+                            // "Theme/default" in the Tabs-mode UI is the inheritance boundary
+                            // for the active-tab master. Persist Default as well so installs that
+                            // once inherited the old SystemAccent default can reach the dedicated
+                            // light/dark Prime theme token without rewriting explicit colors.
+                            prefs2.tabsColor.getAdapter().onChange(ColorOption.Default)
+                        }
                         if (route.colorKey == "workTabs") {
                             val nativeOption = resolved?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default
                             nativeWorkProfileTabsColor.onChange(nativeOption)
