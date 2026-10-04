@@ -209,8 +209,18 @@ private fun PrimeCategoryDrawerOptions(
     val repository = remember { PrimeDrawerTabsRepository(context) }
     val configuration = repository.getConfiguration()
     val defaultTextColor = configuration.defaultDrawerTextColor ?: androidx.compose.material3.MaterialTheme.colorScheme.onSurface.toArgb()
-    val defaultBackgroundColor = configuration.defaultDrawerBackgroundColor
-        ?: prefs2.appDrawerBackgroundColor.getAdapter().state.value.colorPreferenceEntry.lightColor(context)
+    val backgroundOption = prefs2.appDrawerBackgroundColor.getAdapter().state.value
+    val darkTheme = (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+        android.content.res.Configuration.UI_MODE_NIGHT_YES
+    val defaultBackgroundColor = configuration.defaultDrawerBackgroundColor ?: when (backgroundOption) {
+        ColorOption.Default -> androidx.compose.material3.MaterialTheme.colorScheme.surface.toArgb()
+        is ColorOption.CustomColor -> backgroundOption.color
+        else -> if (darkTheme) {
+            backgroundOption.colorPreferenceEntry.darkColor(context)
+        } else {
+            backgroundOption.colorPreferenceEntry.lightColor(context)
+        }
+    }
     val modeTabColor = PrimeDrawerModePreferences(context)
         .get(com.android.launcher3.InvariantDeviceProfile.INSTANCE.get(context).closestProfile, PrimeDrawerMode.TABS)
         .defaultTabsColor
