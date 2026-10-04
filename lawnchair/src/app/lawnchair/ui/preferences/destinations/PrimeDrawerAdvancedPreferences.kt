@@ -187,7 +187,26 @@ private fun PrimeCategoryDrawerOptions(
     val defaultTextColor = configuration.defaultDrawerTextColor ?: androidx.compose.material3.MaterialTheme.colorScheme.onSurface.toArgb()
     val defaultBackgroundColor = configuration.defaultDrawerBackgroundColor
         ?: prefs2.appDrawerBackgroundColor.getAdapter().state.value.colorPreferenceEntry.lightColor(context)
-    val defaultTabColor = prefs2.drawerTabsColor.getAdapter().state.value.colorPreferenceEntry.lightColor(context)
+    val modeTabColor = PrimeDrawerModePreferences(context)
+        .get(com.android.launcher3.InvariantDeviceProfile.INSTANCE.get(context).closestProfile, PrimeDrawerMode.TABS)
+        .defaultTabsColor
+    val masterTabOption = prefs2.tabsColor.getAdapter().state.value
+    val darkTheme = (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+        android.content.res.Configuration.UI_MODE_NIGHT_YES
+    val masterTabColor = when (masterTabOption) {
+        ColorOption.Default -> app.lawnchair.theme.color.tokens.ColorTokens.AllAppsTabBackgroundSelected.resolveColor(context)
+        is ColorOption.CustomColor -> masterTabOption.color
+        ColorOption.WallpaperPrimary -> android.app.WallpaperManager.getInstance(context)
+            .getWallpaperColors(android.app.WallpaperManager.FLAG_SYSTEM)
+            ?.primaryColor?.toArgb()
+            ?: 0xFF007FFF.toInt()
+        else -> if (darkTheme) {
+            masterTabOption.colorPreferenceEntry.darkColor(context)
+        } else {
+            masterTabOption.colorPreferenceEntry.lightColor(context)
+        }
+    }
+    val defaultTabColor = modeTabColor ?: masterTabColor
     PreferenceGroup(heading = stringResource(id = R.string.style)) {
         NullableColorPreference("Couleur de l’onglet de cette catégorie", value.tabColor, defaultTabColor, tabId, "tab")
         NullableColorPreference("Couleur d’arrière-plan", value.drawerBackgroundColor, defaultBackgroundColor, tabId, "background")
