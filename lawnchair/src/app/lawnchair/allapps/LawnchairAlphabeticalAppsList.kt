@@ -179,8 +179,20 @@ class LawnchairAlphabeticalAppsList<T>(
             val effectiveTabId = primePreviewTabId ?: configuration.selectedTabId
             val selectedTab = configuration.tabs.firstOrNull { it.id == effectiveTabId }
 
-            if (selectedTab == null || selectedTab.isSystem) {
+            if (selectedTab == null) {
                 return super.addAppsWithSections(appList, position)
+            }
+            if (selectedTab.isSystem) {
+                val orderedApps = if (selectedTab.sortMode == "alphabetical_desc") {
+                    appList.sortedWith(
+                        compareByDescending<AppInfo?> {
+                            it?.title?.toString()?.lowercase().orEmpty()
+                        },
+                    )
+                } else {
+                    appList
+                }
+                return super.addAppsWithSections(orderedApps, position)
             }
 
             val visibleAppsByKey = appList
@@ -262,19 +274,32 @@ class LawnchairAlphabeticalAppsList<T>(
                 return position
             }
 
+            fun sortAppsForMode(apps: List<AppInfo?>): List<AppInfo?> = when (selectedTab.sortMode) {
+                "custom" -> apps.sortedBy { app ->
+                    app?.toComponentKey()?.toString()?.let(::customOrPreparedIndex) ?: Int.MAX_VALUE
+                }
+                "alphabetical_desc" -> apps.sortedWith(
+                    compareByDescending<AppInfo?> {
+                        it?.title?.toString()?.lowercase().orEmpty()
+                    },
+                )
+                else -> apps
+            }
+            fun sortFoldersForMode(
+                folders: List<Triple<app.lawnchair.prime.drawer.PrimeDrawerFolder, FolderInfo, List<AppInfo>>>,
+            ) = when (selectedTab.sortMode) {
+                "custom" -> folders.sortedBy { (folder) ->
+                    customOrPreparedIndex("folder:" + folder.id)
+                }
+                "alphabetical_desc" -> folders.sortedByDescending { (folder) -> folder.title.lowercase() }
+                else -> folders.sortedBy { (folder) -> folder.title.lowercase() }
+            }
+
             when (selectedTab.folderPlacement) {
                 "end" -> {
-                    if (selectedTab.sortMode == "custom") {
-                        remainingApps = remainingApps.sortedBy { app ->
-                            app?.toComponentKey()?.toString()?.let(::customOrPreparedIndex) ?: Int.MAX_VALUE
-                        }
-                    }
+                    remainingApps = sortAppsForMode(remainingApps)
                     position = super.addAppsWithSections(remainingApps, position)
-                    val orderedFolders = if (selectedTab.sortMode == "custom") {
-                        folderItems.sortedBy { (folder) -> customOrPreparedIndex("folder:" + folder.id) }
-                    } else {
-                        folderItems.sortedBy { (folder) -> folder.title.lowercase() }
-                    }
+                    val orderedFolders = sortFoldersForMode(folderItems)
                     addFolders(orderedFolders)
                 }
                 "mixed" -> {
@@ -285,10 +310,11 @@ class LawnchairAlphabeticalAppsList<T>(
                         Triple("folder:" + folder.id, folder.title, AdapterItem.asFolder(folderInfo))
                     }
                     val mixedItems = (appItems + projectedFolders).sortedWith(
-                        if (selectedTab.sortMode == "custom") {
-                            compareBy { item -> customOrPreparedIndex(item.first) }
-                        } else {
-                            compareBy(String.CASE_INSENSITIVE_ORDER) { item -> item.second }
+                        when (selectedTab.sortMode) {
+                            "custom" -> compareBy { item -> customOrPreparedIndex(item.first) }
+                            "alphabetical_desc" ->
+                                compareByDescending<Triple<String, String, AdapterItem>> { it.second.lowercase() }
+                            else -> compareBy(String.CASE_INSENSITIVE_ORDER) { item -> item.second }
                         },
                     )
                     mixedItems.forEach { (_, _, item) ->
@@ -297,17 +323,9 @@ class LawnchairAlphabeticalAppsList<T>(
                     }
                 }
                 else -> {
-                    val orderedFolders = if (selectedTab.sortMode == "custom") {
-                        folderItems.sortedBy { (folder) -> customOrPreparedIndex("folder:" + folder.id) }
-                    } else {
-                        folderItems.sortedBy { (folder) -> folder.title.lowercase() }
-                    }
+                    val orderedFolders = sortFoldersForMode(folderItems)
                     addFolders(orderedFolders)
-                    if (selectedTab.sortMode == "custom") {
-                        remainingApps = remainingApps.sortedBy { app ->
-                            app?.toComponentKey()?.toString()?.let(::customOrPreparedIndex) ?: Int.MAX_VALUE
-                        }
-                    }
+                    remainingApps = sortAppsForMode(remainingApps)
                     position = super.addAppsWithSections(remainingApps, position)
                 }
             }
