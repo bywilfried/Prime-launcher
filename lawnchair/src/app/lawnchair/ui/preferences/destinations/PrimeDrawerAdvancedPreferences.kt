@@ -62,6 +62,14 @@ fun PrimeDrawerCategoryAdvancedPreference(tabId: String) {
     PreferenceLayout(label = "Options avancées", backArrowVisible = true) {
         PrimeCategoryDrawerOptions(tabId, overrides.value, ::update)
         PrimeCategoryFolderOptions(tabId, overrides.value, ::update)
+        PreferenceGroup {
+            ClickablePreference(
+                label = "Tout remettre par défaut",
+                subtitle = "Supprime toutes les personnalisations de cette catégorie et rétablit l’héritage.",
+                confirmationText = "Tout remettre par défaut pour cette catégorie ?",
+                onClick = { update(PrimeDrawerVisualOverrides()) },
+            )
+        }
     }
 }
 
@@ -86,6 +94,14 @@ fun PrimeDrawerFolderAdvancedPreference(tabId: String, folderId: String) {
 
     PreferenceLayout(label = stringResource(id = R.string.folders_label), backArrowVisible = true) {
         PrimeFolderOptions(tabId, folderId, overrides.value, inherited, ::update)
+        PreferenceGroup {
+            ClickablePreference(
+                label = "Tout remettre par défaut",
+                subtitle = "Supprime toutes les personnalisations de ce dossier et rétablit l’héritage.",
+                confirmationText = "Tout remettre par défaut pour ce dossier ?",
+                onClick = { update(PrimeDrawerFolderVisualOverrides()) },
+            )
+        }
     }
 }
 
@@ -141,6 +157,14 @@ fun PrimeHomeFolderAdvancedPreference(folderId: Int, drawer: Boolean = false) {
             HomeFolderShapePreference("Forme des icônes dans les dossiers", value.childIconShape, prefs2.iconShape.getAdapter().state.value, folderId, "folderChildIcon", drawer)
             NullableSwitch(stringResource(id = R.string.show_labels), value.showLabels, prefs2.showIconLabelsOnHomeScreenFolder.getAdapter().state.value) { update(value.copy(showLabels = it)) }
             NullableFloatSlider(stringResource(id = R.string.label_size), value.labelSize, prefs2.homeIconLabelFolderSizeFactor.getAdapter().state.value, 0.5f..1.5f, 0.1f, true) { update(value.copy(labelSize = it)) }
+        }
+        PreferenceGroup {
+            ClickablePreference(
+                label = "Tout remettre par défaut",
+                subtitle = "Supprime toutes les personnalisations de ce dossier et rétablit l’héritage.",
+                confirmationText = "Tout remettre par défaut pour ce dossier ?",
+                onClick = { update(PrimeDrawerFolderVisualOverrides()) },
+            )
         }
     }
 }
