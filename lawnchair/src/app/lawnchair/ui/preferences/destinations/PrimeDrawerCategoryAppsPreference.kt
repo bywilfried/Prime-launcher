@@ -158,32 +158,42 @@ fun PrimeDrawerCategoryAppsPreference(tabId: String) {
                 showStandardActions = false,
                 extraItems = { hideMenu ->
                     DropdownMenuItem(
-                        text = { Text("A → Z") },
+                        text = { Text("Tri des applications") },
+                        enabled = false,
+                        onClick = {},
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Applications : A → Z") },
                         trailingIcon = { if (tab.sortMode == "alphabetical") Icon(Icons.Rounded.Check, null) },
                         onClick = { repository.setTabSortMode(tabId, "alphabetical"); hideMenu() },
                     )
                     DropdownMenuItem(
-                        text = { Text("Z → A") },
+                        text = { Text("Applications : Z → A") },
                         trailingIcon = { if (tab.sortMode == "alphabetical_desc") Icon(Icons.Rounded.Check, null) },
                         onClick = { repository.setTabSortMode(tabId, "alphabetical_desc"); hideMenu() },
                     )
                     DropdownMenuItem(
-                        text = { Text("Manuel") },
+                        text = { Text("Applications : ordre manuel") },
                         trailingIcon = { if (tab.sortMode == "custom") Icon(Icons.Rounded.Check, null) },
                         onClick = { repository.setTabSortMode(tabId, "custom"); hideMenu() },
                     )
                     DropdownMenuItem(
-                        text = { Text("Au début") },
+                        text = { Text("Position des dossiers") },
+                        enabled = false,
+                        onClick = {},
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Dossiers au début") },
                         trailingIcon = { if (tab.folderPlacement == "start") Icon(Icons.Rounded.Check, null) },
                         onClick = { repository.setTabFolderPlacement(tabId, "start"); hideMenu() },
                     )
                     DropdownMenuItem(
-                        text = { Text("À la fin") },
+                        text = { Text("Dossiers à la fin") },
                         trailingIcon = { if (tab.folderPlacement == "end") Icon(Icons.Rounded.Check, null) },
                         onClick = { repository.setTabFolderPlacement(tabId, "end"); hideMenu() },
                     )
                     DropdownMenuItem(
-                        text = { Text("Comme les applications") },
+                        text = { Text("Dossiers mélangés aux applications") },
                         trailingIcon = { if (tab.folderPlacement == "mixed") Icon(Icons.Rounded.Check, null) },
                         onClick = { repository.setTabFolderPlacement(tabId, "mixed"); hideMenu() },
                     )
