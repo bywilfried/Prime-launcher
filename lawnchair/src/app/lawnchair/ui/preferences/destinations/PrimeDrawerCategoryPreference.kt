@@ -75,12 +75,40 @@ fun PrimeDrawerCategoryPreference(tabId: String) {
                     onClick = { navController.navigate(PrimeDrawerCategoryFolders(tab.id)) },
                 )
                 ClickablePreference(
-                    label = stringResource(id = R.string.prime_tab_advanced),
-                    onClick = { navController.navigate(PrimeDrawerCategoryAdvanced(tab.id)) },
-                )
-                ClickablePreference(
                     label = "Supprimer",
                     onClick = { deleteOpen = true },
+                )
+            }
+            ClickablePreference(
+                label = stringResource(id = R.string.prime_tab_advanced),
+                onClick = { navController.navigate(PrimeDrawerCategoryAdvanced(tab.id)) },
+            )
+        }
+        PreferenceGroup(heading = "Tri") {
+            ClickablePreference(
+                label = "A → Z",
+                subtitle = if (tab.sortMode == "alphabetical") "Sélectionné" else null,
+                onClick = {
+                    repository.setTabSortMode(tab.id, "alphabetical")
+                    configuration = repository.getConfiguration()
+                },
+            )
+            ClickablePreference(
+                label = "Z → A",
+                subtitle = if (tab.sortMode == "alphabetical_desc") "Sélectionné" else null,
+                onClick = {
+                    repository.setTabSortMode(tab.id, "alphabetical_desc")
+                    configuration = repository.getConfiguration()
+                },
+            )
+            if (!tab.isSystem) {
+                ClickablePreference(
+                    label = "Manuel",
+                    subtitle = if (tab.sortMode == "custom") "Sélectionné" else null,
+                    onClick = {
+                        repository.setTabSortMode(tab.id, "custom")
+                        configuration = repository.getConfiguration()
+                    },
                 )
             }
         }
