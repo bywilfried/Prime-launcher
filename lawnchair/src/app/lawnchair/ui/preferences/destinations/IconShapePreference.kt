@@ -250,6 +250,7 @@ private fun ModifyCustomIconShapePreference(
 fun PrimeShapeSelection(
     label: String,
     selectedShape: IconShape,
+    inherited: Boolean,
     onSelect: (IconShape?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -262,9 +263,9 @@ fun PrimeShapeSelection(
     ) {
         PreferenceGroup(heading = stringResource(id = R.string.general_label)) {
             PreferenceTemplate(
-                title = { Text("Utiliser la configuration générale") },
+                title = { Text("Utiliser la valeur parente") },
                 startWidget = {
-                    RadioButton(selected = false, onClick = null)
+                    RadioButton(selected = inherited, onClick = null)
                 },
                 onClick = { onSelect(null) },
             )
@@ -276,7 +277,7 @@ fun PrimeShapeSelection(
                     enabled = item.enabled,
                     startWidget = {
                         RadioButton(
-                            selected = item.value.toString() == selectedShape.toString(),
+                            selected = !inherited && item.value.toString() == selectedShape.toString(),
                             onClick = null,
                             enabled = item.enabled,
                         )
