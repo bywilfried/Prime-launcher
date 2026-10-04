@@ -1857,7 +1857,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     // PREPARE already gives us a real, measured destination icon. Do not
                     // wait for RecyclerView's layout-request flag to clear: on fast gestures that
                     // extra UI turn lets the finger travel hundreds of pixels before START.
-                    boolean layoutUsable = iconWidth > 0;
+                    boolean layoutUsable = previewPage.isLaidOut()
+                            && previewPage.getWidth() > 0
+                            && previewPage.getHeight() > 0;
                     appendPrimeSwipeDebug("READY usable=" + layoutUsable, pendingRv, previewPage);
                     if (layoutUsable) {
                         // Nova-style tracking must start on the first usable destination layout.
