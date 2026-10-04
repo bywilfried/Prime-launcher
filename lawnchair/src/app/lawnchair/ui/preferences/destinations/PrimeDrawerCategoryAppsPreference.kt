@@ -82,7 +82,11 @@ fun PrimeDrawerCategoryAppsPreference(tabId: String) {
     val customIndex = tab.customOrder.withIndex().associate { it.value to it.index }
 
     fun <T : PrimeCategoryListItem> alphabetical(items: List<T>) =
-        items.sortedBy { it.label.lowercase() }
+        if (tab.sortMode == "alphabetical_desc") {
+            items.sortedByDescending { it.label.lowercase() }
+        } else {
+            items.sortedBy { it.label.lowercase() }
+        }
 
     val activeItems: List<PrimeCategoryListItem> = when (tab.folderPlacement) {
         "end" -> {
@@ -154,12 +158,17 @@ fun PrimeDrawerCategoryAppsPreference(tabId: String) {
                 showStandardActions = false,
                 extraItems = { hideMenu ->
                     DropdownMenuItem(
-                        text = { Text("Alphabétique") },
+                        text = { Text("A → Z") },
                         trailingIcon = { if (tab.sortMode == "alphabetical") Icon(Icons.Rounded.Check, null) },
                         onClick = { repository.setTabSortMode(tabId, "alphabetical"); hideMenu() },
                     )
                     DropdownMenuItem(
-                        text = { Text("Personnalisé") },
+                        text = { Text("Z → A") },
+                        trailingIcon = { if (tab.sortMode == "alphabetical_desc") Icon(Icons.Rounded.Check, null) },
+                        onClick = { repository.setTabSortMode(tabId, "alphabetical_desc"); hideMenu() },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Manuel") },
                         trailingIcon = { if (tab.sortMode == "custom") Icon(Icons.Rounded.Check, null) },
                         onClick = { repository.setTabSortMode(tabId, "custom"); hideMenu() },
                     )
