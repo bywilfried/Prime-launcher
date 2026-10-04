@@ -121,7 +121,12 @@ class PrimeDrawerTabsRepository(context: Context) {
     }
 
     fun setTabSortMode(tabId: String, mode: String) {
-        updateUserTab(tabId) { it.copy(sortMode = mode) }
+        val normalizedMode = when (mode) {
+            "custom" -> if (tabId == ALL_TAB_ID || tabId == UNCLASSIFIED_TAB_ID) "alphabetical" else mode
+            "alphabetical_desc" -> mode
+            else -> "alphabetical"
+        }
+        updateTab(tabId) { it.copy(sortMode = normalizedMode) }
     }
 
     fun setTabFolderPlacement(tabId: String, placement: String) {
@@ -129,7 +134,9 @@ class PrimeDrawerTabsRepository(context: Context) {
     }
 
     fun setTabVisualOverrides(tabId: String, overrides: PrimeDrawerVisualOverrides) {
-        updateUserTab(tabId) { it.copy(visualOverrides = overrides) }
+        // System tabs have computed membership, but their presentation is a normal Prime tab
+        // concern. Keep membership immutable while allowing the same visual override model.
+        updateTab(tabId) { it.copy(visualOverrides = overrides) }
     }
 
     fun setTabCustomOrder(tabId: String, orderedKeys: List<String>) {
@@ -348,7 +355,6 @@ class PrimeDrawerTabsRepository(context: Context) {
         if (!primePrefs.drawerTabsEnabled.get()) return null
         val configuration = getConfiguration()
         val selected = configuration.tabs.firstOrNull { it.id == tabId }
-            ?.takeUnless { it.isSystem }
             ?.visualOverrides ?: PrimeDrawerVisualOverrides()
         return selected.copy(
             drawerTextColor = selected.drawerTextColor ?: tabsModeTextColor(),
