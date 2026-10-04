@@ -81,6 +81,7 @@ import app.lawnchair.preferences2.ReloadHelper
 import app.lawnchair.preferences2.firstCached
 import app.lawnchair.ui.preferences.destinations.SmartspacePreferences
 import com.android.launcher3.util.ComponentKey
+import com.patrykmichalik.opto.core.setBlocking
 import soup.compose.material.motion.animation.materialSharedAxisXIn
 import soup.compose.material.motion.animation.materialSharedAxisXOut
 import soup.compose.material.motion.animation.rememberSlideDistance
@@ -394,7 +395,7 @@ fun PreferenceNavigation(
                             // for the active-tab master. Persist Default as well so installs that
                             // once inherited the old SystemAccent default can reach the dedicated
                             // light/dark Prime theme token without rewriting explicit colors.
-                            prefs2.tabsColor.getAdapter().onChange(ColorOption.Default)
+                            prefs2.tabsColor.setBlocking(ColorOption.Default)
                         }
                         if (route.colorKey == "workTabs") {
                             val nativeOption = resolved?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default
