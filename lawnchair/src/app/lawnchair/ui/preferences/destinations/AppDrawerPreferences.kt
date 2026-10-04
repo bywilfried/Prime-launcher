@@ -246,22 +246,32 @@ fun AppDrawerPreferences(
             )
             if (drawerTabsAdapter.state.value) {
                 val drawerTabsColorModel = ColorPreferenceModelList.INSTANCE.get(context)[prefs2.drawerTabsColor.key.name]
+                val inheritedActiveTabColor = prefs2.tabsColor.getAdapter().state.value
                 ColorPreference(
                     label = stringResource(id = drawerTabsColorModel.labelRes),
                     selectedColor = modeProfile.defaultTabsColor
                         ?.let { app.lawnchair.theme.color.ColorOption.CustomColor(it) }
                         ?: app.lawnchair.theme.color.ColorOption.Default,
+                    description = if (modeProfile.defaultTabsColor == null) "Couleur par défaut" else "Personnalisé",
+                    previewColor = modeProfile.defaultTabsColor
+                        ?.let { app.lawnchair.theme.color.ColorOption.CustomColor(it) }
+                        ?: inheritedActiveTabColor,
                     onClick = {
                         navController.navigate(
                             PrimeDrawerDefaultColor(activeDrawerMode.storageKey, "tabs", resources.getString(drawerTabsColorModel.labelRes)),
                         )
                     },
                 )
+                val inheritedInactiveTabColor = prefs2.inactiveTabsColor.getAdapter().state.value
                 ColorPreference(
                     label = "Couleur des onglets inactifs",
                     selectedColor = modeProfile.defaultInactiveTabsColor
                         ?.let { app.lawnchair.theme.color.ColorOption.CustomColor(it) }
                         ?: app.lawnchair.theme.color.ColorOption.Default,
+                    description = if (modeProfile.defaultInactiveTabsColor == null) "Couleur par défaut" else "Personnalisé",
+                    previewColor = modeProfile.defaultInactiveTabsColor
+                        ?.let { app.lawnchair.theme.color.ColorOption.CustomColor(it) }
+                        ?: inheritedInactiveTabColor,
                     onClick = {
                         navController.navigate(
                             PrimeDrawerDefaultColor(activeDrawerMode.storageKey, "inactiveTabs", "Couleur des onglets inactifs"),
