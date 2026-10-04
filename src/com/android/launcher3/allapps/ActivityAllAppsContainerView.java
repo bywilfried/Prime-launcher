@@ -439,10 +439,14 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         return mSearchContainer;
     }
 
-    /** Invoke when the current search session is finished. */
+    /** Clears displayed search results. */
     public void onClearSearchResult() {
         getMainAdapterProvider().clearHighlightedItem();
-        animateToSearchState(false);
+        ExtendedEditText editText = mSearchUiManager.getEditText();
+        // An empty, focused query is still an active search session.
+        boolean keepSearchFocus = editText != null && editText.isFocused()
+                && editText.getText().length() == 0;
+        animateToSearchState(false, DEFAULT_SEARCH_TRANSITION_DURATION_MS, keepSearchFocus);
         rebindAdapters();
     }
 
@@ -480,6 +484,11 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     }
 
     void animateToSearchState(boolean goingToSearch, long durationMs) {
+        animateToSearchState(goingToSearch, durationMs, false);
+    }
+
+    private void animateToSearchState(boolean goingToSearch, long durationMs,
+            boolean keepSearchFocus) {
         if (!mSearchTransitionController.isRunning() && goingToSearch == isSearching()) {
             return;
         }
@@ -511,7 +520,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                         if (mViewPager != null) {
                             mViewPager.setCurrentPage(previousPage);
                         }
-                        onActivePageChanged(previousPage);
+                        onActivePageChanged(previousPage, keepSearchFocus);
                         mSearchExitInProgress = false;
                     }
                 });
@@ -661,11 +670,15 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
 
     @Override
     public void onActivePageChanged(int currentActivePage) {
+        onActivePageChanged(currentActivePage, false);
+    }
+
+    private void onActivePageChanged(int currentActivePage, boolean keepSearchFocus) {
         if (mSearchTransitionController.isRunning()) {
             // Will be called at the end of the animation.
             return;
         }
-        if (currentActivePage != SEARCH) {
+        if (currentActivePage != SEARCH && !keepSearchFocus) {
             mActivityContext.hideKeyboard();
         }
         if (mAH.get(currentActivePage).mRecyclerView != null) {
@@ -674,7 +687,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         }
         // Header keeps track of active recycler view to properly render header protection.
         mHeader.setActiveRV(currentActivePage);
-        reset(true /* animate */, !isSearching() /* exitSearch */);
+        reset(true /* animate */, !isSearching() && !keepSearchFocus /* exitSearch */);
 
         mWorkManager.onActivePageChanged(currentActivePage);
     }
