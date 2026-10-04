@@ -230,6 +230,7 @@ fun PreferenceNavigation(
             PrimeShapeSelection(
                 label = route.label,
                 selectedShape = selected,
+                inherited = current == null,
                 onSelect = { shape ->
                     selected = shape ?: inherited
                     val o = if (route.drawer) repository.getDrawerFolderVisualOverrides(route.folderId)
@@ -307,6 +308,7 @@ fun PreferenceNavigation(
             PrimeShapeSelection(
                 label = route.label,
                 selectedShape = selected,
+                inherited = stored == null,
                 onSelect = { shape ->
                     selected = shape ?: inherited
                     val currentTab = repository.getTab(route.tabId) ?: return@PrimeShapeSelection
