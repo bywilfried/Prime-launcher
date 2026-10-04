@@ -675,12 +675,12 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                     getContext(), PrimeDrawerCategories.INSTANCE));
             return true;
         }));
+        items.add(option("Modifier la catégorie", v -> {
+            getContext().startActivity(PreferenceActivity.createIntent(
+                    getContext(), new PrimeDrawerCategory(tab.getId())));
+            return true;
+        }));
         if (!tab.isSystem()) {
-            items.add(option("Modifier la catégorie", v -> {
-                getContext().startActivity(PreferenceActivity.createIntent(
-                        getContext(), new PrimeDrawerCategory(tab.getId())));
-                return true;
-            }));
             items.add(option(R.string.app_drawer_folder, v -> {
                 getContext().startActivity(PreferenceActivity.createIntent(
                         getContext(), new PrimeDrawerCategoryFolders(tab.getId())));
