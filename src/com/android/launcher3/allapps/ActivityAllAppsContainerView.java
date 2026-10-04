@@ -1854,7 +1854,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     View icon = findPrimeDebugIcon(previewPage);
                     int iconLeft = icon != null ? icon.getLeft() : -1;
                     int iconWidth = icon != null ? icon.getWidth() : -1;
-                    boolean layoutUsable = !previewPage.isLayoutRequested() && iconWidth > 0;
+                    // PREPARE already gives us a real, measured destination icon. Do not
+                    // wait for RecyclerView's layout-request flag to clear: on fast gestures that
+                    // extra UI turn lets the finger travel hundreds of pixels before START.
+                    boolean layoutUsable = iconWidth > 0;
                     appendPrimeSwipeDebug("READY usable=" + layoutUsable, pendingRv, previewPage);
                     if (layoutUsable) {
                         // Nova-style tracking must start on the first usable destination layout.
