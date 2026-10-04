@@ -178,7 +178,7 @@ private fun HomeFolderShapePreference(label: String, value: String?, inherited: 
     PreferenceTemplate(
         title = { Text(label) },
         modifier = Modifier.alpha(if (value == null) 0.55f else 1f),
-        description = if (value == null) ({ Text("Par défaut") }) else ({ Text("Personnalisé") }),
+        description = if (value == null) ({ Text("Valeur parente") }) else ({ Text("Personnalisé") }),
         endWidget = { IconShapePreview(iconShape = effective) },
         onClick = { navController.navigate(PrimeHomeFolderShape(folderId, shapeKey, label, drawer)) },
     )
@@ -191,7 +191,7 @@ private fun HomeFolderColorPreference(label: String, value: Int?, inherited: Int
         label = label,
         selectedColor = value?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default,
         modifier = Modifier.alpha(if (value == null) 0.55f else 1f),
-        description = if (value == null) "Par défaut" else "Personnalisé",
+        description = if (value == null) "Valeur parente" else "Personnalisé",
         previewColor = ColorOption.CustomColor(value ?: inherited),
         onClick = { navController.navigate(PrimeHomeFolderColor(folderId, label, colorKey, drawer)) },
     )
@@ -390,7 +390,7 @@ private fun NullableShapePreference(
     PreferenceTemplate(
         title = { Text(label) },
         modifier = Modifier.alpha(if (value == null) 0.55f else 1f),
-        description = if (value == null) ({ Text("Par défaut") }) else ({ Text("Personnalisé") }),
+        description = if (value == null) ({ Text("Valeur parente") }) else ({ Text("Personnalisé") }),
         endWidget = { IconShapePreview(iconShape = effective) },
         onClick = { navController.navigate(PrimeDrawerShape(tabId, shapeKey, label, folderId)) },
     )
@@ -410,7 +410,7 @@ private fun NullableColorPreference(
         label = label,
         selectedColor = value?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default,
         modifier = Modifier.alpha(if (value == null) 0.55f else 1f),
-        description = if (value == null) "Par défaut" else "Personnalisé",
+        description = if (value == null) "Valeur parente" else "Personnalisé",
         previewColor = ColorOption.CustomColor(value ?: inherited),
         onClick = { navController.navigate(PrimeDrawerCategoryColor(tabId, colorKey, label, folderId)) },
     )
@@ -426,9 +426,9 @@ private fun NullableSwitch(label: String, value: Boolean?, inherited: Boolean, u
         label = label,
         modifier = Modifier.alpha(if (isInherited) 0.55f else 1f),
         description = if (isInherited) {
-            "Par défaut • ${if (inherited) "Activé" else "Désactivé"}"
+            "Valeur parente • ${if (inherited) "Activé" else "Désactivé"}"
         } else {
-            "Personnalisé • ${if (effective) "Activé" else "Désactivé"} • ↶ Par défaut : ${if (inherited) "Activé" else "Désactivé"}"
+            "Personnalisé • ${if (effective) "Activé" else "Désactivé"} • ↶ Valeur parente : ${if (inherited) "Activé" else "Désactivé"}"
         },
         onClick = if (isInherited) null else ({ update(null) }),
     )
@@ -454,9 +454,9 @@ private fun NullableFloatSlider(
         showAsPercentage = showAsPercentage,
         modifier = Modifier.alpha(if (isInherited) 0.55f else 1f),
         status = if (isInherited) {
-            "Par défaut • ${formatAdvancedValue(inherited, showAsPercentage)}"
+            "Valeur parente • ${formatAdvancedValue(inherited, showAsPercentage)}"
         } else {
-            "Personnalisé • ↶ Par défaut : ${formatAdvancedValue(inherited, showAsPercentage)}"
+            "Personnalisé • ↶ Valeur parente : ${formatAdvancedValue(inherited, showAsPercentage)}"
         },
         onReset = if (isInherited) null else ({ update(null) }),
     )
@@ -472,7 +472,7 @@ private fun NullableIntSlider(label: String, value: Int?, inherited: Int, range:
         valueRange = range.start.toFloat()..range.endInclusive.toFloat(),
         step = 1f,
         modifier = Modifier.alpha(if (isInherited) 0.55f else 1f),
-        status = if (isInherited) "Par défaut • $inherited" else "Personnalisé • ↶ Par défaut : $inherited",
+        status = if (isInherited) "Valeur parente • $inherited" else "Personnalisé • ↶ Valeur parente : $inherited",
         onReset = if (isInherited) null else ({ update(null) }),
     )
 }
