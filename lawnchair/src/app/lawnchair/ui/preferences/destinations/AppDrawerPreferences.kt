@@ -42,6 +42,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.toArgb
 import app.lawnchair.preferences.PreferenceAdapter
 import app.lawnchair.preferences.PrefEntry
 import app.lawnchair.preferences.getAdapter
@@ -73,6 +74,8 @@ import app.lawnchair.ui.preferences.navigation.PrimeDrawerDefaultColor
 import app.lawnchair.ui.preferences.navigation.Predictions
 import com.android.launcher3.InvariantDeviceProfile
 import com.android.launcher3.R
+import app.lawnchair.theme.color.ColorOption
+import app.lawnchair.theme.color.tokens.ColorTokens
 
 object AppDrawerRoutes {
     const val HIDDEN_APPS = "hiddenApps"
@@ -234,10 +237,27 @@ fun AppDrawerPreferences(
         }
         PreferenceGroup(heading = stringResource(R.string.style)) {
             val navController = app.lawnchair.ui.preferences.LocalNavController.current
+            val themeIsDark = (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                android.content.res.Configuration.UI_MODE_NIGHT_YES
+            fun resolvedPreview(option: ColorOption, fallback: () -> Int): ColorOption =
+                ColorOption.CustomColor(
+                    when (option) {
+                        ColorOption.Default -> fallback()
+                        is ColorOption.CustomColor -> option.color
+                        else -> if (themeIsDark) {
+                            option.colorPreferenceEntry.darkColor(context)
+                        } else {
+                            option.colorPreferenceEntry.lightColor(context)
+                        }
+                    },
+                )
             val drawerBackgroundModel = ColorPreferenceModelList.INSTANCE.get(context)[prefs2.appDrawerBackgroundColor.key.name]
             ColorPreference(
                 label = stringResource(id = drawerBackgroundModel.labelRes),
                 selectedColor = modeProfile.appDrawerBackgroundColor,
+                previewColor = resolvedPreview(modeProfile.appDrawerBackgroundColor) {
+                    MaterialTheme.colorScheme.surface.toArgb()
+                },
                 onClick = {
                     navController.navigate(
                         PrimeDrawerDefaultColor(activeDrawerMode.storageKey, "background", resources.getString(drawerBackgroundModel.labelRes)),
@@ -255,7 +275,9 @@ fun AppDrawerPreferences(
                     description = if (modeProfile.defaultTabsColor == null) "Couleur par défaut" else "Personnalisé",
                     previewColor = modeProfile.defaultTabsColor
                         ?.let { app.lawnchair.theme.color.ColorOption.CustomColor(it) }
-                        ?: inheritedActiveTabColor,
+                        ?: resolvedPreview(inheritedActiveTabColor) {
+                            ColorTokens.AllAppsTabBackgroundSelected.resolveColor(context)
+                        },
                     onClick = {
                         navController.navigate(
                             PrimeDrawerDefaultColor(activeDrawerMode.storageKey, "tabs", resources.getString(drawerTabsColorModel.labelRes)),
@@ -271,7 +293,9 @@ fun AppDrawerPreferences(
                     description = if (modeProfile.defaultInactiveTabsColor == null) "Couleur par défaut" else "Personnalisé",
                     previewColor = modeProfile.defaultInactiveTabsColor
                         ?.let { app.lawnchair.theme.color.ColorOption.CustomColor(it) }
-                        ?: inheritedInactiveTabColor,
+                        ?: resolvedPreview(inheritedInactiveTabColor) {
+                            ColorTokens.AllAppsTabBackground.resolveColor(context)
+                        },
                     onClick = {
                         navController.navigate(
                             PrimeDrawerDefaultColor(activeDrawerMode.storageKey, "inactiveTabs", "Couleur des onglets inactifs"),
@@ -282,8 +306,12 @@ fun AppDrawerPreferences(
             ColorPreference(
                 label = "Couleur du texte par défaut du drawer",
                 selectedColor = modeProfile.defaultDrawerTextColor
-                    ?.let { app.lawnchair.theme.color.ColorOption.CustomColor(it) }
-                    ?: app.lawnchair.theme.color.ColorOption.Default,
+                    ?.let { ColorOption.CustomColor(it) }
+                    ?: ColorOption.Default,
+                description = if (modeProfile.defaultDrawerTextColor == null) "Couleur par défaut" else "Personnalisé",
+                previewColor = ColorOption.CustomColor(
+                    modeProfile.defaultDrawerTextColor ?: MaterialTheme.colorScheme.onSurface.toArgb(),
+                ),
                 onClick = {
                     navController.navigate(
                         PrimeDrawerDefaultColor(activeDrawerMode.storageKey, "text", "Couleur du texte par défaut du drawer"),
@@ -300,8 +328,12 @@ fun AppDrawerPreferences(
             ColorPreference(
                 label = "Couleur des onglets Personnel / Travail",
                 selectedColor = modeProfile.workProfileTabsColor
-                    ?.let { app.lawnchair.theme.color.ColorOption.CustomColor(it) }
-                    ?: app.lawnchair.theme.color.ColorOption.Default,
+                    ?.let { ColorOption.CustomColor(it) }
+                    ?: ColorOption.Default,
+                description = if (modeProfile.workProfileTabsColor == null) "Couleur par défaut" else "Personnalisé",
+                previewColor = ColorOption.CustomColor(
+                    modeProfile.workProfileTabsColor ?: MaterialTheme.colorScheme.surfaceVariant.toArgb(),
+                ),
                 onClick = {
                     navController.navigate(
                         PrimeDrawerDefaultColor(activeDrawerMode.storageKey, "workTabs", "Couleur des onglets Personnel / Travail"),
