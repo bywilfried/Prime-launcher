@@ -1,0 +1,55 @@
+package app.lawnchair.theme
+
+import android.content.Context
+import app.lawnchair.theme.color.ColorOption
+
+/**
+ * Sparse per-theme/per-variant overrides.
+ *
+ * Only customized roles are stored. Removing a key means "theme value".
+ * Keys include ThemeProfileId so switching themes never destroys another theme's customization.
+ */
+class ThemeColorOverrides(context: Context) {
+    private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+    fun get(profile: ThemeProfile, variant: ThemeVariant, role: ThemeColorRole): ColorOption =
+        prefs.getString(key(profile, variant, role), null)
+            ?.let(ColorOption::fromString)
+            ?: ColorOption.Default
+
+    fun set(profile: ThemeProfile, variant: ThemeVariant, role: ThemeColorRole, option: ColorOption) {
+        val editor = prefs.edit()
+        val key = key(profile, variant, role)
+        if (option == ColorOption.Default) editor.remove(key) else editor.putString(key, option.toString())
+        editor.apply()
+    }
+
+    fun resetVariant(profile: ThemeProfile, variant: ThemeVariant) {
+        removeMatching(profile, variant)
+    }
+
+    fun resetTheme(profile: ThemeProfile) {
+        removeMatching(profile, null)
+    }
+
+    fun isCustomized(profile: ThemeProfile): Boolean =
+        prefs.all.keys.any { it.startsWith(prefix(profile)) }
+
+    private fun removeMatching(profile: ThemeProfile, variant: ThemeVariant?) {
+        val prefix = if (variant == null) prefix(profile) else variantPrefix(profile, variant)
+        val editor = prefs.edit()
+        prefs.all.keys.filter { it.startsWith(prefix) }.forEach(editor::remove)
+        editor.apply()
+    }
+
+    private fun key(profile: ThemeProfile, variant: ThemeVariant, role: ThemeColorRole) =
+        variantPrefix(profile, variant) + role.id
+
+    private fun prefix(profile: ThemeProfile) = "${profile.id.value}."
+    private fun variantPrefix(profile: ThemeProfile, variant: ThemeVariant) =
+        prefix(profile) + variant.name.lowercase() + "."
+
+    companion object {
+        private const val PREFS_NAME = "prime_theme_color_overrides"
+    }
+}
