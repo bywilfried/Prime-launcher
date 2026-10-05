@@ -431,6 +431,7 @@
 
     <!-- Theme -->
     <string name="theme_label">Theme</string>
+    <string name="theme_appearance_label">Appearance</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="theme_system_default">System</string>
