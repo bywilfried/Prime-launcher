@@ -36,12 +36,16 @@ fun ThemePreference() {
     // ThemeProfile; LIGHT/DARK/SYSTEM below only choose which variant of it is displayed.
     NavigationActionPreference(
         label = stringResource(id = R.string.theme_label),
-        destination = ThemeCustomization,
         subtitle = "Legacy",
     )
     ListPreference(
         adapter = preferenceManager().launcherTheme.getAdapter(),
         entries = themeEntries,
         label = stringResource(id = R.string.theme_appearance_label),
+    )
+    NavigationActionPreference(
+        label = "Personnaliser le thème",
+        destination = ThemeCustomization,
+        subtitle = "Modifier les couleurs du thème sélectionné",
     )
 }
