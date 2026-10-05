@@ -13,6 +13,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -26,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.toArgb
 import app.lawnchair.preferences.getAdapter
 import app.lawnchair.theme.color.ColorOption
 import app.lawnchair.ui.preferences.LocalNavController
@@ -180,8 +182,22 @@ fun PrimeColorSelection(
     modifier: Modifier = Modifier,
     dynamicEntries: List<ColorPreferenceEntry<ColorOption>> = dynamicColorsWithDefault,
     staticEntries: List<ColorPreferenceEntry<ColorOption>> = staticColors,
+    defaultPreviewColor: Int? = null,
 ) {
     val context = LocalContext.current
+    val themeFallbackColor = defaultPreviewColor ?: MaterialTheme.colorScheme.surfaceVariant.toArgb()
+    val displayedDynamicEntries = dynamicEntries.map { entry ->
+        if (entry.value == ColorOption.Default) {
+            ColorPreferenceEntry(
+                value = ColorOption.Default,
+                label = entry.label,
+                lightColor = { themeFallbackColor },
+                darkColor = { themeFallbackColor },
+            )
+        } else {
+            entry
+        }
+    }
     val mMSDLPlayerWrapper = MSDLPlayerWrapper.INSTANCE.get(context)
     val navController = LocalNavController.current
     var currentAppliedColor by remember(appliedColor) { mutableStateOf(appliedColor) }
@@ -261,7 +277,7 @@ fun PrimeColorSelection(
                 when (page) {
                     0 -> Column {
                         PresetsList(
-                            dynamicEntries = dynamicEntries,
+                            dynamicEntries = displayedDynamicEntries,
                             onPresetClick = onPresetClick,
                             isPresetSelected = { it == currentAppliedColor },
                         )
