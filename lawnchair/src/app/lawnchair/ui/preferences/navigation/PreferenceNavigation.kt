@@ -15,6 +15,11 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.material3.MaterialTheme
 import app.lawnchair.ui.theme.isSelectedThemeDark
 import app.lawnchair.theme.color.tokens.ColorTokens
+import app.lawnchair.theme.ThemeColorOverrides
+import app.lawnchair.theme.ThemeColorRole
+import app.lawnchair.theme.ThemeColors
+import app.lawnchair.theme.ThemeProfile
+import app.lawnchair.theme.ThemeVariant
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -144,6 +149,26 @@ fun PreferenceNavigation(
             deepLinks = getDeepLink(General),
         ) { GeneralPreferences() }
         composable<ThemeCustomization> { ThemeCustomizationPreferences() }
+        composable<ThemeColorSelection> { backStackEntry ->
+            val route: ThemeColorSelection = backStackEntry.toRoute()
+            val context = LocalContext.current
+            val role = ThemeColorRole.fromId(route.roleId) ?: return@composable
+            val variant = runCatching { ThemeVariant.valueOf(route.variant) }.getOrDefault(ThemeVariant.LIGHT)
+            val profile = ThemeProfile.LEGACY
+            val overrides = remember(context) { ThemeColorOverrides(context) }
+            var applied by remember(route.roleId, route.variant) {
+                mutableStateOf(overrides.get(profile, variant, role))
+            }
+            PrimeColorSelection(
+                label = if (role == ThemeColorRole.GLOBAL_ACCENT) "Couleur des éléments modifiables" else role.id,
+                appliedColor = applied,
+                defaultPreviewColor = ThemeColors.official(context, profile, role, variant),
+                onApply = { option ->
+                    overrides.set(profile, variant, role, option)
+                    applied = option
+                },
+            )
+        }
         composable<GeneralFontSelection> { backStackEntry ->
             val route: GeneralFontSelection = backStackEntry.toRoute()
             val pref = preferenceManager().prefsMap[route.prefKey]
