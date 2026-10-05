@@ -160,7 +160,11 @@ fun PreferenceNavigation(
                 mutableStateOf(overrides.get(profile, variant, role))
             }
             PrimeColorSelection(
-                label = if (role == ThemeColorRole.GLOBAL_ACCENT) "Couleur des éléments modifiables" else role.id,
+                label = when (role) {
+                    ThemeColorRole.GLOBAL_ACCENT -> "Couleur des éléments modifiables"
+                    ThemeColorRole.DRAWER_BACKGROUND -> "Tiroir — fond"
+                    else -> role.id
+                },
                 appliedColor = applied,
                 defaultPreviewColor = ThemeColors.official(context, profile, role, variant),
                 onApply = { option ->
