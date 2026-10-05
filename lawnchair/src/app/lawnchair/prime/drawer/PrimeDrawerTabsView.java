@@ -26,7 +26,8 @@ import android.app.AlertDialog;
 import android.graphics.RectF;
 import android.graphics.drawable.ColorDrawable;
 
-import com.android.launcher3.R;\nimport com.android.launcher3.Utilities;
+import com.android.launcher3.R;
+import com.android.launcher3.Utilities;
 import com.android.launcher3.AbstractFloatingView;
 import com.android.launcher3.allapps.FloatingHeaderRow;
 import com.android.launcher3.allapps.FloatingHeaderView;
@@ -1051,7 +1052,9 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             return 0x00000000;
         }
         if (option == app.lawnchair.theme.color.ColorOption.SystemAccent.INSTANCE) {
-            return (Utilities.isDarkTheme(getContext())\n                    ? option.getColorPreferenceEntry().getDarkColor()\n                    : option.getColorPreferenceEntry().getLightColor()).invoke(getContext());
+            return (Utilities.isDarkTheme(getContext())
+                    ? option.getColorPreferenceEntry().getDarkColor()
+                    : option.getColorPreferenceEntry().getLightColor()).invoke(getContext());
         }
         return 0x00000000;
     }
