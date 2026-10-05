@@ -51,10 +51,22 @@ data class ThemeProfile(
     val variants: ThemeVariantAvailability,
 ) {
     companion object {
-        /** Compatibility profile for the current Lawnchair/Prime generated color scheme. */
-        val DEFAULT = ThemeProfile(
-            id = ThemeProfileId("prime_default"),
+        /**
+         * Compatibility theme containing the colors Prime/Lawnchair used before named theme
+         * profiles were introduced. It is intentionally called Legacy: LIGHT and DARK are
+         * variants of this one theme, while SYSTEM remains only an appearance policy.
+         */
+        val LEGACY = ThemeProfile(
+            id = ThemeProfileId("legacy"),
             variants = ThemeVariantAvailability(hasLight = true, hasDark = true),
         )
+
+        /**
+         * Source-compatibility alias while the remaining theme consumers migrate to [LEGACY].
+         * Do not persist this name as a second theme identity.
+         */
+        @Deprecated("Use LEGACY")
+        val DEFAULT: ThemeProfile
+            get() = LEGACY
     }
 }
