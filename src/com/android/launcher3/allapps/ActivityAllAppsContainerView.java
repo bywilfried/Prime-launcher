@@ -371,14 +371,12 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 0 // Bottom left
         };
 
-        if (Flags.allAppsBlur()) {
-            int layerFg = ColorTokens.shade_panel_fg_color.resolveColor(getContext());
-            int layerBg = ColorTokens.shade_panel_bg_color.resolveColor(getContext());
-            mBottomSheetBackgroundColorOverBlur = ColorUtils.compositeColors(layerFg, layerBg);
-            mBottomSheetBackgroundColorBlurFallback = ColorTokens.BottomSheetBackgroundColorBlurFallback.resolveColor(getContext());
-        }
-
-        mBottomSheetBackgroundColorLegacy = ColorTokens.SurfaceDimColor.resolveColor(getContext());
+        // The drawer's semantic base color must not change with the blur implementation.
+        // Blur and opacity are rendering concerns layered on top of this theme surface.
+        int drawerBackground = ColorTokens.AllAppsBackground.resolveColor(getContext());
+        mBottomSheetBackgroundColorOverBlur = drawerBackground;
+        mBottomSheetBackgroundColorBlurFallback = drawerBackground;
+        mBottomSheetBackgroundColorLegacy = drawerBackground;
 
         // LC-Note: Update our allapps cached colour
         updateBottomSheetBackgroundColor();
