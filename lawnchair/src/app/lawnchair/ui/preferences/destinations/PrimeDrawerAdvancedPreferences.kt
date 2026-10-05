@@ -225,8 +225,6 @@ private fun PrimeCategoryDrawerOptions(
         .get(com.android.launcher3.InvariantDeviceProfile.INSTANCE.get(context).closestProfile, PrimeDrawerMode.TABS)
         .defaultTabsColor
     val masterTabOption = prefs2.tabsColor.getAdapter().state.value
-    val darkTheme = (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
-        android.content.res.Configuration.UI_MODE_NIGHT_YES
     val masterTabColor = when (masterTabOption) {
         ColorOption.Default -> app.lawnchair.theme.color.tokens.ColorTokens.AllAppsTabBackgroundSelected.resolveColor(context)
         is ColorOption.CustomColor -> masterTabOption.color
