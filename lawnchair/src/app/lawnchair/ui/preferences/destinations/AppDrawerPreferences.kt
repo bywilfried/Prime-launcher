@@ -237,6 +237,7 @@ fun AppDrawerPreferences(
         }
         PreferenceGroup(heading = stringResource(R.string.style)) {
             val navController = app.lawnchair.ui.preferences.LocalNavController.current
+            val themeSurfaceColor = MaterialTheme.colorScheme.surface.toArgb()
             val themeIsDark = (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
                 android.content.res.Configuration.UI_MODE_NIGHT_YES
             fun resolvedPreview(option: ColorOption, fallback: () -> Int): ColorOption =
@@ -255,9 +256,7 @@ fun AppDrawerPreferences(
             ColorPreference(
                 label = stringResource(id = drawerBackgroundModel.labelRes),
                 selectedColor = modeProfile.appDrawerBackgroundColor,
-                previewColor = resolvedPreview(modeProfile.appDrawerBackgroundColor) {
-                    MaterialTheme.colorScheme.surface.toArgb()
-                },
+                previewColor = resolvedPreview(modeProfile.appDrawerBackgroundColor) { themeSurfaceColor },
                 onClick = {
                     navController.navigate(
                         PrimeDrawerDefaultColor(activeDrawerMode.storageKey, "background", resources.getString(drawerBackgroundModel.labelRes)),
