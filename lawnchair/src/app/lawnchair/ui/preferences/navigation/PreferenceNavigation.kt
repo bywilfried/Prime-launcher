@@ -170,10 +170,10 @@ fun PreferenceNavigation(
                 onApply = { option ->
                     overrides.set(profile, variant, role, option)
                     applied = option
-                    // Theme roles can feed cached launcher surfaces outside Compose.
-                    // Refresh after every semantic override so all current and future roles have
-                    // the same immediate-apply contract.
-                    app.lawnchair.preferences2.ReloadHelper(context).reloadGrid()
+                    // Theme roles can feed cached Views and themed contexts outside Compose.
+                    // Recreate the launcher once after applying the override so both the effective
+                    // Light/Dark variant and cached surfaces are rebuilt from the same state.
+                    app.lawnchair.preferences2.ReloadHelper(context).recreate()
                 },
             )
         }
