@@ -54,6 +54,9 @@ import app.lawnchair.preferences2.firstCached
 import app.lawnchair.prime.drawer.PrimeDrawerMode
 import app.lawnchair.prime.drawer.PrimeDrawerModePreferences
 import app.lawnchair.theme.effectiveThemeVariant
+import app.lawnchair.theme.ThemeColorRole
+import app.lawnchair.theme.ThemeColors
+import app.lawnchair.theme.ThemeProfile
 import app.lawnchair.theme.color.ColorOption
 import app.lawnchair.theme.color.resolveColor
 import app.lawnchair.theme.color.tokens.ColorTokens
@@ -241,10 +244,14 @@ fun resolveFolderBackgroundColor(context: Context): Int {
 
 /** Apply Lawnchair custom allapps colour to the provided colour */
 private fun getAllAppsBaseColor(context: Context, defaultColor: Int): Int {
-    val prefs2 = PreferenceManager2.getInstance(context)
-    val colorOptions: ColorOption = prefs2.appDrawerBackgroundColor.firstCached()
-    val color = colorOptions.resolveColor(context, context.effectiveThemeVariant())
-    val baseColor = if (color != 0) color else defaultColor
+    // The drawer's master background belongs to the selected theme, not to a drawer mode.
+    // Local category/tab overrides are applied later by ActivityAllAppsContainerView.
+    val baseColor = ThemeColors.resolve(
+        context,
+        ThemeProfile.LEGACY,
+        ThemeColorRole.DRAWER_BACKGROUND,
+        context.effectiveThemeVariant(),
+    )
     return ColorUtils.setAlphaComponent(baseColor, 255)
 }
 
