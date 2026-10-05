@@ -11,6 +11,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import app.lawnchair.theme.ThemeColors
+import app.lawnchair.theme.ThemeProfile
+import app.lawnchair.theme.color.ColorOption
+import app.lawnchair.ui.preferences.LocalNavController
+import app.lawnchair.ui.preferences.components.colorpreference.ColorPreference
+import app.lawnchair.ui.preferences.navigation.ThemeColorSelection
 import app.lawnchair.theme.ThemeColorRole
 import app.lawnchair.theme.ThemeVariant
 import app.lawnchair.ui.preferences.LocalIsExpandedScreen
@@ -54,18 +61,21 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier) {
 
         ThemeSection(
             title = "Global",
+            variant = variant,
             section = ThemeColorRole.Section.GLOBAL,
             expanded = expanded,
             onToggle = { expanded = if (expanded == it) null else it },
         )
         ThemeSection(
             title = "Accueil",
+            variant = variant,
             section = ThemeColorRole.Section.HOME,
             expanded = expanded,
             onToggle = { expanded = if (expanded == it) null else it },
         )
         ThemeSection(
             title = "Tiroir",
+            variant = variant,
             section = ThemeColorRole.Section.DRAWER,
             expanded = expanded,
             onToggle = { expanded = if (expanded == it) null else it },
@@ -100,9 +110,12 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier) {
 private fun ThemeSection(
     title: String,
     section: ThemeColorRole.Section,
+    variant: ThemeVariant,
     expanded: ThemeColorRole.Section?,
     onToggle: (ThemeColorRole.Section) -> Unit,
 ) {
+    val context = LocalContext.current
+    val navController = LocalNavController.current
     PreferenceGroup {
         PreferenceTemplate(
             title = { Text(title) },
@@ -112,10 +125,25 @@ private fun ThemeSection(
         ExpandAndShrink(visible = expanded == section) {
             androidx.compose.foundation.layout.Column {
                 rolesForUi(section).forEach { role ->
-                    PreferenceTemplate(
-                        title = { Text(roleLabel(role)) },
-                        description = { Text("Valeur du thème · raccordement à valider") },
-                    )
+                    if (role == ThemeColorRole.GLOBAL_ACCENT) {
+                        val preview = ThemeColors.resolve(context, ThemeProfile.LEGACY, role, variant)
+                        ColorPreference(
+                            label = roleLabel(role),
+                            selectedColor = ColorOption.Default,
+                            previewColor = ColorOption.CustomColor(preview),
+                            description = "Valeur du thème",
+                            onClick = {
+                                navController.navigate(
+                                    ThemeColorSelection(role.id, variant.name),
+                                )
+                            },
+                        )
+                    } else {
+                        PreferenceTemplate(
+                            title = { Text(roleLabel(role)) },
+                            description = { Text("Valeur du thème · raccordement à valider") },
+                        )
+                    }
                 }
             }
         }
@@ -134,7 +162,7 @@ private fun rolesForUi(section: ThemeColorRole.Section): List<ThemeColorRole> = 
 }
 
 private fun roleLabel(role: ThemeColorRole): String = when (role) {
-    ThemeColorRole.GLOBAL_ACCENT -> "Accent sémantique (interne)"
+    ThemeColorRole.GLOBAL_ACCENT -> "Couleur des éléments modifiables"
     ThemeColorRole.GLOBAL_NOTIFICATION_DOT -> "Pastille de notification — fond"
     ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT -> "Pastille de notification — texte / compteur"
     ThemeColorRole.HOME_ICON_TEXT -> "Texte des icônes"
