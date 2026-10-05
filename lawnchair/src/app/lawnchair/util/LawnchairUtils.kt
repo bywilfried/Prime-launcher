@@ -246,12 +246,26 @@ fun resolveFolderBackgroundColor(context: Context): Int {
 private fun getAllAppsBaseColor(context: Context, defaultColor: Int): Int {
     // The drawer's master background belongs to the selected theme, not to a drawer mode.
     // Local category/tab overrides are applied later by ActivityAllAppsContainerView.
-    val baseColor = ThemeColors.resolve(
-        context,
-        ThemeProfile.LEGACY,
+    val profile = ThemeProfile.LEGACY
+    val variant = context.effectiveThemeVariant()
+    val stored = app.lawnchair.theme.ThemeColorOverrides(context).get(
+        profile,
+        variant,
         ThemeColorRole.DRAWER_BACKGROUND,
-        context.effectiveThemeVariant(),
     )
+    // Legacy's historical "default" was the drawer-provided defaultColor. Do not resolve the
+    // token a second time from an application/activity context: that loses the exact themed
+    // context the All Apps view used historically (and can turn the dark fallback into black).
+    val baseColor = if (stored == ColorOption.Default) {
+        defaultColor
+    } else {
+        ThemeColors.resolve(
+            context,
+            profile,
+            ThemeColorRole.DRAWER_BACKGROUND,
+            variant,
+        )
+    }
     return ColorUtils.setAlphaComponent(baseColor, 255)
 }
 
