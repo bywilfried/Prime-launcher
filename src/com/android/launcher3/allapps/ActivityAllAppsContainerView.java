@@ -371,12 +371,18 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 0 // Bottom left
         };
 
-        // The drawer's semantic base color must not change with the blur implementation.
-        // Blur and opacity are rendering concerns layered on top of this theme surface.
-        int drawerBackground = ColorTokens.AllAppsBackground.resolveColor(getContext());
-        mBottomSheetBackgroundColorOverBlur = drawerBackground;
-        mBottomSheetBackgroundColorBlurFallback = drawerBackground;
-        mBottomSheetBackgroundColorLegacy = drawerBackground;
+        // Preserve Legacy's original rendering pipeline. The semantic DRAWER_BACKGROUND
+        // replaces the historical base surface in LawnchairUtils, while blur remains a
+        // rendering concern with the same fallbacks/compositing Prime used before ThemeProfile.
+        if (Flags.allAppsBlur()) {
+            int layerFg = ColorTokens.shade_panel_fg_color.resolveColor(getContext());
+            int layerBg = ColorTokens.shade_panel_bg_color.resolveColor(getContext());
+            mBottomSheetBackgroundColorOverBlur = ColorUtils.compositeColors(layerFg, layerBg);
+            mBottomSheetBackgroundColorBlurFallback =
+                    ColorTokens.BottomSheetBackgroundColorBlurFallback.resolveColor(getContext());
+        }
+
+        mBottomSheetBackgroundColorLegacy = ColorTokens.SurfaceDimColor.resolveColor(getContext());
 
         // LC-Note: Update our allapps cached colour
         updateBottomSheetBackgroundColor();
