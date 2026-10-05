@@ -29,7 +29,6 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.expressiveLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -99,12 +98,22 @@ fun getColorScheme(darkTheme: Boolean): ColorScheme {
 
     val context = LocalContext.current
     val preferenceManager2 = preferenceManager2()
-    val accentColor by preferenceManager2.accentColor.asState()
     val colorStyle by preferenceManager2.colorStyle.asState()
+    var themeOverrideRevision by remember { mutableStateOf(0) }
+
+    DisposableEffect(context) {
+        val prefs = context.getSharedPreferences("prime_theme_color_overrides", android.content.Context.MODE_PRIVATE)
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key?.startsWith("legacy.") == true) themeOverrideRevision++
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
 
     // GLOBAL_ACCENT is now owned by the selected ThemeProfile. Resolve the requested variant
     // directly so Light and Dark customizations remain independent.
     val variant = if (darkTheme) ThemeVariant.DARK else ThemeVariant.LIGHT
+    themeOverrideRevision // Compose dependency: re-resolve after an override changes.
     val semanticAccent = ThemeColors.resolve(
         context = context,
         profile = ThemeProfile.LEGACY,
