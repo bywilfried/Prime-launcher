@@ -6,6 +6,7 @@ import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences.preferenceManager
 import app.lawnchair.ui.preferences.components.controls.ListPreference
 import app.lawnchair.ui.preferences.components.controls.ListPreferenceEntry
+import app.lawnchair.ui.preferences.navigation.ThemeCustomization
 import com.android.launcher3.R
 import com.android.launcher3.Utilities
 
@@ -35,6 +36,7 @@ fun ThemePreference() {
     // ThemeProfile; LIGHT/DARK/SYSTEM below only choose which variant of it is displayed.
     NavigationActionPreference(
         label = stringResource(id = R.string.theme_label),
+        destination = ThemeCustomization,
         subtitle = "Legacy",
     )
     ListPreference(
