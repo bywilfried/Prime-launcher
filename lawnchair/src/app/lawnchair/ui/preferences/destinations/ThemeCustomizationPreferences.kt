@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -35,8 +36,8 @@ import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
  */
 @Composable
 fun ThemeCustomizationPreferences(modifier: Modifier = Modifier) {
-    var variant by remember { mutableStateOf(ThemeVariant.LIGHT) }
-    var expanded by remember { mutableStateOf<ThemeColorRole.Section?>(null) }
+    var variant by rememberSaveable { mutableStateOf(ThemeVariant.LIGHT) }
+    var expanded by rememberSaveable { mutableStateOf<ThemeColorRole.Section?>(null) }
 
     PreferenceLayout(
         backArrowVisible = !LocalIsExpandedScreen.current,
