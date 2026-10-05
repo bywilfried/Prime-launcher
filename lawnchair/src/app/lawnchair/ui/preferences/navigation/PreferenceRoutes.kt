@@ -144,6 +144,9 @@ data class GeneralCustomIconShapeCreator(val selectedId: ShapeRoute = ShapeRoute
     override val deepLink = "$URI/general-icon-shape-creator"
 }
 
+@Serializable
+data object ThemeCustomization : PreferenceRoute
+
 // Home Screen section routes
 @Serializable
 data object HomeScreenGrid : PreferenceRoute, PreferenceDeepLink {
