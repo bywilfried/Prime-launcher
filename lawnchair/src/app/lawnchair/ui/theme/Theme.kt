@@ -35,6 +35,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import app.lawnchair.preferences.observeAsState
@@ -98,6 +99,7 @@ fun getColorScheme(darkTheme: Boolean): ColorScheme {
 
     val context = LocalContext.current
     val preferenceManager2 = preferenceManager2()
+    val accentColor by preferenceManager2.accentColor.asState()
     val colorStyle by preferenceManager2.colorStyle.asState()
     var themeOverrideRevision by remember { mutableStateOf(0) }
 
@@ -121,11 +123,19 @@ fun getColorScheme(darkTheme: Boolean): ColorScheme {
         variant = variant,
     )
 
-    val colorScheme = remember(semanticAccent, colorStyle.style, darkTheme) {
-        ThemeProvider.INSTANCE.get(context).colorSchemeForSeed(semanticAccent)
-    }
+    // Keep Legacy's historical palette generation intact. GLOBAL_ACCENT is a semantic
+    // control color, not a Monet seed: applying it as a seed shifts surfaces and also changes
+    // the requested tone. Override only the interactive Material tokens with the exact ARGB.
+    val baseColorScheme = remember(accentColor, colorStyle.style, darkTheme) {
+        ThemeProvider.INSTANCE.get(context).colorScheme
+    }.toComposeColorScheme(isDark = darkTheme)
 
-    return colorScheme.toComposeColorScheme(isDark = darkTheme)
+    val exactAccent = ComposeColor(semanticAccent)
+    return baseColorScheme.copy(
+        primary = exactAccent,
+        secondary = exactAccent,
+        tertiary = exactAccent,
+    )
 }
 
 private fun getPreviewColorScheme(darkTheme: Boolean) = if (darkTheme) {
