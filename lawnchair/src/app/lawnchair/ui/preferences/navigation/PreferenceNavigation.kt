@@ -51,6 +51,7 @@ import app.lawnchair.ui.preferences.destinations.FeatureFlagsPreference
 import app.lawnchair.ui.preferences.destinations.FolderPreferences
 import app.lawnchair.ui.preferences.destinations.FontSelection
 import app.lawnchair.ui.preferences.destinations.GeneralPreferences
+import app.lawnchair.ui.preferences.destinations.ThemeCustomizationPreferences
 import app.lawnchair.ui.preferences.destinations.GesturePreferences
 import app.lawnchair.ui.preferences.destinations.HiddenAppsPreferences
 import app.lawnchair.ui.preferences.destinations.HomeScreenGridPreferences
@@ -142,6 +143,7 @@ fun PreferenceNavigation(
         composable<General>(
             deepLinks = getDeepLink(General),
         ) { GeneralPreferences() }
+        composable<ThemeCustomization> { ThemeCustomizationPreferences() }
         composable<GeneralFontSelection> { backStackEntry ->
             val route: GeneralFontSelection = backStackEntry.toRoute()
             val pref = preferenceManager().prefsMap[route.prefKey]
