@@ -47,10 +47,15 @@ object ThemeColors {
     private fun legacy(context: Context, role: ThemeColorRole, variant: ThemeVariant): Int = when (role) {
         ThemeColorRole.GLOBAL_ACCENT -> LEGACY_EDITABLE_ELEMENTS
         // Preserve the exact pre-ThemeProfile drawer surface for each Legacy variant.
-        ThemeColorRole.DRAWER_BACKGROUND -> ColorTokens.AllAppsBackground.resolveColor(
-            context,
-            if (variant == ThemeVariant.DARK) UiColorMode.Dark else UiColorMode.Light,
-        )
+        ThemeColorRole.DRAWER_BACKGROUND -> ThemeProvider.INSTANCE.get(context)
+            .colorScheme
+            .let { scheme ->
+                ColorTokens.SurfaceDimColor.resolveColor(
+                    context,
+                    scheme,
+                    if (variant == ThemeVariant.DARK) UiColorMode.Dark else UiColorMode.Light,
+                )
+            }
         // Roles are added to the official Legacy palette as their runtime consumers are wired.
         // Until then this fallback is preview-only and must not be treated as their final token.
         else -> context.getSystemAccent(variant == ThemeVariant.DARK)
