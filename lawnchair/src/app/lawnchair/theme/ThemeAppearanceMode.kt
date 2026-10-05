@@ -2,7 +2,6 @@ package app.lawnchair.theme
 
 import android.content.Context
 import app.lawnchair.preferences.PreferenceManager
-import com.android.launcher3.Utilities
 
 /**
  * Controls how Prime Launcher selects the effective light/dark variant of a theme profile.
