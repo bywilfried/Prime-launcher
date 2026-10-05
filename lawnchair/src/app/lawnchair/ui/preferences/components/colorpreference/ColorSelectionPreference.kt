@@ -186,9 +186,9 @@ fun PrimeColorSelection(
 ) {
     val context = LocalContext.current
     val themeFallbackColor = defaultPreviewColor ?: MaterialTheme.colorScheme.surfaceVariant.toArgb()
-    val displayedDynamicEntries = dynamicEntries.map { entry ->
+    val displayedDynamicEntries: List<ColorPreferenceEntry<ColorOption>> = dynamicEntries.map { entry ->
         if (entry.value == ColorOption.Default) {
-            ColorPreferenceEntry(
+            ColorPreferenceEntry<ColorOption>(
                 value = ColorOption.Default,
                 label = entry.label,
                 lightColor = { themeFallbackColor },
