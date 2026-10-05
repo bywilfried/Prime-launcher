@@ -147,6 +147,9 @@ data class GeneralCustomIconShapeCreator(val selectedId: ShapeRoute = ShapeRoute
 @Serializable
 data object ThemeCustomization : PreferenceRoute
 
+@Serializable
+data class ThemeColorSelection(val roleId: String, val variant: String) : PreferenceRoute
+
 // Home Screen section routes
 @Serializable
 data object HomeScreenGrid : PreferenceRoute, PreferenceDeepLink {
