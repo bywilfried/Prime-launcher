@@ -11,6 +11,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.material3.MaterialTheme
+import app.lawnchair.ui.theme.isSelectedThemeDark
+import app.lawnchair.theme.color.tokens.ColorTokens
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -256,6 +260,11 @@ fun PreferenceNavigation(
             val repository = PrimeDrawerTabsRepository(context)
             val stored = if (route.drawer) repository.getDrawerFolderVisualOverrides(route.folderId)
                 else repository.getHomeFolderVisualOverrides(route.folderId)
+            val primeThemeDark = isSelectedThemeDark
+            val inheritedColor = when (route.colorKey) {
+                "folderClosedText", "folderText" -> MaterialTheme.colorScheme.onSurface.toArgb()
+                else -> app.lawnchair.util.resolveFolderBackgroundColor(context)
+            }
             PrimeColorSelection(
                 label = route.label,
                 appliedColor = when (route.colorKey) {
@@ -263,10 +272,13 @@ fun PreferenceNavigation(
                     "folderText" -> stored.textColor
                     else -> stored.color
                 }?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default,
+                defaultPreviewColor = inheritedColor,
                 onApply = { option ->
                     val resolved = when (option) {
                         ColorOption.Default -> null
-                        else -> option.colorPreferenceEntry.lightColor(context)
+                        is ColorOption.CustomColor -> option.color
+                        else -> if (primeThemeDark) option.colorPreferenceEntry.darkColor(context)
+                        else option.colorPreferenceEntry.lightColor(context)
                     }
                     val o = if (route.drawer) repository.getDrawerFolderVisualOverrides(route.folderId)
                         else repository.getHomeFolderVisualOverrides(route.folderId)
@@ -367,14 +379,25 @@ fun PreferenceNavigation(
                 "workTabs" -> profile.workProfileTabsColor?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default
                 else -> profile.appDrawerBackgroundColor
             }
+            val primeThemeDark = isSelectedThemeDark
+            val defaultPreviewColor = when (route.colorKey) {
+                "text" -> MaterialTheme.colorScheme.onSurface.toArgb()
+                "tabs" -> ColorTokens.AllAppsTabBackgroundSelected.resolveColor(context)
+                "inactiveTabs" -> ColorTokens.AllAppsTabBackground.resolveColor(context)
+                "workTabs" -> MaterialTheme.colorScheme.surfaceVariant.toArgb()
+                else -> MaterialTheme.colorScheme.surface.toArgb()
+            }
             PrimeColorSelection(
                 label = route.label,
                 appliedColor = current,
+                defaultPreviewColor = defaultPreviewColor,
                 onApply = { option ->
                     if (route.colorKey == "text" || route.colorKey == "tabs" || route.colorKey == "inactiveTabs" || route.colorKey == "workTabs") {
                         val resolved = when (option) {
                             ColorOption.Default -> null
-                            else -> option.colorPreferenceEntry.lightColor(context)
+                            is ColorOption.CustomColor -> option.color
+                            else -> if (primeThemeDark) option.colorPreferenceEntry.darkColor(context)
+                            else option.colorPreferenceEntry.lightColor(context)
                         }
                         modePreferences.update(
                             gridOption,
