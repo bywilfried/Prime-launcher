@@ -170,12 +170,10 @@ fun PreferenceNavigation(
                 onApply = { option ->
                     overrides.set(profile, variant, role, option)
                     applied = option
-                    if (role == ThemeColorRole.DRAWER_BACKGROUND) {
-                        // The All Apps container caches its opaque background. Recreate launcher
-                        // surfaces now so the semantic theme override is visible immediately,
-                        // without requiring a Light/Dark mode toggle.
-                        app.lawnchair.preferences2.ReloadHelper(context).reloadGrid()
-                    }
+                    // Theme roles can feed cached launcher surfaces outside Compose.
+                    // Refresh after every semantic override so all current and future roles have
+                    // the same immediate-apply contract.
+                    app.lawnchair.preferences2.ReloadHelper(context).reloadGrid()
                 },
             )
         }
