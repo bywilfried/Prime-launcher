@@ -192,7 +192,11 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
 
         PreferenceGroup(heading = stringResource(id = R.string.colors)) {
             ThemePreference()
-            ColorPreference(preference = prefs2.accentColor)
+            ColorPreference(
+                preference = prefs2.accentColor,
+                label = "Couleur des éléments modifiables",
+                description = "Couleur utilisée pour identifier les éléments interactifs, comme les interrupteurs, curseurs, boutons, sélections et certains contours.",
+            )
             ColorPreference(preference = prefs2.tabsColor)
             ColorPreference(preference = prefs2.inactiveTabsColor)
             ExpandAndShrink(visible = showColorStyle) {
