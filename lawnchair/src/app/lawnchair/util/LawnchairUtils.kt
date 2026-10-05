@@ -53,7 +53,9 @@ import app.lawnchair.preferences2.PreferenceManager2
 import app.lawnchair.preferences2.firstCached
 import app.lawnchair.prime.drawer.PrimeDrawerMode
 import app.lawnchair.prime.drawer.PrimeDrawerModePreferences
+import app.lawnchair.theme.effectiveThemeVariant
 import app.lawnchair.theme.color.ColorOption
+import app.lawnchair.theme.color.resolveColor
 import app.lawnchair.theme.color.tokens.ColorTokens
 import com.android.launcher3.BaseActivity
 import com.android.launcher3.BuildConfig
@@ -241,7 +243,7 @@ fun resolveFolderBackgroundColor(context: Context): Int {
 private fun getAllAppsBaseColor(context: Context, defaultColor: Int): Int {
     val prefs2 = PreferenceManager2.getInstance(context)
     val colorOptions: ColorOption = prefs2.appDrawerBackgroundColor.firstCached()
-    val color = colorOptions.colorPreferenceEntry.lightColor.invoke(context)
+    val color = colorOptions.resolveColor(context, context.effectiveThemeVariant())
     val baseColor = if (color != 0) color else defaultColor
     return ColorUtils.setAlphaComponent(baseColor, 255)
 }
