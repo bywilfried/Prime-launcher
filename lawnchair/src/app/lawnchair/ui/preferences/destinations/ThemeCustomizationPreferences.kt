@@ -126,7 +126,7 @@ private fun ThemeSection(
         ExpandAndShrink(visible = expanded == section) {
             androidx.compose.foundation.layout.Column {
                 rolesForUi(section).forEach { role ->
-                    if (role == ThemeColorRole.GLOBAL_ACCENT) {
+                    if (role == ThemeColorRole.GLOBAL_ACCENT || role == ThemeColorRole.DRAWER_BACKGROUND) {
                         val preview = ThemeColors.resolve(context, ThemeProfile.LEGACY, role, variant)
                         ColorPreference(
                             label = roleLabel(role),
