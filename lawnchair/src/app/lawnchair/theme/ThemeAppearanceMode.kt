@@ -2,7 +2,7 @@ package app.lawnchair.theme
 
 import android.content.Context
 import app.lawnchair.preferences.PreferenceManager
-import com.android.launcher3.util.Themes
+import com.android.launcher3.Utilities
 
 /**
  * Controls how Prime Launcher selects the effective light/dark variant of a theme profile.
@@ -32,4 +32,4 @@ enum class ThemeAppearanceMode(val storedValue: String) {
  * follow the platform through the existing launcher theme machinery.
  */
 fun Context.effectiveThemeVariant(): ThemeVariant =
-    if (Themes.isDarkTheme(this)) ThemeVariant.DARK else ThemeVariant.LIGHT
+    if (Utilities.isDarkTheme(this)) ThemeVariant.DARK else ThemeVariant.LIGHT
