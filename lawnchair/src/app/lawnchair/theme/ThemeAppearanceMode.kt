@@ -32,4 +32,11 @@ enum class ThemeAppearanceMode(val storedValue: String) {
  * follow the platform through the existing launcher theme machinery.
  */
 fun Context.effectiveThemeVariant(): ThemeVariant =
-    if (Utilities.isDarkTheme(this)) ThemeVariant.DARK else ThemeVariant.LIGHT
+    when (ThemeAppearanceMode.current(this)) {
+        ThemeAppearanceMode.LIGHT -> ThemeVariant.LIGHT
+        ThemeAppearanceMode.DARK -> ThemeVariant.DARK
+        ThemeAppearanceMode.SYSTEM ->
+            if ((resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                android.content.res.Configuration.UI_MODE_NIGHT_YES
+            ) ThemeVariant.DARK else ThemeVariant.LIGHT
+    }
