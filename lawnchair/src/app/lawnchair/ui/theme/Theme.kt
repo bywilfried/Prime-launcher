@@ -29,6 +29,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.expressiveLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +43,10 @@ import app.lawnchair.preferences.preferenceManager
 import app.lawnchair.preferences2.asState
 import app.lawnchair.preferences2.preferenceManager2
 import app.lawnchair.theme.ThemeProvider
+import app.lawnchair.theme.ThemeColors
+import app.lawnchair.theme.ThemeColorRole
+import app.lawnchair.theme.ThemeProfile
+import app.lawnchair.theme.ThemeVariant
 import app.lawnchair.theme.toComposeColorScheme
 import app.lawnchair.ui.preferences.components.ThemeChoice
 import app.lawnchair.wallpaper.WallpaperManagerCompat
@@ -97,8 +102,18 @@ fun getColorScheme(darkTheme: Boolean): ColorScheme {
     val accentColor by preferenceManager2.accentColor.asState()
     val colorStyle by preferenceManager2.colorStyle.asState()
 
-    val colorScheme = remember(accentColor, colorStyle.style) {
-        ThemeProvider.INSTANCE.get(context).colorScheme
+    // GLOBAL_ACCENT is now owned by the selected ThemeProfile. Resolve the requested variant
+    // directly so Light and Dark customizations remain independent.
+    val variant = if (darkTheme) ThemeVariant.DARK else ThemeVariant.LIGHT
+    val semanticAccent = ThemeColors.resolve(
+        context = context,
+        profile = ThemeProfile.LEGACY,
+        role = ThemeColorRole.GLOBAL_ACCENT,
+        variant = variant,
+    )
+
+    val colorScheme = remember(semanticAccent, colorStyle.style, darkTheme) {
+        ThemeProvider.INSTANCE.get(context).colorSchemeForSeed(semanticAccent)
     }
 
     return colorScheme.toComposeColorScheme(isDark = darkTheme)
