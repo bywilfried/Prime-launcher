@@ -60,6 +60,7 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val prefs = preferenceManager()
     val prefs2 = preferenceManager2()
+    val navController = app.lawnchair.ui.preferences.LocalNavController.current
     val liveInfoManager = liveInformationManager()
     val iconPacks by LocalPreferenceInteractor.current.iconPacks.collectAsStateWithLifecycle()
     val themedIconsAdapter = prefs.themedIcons.getAdapter()
@@ -196,7 +197,7 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
                 label = "Couleur des éléments modifiables",
                 selectedColor = accentColorAdapter.state.value,
                 description = "Couleur utilisée pour identifier les éléments interactifs, comme les interrupteurs, curseurs, boutons, sélections et certains contours.",
-                onClick = { app.lawnchair.ui.preferences.LocalNavController.current.navigate(app.lawnchair.ui.preferences.navigation.ColorSelection(prefs2.accentColor.key.name)) },
+                onClick = { navController.navigate(app.lawnchair.ui.preferences.navigation.ColorSelection(prefs2.accentColor.key.name)) },
             )
             ColorPreference(preference = prefs2.tabsColor)
             ColorPreference(preference = prefs2.inactiveTabsColor)
