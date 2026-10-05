@@ -193,9 +193,10 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
         PreferenceGroup(heading = stringResource(id = R.string.colors)) {
             ThemePreference()
             ColorPreference(
-                preference = prefs2.accentColor,
                 label = "Couleur des éléments modifiables",
+                selectedColor = accentColorAdapter.state.value,
                 description = "Couleur utilisée pour identifier les éléments interactifs, comme les interrupteurs, curseurs, boutons, sélections et certains contours.",
+                onClick = { app.lawnchair.ui.preferences.LocalNavController.current.navigate(app.lawnchair.ui.preferences.navigation.ColorSelection(prefs2.accentColor.key.name)) },
             )
             ColorPreference(preference = prefs2.tabsColor)
             ColorPreference(preference = prefs2.inactiveTabsColor)
