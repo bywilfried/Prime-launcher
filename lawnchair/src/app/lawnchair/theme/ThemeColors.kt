@@ -3,7 +3,6 @@ package app.lawnchair.theme
 import android.content.Context
 import app.lawnchair.theme.color.ColorOption
 import app.lawnchair.theme.color.tokens.ColorTokens
-import app.lawnchair.theme.color.resolveColor
 import app.lawnchair.ui.theme.getSystemAccent
 
 /**
@@ -50,7 +49,10 @@ object ThemeColors {
         // Preserve the exact pre-ThemeProfile drawer surface for each Legacy variant.
         ThemeColorRole.DRAWER_BACKGROUND -> ColorTokens.AllAppsBackground.resolveColor(
             context,
-            variant == ThemeVariant.DARK,
+            UiColorMode(
+                isDarkTheme = variant == ThemeVariant.DARK,
+                isDarkText = variant != ThemeVariant.DARK,
+            ),
         )
         // Roles are added to the official Legacy palette as their runtime consumers are wired.
         // Until then this fallback is preview-only and must not be treated as their final token.
