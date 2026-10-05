@@ -95,6 +95,9 @@ object ColorTokens {
 
     @JvmField val AllAppsScrimColor = StaticColorToken(0x404040).setAlpha(.40f)
 
+    // Prime semantic base surface for the app drawer. Keep blur/opacity as rendering concerns.
+    @JvmField val AllAppsBackground = SurfaceDimColor
+
     // Prime/Lawnchair tab theme defaults. Keep these as dedicated theme tokens so every
     // inheriting tab surface has explicit light/dark values and future custom themes can replace
     // them without changing drawer code.
