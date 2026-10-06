@@ -7,7 +7,6 @@ import app.lawnchair.ui.theme.getSystemAccent
 import app.lawnchair.wallpaper.WallpaperManagerCompat
 import app.lawnchair.theme.ThemeProvider
 import app.lawnchair.theme.UiColorMode
-import app.lawnchair.theme.color.tokens.ColorTokens
 import app.lawnchair.theme.color.tokens.Swatch
 import app.lawnchair.theme.color.tokens.SwatchColorToken
 import app.lawnchair.theme.color.tokens.Shade
