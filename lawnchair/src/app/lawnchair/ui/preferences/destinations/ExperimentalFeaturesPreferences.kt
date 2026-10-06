@@ -65,10 +65,25 @@ fun ExperimentalFeaturesPreferences(
                 label = stringResource(id = R.string.font_picker_label),
                 description = stringResource(id = R.string.font_picker_description),
             )
+            val extendedGrid = prefs.workspaceIncreaseMaxGridSize.getAdapter()
+            val gridExceedsDefault = prefs.workspaceColumns.get() > 10 || prefs.workspaceRows.get() > 10
             SwitchPreference(
-                adapter = prefs.workspaceIncreaseMaxGridSize.getAdapter(),
+                checked = extendedGrid.state.value,
+                onCheckedChange = { enabled ->
+                    if (enabled || !gridExceedsDefault) extendedGrid.onChange(enabled)
+                },
                 label = stringResource(id = R.string.workspace_increase_max_grid_size_label),
-                description = stringResource(id = R.string.workspace_increase_max_grid_size_description),
+                description = if (gridExceedsDefault) {
+                    stringResource(R.string.prime_extended_grid_active_description)
+                } else {
+                    stringResource(id = R.string.workspace_increase_max_grid_size_description)
+                },
+                enabled = !gridExceedsDefault || !extendedGrid.state.value,
+            )
+            SwitchPreference(
+                adapter = prefs.primeShowEmptyFolders.getAdapter(),
+                label = stringResource(R.string.prime_show_empty_folders),
+                description = stringResource(R.string.prime_show_empty_folders_description),
             )
             SwitchPreference(
                 adapter = prefs2.showDeckLayout.getAdapter(),
