@@ -391,8 +391,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         mSearchUiManager.initializeSearch(this);
     }
 
-    private android.content.SharedPreferences mPrimeThemeColorOverrides;
-    private android.content.SharedPreferences.OnSharedPreferenceChangeListener mPrimeThemeColorListener;
+    private app.lawnchair.theme.ThemeColorInvalidation.Listener mPrimeThemeColorListener;
 
     @Override
     protected void onAttachedToWindow() {
@@ -402,14 +401,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             mSearchUiDelegate.onInitializeSearchBar();
         }
         mActivityContext.addOnDeviceProfileChangeListener(this);
-        mPrimeThemeColorOverrides = getContext().getSharedPreferences(
-                "prime_theme_color_overrides", Context.MODE_PRIVATE);
-        mPrimeThemeColorListener = (preferences, key) -> {
-            if (key != null && key.contains(".drawer.background")) {
-                refreshPrimeThemeColors();
-            }
-        };
-        mPrimeThemeColorOverrides.registerOnSharedPreferenceChangeListener(mPrimeThemeColorListener);
+        mPrimeThemeColorListener = this::refreshPrimeThemeColors;
+        app.lawnchair.theme.ThemeColorInvalidation.INSTANCE.addListener(mPrimeThemeColorListener);
         if (Utilities.ATLEAST_S) {
             java.util.function.Consumer<Boolean> listener = enabled -> {
                 if (updateBottomSheetBackgroundColor(enabled)) {
@@ -430,10 +423,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
 
     @Override
     protected void onDetachedFromWindow() {
-        if (mPrimeThemeColorOverrides != null && mPrimeThemeColorListener != null) {
-            mPrimeThemeColorOverrides.unregisterOnSharedPreferenceChangeListener(mPrimeThemeColorListener);
+        if (mPrimeThemeColorListener != null) {
+            app.lawnchair.theme.ThemeColorInvalidation.INSTANCE.removeListener(mPrimeThemeColorListener);
             mPrimeThemeColorListener = null;
-            mPrimeThemeColorOverrides = null;
         }
         super.onDetachedFromWindow();
         mActivityContext.removeOnDeviceProfileChangeListener(this);
