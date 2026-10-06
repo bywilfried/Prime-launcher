@@ -20,6 +20,7 @@ import android.animation.AnimatorSet
 import android.app.ActivityOptions
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import android.os.Bundle
@@ -262,6 +263,17 @@ class LawnchairLauncher : QuickstepLauncher() {
         reloadIconsIfNeeded()
 
         AppDatabase.INSTANCE.get(this).checkpointSync()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        val oldNightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        super.onConfigurationChanged(newConfig)
+        val newNightMode = newConfig.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        if (oldNightMode != newNightMode) {
+            // In SYSTEM appearance the launcher activity can stay alive across Android day/night
+            // changes. Refresh semantic View-based theme consumers without restarting Prime.
+            mAppsView?.refreshPrimeThemeColors()
+        }
     }
 
     override fun onNewIntent(intent: Intent?) {
