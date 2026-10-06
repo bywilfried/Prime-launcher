@@ -109,7 +109,7 @@ object ColorTokens {
     )
 
     @JvmField val AllAppsTabBackgroundSelected = DayNightColorToken(
-        Neutral2_400.setLStar(68.0),
+        Neutral2_300.setLStar(68.0),
         Neutral2_900.setLStar(10.0),
     )
 
