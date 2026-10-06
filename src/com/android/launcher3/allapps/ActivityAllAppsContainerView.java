@@ -391,6 +391,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         mSearchUiManager.initializeSearch(this);
     }
 
+    private android.content.SharedPreferences mPrimeThemeColorOverrides;
+    private android.content.SharedPreferences.OnSharedPreferenceChangeListener mPrimeThemeColorListener;
+
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
@@ -399,6 +402,16 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             mSearchUiDelegate.onInitializeSearchBar();
         }
         mActivityContext.addOnDeviceProfileChangeListener(this);
+        mPrimeThemeColorOverrides = getContext().getSharedPreferences(
+                "prime_theme_color_overrides", Context.MODE_PRIVATE);
+        mPrimeThemeColorListener = (preferences, key) -> {
+            if (key != null && key.contains(".drawer.background")) {
+                if (updateBottomSheetBackgroundColor()) {
+                    invalidate();
+                }
+            }
+        };
+        mPrimeThemeColorOverrides.registerOnSharedPreferenceChangeListener(mPrimeThemeColorListener);
         if (Utilities.ATLEAST_S) {
             java.util.function.Consumer<Boolean> listener = enabled -> {
                 if (updateBottomSheetBackgroundColor(enabled)) {
@@ -418,6 +431,11 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     }
 
     @Override
+        if (mPrimeThemeColorOverrides != null && mPrimeThemeColorListener != null) {
+            mPrimeThemeColorOverrides.unregisterOnSharedPreferenceChangeListener(mPrimeThemeColorListener);
+            mPrimeThemeColorListener = null;
+            mPrimeThemeColorOverrides = null;
+        }
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         mActivityContext.removeOnDeviceProfileChangeListener(this);
