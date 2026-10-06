@@ -1,5 +1,7 @@
 package app.lawnchair.theme
 
+import android.content.Context
+
 /**
  * Stable identity for a Prime Launcher color theme.
  *
@@ -51,6 +53,28 @@ data class ThemeProfile(
     val variants: ThemeVariantAvailability,
 ) {
     companion object {
+        private const val PREFS_NAME = "prime_theme_profile"
+        private const val KEY_SELECTED_PROFILE = "selected_profile"
+
+        /** Registry of selectable profiles. Add future themes here without changing consumers. */
+        val entries: List<ThemeProfile>
+            get() = listOf(LEGACY)
+
+        fun byId(id: ThemeProfileId): ThemeProfile? = entries.firstOrNull { it.id == id }
+
+        fun current(context: Context): ThemeProfile {
+            val stored = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .getString(KEY_SELECTED_PROFILE, null)
+            return stored?.let { byId(ThemeProfileId(it)) } ?: LEGACY
+        }
+
+        fun select(context: Context, profile: ThemeProfile) {
+            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .edit()
+                .putString(KEY_SELECTED_PROFILE, profile.id.value)
+                .apply()
+        }
+
         /**
          * Compatibility theme containing the colors Prime/Lawnchair used before named theme
          * profiles were introduced. It is intentionally called Legacy: LIGHT and DARK are
