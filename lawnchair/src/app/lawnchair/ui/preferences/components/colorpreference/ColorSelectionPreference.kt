@@ -210,7 +210,15 @@ fun PrimeColorSelection(
     val mMSDLPlayerWrapper = MSDLPlayerWrapper.INSTANCE.get(context)
     val navController = LocalNavController.current
     var currentAppliedColor by remember(appliedColor) { mutableStateOf(appliedColor) }
-    val selectedColor = remember(appliedColor) { mutableIntStateOf(appliedColor.forCustomPicker(context)) }
+    val selectedColor = remember(appliedColor, defaultPreviewColor) {
+        mutableIntStateOf(
+            if (appliedColor == ColorOption.Default && defaultPreviewColor != null) {
+                defaultPreviewColor
+            } else {
+                appliedColor.forCustomPicker(context)
+            },
+        )
+    }
     val selectedColorApplied = remember {
         derivedStateOf {
             currentAppliedColor is ColorOption.CustomColor &&
