@@ -47,18 +47,22 @@ object ThemeColors {
     private fun legacy(context: Context, role: ThemeColorRole, variant: ThemeVariant): Int = when (role) {
         ThemeColorRole.GLOBAL_ACCENT -> LEGACY_EDITABLE_ELEMENTS
         // Preserve the exact pre-ThemeProfile drawer surface for each Legacy variant.
-        ThemeColorRole.DRAWER_BACKGROUND -> ThemeProvider.INSTANCE.get(context)
-            .colorScheme
-            .let { scheme ->
-                ColorTokens.SurfaceDimColor.resolveColor(
-                    context,
-                    scheme,
-                    if (variant == ThemeVariant.DARK) UiColorMode.Dark else UiColorMode.Light,
-                )
-            }
+        ThemeColorRole.DRAWER_BACKGROUND -> legacyDrawerBackground(context, variant)
         // Roles are added to the official Legacy palette as their runtime consumers are wired.
         // Until then this fallback is preview-only and must not be treated as their final token.
         else -> context.getSystemAccent(variant == ThemeVariant.DARK)
+    }
+
+    private fun legacyDrawerBackground(context: Context, variant: ThemeVariant): Int {
+        val themedContext = android.view.ContextThemeWrapper(
+            context,
+            if (variant == ThemeVariant.DARK) {
+                com.android.launcher3.R.style.AppTheme_Dark
+            } else {
+                com.android.launcher3.R.style.AppTheme
+            },
+        )
+        return ColorTokens.SurfaceDimColor.resolveColor(themedContext)
     }
 
     private const val LEGACY_EDITABLE_ELEMENTS: Int = 0xFF80CBC4.toInt()
