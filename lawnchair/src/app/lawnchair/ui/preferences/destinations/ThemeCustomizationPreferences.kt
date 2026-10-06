@@ -127,6 +127,8 @@ private fun ThemeSection(
             androidx.compose.foundation.layout.Column {
                 rolesForUi(section).forEach { role ->
                     if (role == ThemeColorRole.GLOBAL_ACCENT ||
+                        role == ThemeColorRole.GLOBAL_SETTINGS_BACKGROUND ||
+                        role == ThemeColorRole.GLOBAL_SETTINGS_CARD_BACKGROUND ||
                         role == ThemeColorRole.DRAWER_BACKGROUND ||
                         role == ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE ||
                         role == ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE ||
@@ -175,6 +177,8 @@ private fun rolesForUi(section: ThemeColorRole.Section): List<ThemeColorRole> = 
 
 private fun roleLabel(role: ThemeColorRole): String = when (role) {
     ThemeColorRole.GLOBAL_ACCENT -> "Couleur des éléments modifiables"
+    ThemeColorRole.GLOBAL_SETTINGS_BACKGROUND -> "Interface — fond des menus"
+    ThemeColorRole.GLOBAL_SETTINGS_CARD_BACKGROUND -> "Interface — fond des cartes"
     ThemeColorRole.GLOBAL_NOTIFICATION_DOT -> "Pastille de notification — fond"
     ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT -> "Pastille de notification — texte / compteur"
     ThemeColorRole.HOME_ICON_TEXT -> "Texte des icônes"
