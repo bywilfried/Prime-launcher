@@ -125,13 +125,22 @@ fun ColorSelection(
                     page = 0,
                 )
                 Chip(
-                    label = stringResource(id = R.string.custom),
+                    label = "Fixe",
                     onClick = {
                         mMSDLPlayerWrapper.playToken(MSDLToken.TAP_LOW_EMPHASIS)
                         scrollToPage(1)
                     },
                     currentOffset = pagerState.currentPage + pagerState.currentPageOffsetFraction,
                     page = 1,
+                )
+                Chip(
+                    label = "Dynamique",
+                    onClick = {
+                        mMSDLPlayerWrapper.playToken(MSDLToken.TAP_LOW_EMPHASIS)
+                        scrollToPage(2)
+                    },
+                    currentOffset = pagerState.currentPage + pagerState.currentPageOffsetFraction,
+                    page = 2,
                 )
             }
             HorizontalPager(
@@ -208,11 +217,12 @@ fun PrimeColorSelection(
                 (currentAppliedColor as ColorOption.CustomColor).color == selectedColor.intValue
         }
     }
-    val defaultTabIndex = if (
-        dynamicEntries.any { it.value == currentAppliedColor } ||
-            staticEntries.any { it.value == currentAppliedColor }
-    ) 0 else 1
-    val pagerState = rememberPagerState(initialPage = defaultTabIndex, pageCount = { 2 })
+    val defaultTabIndex = when (currentAppliedColor) {
+        is ColorOption.CustomColor -> 1
+        is ColorOption.DynamicColor -> 2
+        else -> 0
+    }
+    val pagerState = rememberPagerState(initialPage = defaultTabIndex, pageCount = { 3 })
     val onPresetClick = { option: ColorOption ->
         selectedColor.intValue = option.forCustomPicker(context)
         currentAppliedColor = option
@@ -294,6 +304,14 @@ fun PrimeColorSelection(
                     1 -> CustomColorPicker(
                         selectedColor = selectedColor.intValue,
                         onSelect = { selectedColor.intValue = it },
+                    )
+                    2 -> PrimeDynamicColorPicker(
+                        initial = currentAppliedColor as? ColorOption.DynamicColor,
+                        onApply = { option ->
+                            currentAppliedColor = option
+                            onApply(option)
+                            navController.popBackStack()
+                        },
                     )
                 }
             }
