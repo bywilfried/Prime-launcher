@@ -194,9 +194,9 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
         PreferenceGroup(heading = stringResource(id = R.string.colors)) {
             ThemePreference()
             ColorPreference(
-                label = "Couleur d’accentuation",
+                label = "Palette de couleurs",
                 selectedColor = accentColorAdapter.state.value,
-                description = "Couleur source utilisée avec le style des couleurs pour générer la palette dynamique.",
+                description = "Couleur source utilisée pour générer la palette du thème.",
                 onClick = { navController.navigate(app.lawnchair.ui.preferences.navigation.ColorSelection(prefs2.accentColor.key.name)) },
             )
             ExpandAndShrink(visible = showColorStyle) {
