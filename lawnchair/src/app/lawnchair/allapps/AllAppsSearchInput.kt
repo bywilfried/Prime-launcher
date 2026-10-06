@@ -190,7 +190,11 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
                 val backgroundColor = ThemeColors.resolve(
                     context,
                     profile,
-                    ThemeColorRole.DRAWER_SEARCH_BACKGROUND,
+                    if (isFocused || !queryEmpty) {
+                        ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE
+                    } else {
+                        ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE
+                    },
                     variant,
                 )
                 val borderColor = ThemeColors.resolve(
@@ -201,7 +205,7 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
                 )
 
                 val backgroundAlpha by animateIntAsState(
-                    if (isFocused || !queryEmpty) 0 else 100,
+                    100,
                 )
 
                 // Ignore other theme attributes to preserve existing behavior
