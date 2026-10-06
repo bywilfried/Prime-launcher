@@ -406,9 +406,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 "prime_theme_color_overrides", Context.MODE_PRIVATE);
         mPrimeThemeColorListener = (preferences, key) -> {
             if (key != null && key.contains(".drawer.background")) {
-                if (updateBottomSheetBackgroundColor()) {
-                    invalidate();
-                }
+                refreshPrimeThemeColors();
             }
         };
         mPrimeThemeColorOverrides.registerOnSharedPreferenceChangeListener(mPrimeThemeColorListener);
@@ -1014,6 +1012,22 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     // LC-Note: Hey! We cache this! see updateBottomSheetBackgroundColor() for more details.
     public int getPrimeDrawerOpaqueBackgroundColor() {
         return ColorUtils.setAlphaComponent(getBackgroundColor(), 255);
+    }
+
+    /** Re-resolves the semantic drawer background after a theme/appearance change. */
+    public void refreshPrimeThemeColors() {
+        // Recompute the historical themed defaults too: SYSTEM appearance can change while this
+        // All Apps view remains alive.
+        if (Flags.allAppsBlur()) {
+            int layerFg = ColorTokens.shade_panel_fg_color.resolveColor(getContext());
+            int layerBg = ColorTokens.shade_panel_bg_color.resolveColor(getContext());
+            mBottomSheetBackgroundColorOverBlur = ColorUtils.compositeColors(layerFg, layerBg);
+            mBottomSheetBackgroundColorBlurFallback =
+                    ColorTokens.BottomSheetBackgroundColorBlurFallback.resolveColor(getContext());
+        }
+        mBottomSheetBackgroundColorLegacy = ColorTokens.SurfaceDimColor.resolveColor(getContext());
+        updateBottomSheetBackgroundColor();
+        invalidate();
     }
 
     int getBottomSheetBackgroundColor() {
