@@ -79,6 +79,8 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
     private float mRowDownX;
     private float mRowDownY;
     private boolean mRowHorizontalScroll;
+    private final app.lawnchair.theme.ThemeColorInvalidation.Listener mThemeColorListener =
+            this::refreshPrimeThemeColors;
 
     public PrimeDrawerTabsView(Context context) {
         this(context, null);
@@ -121,11 +123,13 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         mRepository.registerConfigurationChangeListener(this);
+        app.lawnchair.theme.ThemeColorInvalidation.INSTANCE.addListener(mThemeColorListener);
     }
 
     @Override
     protected void onDetachedFromWindow() {
         mRepository.unregisterConfigurationChangeListener(this);
+        app.lawnchair.theme.ThemeColorInvalidation.INSTANCE.removeListener(mThemeColorListener);
         super.onDetachedFromWindow();
     }
 
