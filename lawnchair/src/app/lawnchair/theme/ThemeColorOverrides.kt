@@ -22,6 +22,7 @@ class ThemeColorOverrides(context: Context) {
         val key = key(profile, variant, role)
         if (option == ColorOption.Default) editor.remove(key) else editor.putString(key, option.toString())
         editor.apply()
+        ThemeColorInvalidation.invalidate()
     }
 
     fun resetVariant(profile: ThemeProfile, variant: ThemeVariant) {
@@ -40,6 +41,7 @@ class ThemeColorOverrides(context: Context) {
         val editor = prefs.edit()
         prefs.all.keys.filter { it.startsWith(prefix) }.forEach(editor::remove)
         editor.apply()
+        ThemeColorInvalidation.invalidate()
     }
 
     private fun key(profile: ThemeProfile, variant: ThemeVariant, role: ThemeColorRole) =
