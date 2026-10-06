@@ -49,6 +49,7 @@ import app.lawnchair.preferences2.firstCached
 import app.lawnchair.root.RootHelperManager
 import app.lawnchair.root.RootNotAvailableException
 import app.lawnchair.theme.ThemeProvider
+import app.lawnchair.theme.ThemeColorInvalidation
 import app.lawnchair.ui.popup.LauncherOptionsPopup
 import app.lawnchair.ui.popup.LawnchairShortcut
 import app.lawnchair.util.getThemedIconPacksInstalled
@@ -272,10 +273,9 @@ class LawnchairLauncher : QuickstepLauncher() {
         val newNightMode = newConfig.uiMode and Configuration.UI_MODE_NIGHT_MASK
         if (lastPrimeNightMode != newNightMode) {
             lastPrimeNightMode = newNightMode
-            // In SYSTEM appearance the launcher activity can stay alive across Android day/night
-            // changes. Refresh semantic View-based theme consumers without restarting Prime.
-            mAppsView?.refreshPrimeThemeColors()
-            findViewById<PrimeDrawerTabsView?>(R.id.prime_drawer_tabs)?.refreshPrimeThemeColors()
+            // A variant change can affect every semantic role. Consumers re-resolve the roles
+            // they render; the launcher does not need role-specific refresh wiring.
+            ThemeColorInvalidation.invalidate()
         }
     }
 
