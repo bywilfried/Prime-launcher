@@ -154,7 +154,7 @@ fun PreferenceNavigation(
             val context = LocalContext.current
             val role = ThemeColorRole.fromId(route.roleId) ?: return@composable
             val variant = runCatching { ThemeVariant.valueOf(route.variant) }.getOrDefault(ThemeVariant.LIGHT)
-            val profile = ThemeProfile.LEGACY
+            val profile = ThemeProfile.current(context)
             val overrides = remember(context) { ThemeColorOverrides(context) }
             var applied by remember(route.roleId, route.variant) {
                 mutableStateOf(overrides.get(profile, variant, role))
