@@ -996,70 +996,26 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
     }
 
     private int resolveDefaultTabColor() {
-        // Category and Tabs-mode overrides are resolved before this method. Theme customization
-        // is the shared master below those local overrides.
+        // Category and Tabs-mode overrides are resolved before this method. The semantic theme
+        // role is now the single shared master; the old tabsColor preference is intentionally
+        // ignored here so a stale legacy value cannot shadow the selected theme.
         app.lawnchair.theme.ThemeProfile profile =
                 app.lawnchair.theme.ThemeProfile.Companion.current(getContext());
         app.lawnchair.theme.ThemeVariant variant =
                 app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(getContext());
-        app.lawnchair.theme.color.ColorOption themeOverride =
-                new app.lawnchair.theme.ThemeColorOverrides(getContext()).get(
-                        profile, variant,
-                        app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND);
-        if (themeOverride != app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
-            return app.lawnchair.theme.ThemeColors.INSTANCE.resolve(
-                    getContext(), profile,
-                    app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND, variant);
-        }
-
-        PreferenceManager2 prefs2 = PreferenceManager2.getInstance(getContext());
-        // The old
-        // drawerTabsColor preference predates the shared Tabs master and must not form an
-        // additional inheritance layer: it can contain stale persisted values that disagree
-        // with the current settings UI. Keep the legacy value stored, but inherit directly
-        // from the shared active-tabs master here.
-        app.lawnchair.theme.color.ColorOption option = prefs2.getTabsColorBlocking();
-        if (option == app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
-            return app.lawnchair.theme.ThemeColors.resolveLegacyToken(
-                    getContext(),
-                    app.lawnchair.theme.color.tokens.ColorTokens.AllAppsTabBackgroundSelected,
-                    app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(getContext()));
-        }
-        if (option instanceof app.lawnchair.theme.color.ColorOption.CustomColor) {
-            return ((app.lawnchair.theme.color.ColorOption.CustomColor) option).getColor();
-        }
-        if (option == app.lawnchair.theme.color.ColorOption.WallpaperPrimary.INSTANCE) {
-            android.app.WallpaperColors colors = android.app.WallpaperManager.getInstance(getContext())
-                    .getWallpaperColors(android.app.WallpaperManager.FLAG_SYSTEM);
-            if (colors != null && colors.getPrimaryColor() != null) {
-                return colors.getPrimaryColor().toArgb();
-            }
-            return 0xFF007FFF;
-        }
-        if (option == app.lawnchair.theme.color.ColorOption.SystemAccent.INSTANCE) {
-            boolean darkTheme = app.lawnchair.theme.ThemeAppearanceModeKt
-                    .effectiveThemeVariant(getContext()) == app.lawnchair.theme.ThemeVariant.DARK;
-            // Match the color shown by Lawnchair's picker. Using lightColor unconditionally
-            // made dark-theme System accent resolve to the wrong (red) palette entry.
-            return (darkTheme
-                    ? option.getColorPreferenceEntry().getDarkColor()
-                    : option.getColorPreferenceEntry().getLightColor()).invoke(getContext());
-        }
-        if (option == app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
-            // The global master itself should normally never be Default, but keep the final
-            // fallback in Lawnchair's tab token rather than Android's unrelated colorAccent.
-            return app.lawnchair.theme.color.tokens.ColorTokens.AllAppsTabBackgroundSelected
-                    .resolveColor(getContext());
-        }
-        return app.lawnchair.theme.color.tokens.ColorTokens.AllAppsTabBackgroundSelected
-                .resolveColor(getContext());
+        return app.lawnchair.theme.ThemeColors.INSTANCE.resolve(
+                getContext(), profile,
+                app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND, variant);
     }
 
     private int resolveTabTextColor() {
-        return app.lawnchair.theme.ThemeColors.resolveLegacyToken(
-                getContext(),
-                app.lawnchair.theme.color.tokens.ColorTokens.TextColorPrimary,
-                app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(getContext()));
+        app.lawnchair.theme.ThemeProfile profile =
+                app.lawnchair.theme.ThemeProfile.Companion.current(getContext());
+        app.lawnchair.theme.ThemeVariant variant =
+                app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(getContext());
+        return app.lawnchair.theme.ThemeColors.INSTANCE.resolve(
+                getContext(), profile,
+                app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_TEXT, variant);
     }
 
     private int resolveInactiveTabColor() {
@@ -1070,46 +1026,15 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                 .getDefaultInactiveTabsColor();
         if (modeOverride != null) return modeOverride;
 
+        // Same master rule as the active tab: mode/category overrides stay above the theme,
+        // while obsolete global tab-color preferences no longer interfere underneath it.
         app.lawnchair.theme.ThemeProfile profile =
                 app.lawnchair.theme.ThemeProfile.Companion.current(getContext());
         app.lawnchair.theme.ThemeVariant variant =
                 app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(getContext());
-        app.lawnchair.theme.color.ColorOption themeOverride =
-                new app.lawnchair.theme.ThemeColorOverrides(getContext()).get(
-                        profile, variant,
-                        app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND);
-        if (themeOverride != app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
-            return app.lawnchair.theme.ThemeColors.INSTANCE.resolve(
-                    getContext(), profile,
-                    app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND, variant);
-        }
-
-        PreferenceManager2 prefs2 = PreferenceManager2.getInstance(getContext());
-        app.lawnchair.theme.color.ColorOption option = prefs2.getInactiveTabsColorBlocking();
-        if (option == app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
-            return app.lawnchair.theme.ThemeColors.resolveLegacyToken(
-                    getContext(),
-                    app.lawnchair.theme.color.tokens.ColorTokens.AllAppsTabBackground,
-                    app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(getContext()));
-        }
-        if (option instanceof app.lawnchair.theme.color.ColorOption.CustomColor) {
-            return ((app.lawnchair.theme.color.ColorOption.CustomColor) option).getColor();
-        }
-        if (option == app.lawnchair.theme.color.ColorOption.WallpaperPrimary.INSTANCE) {
-            android.app.WallpaperColors colors = android.app.WallpaperManager.getInstance(getContext())
-                    .getWallpaperColors(android.app.WallpaperManager.FLAG_SYSTEM);
-            if (colors != null && colors.getPrimaryColor() != null) {
-                return colors.getPrimaryColor().toArgb();
-            }
-            return 0x00000000;
-        }
-        if (option == app.lawnchair.theme.color.ColorOption.SystemAccent.INSTANCE) {
-            return (app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(getContext())
-                    == app.lawnchair.theme.ThemeVariant.DARK
-                    ? option.getColorPreferenceEntry().getDarkColor()
-                    : option.getColorPreferenceEntry().getLightColor()).invoke(getContext());
-        }
-        return 0x00000000;
+        return app.lawnchair.theme.ThemeColors.INSTANCE.resolve(
+                getContext(), profile,
+                app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND, variant);
     }
 
     private int dp(int value) {
