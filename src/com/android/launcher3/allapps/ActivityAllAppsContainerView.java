@@ -1016,16 +1016,22 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
 
     /** Re-resolves the semantic drawer background after a theme/appearance change. */
     public void refreshPrimeThemeColors() {
-        // Recompute the historical themed defaults too: SYSTEM appearance can change while this
-        // All Apps view remains alive.
+        // Configuration changes do not necessarily replace this View's Context/theme. Resolve
+        // Legacy's official day/night defaults explicitly from the effective Prime appearance.
+        boolean dark = app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(getContext())
+                == app.lawnchair.theme.ThemeVariant.DARK;
+        app.lawnchair.theme.color.UiColorMode colorMode = dark
+                ? app.lawnchair.theme.color.UiColorMode.Companion.getDark()
+                : app.lawnchair.theme.color.UiColorMode.Companion.getLight();
         if (Flags.allAppsBlur()) {
-            int layerFg = ColorTokens.shade_panel_fg_color.resolveColor(getContext());
-            int layerBg = ColorTokens.shade_panel_bg_color.resolveColor(getContext());
+            int layerFg = ColorTokens.shade_panel_fg_color.resolveColor(getContext(), colorMode);
+            int layerBg = ColorTokens.shade_panel_bg_color.resolveColor(getContext(), colorMode);
             mBottomSheetBackgroundColorOverBlur = ColorUtils.compositeColors(layerFg, layerBg);
             mBottomSheetBackgroundColorBlurFallback =
-                    ColorTokens.BottomSheetBackgroundColorBlurFallback.resolveColor(getContext());
+                    ColorTokens.BottomSheetBackgroundColorBlurFallback.resolveColor(getContext(), colorMode);
         }
-        mBottomSheetBackgroundColorLegacy = ColorTokens.SurfaceDimColor.resolveColor(getContext());
+        mBottomSheetBackgroundColorLegacy =
+                ColorTokens.SurfaceDimColor.resolveColor(getContext(), colorMode);
         updateBottomSheetBackgroundColor();
         invalidate();
     }
