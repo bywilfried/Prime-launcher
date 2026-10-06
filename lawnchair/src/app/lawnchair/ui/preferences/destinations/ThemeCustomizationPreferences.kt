@@ -129,6 +129,10 @@ private fun ThemeSection(
                     if (role == ThemeColorRole.GLOBAL_ACCENT ||
                         role == ThemeColorRole.DRAWER_BACKGROUND ||
                         role == ThemeColorRole.DRAWER_SEARCH_BACKGROUND ||
+                        role == ThemeColorRole.DRAWER_SEARCH_TEXT ||
+                        role == ThemeColorRole.DRAWER_SEARCH_HINT ||
+                        role == ThemeColorRole.DRAWER_SEARCH_ICON ||
+                        role == ThemeColorRole.DRAWER_SEARCH_BORDER ||
                         role == ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND ||
                         role == ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND ||
                         role == ThemeColorRole.TABS_CATEGORY_TEXT
