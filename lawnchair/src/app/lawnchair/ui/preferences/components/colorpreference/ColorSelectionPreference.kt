@@ -230,7 +230,8 @@ fun PrimeColorSelection(
         is ColorOption.DynamicColor -> 2
         else -> 0
     }
-    val pagerState = rememberPagerState(initialPage = defaultTabIndex, pageCount = { 3 })
+    val pagerState = rememberPagerState(initialPage = if (defaultTabIndex == 0) 0 else 1, pageCount = { 2 })
+    val customMode = remember(appliedColor) { mutableIntStateOf(if (appliedColor is ColorOption.DynamicColor) 1 else 0) }
     val onPresetClick = { option: ColorOption ->
         selectedColor.intValue = if (option == ColorOption.Default) {
             themeFallbackColor
@@ -313,18 +314,40 @@ fun PrimeColorSelection(
                             isSwatchSelected = { it == currentAppliedColor },
                         )
                     }
-                    1 -> CustomColorPicker(
-                        selectedColor = selectedColor.intValue,
-                        onSelect = { selectedColor.intValue = it },
-                    )
-                    2 -> PrimeDynamicColorPicker(
-                        initial = currentAppliedColor as? ColorOption.DynamicColor,
-                        onApply = { option ->
-                            currentAppliedColor = option
-                            onApply(option)
-                            navController.popBackStack()
-                        },
-                    )
+                    1 -> Column {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(space = 8.dp),
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        ) {
+                            Chip(
+                                label = "Fixe",
+                                onClick = { customMode.intValue = 0 },
+                                currentOffset = customMode.intValue.toFloat(),
+                                page = 0,
+                            )
+                            Chip(
+                                label = "Dynamique",
+                                onClick = { customMode.intValue = 1 },
+                                currentOffset = customMode.intValue.toFloat(),
+                                page = 1,
+                            )
+                        }
+                        if (customMode.intValue == 0) {
+                            CustomColorPicker(
+                                selectedColor = selectedColor.intValue,
+                                onSelect = { selectedColor.intValue = it },
+                            )
+                        } else {
+                            PrimeDynamicColorPicker(
+                                initial = currentAppliedColor as? ColorOption.DynamicColor,
+                                onApply = { option ->
+                                    currentAppliedColor = option
+                                    onApply(option)
+                                    navController.popBackStack()
+                                },
+                            )
+                        }
+                    }
                 }
             }
         }
