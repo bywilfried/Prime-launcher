@@ -3,8 +3,7 @@ package app.lawnchair.theme
 import android.content.Context
 import app.lawnchair.theme.color.ColorOption
 import app.lawnchair.theme.color.tokens.ColorTokens
-import com.android.launcher3.Flags
-import com.android.launcher3.views.ActivityContext
+import app.lawnchair.ui.theme.getSystemAccent
 
 /**
  * Official theme values and the first common semantic resolver.
@@ -78,24 +77,9 @@ object ThemeColors {
         else -> context.getSystemAccent(variant == ThemeVariant.DARK)
     }
 
-    private fun legacyDrawerBackground(context: Context, variant: ThemeVariant): Int {
-        val colorScheme = ThemeProvider.INSTANCE.get(context).colorScheme
-        val mode = if (variant == ThemeVariant.DARK) UiColorMode.Dark else UiColorMode.Light
-
-        if (!Flags.allAppsBlur()) {
-            return ColorTokens.SurfaceDimColor.resolveColor(context, colorScheme, mode)
-        }
-
-        val blurEnabled = runCatching {
-            ActivityContext.lookupContext(context).isAllAppsBackgroundBlurEnabled()
-        }.getOrDefault(false)
-
-        return if (!blurEnabled) {
-            ColorTokens.BottomSheetBackgroundColorBlurFallback.resolveColor(context, colorScheme, mode)
-        } else {
-            val layerFg = ColorTokens.shade_panel_fg_color.resolveColor(context, colorScheme, mode)
-            val layerBg = ColorTokens.shade_panel_bg_color.resolveColor(context, colorScheme, mode)
-            androidx.core.graphics.ColorUtils.compositeColors(layerFg, layerBg)
-        }
-    }
-}
+    private fun legacyDrawerBackground(context: Context, variant: ThemeVariant): Int =
+        ColorTokens.SurfaceDimColor.resolveColor(
+            context,
+            ThemeProvider.INSTANCE.get(context).colorScheme,
+            if (variant == ThemeVariant.DARK) UiColorMode.Dark else UiColorMode.Light,
+        )}
