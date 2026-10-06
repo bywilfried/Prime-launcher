@@ -125,7 +125,7 @@ fun ColorSelection(
                     page = 0,
                 )
                 Chip(
-                    label = "Fixe",
+                    label = stringResource(id = R.string.custom),
                     onClick = {
                         mMSDLPlayerWrapper.playToken(MSDLToken.TAP_LOW_EMPHASIS)
                         scrollToPage(1)
