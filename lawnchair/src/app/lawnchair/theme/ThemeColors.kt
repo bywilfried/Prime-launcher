@@ -60,6 +60,21 @@ object ThemeColors {
         }
     }
 
+
+    /**
+     * Resolves a Lawnchair token for an explicit Prime variant, bypassing a stale View theme.
+     */
+    @JvmStatic
+    fun resolveLegacyToken(
+        context: Context,
+        token: app.lawnchair.theme.color.tokens.ColorToken,
+        variant: ThemeVariant,
+    ): Int = token.resolveColor(
+        context,
+        ThemeProvider.INSTANCE.get(context).colorScheme,
+        if (variant == ThemeVariant.DARK) UiColorMode.Dark else UiColorMode.Light,
+    )
+
     private fun legacy(context: Context, role: ThemeColorRole, variant: ThemeVariant): Int = when (role) {
         ThemeColorRole.GLOBAL_ACCENT -> LEGACY_EDITABLE_ELEMENTS
         // Preserve the exact pre-ThemeProfile drawer surface for each Legacy variant.
