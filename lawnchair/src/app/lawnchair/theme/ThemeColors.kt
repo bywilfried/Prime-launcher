@@ -79,7 +79,8 @@ object ThemeColors {
     private fun legacy(context: Context, role: ThemeColorRole, variant: ThemeVariant): Int = when (role) {
         // This role historically follows the selected accent source and color style through
         // the dynamic palette. Resolve the same token used by the launcher.
-        ThemeColorRole.GLOBAL_ACCENT -> resolveLegacyToken(context, ColorTokens.ColorAccent, variant)
+        ThemeColorRole.GLOBAL_ACCENT ->
+            resolveLegacyToken(context, ColorTokens.PrimeInteractiveColor, variant)
         // Mirror the historical drawer runtime branch so the default swatch matches the drawer.
         ThemeColorRole.DRAWER_BACKGROUND -> legacyDrawerBackground(context, variant)
         // Category tabs keep their historical contrast hierarchy, but derive their hue from the
