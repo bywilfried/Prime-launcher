@@ -167,6 +167,7 @@ fun PreferenceNavigation(
                     ThemeColorRole.DRAWER_BACKGROUND -> "Tiroir — fond"
                     ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE -> "Recherche — fond inactif"
                     ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE -> "Recherche — fond actif"
+                    ThemeColorRole.DRAWER_SEARCH_SELECTED_RESULT_BACKGROUND -> "Recherche — résultat sélectionné"
                     ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND -> "Onglets de catégorie — actif"
                     ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND -> "Onglets de catégorie — inactif"
                     ThemeColorRole.TABS_CATEGORY_TEXT -> "Onglets de catégorie — texte"
