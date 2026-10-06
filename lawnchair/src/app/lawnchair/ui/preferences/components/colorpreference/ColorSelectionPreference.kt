@@ -232,7 +232,11 @@ fun PrimeColorSelection(
     }
     val pagerState = rememberPagerState(initialPage = defaultTabIndex, pageCount = { 3 })
     val onPresetClick = { option: ColorOption ->
-        selectedColor.intValue = option.forCustomPicker(context)
+        selectedColor.intValue = if (option == ColorOption.Default) {
+            themeFallbackColor
+        } else {
+            option.forCustomPicker(context)
+        }
         currentAppliedColor = option
         onApply(option)
     }
