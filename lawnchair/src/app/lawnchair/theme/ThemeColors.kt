@@ -89,7 +89,8 @@ object ThemeColors {
         // Search background and inactive category tabs intentionally share the same Legacy
         // dynamic recipe, not the same semantic value. They therefore evolve together with the
         // accent source/style while remaining independently overridable.
-        ThemeColorRole.DRAWER_SEARCH_BACKGROUND,
+        ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE,
+        ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE,
         ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND ->
             resolveLegacyToken(context, ColorTokens.AllAppsTabBackground, variant)
         ThemeColorRole.DRAWER_SEARCH_TEXT,
