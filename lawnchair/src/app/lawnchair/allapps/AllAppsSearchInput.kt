@@ -53,6 +53,10 @@ import app.lawnchair.qsb.providers.PixelSearch
 import app.lawnchair.qsb.rememberAllAppsQsbState
 import app.lawnchair.search.LawnchairRecentSuggestionProvider
 import app.lawnchair.search.algorithms.LawnchairSearchAlgorithm
+import app.lawnchair.theme.ThemeColorRole
+import app.lawnchair.theme.ThemeColors
+import app.lawnchair.theme.ThemeProfile
+import app.lawnchair.theme.effectiveThemeVariant
 import app.lawnchair.theme.color.tokens.ColorTokens
 import app.lawnchair.ui.theme.LawnchairTheme
 import app.lawnchair.util.ProvideLifecycleState
@@ -180,11 +184,20 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
                     showLens = lensIntent != null,
                 )
 
-                val backgroundColor = if (supportBlur) {
-                    ColorTokens.SearchboxHighlightBlur.resolveColor(context)
-                } else {
-                    ColorTokens.SearchboxHighlight.resolveColor(context)
-                }
+                val profile = ThemeProfile.current(context)
+                val variant = context.effectiveThemeVariant()
+                val backgroundColor = ThemeColors.resolve(
+                    context,
+                    profile,
+                    ThemeColorRole.DRAWER_SEARCH_BACKGROUND,
+                    variant,
+                )
+                val borderColor = ThemeColors.resolve(
+                    context,
+                    profile,
+                    ThemeColorRole.DRAWER_SEARCH_BORDER,
+                    variant,
+                )
 
                 val backgroundAlpha by animateIntAsState(
                     if (isFocused || !queryEmpty) 0 else 100,
@@ -197,7 +210,9 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
                     backgroundColor = backgroundColor,
                     backgroundAlpha = backgroundAlpha,
                     cornerRadius = 1f,
-                    strokeColor = null,
+                    strokeColor = borderColor,
+                    // Preserve Legacy's borderless search bar geometry. The semantic border
+                    // color is resolved now and is ready for styles/modes that expose a stroke.
                     strokeWidth = 0f,
                 )
 
