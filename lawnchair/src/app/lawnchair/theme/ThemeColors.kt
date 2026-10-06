@@ -26,21 +26,13 @@ object ThemeColors {
         }
     }
 
-    /**
-     * Preview of an official value. Runtime consumers can supply their historical fallback when
-     * that value is context-bound (the drawer is the first such role).
-     */
+    /** Preview and runtime deliberately share the same semantic resolution path. */
     fun preview(
         context: Context,
         profile: ThemeProfile,
         role: ThemeColorRole,
         variant: ThemeVariant,
-        historicalFallback: Int? = null,
-    ): Int = if (role == ThemeColorRole.DRAWER_BACKGROUND && historicalFallback != null) {
-        historicalFallback
-    } else {
-        official(context, profile, role, variant)
-    }
+    ): Int = resolve(context, profile, role, variant)
 
     fun resolve(
         context: Context,
