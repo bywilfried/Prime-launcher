@@ -32,7 +32,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Build
-import androidx.compose.material.icons.rounded.Science
 import androidx.compose.material.icons.rounded.TipsAndUpdates
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -205,7 +204,7 @@ fun PreferencesDashboard(
             PreferenceCategory(
                 label = stringResource(R.string.experimental_features_label),
                 description = stringResource(R.string.internal_description),
-                imageVector = Icons.Rounded.Science,
+                iconResource = R.drawable.ic_experimental_features,
                 onNavigate = { onNavigate(ExperimentalFeatures) },
                 isSelected = currentRoute is ExperimentalFeatures,
             )
