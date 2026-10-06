@@ -103,6 +103,16 @@ object ThemeColors {
             resolveLegacyToken(context, ColorTokens.TextColorPrimary, variant)
         ThemeColorRole.DRAWER_SEARCH_BORDER ->
             resolveLegacyToken(context, ColorTokens.ColorAccent, variant)
+        ThemeColorRole.DRAWER_SEARCH_SELECTED_RESULT_BACKGROUND ->
+            resolveLegacyToken(
+                context,
+                if (com.android.systemui.shared.system.BlurUtils.supportsBlursOnWindows()) {
+                    ColorTokens.FocusHighlightBlur
+                } else {
+                    ColorTokens.FocusHighlight
+                },
+                variant,
+            )
         ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND ->
             resolveLegacyToken(context, ColorTokens.AllAppsTabBackgroundSelected, variant)
         ThemeColorRole.TABS_CATEGORY_TEXT ->
