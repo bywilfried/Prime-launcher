@@ -133,6 +133,7 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
         hint = ViewCompat.requireViewById(this, R.id.hint)
 
         input = ViewCompat.requireViewById(this, R.id.input)
+        input.applyPrimeSearchTheme()
 
         qsbShell = ViewCompat.requireViewById(this, R.id.qsb_shell)
 
@@ -419,7 +420,12 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
             focusedLowerCase.matches(Regex("^[\\x00-\\x7F]*$")) &&
             focusedLowerCase.startsWith(inputLowerCase)
         ) {
-            val hintColor = Themes.getAttrColor(context, android.R.attr.textColorTertiary)
+            val hintColor = ThemeColors.resolve(
+                context,
+                ThemeProfile.current(context),
+                ThemeColorRole.DRAWER_SEARCH_HINT,
+                context.effectiveThemeVariant(),
+            )
             val hintText = SpannableStringBuilder(inputString)
                 .append(focusedLowerCase.substring(inputLowerCase.length))
             hintText.setSpan(ForegroundColorSpan(Color.TRANSPARENT), 0, inputLowerCase.length, SPAN_POINT_MARK)
