@@ -222,6 +222,14 @@ fun PreferencesDashboard(
             )
 
             PreferenceCategory(
+                label = stringResource(R.string.experimental_features_label),
+                description = stringResource(R.string.internal_description),
+                iconResource = R.drawable.ic_general,
+                onNavigate = { onNavigate(ExperimentalFeatures) },
+                isSelected = currentRoute is ExperimentalFeatures,
+            )
+
+            PreferenceCategory(
                 label = stringResource(R.string.prime_development_options),
                 description = stringResource(R.string.prime_development_options_description),
                 iconResource = R.drawable.ic_general,
