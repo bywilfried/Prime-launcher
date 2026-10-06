@@ -82,6 +82,15 @@ object ThemeColors {
         ThemeColorRole.GLOBAL_ACCENT -> resolveLegacyToken(context, ColorTokens.ColorAccent, variant)
         // Mirror the historical drawer runtime branch so the default swatch matches the drawer.
         ThemeColorRole.DRAWER_BACKGROUND -> legacyDrawerBackground(context, variant)
+        // Category tabs keep their historical contrast hierarchy, but derive their hue from the
+        // current Lawnchair dynamic palette. Changing accent source/style therefore keeps the
+        // drawer and its tabs visually coherent without storing fixed greys.
+        ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND ->
+            resolveLegacyToken(context, ColorTokens.AllAppsTabBackground, variant)
+        ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND ->
+            resolveLegacyToken(context, ColorTokens.AllAppsTabBackgroundSelected, variant)
+        ThemeColorRole.TABS_CATEGORY_TEXT ->
+            resolveLegacyToken(context, ColorTokens.TextColorPrimary, variant)
         // Roles are added to the official Legacy palette as their runtime consumers are wired.
         // Until then this fallback is preview-only and must not be treated as their final token.
         else -> context.getSystemAccent(variant == ThemeVariant.DARK)
