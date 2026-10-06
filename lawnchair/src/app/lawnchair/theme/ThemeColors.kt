@@ -85,6 +85,10 @@ object ThemeColors {
         // Category tabs keep their historical contrast hierarchy, but derive their hue from the
         // current Lawnchair dynamic palette. Changing accent source/style therefore keeps the
         // drawer and its tabs visually coherent without storing fixed greys.
+        // Search background and inactive category tabs intentionally share the same Legacy
+        // dynamic recipe, not the same semantic value. They therefore evolve together with the
+        // accent source/style while remaining independently overridable.
+        ThemeColorRole.DRAWER_SEARCH_BACKGROUND,
         ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND ->
             resolveLegacyToken(context, ColorTokens.AllAppsTabBackground, variant)
         ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND ->
