@@ -106,7 +106,8 @@ fun getColorScheme(darkTheme: Boolean): ColorScheme {
     DisposableEffect(context) {
         val prefs = context.getSharedPreferences("prime_theme_color_overrides", android.content.Context.MODE_PRIVATE)
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key?.startsWith("legacy.") == true) themeOverrideRevision++
+            val profilePrefix = "${ThemeProfile.current(context).id.value}."
+            if (key?.startsWith(profilePrefix) == true) themeOverrideRevision++
         }
         prefs.registerOnSharedPreferenceChangeListener(listener)
         onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
@@ -118,7 +119,7 @@ fun getColorScheme(darkTheme: Boolean): ColorScheme {
     themeOverrideRevision // Compose dependency: re-resolve after an override changes.
     val semanticAccent = ThemeColors.resolve(
         context = context,
-        profile = ThemeProfile.LEGACY,
+        profile = ThemeProfile.current(context),
         role = ThemeColorRole.GLOBAL_ACCENT,
         variant = variant,
     )
