@@ -1021,8 +1021,13 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         // Legacy's official text is automatic: keep maximum contrast with the actual pill
         // background, including category/mode colors. An explicit theme customization wins.
         if (override == app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
-            return androidx.core.graphics.ColorUtils.calculateLuminance(backgroundColor) > 0.5
-                    ? 0xFF111111 : 0xFFFFFFFF;
+            // Pick whichever of near-black / white has the higher WCAG contrast ratio.
+            // A fixed luminance threshold can choose the wrong side for mid-tone dynamic colors.
+            double backgroundLuminance =
+                    androidx.core.graphics.ColorUtils.calculateLuminance(backgroundColor);
+            double blackContrast = (backgroundLuminance + 0.05) / 0.05;
+            double whiteContrast = 1.05 / (backgroundLuminance + 0.05);
+            return blackContrast >= whiteContrast ? 0xFF111111 : 0xFFFFFFFF;
         }
         return app.lawnchair.theme.ThemeColors.INSTANCE.resolve(
                 getContext(), profile,
