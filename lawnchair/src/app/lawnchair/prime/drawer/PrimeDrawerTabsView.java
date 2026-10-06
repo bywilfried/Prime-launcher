@@ -364,7 +364,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                     ? 0xFF111111 : 0xFFFFFFFF);
         } else {
             background.setColor(resolveInactiveTabColor());
-            pill.setTextColor(Themes.getAttrColor(getContext(), android.R.attr.textColorPrimary));
+            pill.setTextColor(resolveTabTextColor());
         }
         pill.setBackground(background);
     }
@@ -1004,8 +1004,10 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         // from the shared active-tabs master here.
         app.lawnchair.theme.color.ColorOption option = prefs2.getTabsColorBlocking();
         if (option == app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
-            return app.lawnchair.theme.color.tokens.ColorTokens.AllAppsTabBackgroundSelected
-                    .resolveColor(getContext());
+            return app.lawnchair.theme.ThemeColors.resolveLegacyToken(
+                    getContext(),
+                    app.lawnchair.theme.color.tokens.ColorTokens.AllAppsTabBackgroundSelected,
+                    app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(getContext()));
         }
         if (option instanceof app.lawnchair.theme.color.ColorOption.CustomColor) {
             return ((app.lawnchair.theme.color.ColorOption.CustomColor) option).getColor();
@@ -1019,9 +1021,8 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             return 0xFF007FFF;
         }
         if (option == app.lawnchair.theme.color.ColorOption.SystemAccent.INSTANCE) {
-            boolean darkTheme = (getResources().getConfiguration().uiMode
-                    & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
-                    == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+            boolean darkTheme = app.lawnchair.theme.ThemeAppearanceModeKt
+                    .effectiveThemeVariant(getContext()) == app.lawnchair.theme.ThemeVariant.DARK;
             // Match the color shown by Lawnchair's picker. Using lightColor unconditionally
             // made dark-theme System accent resolve to the wrong (red) palette entry.
             return (darkTheme
@@ -1038,6 +1039,13 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                 .resolveColor(getContext());
     }
 
+    private int resolveTabTextColor() {
+        return app.lawnchair.theme.ThemeColors.resolveLegacyToken(
+                getContext(),
+                app.lawnchair.theme.color.tokens.ColorTokens.TextColorPrimary,
+                app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(getContext()));
+    }
+
     private int resolveInactiveTabColor() {
         com.android.launcher3.InvariantDeviceProfile.GridOption grid =
                 com.android.launcher3.InvariantDeviceProfile.INSTANCE.get(getContext()).closestProfile;
@@ -1049,8 +1057,10 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         PreferenceManager2 prefs2 = PreferenceManager2.getInstance(getContext());
         app.lawnchair.theme.color.ColorOption option = prefs2.getInactiveTabsColorBlocking();
         if (option == app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
-            return app.lawnchair.theme.color.tokens.ColorTokens.AllAppsTabBackground
-                    .resolveColor(getContext());
+            return app.lawnchair.theme.ThemeColors.resolveLegacyToken(
+                    getContext(),
+                    app.lawnchair.theme.color.tokens.ColorTokens.AllAppsTabBackground,
+                    app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(getContext()));
         }
         if (option instanceof app.lawnchair.theme.color.ColorOption.CustomColor) {
             return ((app.lawnchair.theme.color.ColorOption.CustomColor) option).getColor();
@@ -1064,7 +1074,8 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             return 0x00000000;
         }
         if (option == app.lawnchair.theme.color.ColorOption.SystemAccent.INSTANCE) {
-            return (Utilities.isDarkTheme(getContext())
+            return (app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(getContext())
+                    == app.lawnchair.theme.ThemeVariant.DARK
                     ? option.getColorPreferenceEntry().getDarkColor()
                     : option.getColorPreferenceEntry().getLightColor()).invoke(getContext());
         }
