@@ -315,6 +315,7 @@ class LawnchairLauncher : QuickstepLauncher() {
     )
 
     fun updateTheme() {
+        ThemeColorInvalidation.invalidate()
         if (themeProvider.colorScheme != colorScheme) {
             recreate()
         } else {
