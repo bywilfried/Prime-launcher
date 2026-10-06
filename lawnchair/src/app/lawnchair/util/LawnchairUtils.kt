@@ -178,12 +178,9 @@ fun overrideAllAppsTextColor(textView: TextView) {
     // The drawer surface can become light independently of the Android day/night mode
     // (for example with the Monochromatic color style). Always choose the label color
     // from the effective drawer surface instead of keeping the theme's initial text color.
-    val textColorAttr = if (backgroundColor.luminance > 0.5f || opacity <= 0.3f) {
-        R.attr.allAppsAlternateTextColor
-    } else {
-        R.attr.allAppsTextColor
+    if (backgroundColor.luminance > 0.5f || opacity <= 0.3f) {
+        textView.setTextColor(Themes.getAttrColor(context, R.attr.allAppsAlternateTextColor))
     }
-    textView.setTextColor(Themes.getAttrColor(context, textColorAttr))
 }
 
 @Suppress("UNCHECKED_CAST")
