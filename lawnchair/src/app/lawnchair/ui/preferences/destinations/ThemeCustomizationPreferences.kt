@@ -128,7 +128,8 @@ private fun ThemeSection(
                 rolesForUi(section).forEach { role ->
                     if (role == ThemeColorRole.GLOBAL_ACCENT ||
                         role == ThemeColorRole.DRAWER_BACKGROUND ||
-                        role == ThemeColorRole.DRAWER_SEARCH_BACKGROUND ||
+                        role == ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE ||
+                        role == ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE ||
                         role == ThemeColorRole.DRAWER_SEARCH_TEXT ||
                         role == ThemeColorRole.DRAWER_SEARCH_HINT ||
                         role == ThemeColorRole.DRAWER_SEARCH_ICON ||
@@ -192,7 +193,8 @@ private fun roleLabel(role: ThemeColorRole): String = when (role) {
     ThemeColorRole.HOME_FOLDER_BORDER -> "Dossiers — bordure"
     ThemeColorRole.DRAWER_BACKGROUND -> "Général — fond"
     ThemeColorRole.DRAWER_TEXT -> "Général — texte"
-    ThemeColorRole.DRAWER_SEARCH_BACKGROUND -> "Recherche — fond"
+    ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE -> "Recherche — fond inactif"
+    ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE -> "Recherche — fond actif"
     ThemeColorRole.DRAWER_SEARCH_TEXT -> "Recherche — texte"
     ThemeColorRole.DRAWER_SEARCH_HINT -> "Recherche — texte indicatif"
     ThemeColorRole.DRAWER_SEARCH_ICON -> "Recherche — icônes"
