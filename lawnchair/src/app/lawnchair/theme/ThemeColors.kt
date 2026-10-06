@@ -3,14 +3,14 @@ package app.lawnchair.theme
 import android.content.Context
 import app.lawnchair.theme.color.ColorOption
 import app.lawnchair.theme.color.tokens.ColorTokens
-import app.lawnchair.ui.theme.getSystemAccent
+import com.android.launcher3.Flags
+import com.android.launcher3.views.ActivityContext
 
 /**
  * Official theme values and the first common semantic resolver.
  *
- * Legacy's editable-elements color deliberately starts from the turquoise accent Prime currently
- * displays. Both official variants use that value for now; they can diverge later without changing
- * the role or persisted override format.
+ * Legacy official values are resolved from the same dynamic palette used by the launcher.
+ * Fixed values are only used when the historical role itself was fixed.
  */
 object ThemeColors {
     fun official(
@@ -68,20 +68,34 @@ object ThemeColors {
     )
 
     private fun legacy(context: Context, role: ThemeColorRole, variant: ThemeVariant): Int = when (role) {
-        ThemeColorRole.GLOBAL_ACCENT -> LEGACY_EDITABLE_ELEMENTS
-        // Preserve the exact pre-ThemeProfile drawer surface for each Legacy variant.
+        // This role historically follows the selected accent source and color style through
+        // the dynamic palette. Resolve the same token used by the launcher.
+        ThemeColorRole.GLOBAL_ACCENT -> resolveLegacyToken(context, ColorTokens.ColorAccent, variant)
+        // Mirror the historical drawer runtime branch so the default swatch matches the drawer.
         ThemeColorRole.DRAWER_BACKGROUND -> legacyDrawerBackground(context, variant)
         // Roles are added to the official Legacy palette as their runtime consumers are wired.
         // Until then this fallback is preview-only and must not be treated as their final token.
         else -> context.getSystemAccent(variant == ThemeVariant.DARK)
     }
 
-    private fun legacyDrawerBackground(context: Context, variant: ThemeVariant): Int =
-        ColorTokens.SurfaceDimColor.resolveColor(
-            context,
-            ThemeProvider.INSTANCE.get(context).colorScheme,
-            if (variant == ThemeVariant.DARK) UiColorMode.Dark else UiColorMode.Light,
-        )
+    private fun legacyDrawerBackground(context: Context, variant: ThemeVariant): Int {
+        val colorScheme = ThemeProvider.INSTANCE.get(context).colorScheme
+        val mode = if (variant == ThemeVariant.DARK) UiColorMode.Dark else UiColorMode.Light
 
-    private const val LEGACY_EDITABLE_ELEMENTS: Int = 0xFF80CBC4.toInt()
+        if (!Flags.allAppsBlur()) {
+            return ColorTokens.SurfaceDimColor.resolveColor(context, colorScheme, mode)
+        }
+
+        val blurEnabled = runCatching {
+            ActivityContext.lookupContext(context).isAllAppsBackgroundBlurEnabled()
+        }.getOrDefault(false)
+
+        return if (!blurEnabled) {
+            ColorTokens.BottomSheetBackgroundColorBlurFallback.resolveColor(context, colorScheme, mode)
+        } else {
+            val layerFg = ColorTokens.shade_panel_fg_color.resolveColor(context, colorScheme, mode)
+            val layerBg = ColorTokens.shade_panel_bg_color.resolveColor(context, colorScheme, mode)
+            androidx.core.graphics.ColorUtils.compositeColors(layerFg, layerBg)
+        }
+    }
 }
