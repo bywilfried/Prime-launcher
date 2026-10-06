@@ -85,6 +85,8 @@ object ThemeColors {
             resolveLegacyToken(context, ColorTokens.Surface, variant)
         ThemeColorRole.GLOBAL_SETTINGS_CARD_BACKGROUND ->
             resolveLegacyToken(context, ColorTokens.SurfaceContainerHighest, variant)
+        ThemeColorRole.GLOBAL_NOTIFICATION_DOT ->
+            resolveLegacyToken(context, ColorTokens.DotColor, variant)
         // Mirror the historical drawer runtime branch so the default swatch matches the drawer.
         ThemeColorRole.DRAWER_BACKGROUND -> legacyDrawerBackground(context, variant)
         // Category tabs keep their historical contrast hierarchy, but derive their hue from the
