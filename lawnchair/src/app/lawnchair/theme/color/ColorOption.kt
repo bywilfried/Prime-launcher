@@ -42,6 +42,26 @@ sealed class ColorOption {
         override fun toString() = "wallpaper_primary"
     }
 
+    data class DynamicColor(
+        val swatch: String,
+        val shade: Int,
+        val lStar: Int? = null,
+    ) : ColorOption() {
+        override val isSupported = true
+
+        override val colorPreferenceEntry = ColorPreferenceEntry<ColorOption>(
+            this,
+            { "Dynamique · $swatch $shade" },
+            { context -> resolveDynamicColor(context, this, false) },
+            { context -> resolveDynamicColor(context, this, true) },
+        )
+
+        override fun toString() = buildString {
+            append("dynamic|").append(swatch).append('|').append(shade)
+            lStar?.let { append('|').append(it) }
+        }
+    }
+
     class CustomColor(val color: Int) : ColorOption() {
         override val isSupported = true
 
@@ -80,7 +100,16 @@ sealed class ColorOption {
             "system_accent" -> SystemAccent
             "wallpaper_primary" -> WallpaperPrimary
             "default" -> Default
-            else -> instantiateCustomColor(stringValue)
+            else -> if (stringValue.startsWith("dynamic|")) instantiateDynamicColor(stringValue)
+            else instantiateCustomColor(stringValue)
+        }
+
+        private fun instantiateDynamicColor(stringValue: String): ColorOption {
+            val parts = stringValue.split('|')
+            if (parts.size < 3) return Default
+            val shade = parts[2].toIntOrNull() ?: return Default
+            val lStar = parts.getOrNull(3)?.toIntOrNull()
+            return DynamicColor(parts[1], shade, lStar)
         }
 
         private fun instantiateCustomColor(stringValue: String): ColorOption {
