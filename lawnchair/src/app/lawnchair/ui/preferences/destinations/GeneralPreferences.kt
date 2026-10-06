@@ -51,6 +51,7 @@ import app.lawnchair.ui.preferences.components.notificationServiceEnabled
 import app.lawnchair.ui.preferences.data.liveinfo.liveInformationManager
 import app.lawnchair.ui.preferences.navigation.GeneralIconPack
 import app.lawnchair.ui.preferences.navigation.GeneralIconShape
+import app.lawnchair.ui.preferences.navigation.ThemeCustomization
 import com.android.launcher3.BuildConfig
 import com.android.launcher3.R
 import com.android.launcher3.Utilities
@@ -202,6 +203,11 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
             ExpandAndShrink(visible = showColorStyle) {
                 ColorStylePreference(prefs2.colorStyle.getAdapter())
             }
+            NavigationActionPreference(
+                label = "Personnalisation",
+                destination = ThemeCustomization,
+                subtitle = "Modifier les couleurs du thème sélectionné",
+            )
         }
 
         val notificationEnabled by remember { notificationDotsEnabled(context) }.collectAsStateWithLifecycle(initialValue = false)
