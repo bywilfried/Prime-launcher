@@ -6,7 +6,6 @@ import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences.preferenceManager
 import app.lawnchair.ui.preferences.components.controls.ListPreference
 import app.lawnchair.ui.preferences.components.controls.ListPreferenceEntry
-import app.lawnchair.ui.preferences.navigation.ThemeCustomization
 import com.android.launcher3.R
 import com.android.launcher3.Utilities
 
@@ -42,10 +41,5 @@ fun ThemePreference() {
         adapter = preferenceManager().launcherTheme.getAdapter(),
         entries = themeEntries,
         label = stringResource(id = R.string.theme_appearance_label),
-    )
-    NavigationActionPreference(
-        label = "Personnaliser le thème",
-        destination = ThemeCustomization,
-        subtitle = "Modifier les couleurs du thème sélectionné",
     )
 }
