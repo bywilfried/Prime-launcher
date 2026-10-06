@@ -166,7 +166,8 @@ fun PreferenceNavigation(
                     else -> role.id
                 },
                 appliedColor = applied,
-                defaultPreviewColor = ThemeColors.preview(context, profile, role, variant),
+                // The Default swatch is the parent/theme value, never the current override.
+                defaultPreviewColor = ThemeColors.official(context, profile, role, variant),
                 onApply = { option ->
                     overrides.set(profile, variant, role, option)
                     applied = option
