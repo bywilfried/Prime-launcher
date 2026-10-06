@@ -157,6 +157,14 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         refreshForConfiguration(parent, mRepository.getConfiguration());
     }
 
+    /** Re-resolves every theme-backed pill color without rebuilding the launcher. */
+    public void refreshPrimeThemeColors() {
+        if (mHeaderParent != null) {
+            refresh(mHeaderParent);
+            invalidate();
+        }
+    }
+
     private void refreshForConfiguration(
             FloatingHeaderView parent, PrimeDrawerTabsConfiguration configuration) {
         boolean enabled = mPrefs.getDrawerTabsEnabled().get();
