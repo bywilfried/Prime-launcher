@@ -996,8 +996,24 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
     }
 
     private int resolveDefaultTabColor() {
+        // Category and Tabs-mode overrides are resolved before this method. Theme customization
+        // is the shared master below those local overrides.
+        app.lawnchair.theme.ThemeProfile profile =
+                app.lawnchair.theme.ThemeProfile.Companion.current(getContext());
+        app.lawnchair.theme.ThemeVariant variant =
+                app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(getContext());
+        app.lawnchair.theme.color.ColorOption themeOverride =
+                new app.lawnchair.theme.ThemeColorOverrides(getContext()).get(
+                        profile, variant,
+                        app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND);
+        if (themeOverride != app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
+            return app.lawnchair.theme.ThemeColors.INSTANCE.resolve(
+                    getContext(), profile,
+                    app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND, variant);
+        }
+
         PreferenceManager2 prefs2 = PreferenceManager2.getInstance(getContext());
-        // Category and Tabs-mode overrides are resolved before this method. The old
+        // The old
         // drawerTabsColor preference predates the shared Tabs master and must not form an
         // additional inheritance layer: it can contain stale persisted values that disagree
         // with the current settings UI. Keep the legacy value stored, but inherit directly
@@ -1053,6 +1069,20 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                 .get(grid, PrimeDrawerMode.TABS)
                 .getDefaultInactiveTabsColor();
         if (modeOverride != null) return modeOverride;
+
+        app.lawnchair.theme.ThemeProfile profile =
+                app.lawnchair.theme.ThemeProfile.Companion.current(getContext());
+        app.lawnchair.theme.ThemeVariant variant =
+                app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(getContext());
+        app.lawnchair.theme.color.ColorOption themeOverride =
+                new app.lawnchair.theme.ThemeColorOverrides(getContext()).get(
+                        profile, variant,
+                        app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND);
+        if (themeOverride != app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
+            return app.lawnchair.theme.ThemeColors.INSTANCE.resolve(
+                    getContext(), profile,
+                    app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND, variant);
+        }
 
         PreferenceManager2 prefs2 = PreferenceManager2.getInstance(getContext());
         app.lawnchair.theme.color.ColorOption option = prefs2.getInactiveTabsColorBlocking();
