@@ -133,15 +133,6 @@ fun ColorSelection(
                     currentOffset = pagerState.currentPage + pagerState.currentPageOffsetFraction,
                     page = 1,
                 )
-                Chip(
-                    label = "Dynamique",
-                    onClick = {
-                        mMSDLPlayerWrapper.playToken(MSDLToken.TAP_LOW_EMPHASIS)
-                        scrollToPage(2)
-                    },
-                    currentOffset = pagerState.currentPage + pagerState.currentPageOffsetFraction,
-                    page = 2,
-                )
             }
             HorizontalPager(
                 state = pagerState,
