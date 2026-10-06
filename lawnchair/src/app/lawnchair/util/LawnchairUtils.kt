@@ -246,7 +246,7 @@ fun resolveFolderBackgroundColor(context: Context): Int {
 private fun getAllAppsBaseColor(context: Context, defaultColor: Int): Int {
     // The drawer's master background belongs to the selected theme, not to a drawer mode.
     // Local category/tab overrides are applied later by ActivityAllAppsContainerView.
-    val profile = ThemeProfile.LEGACY
+    val profile = ThemeProfile.current(context)
     val variant = context.effectiveThemeVariant()
     val stored = app.lawnchair.theme.ThemeColorOverrides(context).get(
         profile,
