@@ -170,10 +170,8 @@ fun PreferenceNavigation(
                 onApply = { option ->
                     overrides.set(profile, variant, role, option)
                     applied = option
-                    // Theme roles feed cached Views and themed contexts outside Compose.
-                    // A full launcher restart is intentional here: it gives every semantic role
-                    // the same apply contract and avoids stale All Apps/activity contexts.
-                    app.lawnchair.util.restartLauncher(context)
+                    // Runtime consumers observe semantic theme overrides themselves. Do not restart
+                    // or recreate the launcher for a color edit.
                 },
             )
         }
