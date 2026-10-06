@@ -32,15 +32,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Build
-import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Science
 import androidx.compose.material.icons.rounded.TipsAndUpdates
-import androidx.compose.material3.DropdownMenuGroup
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.surfaceColorAtElevation
@@ -49,7 +44,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.getSystemService
@@ -60,10 +54,8 @@ import app.lawnchair.preferences.observeAsState
 import app.lawnchair.preferences.preferenceManager
 import app.lawnchair.preferences2.firstCached
 import app.lawnchair.preferences2.preferenceManager2
-import app.lawnchair.ui.OverflowMenuGrouped
 import app.lawnchair.ui.preferences.components.AnnouncementPreference
 import app.lawnchair.ui.preferences.components.controls.PreferenceCategory
-import app.lawnchair.ui.preferences.components.controls.WarningPreference
 import app.lawnchair.ui.preferences.components.layout.ClickableIcon
 import app.lawnchair.ui.preferences.components.layout.ExpandAndShrink
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
@@ -88,7 +80,6 @@ import app.lawnchair.ui.preferences.navigation.Search
 import app.lawnchair.ui.preferences.navigation.Smartspace
 import app.lawnchair.ui.util.addIf
 import app.lawnchair.util.isDefaultLauncher
-import app.lawnchair.util.restartLauncher
 import com.android.launcher3.BuildConfig
 import com.android.launcher3.R
 import com.android.launcher3.util.MSDLPlayerWrapper
@@ -116,14 +107,9 @@ fun PreferencesDashboard(
         modifier = modifier,
         verticalArrangement = Arrangement.Top,
         backArrowVisible = false,
-        actions = { PreferencesOverflowMenu(currentRoute = currentRoute, onNavigate = onNavigate) },
+
     ) {
         AnnouncementPreference()
-
-        if (BuildConfig.APPLICATION_ID.contains("nightly") || BuildConfig.DEBUG) {
-            PreferencesDebugWarning()
-            Spacer(modifier = Modifier.height(8.dp))
-        }
 
         if (!context.isDefaultLauncher()) {
             PreferencesSetDefaultLauncherWarning()
@@ -246,112 +232,6 @@ fun PreferencesDashboard(
             )
         }
     }
-}
-
-@Composable
-fun RowScope.PreferencesOverflowMenu(
-    currentRoute: PreferenceRootRoute,
-    onNavigate: (PreferenceRootRoute) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val enableDebug by preferenceManager().enableDebugMenu.observeAsState()
-    val highlightColor = MaterialTheme.colorScheme.surfaceColorAtElevation(4.dp)
-    val highlightShape = MaterialTheme.shapes.large
-
-    if (enableDebug) {
-        ClickableIcon(
-            imageVector = Icons.Rounded.Build,
-            onClick = { onNavigate(DebugMenu) },
-            modifier = Modifier.addIf(currentRoute == DebugMenu) {
-                Modifier
-                    .clip(highlightShape)
-                    .background(highlightColor)
-            },
-        )
-    }
-    val context = LocalContext.current
-
-    OverflowMenuGrouped(
-        modifier = modifier.addIf(
-            listOf(ExperimentalFeatures).any {
-                currentRoute == it
-            },
-        ) {
-            Modifier
-                .clip(highlightShape)
-                .background(highlightColor)
-        },
-    ) {
-        DropdownMenuGroup(
-            shapes = MenuDefaults.groupShape(0, 1),
-        ) {
-            DropdownMenuItem(
-                leadingIcon = {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_about),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                },
-                onClick = {
-                    openAppInfo(context)
-                    hideMenu()
-                },
-                text = {
-                    Text(text = stringResource(id = R.string.app_info_drop_target_label))
-                },
-            )
-            DropdownMenuItem(
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Rounded.Refresh,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                },
-                onClick = {
-                    restartLauncher(context)
-                    hideMenu()
-                },
-                text = {
-                    Text(text = stringResource(id = R.string.debug_restart_launcher))
-                },
-            )
-            DropdownMenuItem(
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Rounded.Science,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                },
-                onClick = {
-                    onNavigate(ExperimentalFeatures)
-                    hideMenu()
-                },
-                text = {
-                    Text(text = stringResource(id = R.string.experimental_features_label))
-                },
-            )
-        }
-
-        Spacer(Modifier.height(MenuDefaults.GroupSpacing))
-    }
-}
-
-@Composable
-fun PreferencesDebugWarning(
-    modifier: Modifier = Modifier,
-) {
-    WarningPreference(
-        // Don't move to strings.xml, no need to translate this warning
-        text = "You are using a development build, which may contain bugs and broken features. Use at your own risk!",
-        modifier = modifier.padding(horizontal = 16.dp),
-        standalone = true,
-        colors = ListItemDefaults.segmentedColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer,
-        ),
-    )
 }
 
 @Composable
