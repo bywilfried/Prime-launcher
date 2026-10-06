@@ -36,6 +36,7 @@ enum class ThemeColorRole(val id: String, val section: Section) {
     DRAWER_SEARCH_HINT("drawer.search.hint", Section.DRAWER),
     DRAWER_SEARCH_ICON("drawer.search.icon", Section.DRAWER),
     DRAWER_SEARCH_BORDER("drawer.search.border", Section.DRAWER),
+    DRAWER_SEARCH_SELECTED_RESULT_BACKGROUND("drawer.search.selected_result.background", Section.DRAWER),
     DRAWER_FOLDER_CLOSED_BACKGROUND("drawer.folder.closed.background", Section.DRAWER),
     DRAWER_FOLDER_CLOSED_TEXT("drawer.folder.closed.text", Section.DRAWER),
     DRAWER_FOLDER_OPEN_BACKGROUND("drawer.folder.open.background", Section.DRAWER),
