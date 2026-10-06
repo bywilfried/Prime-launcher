@@ -5,8 +5,52 @@ import androidx.compose.ui.res.stringResource
 import app.lawnchair.ui.preferences.components.colorpreference.ColorPreferenceEntry
 import app.lawnchair.ui.theme.getSystemAccent
 import app.lawnchair.wallpaper.WallpaperManagerCompat
+import app.lawnchair.theme.ThemeProvider
+import app.lawnchair.theme.UiColorMode
+import app.lawnchair.theme.color.tokens.ColorTokens
+import app.lawnchair.theme.color.tokens.Swatch
+import app.lawnchair.theme.color.tokens.SwatchColorToken
+import app.lawnchair.theme.color.tokens.Shade
+import app.lawnchair.theme.color.tokens.setLStar
 import com.android.launcher3.R
 import com.android.launcher3.Utilities
+
+
+private fun resolveDynamicColor(context: android.content.Context, recipe: ColorOption.DynamicColor, dark: Boolean): Int {
+    val swatch = when (recipe.swatch.lowercase()) {
+        "neutral1" -> Swatch.Neutral1
+        "neutral2" -> Swatch.Neutral2
+        "accent2" -> Swatch.Accent2
+        "accent3" -> Swatch.Accent3
+        else -> Swatch.Accent1
+    }
+    val shade = when (recipe.shade) {
+        0 -> Shade.S0
+        10 -> Shade.S10
+        20 -> Shade.S20
+        50 -> Shade.S50
+        100 -> Shade.S100
+        200 -> Shade.S200
+        300 -> Shade.S300
+        400 -> Shade.S400
+        500 -> Shade.S500
+        600 -> Shade.S600
+        650 -> Shade.S650
+        700 -> Shade.S700
+        800 -> Shade.S800
+        900 -> Shade.S900
+        950 -> Shade.S950
+        1000 -> Shade.S1000
+        else -> Shade.S500
+    }
+    var token: app.lawnchair.theme.color.tokens.ColorToken = SwatchColorToken(swatch, shade)
+    recipe.lStar?.let { token = token.setLStar(it.toDouble()) }
+    return token.resolveColor(
+        context,
+        ThemeProvider.INSTANCE.get(context).colorScheme,
+        if (dark) UiColorMode.Dark else UiColorMode.Light,
+    )
+}
 
 sealed class ColorOption {
 
