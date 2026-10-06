@@ -1064,6 +1064,13 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         } else {
             defaultColor = mBottomSheetBackgroundColorOverBlur;
         }
+        // Expose the exact historical base selected by the live drawer (legacy surface,
+        // blur fallback, or blur composite) to the semantic theme preview. This value is recorded
+        // before user opacity and before any semantic/category override is applied.
+        app.lawnchair.theme.ThemeVariant primeVariant =
+                app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(getContext());
+        app.lawnchair.theme.ThemeColors.recordLegacyDrawerOfficial(primeVariant, defaultColor);
+
         int newColor = LawnchairUtilsKt.getAllAppsBackgroundColor(mActivityContext, defaultColor);
         if (mCachedBottomSheetBgColor != newColor) {
             mCachedBottomSheetBgColor = newColor;
