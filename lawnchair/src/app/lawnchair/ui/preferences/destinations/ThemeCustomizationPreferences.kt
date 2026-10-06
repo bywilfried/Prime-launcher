@@ -136,6 +136,7 @@ private fun ThemeSection(
                         role == ThemeColorRole.DRAWER_SEARCH_HINT ||
                         role == ThemeColorRole.DRAWER_SEARCH_ICON ||
                         role == ThemeColorRole.DRAWER_SEARCH_BORDER ||
+                        role == ThemeColorRole.DRAWER_SEARCH_SELECTED_RESULT_BACKGROUND ||
                         role == ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND ||
                         role == ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND ||
                         role == ThemeColorRole.TABS_CATEGORY_TEXT
@@ -203,6 +204,7 @@ private fun roleLabel(role: ThemeColorRole): String = when (role) {
     ThemeColorRole.DRAWER_SEARCH_HINT -> "Recherche — texte indicatif"
     ThemeColorRole.DRAWER_SEARCH_ICON -> "Recherche — icônes"
     ThemeColorRole.DRAWER_SEARCH_BORDER -> "Recherche — bordure"
+    ThemeColorRole.DRAWER_SEARCH_SELECTED_RESULT_BACKGROUND -> "Recherche — résultat sélectionné"
     ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND -> "Dossier fermé — fond"
     ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> "Dossier fermé — texte"
     ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND -> "Dossier ouvert — fond"
