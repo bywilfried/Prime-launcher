@@ -2,7 +2,9 @@ package app.lawnchair.ui.preferences.destinations
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,6 +41,10 @@ import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
 fun ThemeCustomizationPreferences(modifier: Modifier = Modifier) {
     var variant by rememberSaveable { mutableStateOf(ThemeVariant.LIGHT) }
     var expanded by rememberSaveable { mutableStateOf<ThemeColorRole.Section?>(null) }
+    var confirmThemeReset by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
+    val profile = ThemeProfile.current(context)
+    val overrides = remember(context) { ThemeColorOverrides(context) }
 
     PreferenceLayout(
         backArrowVisible = !LocalIsExpandedScreen.current,
@@ -87,12 +93,12 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier) {
             PreferenceTemplate(
                 title = { Text("Réinitialiser la variante") },
                 description = { Text("Supprimera les personnalisations de la variante affichée.") },
-                enabled = false,
+                onClick = { overrides.resetVariant(profile, variant) },
             )
             PreferenceTemplate(
                 title = { Text("Réinitialiser le thème") },
                 description = { Text("Restaurera les valeurs officielles du thème sélectionné.") },
-                enabled = false,
+                onClick = { confirmThemeReset = true },
             )
             PreferenceTemplate(
                 title = { Text("Exporter le thème") },
@@ -105,6 +111,29 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier) {
                 enabled = false,
             )
         }
+    }
+
+    if (confirmThemeReset) {
+        AlertDialog(
+            onDismissRequest = { confirmThemeReset = false },
+            title = { Text("Réinitialiser le thème ?") },
+            text = { Text("Toutes les personnalisations des variantes Clair et Sombre seront supprimées.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        overrides.resetTheme(profile)
+                        confirmThemeReset = false
+                    },
+                ) {
+                    Text("Réinitialiser")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmThemeReset = false }) {
+                    Text("Annuler")
+                }
+            },
+        )
     }
 }
 
