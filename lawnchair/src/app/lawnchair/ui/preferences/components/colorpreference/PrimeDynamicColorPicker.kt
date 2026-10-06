@@ -1,5 +1,6 @@
 package app.lawnchair.ui.preferences.components.colorpreference
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,13 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.lawnchair.theme.color.ColorOption
@@ -43,7 +51,10 @@ fun PrimeDynamicColorPicker(
         modifier = Modifier.fillMaxWidth().padding(16.dp),
     ) {
         Text("Palette")
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        ) {
             swatches.forEach { value ->
                 Chip(
                     label = value,
@@ -55,6 +66,26 @@ fun PrimeDynamicColorPicker(
         }
 
         val shade = shades[shadeIndex.toInt().coerceIn(shades.indices)]
+        val context = LocalContext.current
+        val previewOption = ColorOption.DynamicColor(
+            swatch = swatch,
+            shade = shade,
+            lStar = if (useLStar) lStar.toInt() else null,
+        )
+        val previewColor = previewOption.colorPreferenceEntry.lightColor(context)
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(Color(previewColor), CircleShape),
+            )
+            Text("Aperçu de la couleur")
+        }
+
         Text("Tonalité : $shade")
         Slider(
             value = shadeIndex,
