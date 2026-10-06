@@ -8,6 +8,8 @@ package app.lawnchair.theme
  */
 enum class ThemeColorRole(val id: String, val section: Section) {
     GLOBAL_ACCENT("global.accent", Section.GLOBAL),
+    GLOBAL_SETTINGS_BACKGROUND("global.settings.background", Section.GLOBAL),
+    GLOBAL_SETTINGS_CARD_BACKGROUND("global.settings.card_background", Section.GLOBAL),
     GLOBAL_NOTIFICATION_DOT("global.notification_dot", Section.GLOBAL),
     GLOBAL_NOTIFICATION_DOT_TEXT("global.notification_dot_text", Section.GLOBAL),
 
