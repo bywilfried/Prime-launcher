@@ -28,7 +28,8 @@ enum class ThemeColorRole(val id: String, val section: Section) {
 
     DRAWER_BACKGROUND("drawer.background", Section.DRAWER),
     DRAWER_TEXT("drawer.text", Section.DRAWER),
-    DRAWER_SEARCH_BACKGROUND("drawer.search.background", Section.DRAWER),
+    DRAWER_SEARCH_BACKGROUND_INACTIVE("drawer.search.background", Section.DRAWER),
+    DRAWER_SEARCH_BACKGROUND_ACTIVE("drawer.search.background_active", Section.DRAWER),
     DRAWER_SEARCH_TEXT("drawer.search.text", Section.DRAWER),
     DRAWER_SEARCH_HINT("drawer.search.hint", Section.DRAWER),
     DRAWER_SEARCH_ICON("drawer.search.icon", Section.DRAWER),
