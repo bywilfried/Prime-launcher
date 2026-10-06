@@ -106,13 +106,13 @@ object ColorTokens {
     // Accent2 keeps the selected wallpaper/source hue obvious while L* preserves the
     // Legacy light/dark surface hierarchy.
     @JvmField val AllAppsTabBackground = DayNightColorToken(
-        Accent2_200.setLStar(78.0),
-        Accent2_600.setLStar(24.0),
+        Accent2_200.setLStar(72.0),
+        Accent2_600.setLStar(34.0),
     )
 
     @JvmField val AllAppsTabBackgroundSelected = DayNightColorToken(
-        Accent2_300.setLStar(62.0),
-        Accent2_800.setLStar(4.0),
+        Accent2_300.setLStar(58.0),
+        Accent2_800.setLStar(14.0),
     )
 
     @JvmField val FocusHighlight = DayNightColorToken(Neutral1_0, Neutral1_700)
