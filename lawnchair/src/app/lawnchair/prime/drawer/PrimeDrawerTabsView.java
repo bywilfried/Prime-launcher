@@ -360,8 +360,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                     : modeTabColor != null ? modeTabColor : resolveDefaultTabColor();
             recordActiveTabColorSource(selectedColor, modeTabColor, activeColor);
             background.setColor(activeColor);
-            pill.setTextColor(androidx.core.graphics.ColorUtils.calculateLuminance(activeColor) > 0.5
-                    ? 0xFF111111 : 0xFFFFFFFF);
+            pill.setTextColor(resolveTabTextColor(activeColor));
         } else {
             background.setColor(resolveInactiveTabColor());
             pill.setTextColor(resolveTabTextColor());
@@ -971,7 +970,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         } else {
             int inactiveColor = resolveInactiveTabColor();
             background.setColor(inactiveColor);
-            pill.setTextColor(Themes.getAttrColor(getContext(), android.R.attr.textColorPrimary));
+            pill.setTextColor(resolveTabTextColor(inactiveColor));
         }
         pill.setBackground(background);
         pill.setOnClickListener(v -> action.run());
@@ -1008,11 +1007,22 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                 app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND, variant);
     }
 
-    private int resolveTabTextColor() {
+    private int resolveTabTextColor(int backgroundColor) {
         app.lawnchair.theme.ThemeProfile profile =
                 app.lawnchair.theme.ThemeProfile.Companion.current(getContext());
         app.lawnchair.theme.ThemeVariant variant =
                 app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(getContext());
+        app.lawnchair.theme.color.ColorOption override =
+                new app.lawnchair.theme.ThemeColorOverrides(getContext()).get(
+                        profile, variant,
+                        app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_TEXT);
+
+        // Legacy's official text is automatic: keep maximum contrast with the actual pill
+        // background, including category/mode colors. An explicit theme customization wins.
+        if (override == app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
+            return androidx.core.graphics.ColorUtils.calculateLuminance(backgroundColor) > 0.5
+                    ? 0xFF111111 : 0xFFFFFFFF;
+        }
         return app.lawnchair.theme.ThemeColors.INSTANCE.resolve(
                 getContext(), profile,
                 app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_TEXT, variant);
