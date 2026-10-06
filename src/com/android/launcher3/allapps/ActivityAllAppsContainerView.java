@@ -1008,22 +1008,24 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
 
     /** Re-resolves the semantic drawer background after a theme/appearance change. */
     public void refreshPrimeThemeColors() {
-        // Configuration changes do not necessarily replace this View's Context/theme. Resolve
-        // Legacy's official day/night defaults explicitly from the effective Prime appearance.
-        boolean dark = app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(getContext())
-                == app.lawnchair.theme.ThemeVariant.DARK;
-        app.lawnchair.theme.UiColorMode colorMode = dark
-                ? app.lawnchair.theme.UiColorMode.Companion.getDark()
-                : app.lawnchair.theme.UiColorMode.Companion.getLight();
+        // Java sees only the one-argument resolveColor() methods of concrete token classes.
+        // Keep explicit variant resolution behind ThemeColors, where the ColorToken interface and
+        // Kotlin UiColorMode API are available without leaking those implementation details here.
+        app.lawnchair.theme.ThemeVariant variant =
+                app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(getContext());
         if (Flags.allAppsBlur()) {
-            int layerFg = ColorTokens.shade_panel_fg_color.resolveColor(getContext(), colorMode);
-            int layerBg = ColorTokens.shade_panel_bg_color.resolveColor(getContext(), colorMode);
+            int layerFg = app.lawnchair.theme.ThemeColors.resolveLegacyToken(
+                    getContext(), ColorTokens.shade_panel_fg_color, variant);
+            int layerBg = app.lawnchair.theme.ThemeColors.resolveLegacyToken(
+                    getContext(), ColorTokens.shade_panel_bg_color, variant);
             mBottomSheetBackgroundColorOverBlur = ColorUtils.compositeColors(layerFg, layerBg);
             mBottomSheetBackgroundColorBlurFallback =
-                    ColorTokens.BottomSheetBackgroundColorBlurFallback.resolveColor(getContext(), colorMode);
+                    app.lawnchair.theme.ThemeColors.resolveLegacyToken(
+                            getContext(), ColorTokens.BottomSheetBackgroundColorBlurFallback, variant);
         }
         mBottomSheetBackgroundColorLegacy =
-                ColorTokens.SurfaceDimColor.resolveColor(getContext(), colorMode);
+                app.lawnchair.theme.ThemeColors.resolveLegacyToken(
+                        getContext(), ColorTokens.SurfaceDimColor, variant);
         updateBottomSheetBackgroundColor();
         invalidate();
     }
