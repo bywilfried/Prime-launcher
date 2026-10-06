@@ -275,6 +275,7 @@ class LawnchairLauncher : QuickstepLauncher() {
             // In SYSTEM appearance the launcher activity can stay alive across Android day/night
             // changes. Refresh semantic View-based theme consumers without restarting Prime.
             mAppsView?.refreshPrimeThemeColors()
+            findViewById<PrimeDrawerTabsView?>(R.id.prime_drawer_tabs)?.refreshPrimeThemeColors()
         }
     }
 
