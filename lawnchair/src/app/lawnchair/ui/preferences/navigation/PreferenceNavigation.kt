@@ -166,7 +166,7 @@ fun PreferenceNavigation(
                     else -> role.id
                 },
                 appliedColor = applied,
-                defaultPreviewColor = ThemeColors.official(context, profile, role, variant),
+                defaultPreviewColor = ThemeColors.preview(context, profile, role, variant),
                 onApply = { option ->
                     overrides.set(profile, variant, role, option)
                     applied = option
