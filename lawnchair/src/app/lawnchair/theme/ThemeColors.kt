@@ -81,6 +81,10 @@ object ThemeColors {
         // the dynamic palette. Resolve the same token used by the launcher.
         ThemeColorRole.GLOBAL_ACCENT ->
             resolveLegacyToken(context, ColorTokens.PrimeInteractiveColor, variant)
+        ThemeColorRole.GLOBAL_SETTINGS_BACKGROUND ->
+            resolveLegacyToken(context, ColorTokens.Surface, variant)
+        ThemeColorRole.GLOBAL_SETTINGS_CARD_BACKGROUND ->
+            resolveLegacyToken(context, ColorTokens.SurfaceContainerHighest, variant)
         // Mirror the historical drawer runtime branch so the default swatch matches the drawer.
         ThemeColorRole.DRAWER_BACKGROUND -> legacyDrawerBackground(context, variant)
         // Category tabs keep their historical contrast hierarchy, but derive their hue from the
