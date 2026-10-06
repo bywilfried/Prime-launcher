@@ -101,14 +101,16 @@ object ColorTokens {
     // Prime/Lawnchair tab theme defaults. Keep these as dedicated theme tokens so every
     // inheriting tab surface has explicit light/dark values and future custom themes can replace
     // them without changing drawer code.
+    // Use Neutral2, like the drawer surface, so category tabs inherit the hue of the
+    // current dynamic palette instead of staying on the more neutral Neutral1 family.
     @JvmField val AllAppsTabBackground = DayNightColorToken(
-        Neutral1_200.setLStar(84.0),
-        Neutral1_700.setLStar(28.0),
+        Neutral2_200.setLStar(84.0),
+        Neutral2_700.setLStar(28.0),
     )
 
     @JvmField val AllAppsTabBackgroundSelected = DayNightColorToken(
-        Neutral1_400.setLStar(68.0),
-        Neutral1_900.setLStar(10.0),
+        Neutral2_400.setLStar(68.0),
+        Neutral2_900.setLStar(10.0),
     )
 
     @JvmField val FocusHighlight = DayNightColorToken(Neutral1_0, Neutral1_700)
