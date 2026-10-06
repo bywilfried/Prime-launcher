@@ -431,12 +431,12 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     }
 
     @Override
+    protected void onDetachedFromWindow() {
         if (mPrimeThemeColorOverrides != null && mPrimeThemeColorListener != null) {
             mPrimeThemeColorOverrides.unregisterOnSharedPreferenceChangeListener(mPrimeThemeColorListener);
             mPrimeThemeColorListener = null;
             mPrimeThemeColorOverrides = null;
         }
-    protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         mActivityContext.removeOnDeviceProfileChangeListener(this);
         if (mCrossWindowBlurListener != null) {
