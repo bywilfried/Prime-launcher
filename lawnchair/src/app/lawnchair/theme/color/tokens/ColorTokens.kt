@@ -79,6 +79,14 @@ object ColorTokens {
 
     @JvmField val ColorAccent = DayNightColorToken(Accent1_600, Accent1_100)
 
+    // Prime interactive-element default: deliberately separated from the palette seed.
+    // It stays dynamic, but is darker than cards in light mode and lighter than cards in dark
+    // mode so switches, sliders, selection outlines and their preview swatch remain visible.
+    @JvmField val PrimeInteractiveColor = DayNightColorToken(
+        Accent1_600.setLStar(42.0),
+        Accent1_100.setLStar(72.0),
+    )
+
     @JvmField val ColorBackground = DayNightColorToken(Neutral1_50, Neutral1_900)
 
     @JvmField val ColorBackgroundFloating = DayNightColorToken(Neutral2_50, Neutral2_900)
