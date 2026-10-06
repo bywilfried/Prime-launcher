@@ -166,12 +166,14 @@ class LawnchairLauncher : QuickstepLauncher() {
 
     private lateinit var colorScheme: ColorScheme
     private var hasBackGesture = false
+    private var lastPrimeNightMode = Configuration.UI_MODE_NIGHT_UNDEFINED
 
     val gestureController by unsafeLazy { GestureController(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         layoutInflater.factory2 = LawnchairLayoutFactory(this)
         super.onCreate(savedInstanceState)
+        lastPrimeNightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
 
         prefs.launcherTheme.subscribeChanges(this, ::updateTheme)
         prefs.feedProvider.subscribeChanges(this, defaultOverlay::reconnect)
@@ -266,10 +268,10 @@ class LawnchairLauncher : QuickstepLauncher() {
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
-        val oldNightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
         super.onConfigurationChanged(newConfig)
         val newNightMode = newConfig.uiMode and Configuration.UI_MODE_NIGHT_MASK
-        if (oldNightMode != newNightMode) {
+        if (lastPrimeNightMode != newNightMode) {
+            lastPrimeNightMode = newNightMode
             // In SYSTEM appearance the launcher activity can stay alive across Android day/night
             // changes. Refresh semantic View-based theme consumers without restarting Prime.
             mAppsView?.refreshPrimeThemeColors()
