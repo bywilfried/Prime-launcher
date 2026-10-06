@@ -12,6 +12,16 @@ import app.lawnchair.ui.theme.getSystemAccent
  * Fixed values are only used when the historical role itself was fixed.
  */
 object ThemeColors {
+    // The drawer can choose between several historical base colors depending on the live blur
+    // state. Keep the last base actually selected by All Apps so settings can preview that exact
+    // official value instead of guessing from a Context that has no launcher blur state.
+    private val legacyDrawerOfficialByVariant = mutableMapOf<ThemeVariant, Int>()
+
+    @JvmStatic
+    fun recordLegacyDrawerOfficial(variant: ThemeVariant, color: Int) {
+        legacyDrawerOfficialByVariant[variant] = color
+    }
+
     fun official(
         context: Context,
         profile: ThemeProfile,
@@ -78,8 +88,9 @@ object ThemeColors {
     }
 
     private fun legacyDrawerBackground(context: Context, variant: ThemeVariant): Int =
-        ColorTokens.SurfaceDimColor.resolveColor(
+        legacyDrawerOfficialByVariant[variant] ?: resolveLegacyToken(
             context,
-            ThemeProvider.INSTANCE.get(context).colorScheme,
-            if (variant == ThemeVariant.DARK) UiColorMode.Dark else UiColorMode.Light,
-        )}
+            ColorTokens.SurfaceDimColor,
+            variant,
+        )
+}
