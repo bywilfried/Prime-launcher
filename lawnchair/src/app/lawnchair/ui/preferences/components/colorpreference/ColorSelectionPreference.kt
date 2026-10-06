@@ -233,7 +233,7 @@ fun PrimeColorSelection(
         label = label,
         modifier = modifier,
         bottomBar = {
-            if (pagerState.currentPage == 0) {
+            if (pagerState.currentPage != 1) {
                 BottomSpacer()
                 return@PreferenceLayout
             }
