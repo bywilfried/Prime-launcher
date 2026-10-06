@@ -162,6 +162,8 @@ fun PreferenceNavigation(
             PrimeColorSelection(
                 label = when (role) {
                     ThemeColorRole.GLOBAL_ACCENT -> "Couleur des éléments modifiables"
+                    ThemeColorRole.GLOBAL_SETTINGS_BACKGROUND -> "Interface — fond des menus"
+                    ThemeColorRole.GLOBAL_SETTINGS_CARD_BACKGROUND -> "Interface — fond des cartes"
                     ThemeColorRole.DRAWER_BACKGROUND -> "Tiroir — fond"
                     ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE -> "Recherche — fond inactif"
                     ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE -> "Recherche — fond actif"
