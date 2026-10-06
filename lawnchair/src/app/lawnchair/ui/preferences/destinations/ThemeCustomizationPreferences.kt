@@ -20,6 +20,7 @@ import app.lawnchair.ui.preferences.LocalNavController
 import app.lawnchair.ui.preferences.components.colorpreference.ColorPreference
 import app.lawnchair.ui.preferences.navigation.ThemeColorSelection
 import app.lawnchair.theme.ThemeColorRole
+import app.lawnchair.theme.ThemeColorOverrides
 import app.lawnchair.theme.ThemeVariant
 import app.lawnchair.ui.preferences.LocalIsExpandedScreen
 import app.lawnchair.ui.preferences.components.layout.ExpandAndShrink
@@ -141,12 +142,18 @@ private fun ThemeSection(
                         role == ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND ||
                         role == ThemeColorRole.TABS_CATEGORY_TEXT
                     ) {
-                        val preview = ThemeColors.resolve(context, ThemeProfile.current(context), role, variant)
+                        val profile = ThemeProfile.current(context)
+                        val override = ThemeColorOverrides(context).get(profile, variant, role)
+                        val preview = ThemeColors.resolve(context, profile, role, variant)
                         ColorPreference(
                             label = roleLabel(role),
-                            selectedColor = ColorOption.Default,
+                            selectedColor = override,
                             previewColor = ColorOption.CustomColor(preview),
-                            description = "Valeur du thème",
+                            description = if (override == ColorOption.Default) {
+                                "Valeur du thème"
+                            } else {
+                                "Personnalisée"
+                            },
                             onClick = {
                                 navController.navigate(
                                     ThemeColorSelection(role.id, variant.name),
