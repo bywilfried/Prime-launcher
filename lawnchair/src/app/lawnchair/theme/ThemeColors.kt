@@ -53,17 +53,12 @@ object ThemeColors {
         else -> context.getSystemAccent(variant == ThemeVariant.DARK)
     }
 
-    private fun legacyDrawerBackground(context: Context, variant: ThemeVariant): Int {
-        val themedContext = android.view.ContextThemeWrapper(
+    private fun legacyDrawerBackground(context: Context, variant: ThemeVariant): Int =
+        ColorTokens.SurfaceDimColor.resolveColor(
             context,
-            if (variant == ThemeVariant.DARK) {
-                com.android.launcher3.R.style.AppTheme_Dark
-            } else {
-                com.android.launcher3.R.style.AppTheme
-            },
+            ThemeProvider.INSTANCE.get(context).colorScheme,
+            if (variant == ThemeVariant.DARK) UiColorMode.Dark else UiColorMode.Light,
         )
-        return ColorTokens.SurfaceDimColor.resolveColor(themedContext)
-    }
 
     private const val LEGACY_EDITABLE_ELEMENTS: Int = 0xFF80CBC4.toInt()
 }
