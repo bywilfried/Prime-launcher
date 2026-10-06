@@ -91,6 +91,12 @@ object ThemeColors {
         ThemeColorRole.DRAWER_SEARCH_BACKGROUND,
         ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND ->
             resolveLegacyToken(context, ColorTokens.AllAppsTabBackground, variant)
+        ThemeColorRole.DRAWER_SEARCH_TEXT,
+        ThemeColorRole.DRAWER_SEARCH_HINT,
+        ThemeColorRole.DRAWER_SEARCH_ICON ->
+            resolveLegacyToken(context, ColorTokens.TextColorPrimary, variant)
+        ThemeColorRole.DRAWER_SEARCH_BORDER ->
+            resolveLegacyToken(context, ColorTokens.ColorAccent, variant)
         ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND ->
             resolveLegacyToken(context, ColorTokens.AllAppsTabBackgroundSelected, variant)
         ThemeColorRole.TABS_CATEGORY_TEXT ->
