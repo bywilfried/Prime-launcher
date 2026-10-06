@@ -1012,9 +1012,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         // Legacy's official day/night defaults explicitly from the effective Prime appearance.
         boolean dark = app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(getContext())
                 == app.lawnchair.theme.ThemeVariant.DARK;
-        app.lawnchair.theme.color.UiColorMode colorMode = dark
-                ? app.lawnchair.theme.color.UiColorMode.Companion.getDark()
-                : app.lawnchair.theme.color.UiColorMode.Companion.getLight();
+        app.lawnchair.theme.UiColorMode colorMode = dark
+                ? app.lawnchair.theme.UiColorMode.Companion.getDark()
+                : app.lawnchair.theme.UiColorMode.Companion.getLight();
         if (Flags.allAppsBlur()) {
             int layerFg = ColorTokens.shade_panel_fg_color.resolveColor(getContext(), colorMode);
             int layerBg = ColorTokens.shade_panel_bg_color.resolveColor(getContext(), colorMode);
