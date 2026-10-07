@@ -37,6 +37,7 @@ import com.android.launcher3.Utilities.isDarkTheme
 import com.android.launcher3.anim.SpringAnimationBuilder
 import com.android.launcher3.apppairs.AppPairIcon
 import com.android.launcher3.folder.ClippedFolderIconLayoutRule.MAX_NUM_ITEMS_IN_PREVIEW
+import app.lawnchair.util.LawnchairUtilsKt.resolveFolderBackgroundColor
 
 /** Holder for Animators created from [FolderAnimationSpringBuilderManager] */
 class FolderSpringAnimatorSet(val animatorSet: AnimatorSet) {
@@ -231,11 +232,13 @@ class FolderSpringAnimatorSet(val animatorSet: AnimatorSet) {
         ) {
             with(folder) {
                 val folderBackground = folder.background as GradientDrawable
-                // Use the exact same resolved color as the closed FolderIcon. Prime folder
-                // overrides and the general folder color therefore share one color source.
+                // Prime owns independent semantic colors for the closed preview and the open
+                // folder. The expressive animation must interpolate between those two roles
+                // instead of pinning the open Folder drawable to the preview color.
                 val isOpening = animationData.isOpening
                 val initialColor = folder.folderIcon.mBackground.resolvedColor
-                val finalColor = initialColor
+                val finalColor =
+                    resolveFolderBackgroundColor(folder.context, folder.isInAppDrawer)
                 folderBackground.mutate()
                 folderBackground.setColor(if (isOpening) initialColor else finalColor)
                 // TODO: convert to spring animation?
@@ -247,6 +250,20 @@ class FolderSpringAnimatorSet(val animatorSet: AnimatorSet) {
                             if (isOpening) finalColor else initialColor,
                         )
                         .apply { duration = animationData.defaultDuration.toLong() }
+                )
+                animatorSet.addListener(
+                    object : AnimatorListenerAdapter() {
+                        override fun onAnimationEnd(animation: Animator) {
+                            if (isOpening) {
+                                folderBackground.setColor(
+                                    resolveFolderBackgroundColor(
+                                        folder.context,
+                                        folder.isInAppDrawer,
+                                    )
+                                )
+                            }
+                        }
+                    }
                 )
 
                 val footerAlphaDuration: Int
