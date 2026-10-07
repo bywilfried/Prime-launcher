@@ -183,6 +183,7 @@ fun PrimeColorSelection(
     dynamicEntries: List<ColorPreferenceEntry<ColorOption>> = dynamicColorsWithDefault,
     staticEntries: List<ColorPreferenceEntry<ColorOption>> = staticColors,
     defaultPreviewColor: Int? = null,
+    defaultDynamicColor: ColorOption.DynamicColor? = null,
 ) {
     val context = LocalContext.current
     val themeFallbackColor = defaultPreviewColor ?: MaterialTheme.colorScheme.surfaceVariant.toArgb()
@@ -330,7 +331,10 @@ fun PrimeColorSelection(
                             )
                         } else {
                             PrimeDynamicColorPicker(
-                                initial = currentAppliedColor as? ColorOption.DynamicColor,
+                                // When no dynamic override exists yet, start from the semantic
+                                // theme recipe instead of the generic Accent1/500 fallback.
+                                initial = (currentAppliedColor as? ColorOption.DynamicColor)
+                                    ?: defaultDynamicColor,
                                 onApply = { option ->
                                     currentAppliedColor = option
                                     onApply(option)
