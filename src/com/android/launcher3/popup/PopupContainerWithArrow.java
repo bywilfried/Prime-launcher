@@ -216,6 +216,11 @@ public class PopupContainerWithArrow<T extends Context & ActivityContext>
                 .collect(Collectors.toList());
         container = (PopupContainerWithArrow) launcher.getLayoutInflater().inflate(
                 R.layout.popup_container, launcher.getDragLayer(), false);
+        if (launcher.isInState(com.android.launcher3.LauncherState.ALL_APPS)) {
+            container.setPrimePopupRoles(app.lawnchair.theme.ThemeColorRole.DRAWER_POPUP_BACKGROUND,
+                    app.lawnchair.theme.ThemeColorRole.DRAWER_POPUP_TEXT,
+                    app.lawnchair.theme.ThemeColorRole.DRAWER_POPUP_ICON);
+        }
         container.configureForLauncher(launcher, item);
         
         /* LC-Note: Fix for missing flags and account for NCDFE */
