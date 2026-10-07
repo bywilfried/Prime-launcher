@@ -1,6 +1,7 @@
 package app.lawnchair.theme
 
 import android.content.Context
+import app.lawnchair.preferences2.ReloadHelper
 import app.lawnchair.theme.color.ColorOption
 
 /**
@@ -9,7 +10,7 @@ import app.lawnchair.theme.color.ColorOption
  * Only customized roles are stored. Removing a key means "theme value".
  * Keys include ThemeProfileId so switching themes never destroys another theme's customization.
  */
-class ThemeColorOverrides(context: Context) {
+class ThemeColorOverrides(private val context: Context) {
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     fun get(profile: ThemeProfile, variant: ThemeVariant, role: ThemeColorRole): ColorOption =
@@ -22,7 +23,7 @@ class ThemeColorOverrides(context: Context) {
         val key = key(profile, variant, role)
         if (option == ColorOption.Default) editor.remove(key) else editor.putString(key, option.toString())
         editor.apply()
-        ThemeColorInvalidation.invalidate()
+        notifyThemeChanged()
     }
 
     fun resetVariant(profile: ThemeProfile, variant: ThemeVariant) {
@@ -41,7 +42,14 @@ class ThemeColorOverrides(context: Context) {
         val editor = prefs.edit()
         prefs.all.keys.filter { it.startsWith(prefix) }.forEach(editor::remove)
         editor.apply()
+        notifyThemeChanged()
+    }
+
+    private fun notifyThemeChanged() {
         ThemeColorInvalidation.invalidate()
+        // Most launcher Views resolve semantic colors eagerly. Recreate the active Launcher so
+        // Home, Drawer, folders, popups and search surfaces all consume the new override at once.
+        ReloadHelper(context).recreate()
     }
 
     private fun key(profile: ThemeProfile, variant: ThemeVariant, role: ThemeColorRole) =
