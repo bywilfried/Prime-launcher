@@ -218,11 +218,17 @@ fun getFolderBackgroundAlpha(context: Context): Int {
  * owned by semantic theme roles; explicit per-folder/category overrides are applied separately.
  */
 fun resolveFolderPreviewColor(context: Context, isInAppDrawer: Boolean = false): Int {
-    val base = if (isInAppDrawer) {
-        ColorTokens.FolderPreviewColor.resolveColor(context)
+    val role = if (isInAppDrawer) {
+        ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND
     } else {
-        ThemeColors.resolve(context, ThemeProfile.current(context), ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND, context.effectiveThemeVariant())
+        ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND
     }
+    val base = ThemeColors.resolve(
+        context,
+        ThemeProfile.current(context),
+        role,
+        context.effectiveThemeVariant(),
+    )
     return ColorUtils.setAlphaComponent(base, getFolderPreviewAlpha(context))
 }
 
