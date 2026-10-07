@@ -164,6 +164,7 @@ private fun ThemeSection(
                         role == ThemeColorRole.HOME_POPUP_BACKGROUND ||
                         role == ThemeColorRole.HOME_POPUP_TEXT ||
                         role == ThemeColorRole.HOME_POPUP_ICON ||
+                        role == ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND ||
                         role == ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND ||
                         role == ThemeColorRole.DRAWER_POPUP_BACKGROUND ||
                         role == ThemeColorRole.DRAWER_POPUP_TEXT ||
