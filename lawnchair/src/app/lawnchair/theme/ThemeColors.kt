@@ -87,6 +87,14 @@ object ThemeColors {
             resolveLegacyToken(context, ColorTokens.SurfaceContainerHighest, variant)
         ThemeColorRole.GLOBAL_NOTIFICATION_DOT ->
             resolveLegacyToken(context, ColorTokens.DotColor, variant)
+        ThemeColorRole.HOME_POPUP_BACKGROUND,
+        ThemeColorRole.DRAWER_POPUP_BACKGROUND ->
+            resolveLegacyToken(context, ColorTokens.PopupShadeFirst, variant)
+        ThemeColorRole.HOME_POPUP_TEXT,
+        ThemeColorRole.DRAWER_POPUP_TEXT,
+        ThemeColorRole.HOME_POPUP_ICON,
+        ThemeColorRole.DRAWER_POPUP_ICON ->
+            resolveLegacyToken(context, ColorTokens.TextColorPrimary, variant)
         // Mirror the historical drawer runtime branch so the default swatch matches the drawer.
         ThemeColorRole.DRAWER_BACKGROUND -> legacyDrawerBackground(context, variant)
         // Category tabs keep their historical contrast hierarchy, but derive their hue from the
