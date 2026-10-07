@@ -493,8 +493,11 @@ public final class PrimeFolderLongPressHelper {
         if (homeInfo.id < 0) return;
         PrimeDrawerTabsRepository repository = new PrimeDrawerTabsRepository(context);
         PrimeFolderRef ref = getPrimeRef(sourceInfo);
+        // Copy only overrides explicitly set on the source folder. Category-inherited
+        // colors must not become persistent Home overrides, otherwise they mask semantic
+        // HOME_FOLDER_* theme colors after the folder is dropped on Workspace.
         PrimeDrawerFolderVisualOverrides overrides = ref != null
-                ? repository.getResolvedFolderVisualOverrides(ref.tabId, ref.folderId)
+                ? repository.getFolderVisualOverrides(ref.tabId, ref.folderId)
                 : sourceInfo.id >= 0
                         ? repository.getDrawerFolderVisualOverrides(sourceInfo.id)
                         : null;
