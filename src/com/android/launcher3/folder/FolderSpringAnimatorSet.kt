@@ -37,7 +37,7 @@ import com.android.launcher3.Utilities.isDarkTheme
 import com.android.launcher3.anim.SpringAnimationBuilder
 import com.android.launcher3.apppairs.AppPairIcon
 import com.android.launcher3.folder.ClippedFolderIconLayoutRule.MAX_NUM_ITEMS_IN_PREVIEW
-import app.lawnchair.util.LawnchairUtilsKt.resolveFolderBackgroundColor
+import app.lawnchair.util.resolveFolderBackgroundColor
 
 /** Holder for Animators created from [FolderAnimationSpringBuilderManager] */
 class FolderSpringAnimatorSet(val animatorSet: AnimatorSet) {
