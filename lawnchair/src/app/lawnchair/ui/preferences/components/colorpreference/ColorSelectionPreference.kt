@@ -333,7 +333,11 @@ fun PrimeColorSelection(
                             PrimeDynamicColorPicker(
                                 // When no dynamic override exists yet, start from the semantic
                                 // theme recipe instead of the generic Accent1/500 fallback.
-                                initial = (currentAppliedColor as? ColorOption.DynamicColor)
+                                // Seed from the persisted dynamic override when there is one; otherwise
+                                // always open on the semantic theme recipe supplied by the caller.
+                                // Use appliedColor (the route snapshot), not the mutable preset state:
+                                // visiting Presets must not silently replace the editor's baseline.
+                                initial = (appliedColor as? ColorOption.DynamicColor)
                                     ?: defaultDynamicColor,
                                 onApply = { option ->
                                     currentAppliedColor = option
