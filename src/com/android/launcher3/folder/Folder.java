@@ -790,10 +790,20 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         if (primeOverrides != null && primeOverrides.getTextColor() != null) {
             mFolderName.setTextColor(primeOverrides.getTextColor());
         }
-        if (primeOverrides != null && primeOverrides.getColor() != null) {
+        int semanticOpenColor =
+                LawnchairUtilsKt.resolveFolderBackgroundColor(getContext(), isInAppDrawer());
+        int semanticClosedColor =
+                LawnchairUtilsKt.resolveFolderPreviewColor(getContext(), isInAppDrawer());
+        if (primeOverrides != null && primeOverrides.getColor() != null
+                && (primeOverrides.getColor() & 0x00FFFFFF)
+                        != (semanticClosedColor & 0x00FFFFFF)) {
+            // A real Prime folder/category color remains authoritative. Older/default visual
+            // overrides could however materialize the closed preview color into "color"; treating
+            // that value as an open-folder override makes both semantic roles collapse to the
+            // same color. Let the dedicated open role win for that stale/default case.
             mBackground.setColor(primeOverrides.getColor());
         } else {
-            mBackground.setColor(LawnchairUtilsKt.resolveFolderBackgroundColor(getContext(), isInAppDrawer()));
+            mBackground.setColor(semanticOpenColor);
         }
         if (primeOverrides != null && primeOverrides.getBackgroundOpacity() != null) {
             mBackground.setAlpha(Math.round(255 * primeOverrides.getBackgroundOpacity()));
