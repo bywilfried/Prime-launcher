@@ -27,6 +27,9 @@ enum class ThemeColorRole(val id: String, val section: Section) {
     HOME_FOLDER_OPEN_HINT("home.folder.open.hint", Section.HOME),
     HOME_FOLDER_PAGINATION("home.folder.pagination", Section.HOME),
     HOME_FOLDER_BORDER("home.folder.border", Section.HOME),
+    HOME_POPUP_BACKGROUND("home.popup.background", Section.HOME),
+    HOME_POPUP_TEXT("home.popup.text", Section.HOME),
+    HOME_POPUP_ICON("home.popup.icon", Section.HOME),
 
     DRAWER_BACKGROUND("drawer.background", Section.DRAWER),
     DRAWER_TEXT("drawer.text", Section.DRAWER),
@@ -47,6 +50,9 @@ enum class ThemeColorRole(val id: String, val section: Section) {
     DRAWER_PROFILE_TAB_SELECTED_BACKGROUND("drawer.profile_tab.selected.background", Section.DRAWER),
     DRAWER_PROFILE_TAB_UNSELECTED_BACKGROUND("drawer.profile_tab.unselected.background", Section.DRAWER),
     DRAWER_PROFILE_TAB_TEXT("drawer.profile_tab.text", Section.DRAWER),
+    DRAWER_POPUP_BACKGROUND("drawer.popup.background", Section.DRAWER),
+    DRAWER_POPUP_TEXT("drawer.popup.text", Section.DRAWER),
+    DRAWER_POPUP_ICON("drawer.popup.icon", Section.DRAWER),
 
     TABS_CATEGORY_ACTIVE_BACKGROUND("tabs.category.active.background", Section.TABS),
     TABS_CATEGORY_INACTIVE_BACKGROUND("tabs.category.inactive.background", Section.TABS),
