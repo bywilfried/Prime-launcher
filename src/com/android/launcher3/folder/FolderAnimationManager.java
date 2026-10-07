@@ -43,6 +43,7 @@ import com.android.launcher3.BubbleTextView;
 import com.android.launcher3.CellLayout;
 import com.android.launcher3.DeviceProfile;
 import com.android.launcher3.R;
+import com.android.launcher3.PrimeDebugLog;
 import com.android.launcher3.ShortcutAndWidgetContainer;
 import com.android.launcher3.Utilities;
 import com.android.launcher3.anim.PropertyResetListener;
@@ -53,6 +54,7 @@ import com.android.launcher3.graphics.ThemeManager;
 import com.android.launcher3.views.BaseDragLayer;
 
 import java.util.List;
+import java.util.Locale;
 
 import app.lawnchair.util.LawnchairUtilsKt;
 
@@ -192,6 +194,13 @@ public class FolderAnimationManager implements FolderAnimationCreator {
         int initialColor = mPreviewBackground.getResolvedColor();
         int finalColor = LawnchairUtilsKt.resolveFolderBackgroundColor(
                 mContext, mFolder.isInAppDrawer());
+        PrimeDebugLog.d("PrimeFolderColor",
+                "ANIM create scope=" + (mFolder.isInAppDrawer() ? "DRAWER" : "HOME")
+                        + " opening=" + mIsOpening
+                        + " initial=" + colorHex(initialColor)
+                        + " final=" + colorHex(finalColor)
+                        + " drawableBefore=" + colorHex(mFolderBackground.getColor() != null
+                                ? mFolderBackground.getColor().getDefaultColor() : null));
 
         mFolderBackground.mutate();
         mFolderBackground.setColor(mIsOpening ? initialColor : finalColor);
@@ -342,8 +351,14 @@ public class FolderAnimationManager implements FolderAnimationCreator {
 
                 // Keep the persistent Folder drawable on its own semantic role after opening.
                 if (mIsOpening) {
-                    mFolderBackground.setColor(LawnchairUtilsKt.resolveFolderBackgroundColor(
-                            mContext, mFolder.isInAppDrawer()));
+                    int settledColor = LawnchairUtilsKt.resolveFolderBackgroundColor(
+                            mContext, mFolder.isInAppDrawer());
+                    mFolderBackground.setColor(settledColor);
+                    PrimeDebugLog.d("PrimeFolderColor",
+                            "ANIM end scope=" + (mFolder.isInAppDrawer() ? "DRAWER" : "HOME")
+                                    + " settled=" + colorHex(settledColor)
+                                    + " drawable=" + colorHex(mFolderBackground.getColor() != null
+                                            ? mFolderBackground.getColor().getDefaultColor() : null));
                 }
             }
         });
@@ -364,6 +379,10 @@ public class FolderAnimationManager implements FolderAnimationCreator {
                 // difference to keep the preview items centered.
                 (int) (previewItemOffsetX / scaleRelativeToDragLayer) + radiusDiff, radiusDiff);
         return a;
+    }
+
+    private static String colorHex(Integer color) {
+        return color == null ? "null" : String.format(Locale.US, "#%08X", color);
     }
 
     /**
