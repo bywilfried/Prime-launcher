@@ -198,7 +198,10 @@ public class PreviewBackground extends DelegatedCellDrawing {
         ColorOption dotColorOption = PreferenceCacheExtensionsKt.firstCached(preferenceManager2.getNotificationDotColor());
         mDotColor = dotColorOption.getColorPreferenceEntry().getLightColor().invoke(context);
         mStrokeColor = ColorTokens.FolderIconBorderColor.resolveColor(context);
-        mBgColor = LawnchairUtilsKt.resolveFolderPreviewColor(context);
+        mBgColor = LawnchairUtilsKt.resolveFolderPreviewColor(
+                context,
+                invalidateDelegate instanceof FolderIcon
+                        && ((FolderIcon) invalidateDelegate).isInAppDrawer());
         ta.recycle();
 
         DeviceProfile grid = activity.getDeviceProfile();
