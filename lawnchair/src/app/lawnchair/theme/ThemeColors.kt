@@ -68,6 +68,10 @@ object ThemeColors {
             // Blur highlight includes alpha, which the dynamic recipe editor cannot represent yet.
             ThemeColorRole.DRAWER_SEARCH_SELECTED_RESULT_BACKGROUND ->
                 if (dark) recipe("Neutral1", 700) else recipe("Neutral1", 0)
+            ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND ->
+                if (dark) recipe("Neutral1", 900, 12) else recipe("Accent2", 200)
+            ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND ->
+                if (dark) recipe("Neutral2", 900, 12) else recipe("Neutral1", 50, 94)
             else -> null
         }
     }
@@ -124,6 +128,10 @@ object ThemeColors {
             resolveLegacyToken(context, ColorTokens.SurfaceContainerHighest, variant)
         ThemeColorRole.GLOBAL_NOTIFICATION_DOT ->
             resolveLegacyToken(context, ColorTokens.DotColor, variant)
+        ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND ->
+            resolveLegacyToken(context, ColorTokens.FolderPreviewColor, variant)
+        ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND ->
+            resolveLegacyToken(context, ColorTokens.FolderBackgroundColor, variant)
         ThemeColorRole.HOME_POPUP_BACKGROUND ->
             resolveLegacyToken(context, ColorTokens.PopupShadeFirst, variant)
         ThemeColorRole.DRAWER_POPUP_BACKGROUND ->
