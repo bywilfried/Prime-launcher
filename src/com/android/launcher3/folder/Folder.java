@@ -345,7 +345,7 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         final int paddingLeftRight = dp.folderContentPaddingLeftRight;
 
         mBackground = DrawableTokens.RoundRectFolder.resolve(getContext());
-        mBackground.setColor(LawnchairUtilsKt.resolveFolderBackgroundColor(getContext()));
+        mBackground.setColor(LawnchairUtilsKt.resolveFolderBackgroundColor(getContext(), isInAppDrawer()));
         var alpha = LawnchairUtilsKt.getFolderBackgroundAlpha(getContext());
         mBackground.setAlpha(alpha);
 
@@ -790,7 +790,7 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         if (primeOverrides != null && primeOverrides.getColor() != null) {
             mBackground.setColor(primeOverrides.getColor());
         } else {
-            mBackground.setColor(LawnchairUtilsKt.resolveFolderBackgroundColor(getContext()));
+            mBackground.setColor(LawnchairUtilsKt.resolveFolderBackgroundColor(getContext(), isInAppDrawer()));
         }
         if (primeOverrides != null && primeOverrides.getBackgroundOpacity() != null) {
             mBackground.setAlpha(Math.round(255 * primeOverrides.getBackgroundOpacity()));
