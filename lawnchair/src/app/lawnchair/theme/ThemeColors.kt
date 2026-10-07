@@ -132,12 +132,11 @@ object ThemeColors {
         ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND ->
             resolveLegacyToken(context, ColorTokens.FolderPreviewColor, variant)
         ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND,
-        ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND ->
-            resolveLegacyToken(context, ColorTokens.DrawerPopupBackground, variant)
+        ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND,
+        ThemeColorRole.DRAWER_POPUP_BACKGROUND ->
+            resolveDrawerPopupBackground(context, variant)
         ThemeColorRole.HOME_POPUP_BACKGROUND ->
             resolveLegacyToken(context, ColorTokens.PopupShadeFirst, variant)
-        ThemeColorRole.DRAWER_POPUP_BACKGROUND ->
-            resolveLegacyToken(context, ColorTokens.DrawerPopupBackground, variant)
         ThemeColorRole.HOME_POPUP_TEXT,
         ThemeColorRole.DRAWER_POPUP_TEXT,
         ThemeColorRole.HOME_POPUP_ICON,
@@ -179,6 +178,9 @@ object ThemeColors {
         // Until then this fallback is preview-only and must not be treated as their final token.
         else -> context.getSystemAccent(variant == ThemeVariant.DARK)
     }
+
+    private fun resolveDrawerPopupBackground(context: Context, variant: ThemeVariant): Int =
+        resolveLegacyToken(context, ColorTokens.DrawerPopupBackground, variant)
 
     private fun legacyDrawerBackground(context: Context, variant: ThemeVariant): Int =
         legacyDrawerOfficialByVariant[variant] ?: resolveLegacyToken(
