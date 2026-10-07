@@ -35,6 +35,43 @@ object ThemeColors {
         }
     }
 
+    /**
+     * Editable dynamic recipe equivalent to the official Legacy semantic value.
+     * This is used only to seed the dynamic editor; runtime still resolves the real tokens above.
+     */
+    fun officialDynamicRecipe(role: ThemeColorRole, variant: ThemeVariant): ColorOption.DynamicColor? {
+        fun recipe(swatch: String, shade: Int, lStar: Int? = null) =
+            ColorOption.DynamicColor(swatch, shade, lStar)
+        val dark = variant == ThemeVariant.DARK
+        return when (role) {
+            ThemeColorRole.GLOBAL_ACCENT -> if (dark) recipe("Accent1", 100, 72) else recipe("Accent1", 600, 42)
+            ThemeColorRole.GLOBAL_SETTINGS_BACKGROUND -> if (dark) recipe("Neutral1", 500, 6) else recipe("Neutral1", 500, 98)
+            ThemeColorRole.GLOBAL_SETTINGS_CARD_BACKGROUND -> if (dark) recipe("Neutral1", 500, 22) else recipe("Neutral1", 500, 90)
+            ThemeColorRole.HOME_POPUP_BACKGROUND -> if (dark) recipe("Accent2", 800, 20) else recipe("Accent2", 200, 98)
+            ThemeColorRole.DRAWER_POPUP_BACKGROUND -> if (dark) recipe("Accent2", 800, 28) else recipe("Accent2", 200, 92)
+            ThemeColorRole.HOME_POPUP_TEXT,
+            ThemeColorRole.DRAWER_POPUP_TEXT,
+            ThemeColorRole.HOME_POPUP_ICON,
+            ThemeColorRole.DRAWER_POPUP_ICON,
+            ThemeColorRole.DRAWER_SEARCH_TEXT,
+            ThemeColorRole.DRAWER_SEARCH_HINT,
+            ThemeColorRole.DRAWER_SEARCH_ICON,
+            ThemeColorRole.TABS_CATEGORY_TEXT -> if (dark) recipe("Neutral1", 50) else recipe("Neutral1", 900)
+            ThemeColorRole.DRAWER_BACKGROUND -> if (dark) recipe("Neutral2", 600, 6) else recipe("Neutral2", 600, 87)
+            ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE,
+            ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE,
+            ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND ->
+                if (dark) recipe("Accent2", 600, 34) else recipe("Accent2", 200, 72)
+            ThemeColorRole.DRAWER_SEARCH_BORDER -> if (dark) recipe("Accent1", 100) else recipe("Accent1", 600)
+            ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND ->
+                if (dark) recipe("Accent2", 800, 14) else recipe("Accent2", 300, 58)
+            // Blur highlight includes alpha, which the dynamic recipe editor cannot represent yet.
+            ThemeColorRole.DRAWER_SEARCH_SELECTED_RESULT_BACKGROUND ->
+                if (dark) recipe("Neutral1", 700) else recipe("Neutral1", 0)
+            else -> null
+        }
+    }
+
     /** Preview and runtime deliberately share the same semantic resolution path. */
     fun preview(
         context: Context,
