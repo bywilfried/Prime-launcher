@@ -273,9 +273,11 @@ class LawnchairLauncher : QuickstepLauncher() {
         val newNightMode = newConfig.uiMode and Configuration.UI_MODE_NIGHT_MASK
         if (lastPrimeNightMode != newNightMode) {
             lastPrimeNightMode = newNightMode
-            // A variant change can affect every semantic role. Consumers re-resolve the roles
-            // they render; the launcher does not need role-specific refresh wiring.
+            // Popup and legacy View colors are resolved when their themed views/drawables are
+            // created. Recreate the launcher on a light/dark variant switch so those resources
+            // cannot keep the previous configuration's colors.
             ThemeColorInvalidation.invalidate()
+            recreate()
         }
     }
 
