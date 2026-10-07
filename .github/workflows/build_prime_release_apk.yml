@@ -1,0 +1,65 @@
+name: Build Prime Release APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-release-apk:
+    name: Build Prime Release APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'zulu'
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${{ secrets.PRIME_KEYSTORE_BASE64 }}"
+          test -n "${{ secrets.PRIME_KEYSTORE_PASSWORD }}"
+          test -n "${{ secrets.PRIME_KEY_ALIAS }}"
+          test -n "${{ secrets.PRIME_KEY_PASSWORD }}"
+          printf '%s' "${{ secrets.PRIME_KEYSTORE_BASE64 }}" | base64 --decode > "$GITHUB_WORKSPACE/key.jks"
+          {
+            echo "storePassword=${{ secrets.PRIME_KEYSTORE_PASSWORD }}"
+            echo "keyAlias=${{ secrets.PRIME_KEY_ALIAS }}"
+            echo "keyPassword=${{ secrets.PRIME_KEY_PASSWORD }}"
+            echo "storeFile=$GITHUB_WORKSPACE/key.jks"
+          } > keystore.properties
+
+      - name: Build Release APK
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew assembleLawnWithQuickstepGithubRelease --warning-mode=none 2>&1 | sed \
+            -e '/^w: /d' \
+            -e '/^warning: /d' \
+            -e '/^Warning: /d' \
+            -e '/^To suppress the warning do one of the following:$/d'
+
+      - name: Prepare APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="$(find build/outputs/apk -type f -path '*/release/*' -name '*.apk' -print -quit)"
+          test -n "$apk"
+          mkdir -p artifact
+          cp "$apk" artifact/Prime-Launcher-Release.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: Prime-Launcher-Release-APK
+          path: artifact/Prime-Launcher-Release.apk
+          if-no-files-found: error
