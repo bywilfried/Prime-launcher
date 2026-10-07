@@ -187,12 +187,17 @@ public class FolderAnimationManager implements FolderAnimationCreator {
         final float xDistance = initialX - lp.x;
         final float yDistance = initialY - lp.y;
 
-        // Animate from the closed FolderIcon color to the open Folder color already resolved
-        // by Folder.applyPrimeVisualOverrides(). Keeping finalColor from mFolderBackground is
-        // essential: Home/Drawer semantic open-folder roles may intentionally differ from the
-        // closed preview color, while explicit per-folder overrides still resolve before here.
+        // Resolve the semantic open-folder color directly instead of reading it back from the
+        // mutable drawable. Folder animations mutate/reuse that drawable, so its current ColorStateList
+        // is not a reliable source of truth for the intended final color.
         int initialColor = mPreviewBackground.getResolvedColor();
-        int finalColor = mFolderBackground.getColor().getDefaultColor();
+        app.lawnchair.prime.drawer.PrimeDrawerFolderVisualOverrides primeOverrides =
+                app.lawnchair.prime.drawer.PrimeFolderLongPressHelper.getVisualOverrides(
+                        mContext, mFolder.getInfo());
+        int finalColor = primeOverrides != null && primeOverrides.getColor() != null
+                ? primeOverrides.getColor()
+                : LawnchairUtilsKt.resolveFolderBackgroundColor(
+                        mContext, mFolder.isInAppDrawer());
 
         mFolderBackground.mutate();
         mFolderBackground.setColor(mIsOpening ? initialColor : finalColor);
