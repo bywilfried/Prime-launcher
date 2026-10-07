@@ -212,16 +212,6 @@ fun getFolderBackgroundAlpha(context: Context): Int {
     return (prefs2.folderBackgroundOpacity.firstCached() * 255).toInt()
 }
 
-/**
- * Custom folder color from preferences, or `0` when the theme default should be used.
- *
- * Note: pure black (`#FF000000`) is a valid custom color and is not treated as default.
- */
-fun getCustomFolderColor(context: Context): Int {
-    val prefs2 = PreferenceManager2.getInstance(context)
-    return prefs2.folderColor.firstCached().colorPreferenceEntry.lightColor(context)
-}
-
 /** Closed-folder preview circle color (includes preview opacity).
  *
  * The legacy global folderColor preference is intentionally ignored here. Folder colors are now
