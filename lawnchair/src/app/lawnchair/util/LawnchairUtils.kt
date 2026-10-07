@@ -244,10 +244,13 @@ fun resolveFolderBackgroundColor(context: Context, isInAppDrawer: Boolean = fals
     val custom = prefs2.folderColor.firstCached().colorPreferenceEntry.lightColor(context)
     return if (custom != 0) {
         custom
-    } else if (isInAppDrawer) {
-        ColorTokens.FolderBackgroundColor.resolveColor(context)
     } else {
-        ThemeColors.resolve(context, ThemeProfile.current(context), ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND, context.effectiveThemeVariant())
+        val role = if (isInAppDrawer) {
+            ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND
+        } else {
+            ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND
+        }
+        ThemeColors.resolve(context, ThemeProfile.current(context), role, context.effectiveThemeVariant())
     }
 }
 
