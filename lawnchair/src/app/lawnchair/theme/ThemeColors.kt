@@ -87,9 +87,10 @@ object ThemeColors {
             resolveLegacyToken(context, ColorTokens.SurfaceContainerHighest, variant)
         ThemeColorRole.GLOBAL_NOTIFICATION_DOT ->
             resolveLegacyToken(context, ColorTokens.DotColor, variant)
-        ThemeColorRole.HOME_POPUP_BACKGROUND,
-        ThemeColorRole.DRAWER_POPUP_BACKGROUND ->
+        ThemeColorRole.HOME_POPUP_BACKGROUND ->
             resolveLegacyToken(context, ColorTokens.PopupShadeFirst, variant)
+        ThemeColorRole.DRAWER_POPUP_BACKGROUND ->
+            resolveLegacyToken(context, ColorTokens.DrawerPopupBackground, variant)
         ThemeColorRole.HOME_POPUP_TEXT,
         ThemeColorRole.DRAWER_POPUP_TEXT,
         ThemeColorRole.HOME_POPUP_ICON,
