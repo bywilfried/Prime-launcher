@@ -187,10 +187,12 @@ public class FolderAnimationManager implements FolderAnimationCreator {
         final float xDistance = initialX - lp.x;
         final float yDistance = initialY - lp.y;
 
-        // Use the exact same resolved color as the closed FolderIcon. This keeps one color source
-        // for both states: Prime override when present, otherwise the general folder color.
+        // Animate from the closed FolderIcon color to the open Folder color already resolved
+        // by Folder.applyPrimeVisualOverrides(). Keeping finalColor from mFolderBackground is
+        // essential: Home/Drawer semantic open-folder roles may intentionally differ from the
+        // closed preview color, while explicit per-folder overrides still resolve before here.
         int initialColor = mPreviewBackground.getResolvedColor();
-        int finalColor = initialColor;
+        int finalColor = mFolderBackground.getColor().getDefaultColor();
 
         mFolderBackground.mutate();
         mFolderBackground.setColor(mIsOpening ? initialColor : finalColor);
