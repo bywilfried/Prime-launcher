@@ -169,7 +169,9 @@ object ColorTokens {
 
     @JvmField val FolderPreviewColor = DayNightColorToken(Accent2_200, Neutral1_900.setLStar(12.0))
 
-    @JvmField val PopupColorPrimary = DayNightColorToken(Accent2_50, Neutral2_800)
+    // Keep popup surfaces visibly tied to the selected dynamic palette in both variants.
+    // L* is applied by PopupShade* below, so these tokens primarily provide the hue/chroma.
+    @JvmField val PopupColorPrimary = DayNightColorToken(Accent2_200, Accent2_800)
 
     @JvmField val PopupColorSecondary = DayNightColorToken(Neutral2_100, Neutral1_900)
 
