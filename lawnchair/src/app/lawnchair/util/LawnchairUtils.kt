@@ -222,12 +222,13 @@ fun getCustomFolderColor(context: Context): Int {
     return prefs2.folderColor.firstCached().colorPreferenceEntry.lightColor(context)
 }
 
-/** Closed-folder preview circle color (includes preview opacity). */
+/** Closed-folder preview circle color (includes preview opacity).
+ *
+ * The legacy global folderColor preference is intentionally ignored here. Folder colors are now
+ * owned by semantic theme roles; explicit per-folder/category overrides are applied separately.
+ */
 fun resolveFolderPreviewColor(context: Context, isInAppDrawer: Boolean = false): Int {
-    val custom = getCustomFolderColor(context)
-    val base = if (custom != 0) {
-        custom
-    } else if (isInAppDrawer) {
+    val base = if (isInAppDrawer) {
         ColorTokens.FolderPreviewColor.resolveColor(context)
     } else {
         ThemeColors.resolve(context, ThemeProfile.current(context), ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND, context.effectiveThemeVariant())
@@ -240,18 +241,14 @@ fun resolveFolderPreviewColor(context: Context, isInAppDrawer: Boolean = false):
  * Opacity is applied separately via [getFolderBackgroundAlpha] on the drawable.
  */
 fun resolveFolderBackgroundColor(context: Context, isInAppDrawer: Boolean = false): Int {
-    val prefs2 = PreferenceManager2.getInstance(context)
-    val custom = prefs2.folderColor.firstCached().colorPreferenceEntry.lightColor(context)
-    return if (custom != 0) {
-        custom
+    // Do not consult the legacy global folderColor preference here. Semantic theme colors are the
+    // default; explicit per-folder/category overrides remain authoritative in Folder.
+    val role = if (isInAppDrawer) {
+        ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND
     } else {
-        val role = if (isInAppDrawer) {
-            ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND
-        } else {
-            ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND
-        }
-        ThemeColors.resolve(context, ThemeProfile.current(context), role, context.effectiveThemeVariant())
+        ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND
     }
+    return ThemeColors.resolve(context, ThemeProfile.current(context), role, context.effectiveThemeVariant())
 }
 
 /** Apply Lawnchair custom allapps colour to the provided colour */
