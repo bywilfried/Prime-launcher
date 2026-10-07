@@ -705,10 +705,6 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                     getContext(), AppDrawer.INSTANCE));
             return true;
         }));
-        items.add(option("Diagnostic swipe", v -> {
-            showSwipeDiagnostic(parent);
-            return true;
-        }));
         if (!tab.getId().equals(mRepository.getConfiguration().getDefaultTabId())) {
             items.add(option(R.string.prime_tab_set_default, v -> {
                 mRepository.setDefaultTab(tab.getId());
@@ -721,44 +717,6 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         RectF target = new RectF(location[0], location[1],
                 location[0] + anchor.getWidth(), location[1] + anchor.getHeight());
         mTabPopup = OptionsPopupView.show(activityContext, target, items, false);
-    }
-
-    private void showSwipeDiagnostic(FloatingHeaderView parent) {
-        if (!(parent.getParent() instanceof ActivityAllAppsContainerView)) return;
-        ActivityAllAppsContainerView<?> allApps =
-                (ActivityAllAppsContainerView<?>) parent.getParent();
-
-        TextView logView = new TextView(getContext());
-        logView.setText(allApps.getPrimeSwipeDebugLog());
-        logView.setTextIsSelectable(true);
-        logView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
-        int padding = dp(16);
-        logView.setPadding(padding, padding, padding, padding);
-
-        ScrollView scroll = new ScrollView(getContext());
-        scroll.addView(logView, new ScrollView.LayoutParams(
-                LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
-
-        AlertDialog dialog = new AlertDialog.Builder(getContext())
-                .setTitle("Diagnostic swipe Prime")
-                .setView(scroll)
-                .setNegativeButton("Fermer", null)
-                .setNeutralButton("Effacer", null)
-                .setPositiveButton("Copier", null)
-                .create();
-        dialog.setOnShowListener(ignored -> {
-            dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(v -> {
-                ClipboardManager clipboard =
-                        (ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
-                clipboard.setPrimaryClip(
-                        ClipData.newPlainText("Prime swipe diagnostic", allApps.getPrimeSwipeDebugLog()));
-            });
-            dialog.getButton(DialogInterface.BUTTON_NEUTRAL).setOnClickListener(v -> {
-                allApps.clearPrimeSwipeDebugLog();
-                logView.setText(allApps.getPrimeSwipeDebugLog());
-            });
-        });
-        dialog.show();
     }
 
     private void showAppsDialog(FloatingHeaderView parent, PrimeDrawerTab tab) {
