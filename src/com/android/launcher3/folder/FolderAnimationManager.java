@@ -187,22 +187,11 @@ public class FolderAnimationManager implements FolderAnimationCreator {
         final float xDistance = initialX - lp.x;
         final float yDistance = initialY - lp.y;
 
-        // Resolve the semantic open-folder color directly instead of reading it back from the
-        // mutable drawable. Folder animations mutate/reuse that drawable, so its current ColorStateList
-        // is not a reliable source of truth for the intended final color.
+        // Prime owns two independent semantic colors. The closed preview is only the animation
+        // start/end point; the Folder drawable always owns the open semantic color.
         int initialColor = mPreviewBackground.getResolvedColor();
-        app.lawnchair.prime.drawer.PrimeDrawerFolderVisualOverrides primeOverrides =
-                app.lawnchair.prime.drawer.PrimeFolderLongPressHelper.getVisualOverrides(
-                        mContext, mFolder.getInfo());
-        int semanticOpenColor = LawnchairUtilsKt.resolveFolderBackgroundColor(
+        int finalColor = LawnchairUtilsKt.resolveFolderBackgroundColor(
                 mContext, mFolder.isInAppDrawer());
-        int semanticClosedColor = LawnchairUtilsKt.resolveFolderPreviewColor(
-                mContext, mFolder.isInAppDrawer());
-        int finalColor = primeOverrides != null && primeOverrides.getColor() != null
-                && (primeOverrides.getColor() & 0x00FFFFFF)
-                        != (semanticClosedColor & 0x00FFFFFF)
-                ? primeOverrides.getColor()
-                : semanticOpenColor;
 
         mFolderBackground.mutate();
         mFolderBackground.setColor(mIsOpening ? initialColor : finalColor);
@@ -351,23 +340,10 @@ public class FolderAnimationManager implements FolderAnimationCreator {
                 mCellLayout.setClipChildren(mCellLayoutClipChildren);
                 mCellLayout.setClipToPadding(mCellLayoutClipPadding);
 
-                // The background animator starts from the closed-folder preview color. Reassert
-                // the semantic open-folder color after opening so no animation/cancellation path
-                // can leave the Folder drawable stuck on the preview color.
+                // Keep the persistent Folder drawable on its own semantic role after opening.
                 if (mIsOpening) {
-                    app.lawnchair.prime.drawer.PrimeDrawerFolderVisualOverrides overrides =
-                            app.lawnchair.prime.drawer.PrimeFolderLongPressHelper.getVisualOverrides(
-                                    mContext, mFolder.getInfo());
-                    int semanticOpenColor = LawnchairUtilsKt.resolveFolderBackgroundColor(
-                            mContext, mFolder.isInAppDrawer());
-                    int semanticClosedColor = LawnchairUtilsKt.resolveFolderPreviewColor(
-                            mContext, mFolder.isInAppDrawer());
-                    int openColor = overrides != null && overrides.getColor() != null
-                            && (overrides.getColor() & 0x00FFFFFF)
-                                    != (semanticClosedColor & 0x00FFFFFF)
-                            ? overrides.getColor()
-                            : semanticOpenColor;
-                    mFolderBackground.setColor(openColor);
+                    mFolderBackground.setColor(LawnchairUtilsKt.resolveFolderBackgroundColor(
+                            mContext, mFolder.isInAppDrawer()));
                 }
             }
         });
