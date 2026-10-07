@@ -43,12 +43,15 @@ import android.util.Property;
 import android.view.View;
 import android.view.animation.Interpolator;
 
+import java.util.Locale;
+
 import androidx.annotation.VisibleForTesting;
 
 import com.android.launcher3.CellLayout;
 import com.android.launcher3.DeviceProfile;
 import com.android.launcher3.Flags;
 import com.android.launcher3.R;
+import com.android.launcher3.PrimeDebugLog;
 import com.android.launcher3.celllayout.DelegatedCellDrawing;
 import com.android.launcher3.graphics.ShapeDelegate;
 import com.android.launcher3.graphics.ThemeManager;
@@ -198,10 +201,14 @@ public class PreviewBackground extends DelegatedCellDrawing {
         ColorOption dotColorOption = PreferenceCacheExtensionsKt.firstCached(preferenceManager2.getNotificationDotColor());
         mDotColor = dotColorOption.getColorPreferenceEntry().getLightColor().invoke(context);
         mStrokeColor = ColorTokens.FolderIconBorderColor.resolveColor(context);
-        mBgColor = LawnchairUtilsKt.resolveFolderPreviewColor(
-                context,
-                invalidateDelegate instanceof FolderIcon
-                        && ((FolderIcon) invalidateDelegate).isInAppDrawer());
+        boolean isDrawerFolder = invalidateDelegate instanceof FolderIcon
+                && ((FolderIcon) invalidateDelegate).isInAppDrawer();
+        mBgColor = LawnchairUtilsKt.resolveFolderPreviewColor(context, isDrawerFolder);
+        PrimeDebugLog.d("PrimeFolderColor",
+                "CLOSED setup scope=" + (isDrawerFolder ? "DRAWER" : "HOME")
+                        + " semantic=" + colorHex(mBgColor)
+                        + " prime=" + colorHex(mPrimeColor)
+                        + " drawn=" + colorHex(getResolvedColor()));
         ta.recycle();
 
         DeviceProfile grid = activity.getDeviceProfile();
@@ -308,7 +315,15 @@ public class PreviewBackground extends DelegatedCellDrawing {
 
     public void setPrimeColor(Integer color) {
         mPrimeColor = color;
+        PrimeDebugLog.d("PrimeFolderColor",
+                "CLOSED primeOverride prime=" + colorHex(mPrimeColor)
+                        + " semantic=" + colorHex(mBgColor)
+                        + " drawn=" + colorHex(getResolvedColor()));
         invalidate();
+    }
+
+    private static String colorHex(Integer color) {
+        return color == null ? "null" : String.format(Locale.US, "#%08X", color);
     }
 
     public void setPrimeShape(IconShape shape) {
