@@ -236,6 +236,11 @@ class PrimeDrawerTabsRepository(context: Context) {
         }
     }
 
+    fun getFolderVisualOverrides(tabId: String, folderId: String): PrimeDrawerFolderVisualOverrides? =
+        getConfiguration().tabs.firstOrNull { it.id == tabId }
+            ?.folders?.firstOrNull { it.id == folderId }
+            ?.visualOverrides
+
     fun setFolderVisualOverrides(tabId: String, folderId: String, overrides: PrimeDrawerFolderVisualOverrides) {
         updateUserTab(tabId) { tab ->
             tab.copy(folders = tab.folders.map { folder ->
