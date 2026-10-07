@@ -194,10 +194,15 @@ public class FolderAnimationManager implements FolderAnimationCreator {
         app.lawnchair.prime.drawer.PrimeDrawerFolderVisualOverrides primeOverrides =
                 app.lawnchair.prime.drawer.PrimeFolderLongPressHelper.getVisualOverrides(
                         mContext, mFolder.getInfo());
+        int semanticOpenColor = LawnchairUtilsKt.resolveFolderBackgroundColor(
+                mContext, mFolder.isInAppDrawer());
+        int semanticClosedColor = LawnchairUtilsKt.resolveFolderPreviewColor(
+                mContext, mFolder.isInAppDrawer());
         int finalColor = primeOverrides != null && primeOverrides.getColor() != null
+                && (primeOverrides.getColor() & 0x00FFFFFF)
+                        != (semanticClosedColor & 0x00FFFFFF)
                 ? primeOverrides.getColor()
-                : LawnchairUtilsKt.resolveFolderBackgroundColor(
-                        mContext, mFolder.isInAppDrawer());
+                : semanticOpenColor;
 
         mFolderBackground.mutate();
         mFolderBackground.setColor(mIsOpening ? initialColor : finalColor);
@@ -353,10 +358,15 @@ public class FolderAnimationManager implements FolderAnimationCreator {
                     app.lawnchair.prime.drawer.PrimeDrawerFolderVisualOverrides overrides =
                             app.lawnchair.prime.drawer.PrimeFolderLongPressHelper.getVisualOverrides(
                                     mContext, mFolder.getInfo());
+                    int semanticOpenColor = LawnchairUtilsKt.resolveFolderBackgroundColor(
+                            mContext, mFolder.isInAppDrawer());
+                    int semanticClosedColor = LawnchairUtilsKt.resolveFolderPreviewColor(
+                            mContext, mFolder.isInAppDrawer());
                     int openColor = overrides != null && overrides.getColor() != null
+                            && (overrides.getColor() & 0x00FFFFFF)
+                                    != (semanticClosedColor & 0x00FFFFFF)
                             ? overrides.getColor()
-                            : LawnchairUtilsKt.resolveFolderBackgroundColor(
-                                    mContext, mFolder.isInAppDrawer());
+                            : semanticOpenColor;
                     mFolderBackground.setColor(openColor);
                 }
             }
