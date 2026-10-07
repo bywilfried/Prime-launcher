@@ -197,7 +197,7 @@ public class OptionsPopupView<T extends Context & ActivityContext> extends Arrow
                 view.getLayoutParams().width = width;
             }
             view.getIconView().setBackgroundDrawable(item.icon);
-            view.getTextView().setTextColor(popup.getPrimePopupTextColor());
+            view.getBubbleText().setTextColor(popup.getPrimePopupTextColor());
             if (item.icon != null) item.icon.setTint(popup.getPrimePopupIconColor());
             view.getBubbleText().setText(item.label);
             view.setOnClickListener(popup);
