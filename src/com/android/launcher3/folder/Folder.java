@@ -345,7 +345,10 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         final int paddingLeftRight = dp.folderContentPaddingLeftRight;
 
         mBackground = DrawableTokens.RoundRectFolder.resolve(getContext());
-        mBackground.setColor(LawnchairUtilsKt.resolveFolderBackgroundColor(getContext(), isInAppDrawer()));
+        // mInfo is assigned only after inflation; do not call isInAppDrawer() here.
+        // Default stays on the historical Lawnchair token. Prime Home/Drawer resolution is
+        // reapplied once the Folder has its ItemInfo.
+        mBackground.setColor(LawnchairUtilsKt.resolveFolderBackgroundColor(getContext(), true));
         var alpha = LawnchairUtilsKt.getFolderBackgroundAlpha(getContext());
         mBackground.setAlpha(alpha);
 
