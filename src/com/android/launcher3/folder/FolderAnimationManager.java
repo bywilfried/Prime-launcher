@@ -345,6 +345,20 @@ public class FolderAnimationManager implements FolderAnimationCreator {
                 mContent.setClipToPadding(mContentClipToPadding);
                 mCellLayout.setClipChildren(mCellLayoutClipChildren);
                 mCellLayout.setClipToPadding(mCellLayoutClipPadding);
+
+                // The background animator starts from the closed-folder preview color. Reassert
+                // the semantic open-folder color after opening so no animation/cancellation path
+                // can leave the Folder drawable stuck on the preview color.
+                if (mIsOpening) {
+                    app.lawnchair.prime.drawer.PrimeDrawerFolderVisualOverrides overrides =
+                            app.lawnchair.prime.drawer.PrimeFolderLongPressHelper.getVisualOverrides(
+                                    mContext, mFolder.getInfo());
+                    int openColor = overrides != null && overrides.getColor() != null
+                            ? overrides.getColor()
+                            : LawnchairUtilsKt.resolveFolderBackgroundColor(
+                                    mContext, mFolder.isInAppDrawer());
+                    mFolderBackground.setColor(openColor);
+                }
             }
         });
 
