@@ -224,6 +224,12 @@ fun PrimeColorSelection(
     }
     val pagerState = rememberPagerState(initialPage = if (defaultTabIndex == 0) 0 else 1, pageCount = { 2 })
     val customMode = remember(appliedColor) { mutableIntStateOf(if (appliedColor is ColorOption.DynamicColor) 1 else 0) }
+    // Keep the dynamic editor anchored to the semantic theme recipe until the user actually
+    // applies a dynamic override. This avoids the generic Accent1/500 fallback when Default or
+    // a fixed custom color is currently active.
+    val dynamicEditorInitial = remember(appliedColor, defaultDynamicColor) {
+        (appliedColor as? ColorOption.DynamicColor) ?: defaultDynamicColor
+    }
     val onPresetClick = { option: ColorOption ->
         selectedColor.intValue = if (option == ColorOption.Default) {
             themeFallbackColor
@@ -337,8 +343,7 @@ fun PrimeColorSelection(
                                 // always open on the semantic theme recipe supplied by the caller.
                                 // Use appliedColor (the route snapshot), not the mutable preset state:
                                 // visiting Presets must not silently replace the editor's baseline.
-                                initial = (appliedColor as? ColorOption.DynamicColor)
-                                    ?: defaultDynamicColor,
+                                initial = dynamicEditorInitial,
                                 onApply = { option ->
                                     currentAppliedColor = option
                                     onApply(option)
