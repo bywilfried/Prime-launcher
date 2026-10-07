@@ -1457,7 +1457,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     @Nullable private AllAppsRecyclerView mPrimeCanonicalRecyclerView;
     @Nullable private AllAppsRecyclerView mPrimeDirectSelectionSparePage;
     private int mPrimeDirectSelectionGeneration;
-    private final StringBuilder mPrimeSwipeDebugLog = new StringBuilder();
+    private static final StringBuilder mPrimeSwipeDebugLog = new StringBuilder();
 
     /** Adds non-RecyclerView Prime diagnostics to the same in-launcher swipe log. */
     public void recordPrimeSwipeDebugEvent(@NonNull String event) {
@@ -1557,12 +1557,12 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         return null;
     }
 
-    public String getPrimeSwipeDebugLog() {
+    public static String getPrimeSwipeDebugLog() {
         return mPrimeSwipeDebugLog.length() == 0
                 ? "Aucun swipe Prime enregistré." : mPrimeSwipeDebugLog.toString();
     }
 
-    public void clearPrimeSwipeDebugLog() {
+    public static void clearPrimeSwipeDebugLog() {
         mPrimeSwipeDebugLog.setLength(0);
     }
 
