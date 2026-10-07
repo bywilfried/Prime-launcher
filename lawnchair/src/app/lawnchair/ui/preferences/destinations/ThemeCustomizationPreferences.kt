@@ -159,6 +159,12 @@ private fun ThemeSection(
                     if (role == ThemeColorRole.GLOBAL_ACCENT ||
                         role == ThemeColorRole.GLOBAL_SETTINGS_BACKGROUND ||
                         role == ThemeColorRole.GLOBAL_SETTINGS_CARD_BACKGROUND ||
+                        role == ThemeColorRole.HOME_POPUP_BACKGROUND ||
+                        role == ThemeColorRole.HOME_POPUP_TEXT ||
+                        role == ThemeColorRole.HOME_POPUP_ICON ||
+                        role == ThemeColorRole.DRAWER_POPUP_BACKGROUND ||
+                        role == ThemeColorRole.DRAWER_POPUP_TEXT ||
+                        role == ThemeColorRole.DRAWER_POPUP_ICON ||
                         role == ThemeColorRole.DRAWER_BACKGROUND ||
                         role == ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE ||
                         role == ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE ||
@@ -232,6 +238,9 @@ private fun roleLabel(role: ThemeColorRole): String = when (role) {
     ThemeColorRole.HOME_FOLDER_OPEN_HINT -> "Dossier ouvert — texte indicatif"
     ThemeColorRole.HOME_FOLDER_PAGINATION -> "Dossiers — pagination"
     ThemeColorRole.HOME_FOLDER_BORDER -> "Dossiers — bordure"
+    ThemeColorRole.HOME_POPUP_BACKGROUND -> "Menus contextuels — fond"
+    ThemeColorRole.HOME_POPUP_TEXT -> "Menus contextuels — texte"
+    ThemeColorRole.HOME_POPUP_ICON -> "Menus contextuels — icônes"
     ThemeColorRole.DRAWER_BACKGROUND -> "Général — fond"
     ThemeColorRole.DRAWER_TEXT -> "Général — texte"
     ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE -> "Recherche — fond inactif"
@@ -251,6 +260,9 @@ private fun roleLabel(role: ThemeColorRole): String = when (role) {
     ThemeColorRole.DRAWER_PROFILE_TAB_SELECTED_BACKGROUND -> "Personnel / Travail — sélectionné"
     ThemeColorRole.DRAWER_PROFILE_TAB_UNSELECTED_BACKGROUND -> "Personnel / Travail — non sélectionné"
     ThemeColorRole.DRAWER_PROFILE_TAB_TEXT -> "Personnel / Travail — texte"
+    ThemeColorRole.DRAWER_POPUP_BACKGROUND -> "Menus contextuels — fond"
+    ThemeColorRole.DRAWER_POPUP_TEXT -> "Menus contextuels — texte"
+    ThemeColorRole.DRAWER_POPUP_ICON -> "Menus contextuels — icônes"
     ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND -> "Onglets de catégorie — actif"
     ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND -> "Onglets de catégorie — inactif"
     ThemeColorRole.TABS_CATEGORY_TEXT -> "Onglets de catégorie — texte"
