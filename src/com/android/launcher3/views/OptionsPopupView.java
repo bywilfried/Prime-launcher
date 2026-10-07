@@ -183,6 +183,12 @@ public class OptionsPopupView<T extends Context & ActivityContext> extends Arrow
         OptionsPopupView<T> popup = (OptionsPopupView<T>) activityContext.getLayoutInflater()
                 .inflate(R.layout.longpress_options_menu, activityContext.getDragLayer(), false);
         popup.mTargetRect = targetRect;
+        if (activityContext instanceof com.android.launcher3.Launcher
+                && ((com.android.launcher3.Launcher) activityContext).isInState(com.android.launcher3.LauncherState.ALL_APPS)) {
+            popup.setPrimePopupRoles(app.lawnchair.theme.ThemeColorRole.DRAWER_POPUP_BACKGROUND,
+                    app.lawnchair.theme.ThemeColorRole.DRAWER_POPUP_TEXT,
+                    app.lawnchair.theme.ThemeColorRole.DRAWER_POPUP_ICON);
+        }
         popup.setShouldAddArrow(shouldAddArrow);
 
         for (OptionItem item : items) {
@@ -191,6 +197,8 @@ public class OptionsPopupView<T extends Context & ActivityContext> extends Arrow
                 view.getLayoutParams().width = width;
             }
             view.getIconView().setBackgroundDrawable(item.icon);
+            view.getTextView().setTextColor(popup.getPrimePopupTextColor());
+            if (item.icon != null) item.icon.setTint(popup.getPrimePopupIconColor());
             view.getBubbleText().setText(item.label);
             view.setOnClickListener(popup);
             view.setOnLongClickListener(popup);
