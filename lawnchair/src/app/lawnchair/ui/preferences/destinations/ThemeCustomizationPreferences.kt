@@ -159,6 +159,8 @@ private fun ThemeSection(
                     if (role == ThemeColorRole.GLOBAL_ACCENT ||
                         role == ThemeColorRole.GLOBAL_SETTINGS_BACKGROUND ||
                         role == ThemeColorRole.GLOBAL_SETTINGS_CARD_BACKGROUND ||
+                        role == ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND ||
+                        role == ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND ||
                         role == ThemeColorRole.HOME_POPUP_BACKGROUND ||
                         role == ThemeColorRole.HOME_POPUP_TEXT ||
                         role == ThemeColorRole.HOME_POPUP_ICON ||
