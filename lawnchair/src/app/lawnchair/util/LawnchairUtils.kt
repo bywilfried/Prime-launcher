@@ -223,12 +223,14 @@ fun getCustomFolderColor(context: Context): Int {
 }
 
 /** Closed-folder preview circle color (includes preview opacity). */
-fun resolveFolderPreviewColor(context: Context): Int {
+fun resolveFolderPreviewColor(context: Context, isInAppDrawer: Boolean): Int {
     val custom = getCustomFolderColor(context)
     val base = if (custom != 0) {
         custom
-    } else {
+    } else if (isInAppDrawer) {
         ColorTokens.FolderPreviewColor.resolveColor(context)
+    } else {
+        ThemeColors.resolve(context, ThemeProfile.current(context), ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND, context.effectiveThemeVariant())
     }
     return ColorUtils.setAlphaComponent(base, getFolderPreviewAlpha(context))
 }
@@ -237,13 +239,15 @@ fun resolveFolderPreviewColor(context: Context): Int {
  * Open-folder background fill color.
  * Opacity is applied separately via [getFolderBackgroundAlpha] on the drawable.
  */
-fun resolveFolderBackgroundColor(context: Context): Int {
+fun resolveFolderBackgroundColor(context: Context, isInAppDrawer: Boolean): Int {
     val prefs2 = PreferenceManager2.getInstance(context)
     val custom = prefs2.folderColor.firstCached().colorPreferenceEntry.lightColor(context)
     return if (custom != 0) {
         custom
-    } else {
+    } else if (isInAppDrawer) {
         ColorTokens.FolderBackgroundColor.resolveColor(context)
+    } else {
+        ThemeColors.resolve(context, ThemeProfile.current(context), ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND, context.effectiveThemeVariant())
     }
 }
 
