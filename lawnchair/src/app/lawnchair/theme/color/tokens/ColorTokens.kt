@@ -179,6 +179,13 @@ object ColorTokens {
 
     @JvmField val PopupShadeFirst = DayNightColorToken(PopupColorPrimary.setLStar(98.0), PopupColorPrimary.setLStar(20.0))
 
+    // Drawer popups need stronger separation from the All Apps surface while preserving
+    // the hue/chroma of the selected dynamic palette. Home keeps the historical recipe.
+    @JvmField val DrawerPopupBackground = DayNightColorToken(
+        PopupColorPrimary.setLStar(92.0),
+        PopupColorPrimary.setLStar(28.0),
+    )
+
     @JvmField val PopupShadeSecond = DayNightColorToken(PopupColorPrimary.setLStar(95.0), PopupColorPrimary.setLStar(15.0))
 
     @JvmField val PopupShadeThird = DayNightColorToken(PopupColorPrimary.setLStar(90.0), PopupColorPrimary.setLStar(10.0))
