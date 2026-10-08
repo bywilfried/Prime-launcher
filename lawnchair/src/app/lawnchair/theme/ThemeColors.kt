@@ -83,7 +83,8 @@ object ThemeColors {
 
     /** Dock background: Prime override wins; otherwise preserve the existing Dock preference. */
     @JvmStatic
-    fun resolveDockBackground(context: Context, legacyOption: ColorOption, variant: ThemeVariant): Int {
+    fun resolveDockBackground(context: Context, legacyOption: ColorOption): Int {
+        val variant = context.effectiveThemeVariant()
         val role = ThemeColorRole.HOME_HOTSEAT_BACKGROUND
         val profile = ThemeProfile.current(context)
         if (ThemeColorOverrides(context).get(profile, variant, role) != ColorOption.Default) {
