@@ -184,14 +184,19 @@ fun PrimeColorSelection(
     staticEntries: List<ColorPreferenceEntry<ColorOption>> = staticColors,
     defaultPreviewColor: Int? = null,
     defaultDynamicColor: ColorOption.DynamicColor? = null,
- ) {
+    automaticContrastDefaultLabel: Boolean = false,
+) {
     val context = LocalContext.current
     val themeFallbackColor = defaultPreviewColor ?: MaterialTheme.colorScheme.surfaceVariant.toArgb()
     val displayedDynamicEntries: List<ColorPreferenceEntry<ColorOption>> = dynamicEntries.map { entry ->
         if (entry.value == ColorOption.Default) {
             ColorPreferenceEntry<ColorOption>(
                 value = ColorOption.Default,
-                label = entry.label,
+                label = if (automaticContrastDefaultLabel) {
+                    { "Couleur par défaut — Contraste automatique" }
+                } else {
+                    entry.label
+                },
                 lightColor = { themeFallbackColor },
                 darkColor = { themeFallbackColor },
             )
