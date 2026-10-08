@@ -28,12 +28,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import app.lawnchair.preferences.PreferenceManager
 import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences.preferenceManager
 import app.lawnchair.preferences2.PreferenceManager2
 import app.lawnchair.preferences2.preferenceManager2
+import app.lawnchair.theme.ThemeColors
+import app.lawnchair.theme.color.ColorOption
+import app.lawnchair.ui.preferences.LocalNavController
+import app.lawnchair.ui.preferences.navigation.ColorSelection
 import app.lawnchair.ui.preferences.LocalIsExpandedScreen
 import app.lawnchair.ui.preferences.components.DummyLauncherBox
 import app.lawnchair.ui.preferences.components.DummyLauncherLayout
@@ -94,7 +99,17 @@ fun DockPreferences(modifier: Modifier = Modifier) {
 @Composable
 fun HotseatBackgroundSettings(prefs: PreferenceManager, prefs2: PreferenceManager2) {
     DividerColumn {
-        ColorPreference(preference = prefs2.hotseatBackgroundColor)
+        val context = LocalContext.current
+        val navController = LocalNavController.current
+        val legacyColor = prefs2.hotseatBackgroundColor.getAdapter().state.value
+        val actualColor = ThemeColors.resolveDockBackground(context, legacyColor)
+        ColorPreference(
+            label = "Couleur d'arrière-plan",
+            selectedColor = legacyColor,
+            previewColor = ColorOption.CustomColor(actualColor),
+            description = "Couleur effective du dock",
+            onClick = { navController.navigate(ColorSelection(prefs2.hotseatBackgroundColor.key.name)) },
+        )
         SliderPreference(
             label = stringResource(id = R.string.hotseat_bg_corner_radius),
             adapter = prefs2.hotseatBackgroundCornerRadius.getAdapter(),
