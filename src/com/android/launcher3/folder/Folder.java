@@ -787,9 +787,6 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
             }
             return false;
         });
-        if (primeOverrides != null && primeOverrides.getTextColor() != null) {
-            mFolderName.setTextColor(primeOverrides.getTextColor());
-        }
         // Open-folder background is an independent semantic role in Prime. Do not reuse the
         // legacy Prime folder "color" here: that value belongs to the closed preview path.
         // This keeps CLOSED_BACKGROUND and OPEN_BACKGROUND independent end-to-end.
@@ -799,6 +796,22 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
                 ? primeOverrides.getOpenColor()
                 : semanticOpenColor;
         mBackground.setColor(openColor);
+        // A single contrast algorithm serves Home, Dock and Drawer, but each has its own
+        // independently persisted light/dark text override.
+        app.lawnchair.theme.ThemeColorRole titleRole;
+        if (isInAppDrawer()) {
+            titleRole = app.lawnchair.theme.ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT;
+        } else if (mInfo.container == com.android.launcher3.LauncherSettings.Favorites.CONTAINER_HOTSEAT
+                || mInfo.container == com.android.launcher3.LauncherSettings.Favorites.CONTAINER_HOTSEAT_PREDICTION) {
+            titleRole = app.lawnchair.theme.ThemeColorRole.DOCK_FOLDER_OPEN_TEXT;
+        } else {
+            titleRole = app.lawnchair.theme.ThemeColorRole.HOME_FOLDER_OPEN_TEXT;
+        }
+        int titleColor = app.lawnchair.theme.ThemeColors.resolveOpenFolderTitleColor(
+                getContext(), titleRole, openColor);
+        // Explicit per-folder text overrides are intentionally stronger than automatic color.
+        mFolderName.setTextColor(primeOverrides != null && primeOverrides.getTextColor() != null
+                ? primeOverrides.getTextColor() : titleColor);
         if (primeOverrides != null && primeOverrides.getBackgroundOpacity() != null) {
             mBackground.setAlpha(Math.round(255 * primeOverrides.getBackgroundOpacity()));
         } else {
