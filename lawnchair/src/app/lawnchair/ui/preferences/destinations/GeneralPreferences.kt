@@ -258,9 +258,13 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
                 )
             }
             ExpandAndShrink(visible = canDisplayNotificationDot && showNotificationCount) {
+                val profile = ThemeProfile.current(context)
+                val variant = context.effectiveThemeVariant()
+                val dotOverride = ThemeColorOverrides(context).get(profile, variant, ThemeColorRole.GLOBAL_NOTIFICATION_DOT)
+                val textOverride = ThemeColorOverrides(context).get(profile, variant, ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT)
                 NotificationDotColorContrastWarnings(
-                    dotColor = dotColor,
-                    dotTextColor = dotTextColor,
+                    dotColor = if (dotOverride == ColorOption.Default) dotColor else dotOverride,
+                    dotTextColor = if (textOverride == ColorOption.Default) dotTextColor else textOverride,
                 )
             }
         }
