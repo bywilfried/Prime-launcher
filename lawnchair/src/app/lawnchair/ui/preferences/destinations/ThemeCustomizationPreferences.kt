@@ -44,6 +44,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier) {
     var variant by rememberSaveable { mutableStateOf(ThemeVariant.LIGHT) }
     var expanded by rememberSaveable { mutableStateOf<ThemeColorRole.Section?>(null) }
     var confirmThemeReset by rememberSaveable { mutableStateOf(false) }
+    var confirmVariantReset by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
     val profile = ThemeProfile.current(context)
     val overrides = remember(context) { ThemeColorOverrides(context) }
@@ -102,7 +103,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier) {
             PreferenceTemplate(
                 title = { Text("Réinitialiser la variante") },
                 description = { Text("Supprimera les personnalisations de la variante affichée.") },
-                onClick = { overrides.resetVariant(profile, variant) },
+                onClick = { confirmVariantReset = true },
             )
             PreferenceTemplate(
                 title = { Text("Réinitialiser le thème") },
@@ -120,6 +121,29 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier) {
                 enabled = false,
             )
         }
+    }
+
+    if (confirmVariantReset) {
+        AlertDialog(
+            onDismissRequest = { confirmVariantReset = false },
+            title = { Text("Réinitialiser la variante ?") },
+            text = {
+                Text("Toutes les personnalisations de la variante ${if (variant == ThemeVariant.LIGHT) "Clair" else "Sombre"} seront supprimées. L’autre variante sera conservée.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    overrides.resetVariant(profile, variant)
+                    confirmVariantReset = false
+                }) {
+                    Text("Réinitialiser")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmVariantReset = false }) {
+                    Text("Annuler")
+                }
+            },
+        )
     }
 
     if (confirmThemeReset) {
