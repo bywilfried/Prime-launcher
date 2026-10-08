@@ -25,6 +25,7 @@ fun PresetsList(
     onPresetClick: (ColorOption) -> Unit,
     isPresetSelected: (ColorOption) -> Boolean,
     modifier: Modifier = Modifier,
+    automaticContrastDefault: Boolean = false,
 ) {
     val mMSDLPlayerWrapper = MSDLPlayerWrapper.INSTANCE.get(LocalContext.current)
     PreferenceGroup(
@@ -40,10 +41,12 @@ fun PresetsList(
                             selected = isPresetSelected(entry.value),
                             onClick = null,
                         )
-                        ColorDot(
-                            entry = entry,
-                            modifier = Modifier.padding(start = 16.dp),
-                        )
+                        if (automaticContrastDefault && entry.value == ColorOption.Default) {
+                            app.lawnchair.ui.preferences.components.colorpreference.ContrastColorDot(
+                                modifier = Modifier.padding(start = 16.dp))
+                        } else {
+                            ColorDot(entry = entry, modifier = Modifier.padding(start = 16.dp))
+                        }
                     }
                 },
                 onClick = {
