@@ -242,9 +242,13 @@ private fun ThemeSection(
                             label = roleLabel(role),
                             selectedColor = override,
                             previewColor = ColorOption.CustomColor(preview),
-                            iconColorPreview = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT && override == ColorOption.IconColor,
+                            iconColorPreview = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT &&
+                                (override == ColorOption.IconColor || override == ColorOption.Default),
                             // Always display the resolved color, not a generic "A" glyph.
-                            automaticContrastPreview = false,
+                            automaticContrastPreview = override == ColorOption.Default &&
+                                (role == ThemeColorRole.HOME_FOLDER_OPEN_TEXT ||
+                                    role == ThemeColorRole.DOCK_FOLDER_OPEN_TEXT ||
+                                    role == ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT),
                             description = if (override == ColorOption.Default) {
                                 "Valeur du thème"
                             } else {
