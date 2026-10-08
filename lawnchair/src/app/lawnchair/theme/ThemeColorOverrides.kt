@@ -47,9 +47,20 @@ class ThemeColorOverrides(private val context: Context) {
     private fun removeMatching(profile: ThemeProfile, variant: ThemeVariant?) {
         val prefix = if (variant == null) prefix(profile) else variantPrefix(profile, variant)
         val editor = prefs.edit()
-        prefs.all.keys.filter { it.startsWith(prefix) }.forEach(editor::remove)
+        val removedKeys = prefs.all.keys.filter { it.startsWith(prefix) }
+        val removedDotOverride = removedKeys.any { key ->
+            key.endsWith(ThemeColorRole.GLOBAL_NOTIFICATION_DOT.id) ||
+                key.endsWith(ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT.id)
+        }
+        removedKeys.forEach(editor::remove)
         editor.apply()
         notifyThemeChanged()
+        if (removedDotOverride) {
+            // A reset must rebuild DeviceProfile's DotRenderer, just like an
+            // individual dot color change; recreating Launcher alone is insufficient.
+            ReloadHelper(context).reloadGrid()
+            ReloadHelper(context).reloadTaskbar()
+        }
     }
 
     private fun notifyThemeChanged() {
