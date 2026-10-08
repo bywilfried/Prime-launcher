@@ -28,6 +28,12 @@ import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences.preferenceManager
 import app.lawnchair.preferences2.asState
 import app.lawnchair.preferences2.preferenceManager2
+import app.lawnchair.theme.ThemeColorRole
+import app.lawnchair.theme.ThemeColorOverrides
+import app.lawnchair.theme.ThemeColors
+import app.lawnchair.theme.ThemeProfile
+import app.lawnchair.theme.effectiveThemeVariant
+import app.lawnchair.ui.preferences.navigation.ThemeColorSelection
 import app.lawnchair.theme.color.ColorOption
 import app.lawnchair.theme.color.ColorStyle
 import app.lawnchair.ui.preferences.LocalIsExpandedScreen
@@ -214,7 +220,17 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
             NotificationDotsPreference(enabled = notificationEnabled, serviceEnabled = serviceEnabled)
             val canDisplayNotificationDot = notificationEnabled && serviceEnabled
             ExpandAndShrink(visible = canDisplayNotificationDot) {
-                ColorPreference(preference = prefs2.notificationDotColor)
+                val profile = ThemeProfile.current(context)
+                val variant = context.effectiveThemeVariant()
+                val role = ThemeColorRole.GLOBAL_NOTIFICATION_DOT
+                val override = ThemeColorOverrides(context).get(profile, variant, role)
+                ColorPreference(
+                    label = stringResource(id = R.string.notification_dots_color),
+                    selectedColor = override,
+                    previewColor = ColorOption.CustomColor(ThemeColors.resolve(context, profile, role, variant)),
+                    description = if (override == ColorOption.Default) "Valeur du thème" else "Personnalisée",
+                    onClick = { navController.navigate(ThemeColorSelection(role.id, variant.name)) },
+                )
             }
             ExpandAndShrink(visible = canDisplayNotificationDot) {
                 SwitchPreference(
@@ -223,7 +239,17 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
                 )
             }
             ExpandAndShrink(visible = canDisplayNotificationDot && showNotificationCount) {
-                ColorPreference(preference = prefs2.notificationDotTextColor)
+                val profile = ThemeProfile.current(context)
+                val variant = context.effectiveThemeVariant()
+                val role = ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT
+                val override = ThemeColorOverrides(context).get(profile, variant, role)
+                ColorPreference(
+                    label = stringResource(id = R.string.notification_dots_text_color),
+                    selectedColor = override,
+                    previewColor = ColorOption.CustomColor(ThemeColors.resolve(context, profile, role, variant)),
+                    description = if (override == ColorOption.Default) "Valeur du thème" else "Personnalisée",
+                    onClick = { navController.navigate(ThemeColorSelection(role.id, variant.name)) },
+                )
             }
             ExpandAndShrink(visible = canDisplayNotificationDot && showNotificationCount) {
                 NotificationDotColorContrastWarnings(
