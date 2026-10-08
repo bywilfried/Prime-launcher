@@ -20,7 +20,7 @@ object NotificationDotThemeColors {
         val variant = context.effectiveThemeVariant()
         val profile = ThemeProfile.current(context)
         val override = ThemeColorOverrides(context).get(profile, variant, role)
-        if (override == ColorOption.IconColor) {
+        if (override == ColorOption.IconColor || (role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT && override == ColorOption.Default && legacyOption == ColorOption.Default)) {
             // The real color is per icon; DeviceProfile uses this only as a fallback.
             return ThemeColors.official(context, profile, role, variant)
         }
@@ -49,7 +49,7 @@ object NotificationDotThemeColors {
     @JvmStatic
     fun isPerIconColor(context: Context): Boolean =
         ThemeColorOverrides(context).get(ThemeProfile.current(context), context.effectiveThemeVariant(),
-            ThemeColorRole.GLOBAL_NOTIFICATION_DOT) == ColorOption.IconColor
+            ThemeColorRole.GLOBAL_NOTIFICATION_DOT).let { it == ColorOption.IconColor || (it == ColorOption.Default && PreferenceManager2.getInstance(context).notificationDotColor.firstCached() == ColorOption.Default) }
 
     @JvmStatic
     fun isAutomaticText(context: Context): Boolean =
