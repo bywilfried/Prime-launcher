@@ -227,7 +227,10 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
                 ColorPreference(
                     label = stringResource(id = R.string.notification_dots_color),
                     selectedColor = override,
-                    previewColor = ColorOption.CustomColor(ThemeColors.resolve(context, profile, role, variant)),
+                    previewColor = ColorOption.CustomColor(
+                        app.lawnchair.theme.NotificationDotThemeColors.resolve(context, role, dotColor)
+                            .takeIf { it != 0 } ?: ThemeColors.official(context, profile, role, variant),
+                    ),
                     description = if (override == ColorOption.Default) "Valeur du thème" else "Personnalisée",
                     onClick = { navController.navigate(ThemeColorSelection(role.id, variant.name)) },
                 )
@@ -246,7 +249,10 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
                 ColorPreference(
                     label = stringResource(id = R.string.notification_dots_text_color),
                     selectedColor = override,
-                    previewColor = ColorOption.CustomColor(ThemeColors.resolve(context, profile, role, variant)),
+                    previewColor = ColorOption.CustomColor(
+                        app.lawnchair.theme.NotificationDotThemeColors.resolve(context, role, dotTextColor)
+                            .takeIf { it != 0 } ?: ThemeColors.official(context, profile, role, variant),
+                    ),
                     description = if (override == ColorOption.Default) "Valeur du thème" else "Personnalisée",
                     onClick = { navController.navigate(ThemeColorSelection(role.id, variant.name)) },
                 )
