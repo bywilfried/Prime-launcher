@@ -21,6 +21,7 @@ import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.core.DataMigration
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
@@ -997,7 +998,30 @@ class PreferenceManager2 @Inject constructor(
     companion object {
         private val Context.preferencesDataStore by preferencesDataStore(
             name = "preferences",
-            produceMigrations = { listOf(SharedPreferencesMigration(context = it).produceMigration()) },
+            produceMigrations = {
+                listOf(
+                    SharedPreferencesMigration(context = it).produceMigration(),
+                    object : DataMigration<Preferences> {
+                        private val migrationKey = booleanPreferencesKey("prime_notification_dot_legacy_reset_v1")
+                        private val dotKey = stringPreferencesKey("notification_dot_color")
+                        private val countKey = stringPreferencesKey("notification_dot_text_color")
+
+                        override suspend fun shouldMigrate(currentData: Preferences): Boolean =
+                            currentData[migrationKey] != true
+
+                        override suspend fun migrate(currentData: Preferences): Preferences =
+                            currentData.toMutablePreferences().apply {
+                                // One-time cleanup of old Lawnchair test colors. Prime's
+                                // separate per-theme/per-variant overrides are untouched.
+                                remove(dotKey)
+                                remove(countKey)
+                                this[migrationKey] = true
+                            }
+
+                        override suspend fun cleanUp() = Unit
+                    },
+                )
+            },
         )
 
         @JvmField
