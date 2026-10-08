@@ -186,6 +186,8 @@ fun PrimeColorSelection(
     defaultDynamicColor: ColorOption.DynamicColor? = null,
     automaticContrastDefaultLabel: Boolean = false,
     perIconDotOption: Boolean = false,
+    adaptiveFolderDefault: Boolean = false,
+    perIconDefault: Boolean = false,
 ) {
     val context = LocalContext.current
     val themeFallbackColor = defaultPreviewColor ?: MaterialTheme.colorScheme.surfaceVariant.toArgb()
@@ -194,7 +196,11 @@ fun PrimeColorSelection(
         if (entry.value == ColorOption.Default) {
             ColorPreferenceEntry<ColorOption>(
                 value = ColorOption.Default,
-                label = if (automaticContrastDefaultLabel) {
+                label = if (adaptiveFolderDefault) {
+                    { "Automatique — adaptée au fond du dossier" }
+                } else if (perIconDefault) {
+                    { "Selon la couleur de l’icône (par défaut)" }
+                } else if (automaticContrastDefaultLabel) {
                     { "Couleur par défaut — Contraste automatique" }
                 } else {
                     entry.label
@@ -312,6 +318,8 @@ fun PrimeColorSelection(
                             onPresetClick = onPresetClick,
                             isPresetSelected = { it == currentAppliedColor },
                             automaticContrastDefault = automaticContrastDefaultLabel,
+                            adaptiveFolderDefault = adaptiveFolderDefault,
+                            perIconDefault = perIconDefault,
                         )
                         SwatchGrid(
                             modifier = Modifier.padding(top = 12.dp),
