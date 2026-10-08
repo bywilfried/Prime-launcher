@@ -173,6 +173,15 @@ private fun ThemeSection(
                         role == ThemeColorRole.HOME_HOTSEAT_BACKGROUND ||
                         role == ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND ||
                         role == ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND ||
+                        role == ThemeColorRole.HOME_FOLDER_OPEN_TEXT ||
+                        role == ThemeColorRole.DOCK_FOLDER_OPEN_TEXT ||
+                        role == ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT ||
+                        role == ThemeColorRole.DOCK_FOLDER_CLOSED_BACKGROUND ||
+                        role == ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT ||
+                        role == ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND ||
+                        role == ThemeColorRole.DOCK_FOLDER_OPEN_HINT ||
+                        role == ThemeColorRole.DOCK_FOLDER_PAGINATION ||
+                        role == ThemeColorRole.DOCK_FOLDER_BORDER ||
                         role == ThemeColorRole.HOME_POPUP_BACKGROUND ||
                         role == ThemeColorRole.HOME_POPUP_TEXT ||
                         role == ThemeColorRole.HOME_POPUP_ICON ||
