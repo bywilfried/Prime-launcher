@@ -248,7 +248,8 @@ private fun ThemeSection(
                             automaticContrastPreview = override == ColorOption.Default &&
                                 (role == ThemeColorRole.HOME_FOLDER_OPEN_TEXT ||
                                     role == ThemeColorRole.DOCK_FOLDER_OPEN_TEXT ||
-                                    role == ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT),
+                                    role == ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT ||
+                                    role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT),
                             description = if (override == ColorOption.Default) {
                                 "Valeur du thème"
                             } else {
