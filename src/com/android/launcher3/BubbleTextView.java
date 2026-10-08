@@ -1063,11 +1063,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             if (app.lawnchair.theme.NotificationDotThemeColors.isPerIconColor(getContext())) {
                 int background = mDotParams.appColor;
                 if (Color.alpha(background) == 0) {
-                    background = app.lawnchair.theme.ThemeColors.official(
-                            getContext(),
-                            app.lawnchair.theme.ThemeProfile.Companion.current(getContext()),
-                            app.lawnchair.theme.ThemeColorRole.GLOBAL_NOTIFICATION_DOT,
-                            app.lawnchair.theme.ThemeVariantKt.effectiveThemeVariant(getContext()));
+                    background = mDotParams.dotColor;
                 }
                 int textColor = app.lawnchair.theme.NotificationDotThemeColors.isAutomaticText(getContext())
                         ? app.lawnchair.theme.NotificationDotThemeColors.contrastForBackground(background)
