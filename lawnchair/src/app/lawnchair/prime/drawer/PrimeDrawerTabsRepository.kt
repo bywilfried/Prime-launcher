@@ -349,6 +349,7 @@ class PrimeDrawerTabsRepository(context: Context) {
             childIconShape = own.childIconShape ?: category.folderChildIconShape,
             shape = own.shape ?: category.folderShape,
             color = own.color ?: category.folderColor,
+            openColor = own.openColor ?: category.folderOpenColor,
             textColor = own.textColor ?: category.folderTextColor ?: tabsModeTextColor(),
             closedLabelColor = own.closedLabelColor ?: category.drawerTextColor ?: tabsModeTextColor(),
         )
@@ -534,6 +535,7 @@ class PrimeDrawerTabsRepository(context: Context) {
         folderChildIconShape?.let { put("folderChildIconShape", it) }
         folderShape?.let { put("folderShape", it) }
         folderColor?.let { put("folderColor", it) }
+        folderOpenColor?.let { put("folderOpenColor", it) }
         drawerTextColor?.let { put("drawerTextColor", it) }
         folderTextColor?.let { put("folderTextColor", it) }
     }
@@ -562,6 +564,7 @@ class PrimeDrawerTabsRepository(context: Context) {
         folderChildIconShape = this.optStringOrNull("folderChildIconShape"),
         folderShape = this.optStringOrNull("folderShape"),
         folderColor = this.optIntOrNull("folderColor"),
+        folderOpenColor = this.optIntOrNull("folderOpenColor"),
         drawerTextColor = this.optIntOrNull("drawerTextColor"),
         folderTextColor = this.optIntOrNull("folderTextColor"),
     )
@@ -577,6 +580,7 @@ class PrimeDrawerTabsRepository(context: Context) {
         childIconShape?.let { put("childIconShape", it) }
         shape?.let { put("shape", it) }
         color?.let { put("color", it) }
+        openColor?.let { put("openColor", it) }
         textColor?.let { put("textColor", it) }
         closedLabelColor?.let { put("closedLabelColor", it) }
     }
@@ -592,6 +596,7 @@ class PrimeDrawerTabsRepository(context: Context) {
         childIconShape = this.optStringOrNull("childIconShape"),
         shape = this.optStringOrNull("shape"),
         color = this.optIntOrNull("color"),
+        openColor = this.optIntOrNull("openColor"),
         textColor = this.optIntOrNull("textColor"),
         closedLabelColor = this.optIntOrNull("closedLabelColor"),
     )
@@ -720,6 +725,7 @@ data class PrimeDrawerVisualOverrides(
     val folderChildIconShape: String? = null,
     val folderShape: String? = null,
     val folderColor: Int? = null,
+    val folderOpenColor: Int? = null,
     val drawerTextColor: Int? = null,
     val folderTextColor: Int? = null,
 )
@@ -735,6 +741,7 @@ data class PrimeDrawerFolderVisualOverrides(
     val childIconShape: String? = null,
     val shape: String? = null,
     val color: Int? = null,
+    val openColor: Int? = null,
     val textColor: Int? = null,
     val closedLabelColor: Int? = null,
 )
