@@ -184,15 +184,14 @@ fun PrimeColorSelection(
     staticEntries: List<ColorPreferenceEntry<ColorOption>> = staticColors,
     defaultPreviewColor: Int? = null,
     defaultDynamicColor: ColorOption.DynamicColor? = null,
-    automaticLegacyDefault: Boolean = false,
-) {
+ ) {
     val context = LocalContext.current
     val themeFallbackColor = defaultPreviewColor ?: MaterialTheme.colorScheme.surfaceVariant.toArgb()
     val displayedDynamicEntries: List<ColorPreferenceEntry<ColorOption>> = dynamicEntries.map { entry ->
         if (entry.value == ColorOption.Default) {
             ColorPreferenceEntry<ColorOption>(
                 value = ColorOption.Default,
-                label = if (automaticLegacyDefault) "Automatique (Legacy) — selon l'icône" else entry.label,
+                label = entry.label,
                 lightColor = { themeFallbackColor },
                 darkColor = { themeFallbackColor },
             )
