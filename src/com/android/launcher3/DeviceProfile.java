@@ -814,10 +814,9 @@ public class DeviceProfile {
     // Lawnchair
     private static DotRenderer createDotRenderer(
         @NonNull ThemeManager themeManager, int size, @NonNull SparseArray<DotRenderer> cache, boolean showNotificationCount, Typeface typeface, int dotColor, int countColor) {
-        DotRenderer renderer = cache.get(size);
-
-        if (renderer == null) {
-            renderer = new DotRenderer(
+        // This cache is keyed by icon size, not by the semantic badge colors.
+        // Reusing a renderer here could retain stale colors after an override.
+        return new DotRenderer(
                 size,
                 themeManager.getIconShape().getPath(DEFAULT_DOT_SIZE),
                 DEFAULT_DOT_SIZE,
@@ -825,9 +824,6 @@ public class DeviceProfile {
                 typeface,
                 dotColor,
                 countColor);
-            cache.put(size, renderer);
-        }
-        return renderer;
     }
 
     /**
