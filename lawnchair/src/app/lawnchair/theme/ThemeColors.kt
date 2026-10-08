@@ -16,6 +16,12 @@ object ThemeColors {
     // state. Keep the last base actually selected by All Apps so settings can preview that exact
     // official value instead of guessing from a Context that has no launcher blur state.
     private val legacyDrawerOfficialByVariant = mutableMapOf<ThemeVariant, Int>()
+    private val liveDrawerBackgroundByVariant = mutableMapOf<ThemeVariant, Int>()
+
+    @JvmStatic
+    fun recordLiveDrawerBackground(variant: ThemeVariant, color: Int) {
+        liveDrawerBackgroundByVariant[variant] = color
+    }
 
     @JvmStatic
     fun recordLegacyDrawerOfficial(variant: ThemeVariant, color: Int) {
@@ -170,8 +176,9 @@ object ThemeColors {
         ThemeColorRole.DRAWER_POPUP_ICON ->
             resolveLegacyToken(context, ColorTokens.TextColorPrimary, variant)
         // Mirror the historical drawer runtime branch so the default swatch matches the drawer.
-        ThemeColorRole.DRAWER_BACKGROUND,
-        ThemeColorRole.HOME_HOTSEAT_BACKGROUND -> legacyDrawerBackground(context, variant)
+        ThemeColorRole.DRAWER_BACKGROUND -> legacyDrawerBackground(context, variant)
+        ThemeColorRole.HOME_HOTSEAT_BACKGROUND ->
+            liveDrawerBackgroundByVariant[variant] ?: legacyDrawerBackground(context, variant)
         // Category tabs keep their historical contrast hierarchy, but derive their hue from the
         // current Lawnchair dynamic palette. Changing accent source/style therefore keeps the
         // drawer and its tabs visually coherent without storing fixed greys.
