@@ -1,5 +1,6 @@
 package app.lawnchair.ui.preferences.components.colorpreference
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -14,6 +15,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import app.lawnchair.ui.theme.isSelectedThemeDark
@@ -30,7 +33,9 @@ fun <T> ColorDot(
 
     val color = if (isSelectedThemeDark) colorDark else colorLight
 
-    if (colorLight != 0) {
+    if (entry.value == app.lawnchair.theme.color.ColorOption.IconColor) {
+        IconColorDot(modifier)
+    } else if (colorLight != 0) {
         ColorDot(
             color = Color(color),
             modifier = modifier,
@@ -52,6 +57,35 @@ private fun ColorDot(
             .background(color = color)
             .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape),
     )
+}
+
+/** Symbolic preview: automatic contrast is per badge, never a single fixed color. */
+@Composable
+fun ContrastColorDot(modifier: Modifier = Modifier) {
+    Canvas(
+        modifier = modifier.size(30.dp).clip(CircleShape)
+            .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape),
+    ) {
+        drawRect(Color.Black, topLeft = Offset.Zero, size = Size(size.width / 2f, size.height))
+        drawRect(Color.White, topLeft = Offset(size.width / 2f, 0f),
+            size = Size(size.width / 2f, size.height))
+    }
+}
+
+@Composable
+fun IconColorDot(modifier: Modifier = Modifier) {
+    Canvas(
+        modifier = modifier.size(30.dp).clip(CircleShape)
+            .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape),
+    ) {
+        val colors = listOf(Color(0xFFED9A31), Color(0xFF3971C8),
+            Color(0xFF40A878), Color(0xFFB74983))
+        colors.forEachIndexed { index, color ->
+            drawRect(color, topLeft = Offset((index % 2) * size.width / 2f,
+                (index / 2) * size.height / 2f),
+                size = Size(size.width / 2f, size.height / 2f))
+        }
+    }
 }
 
 @Composable
