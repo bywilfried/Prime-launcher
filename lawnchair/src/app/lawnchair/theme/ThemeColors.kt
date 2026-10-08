@@ -81,6 +81,22 @@ object ThemeColors {
         }
     }
 
+    /** Dock background: Prime override wins; otherwise preserve the existing Dock preference. */
+    @JvmStatic
+    fun resolveDockBackground(context: Context, legacyOption: ColorOption, variant: ThemeVariant): Int {
+        val role = ThemeColorRole.HOME_HOTSEAT_BACKGROUND
+        val profile = ThemeProfile.current(context)
+        if (ThemeColorOverrides(context).get(profile, variant, role) != ColorOption.Default) {
+            return resolve(context, profile, role, variant)
+        }
+        return when (legacyOption) {
+            ColorOption.Default -> official(context, profile, role, variant)
+            is ColorOption.CustomColor -> legacyOption.color
+            else -> if (variant == ThemeVariant.DARK) legacyOption.colorPreferenceEntry.darkColor(context)
+                else legacyOption.colorPreferenceEntry.lightColor(context)
+        }
+    }
+
     /** Preview and runtime deliberately share the same semantic resolution path. */
     fun preview(
         context: Context,
