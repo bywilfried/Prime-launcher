@@ -1,6 +1,8 @@
 package app.lawnchair.theme
 
 import android.content.Context
+import android.graphics.Color
+import androidx.core.graphics.ColorUtils
 import app.lawnchair.theme.color.ColorOption
 import app.lawnchair.theme.color.tokens.ColorTokens
 import app.lawnchair.ui.theme.getSystemAccent
@@ -128,6 +130,48 @@ object ThemeColors {
             dockOverride == ColorOption.Default && drawerColor != null
         ) drawerColor else resolveDockBackgroundForVariant(context, legacyOption, variant)
     }
+
+    /**
+     * Harmonized open-folder title. The folder supplies its effective background, including
+     * per-folder overrides. A user-selected text color always takes precedence.
+     */
+    @JvmStatic
+    fun resolveOpenFolderTitleColor(
+        context: Context,
+        role: ThemeColorRole,
+        backgroundColor: Int,
+    ): Int {
+        val profile = ThemeProfile.current(context)
+        val variant = context.effectiveThemeVariant()
+        if (ThemeColorOverrides(context).get(profile, variant, role) != ColorOption.Default) {
+            return resolve(context, profile, role, variant)
+        }
+        // Preserve the background hue and find the smallest lightness change meeting WCAG AA.
+        val backdrop = if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE
+        val opaqueBackground = ColorUtils.compositeColors(backgroundColor, backdrop)
+        val darkCandidate = harmonizedContrastColor(opaqueBackground, Color.BLACK)
+        val lightCandidate = harmonizedContrastColor(opaqueBackground, Color.WHITE)
+        val darkDistance = colorDistance(opaqueBackground, darkCandidate)
+        val lightDistance = colorDistance(opaqueBackground, lightCandidate)
+        return if (darkDistance <= lightDistance) darkCandidate else lightCandidate
+    }
+
+    private fun harmonizedContrastColor(background: Int, target: Int): Int {
+        var low = 0.0
+        var high = 1.0
+        repeat(18) {
+            val amount = (low + high) / 2
+            val candidate = ColorUtils.blendARGB(background, target, amount.toFloat())
+            if (ColorUtils.calculateContrast(candidate, background) >= 4.5) high = amount
+            else low = amount
+        }
+        return ColorUtils.blendARGB(background, target, high.toFloat())
+    }
+
+    private fun colorDistance(a: Int, b: Int): Int =
+        kotlin.math.abs(Color.red(a) - Color.red(b)) +
+            kotlin.math.abs(Color.green(a) - Color.green(b)) +
+            kotlin.math.abs(Color.blue(a) - Color.blue(b))
 
     /** Preview and runtime deliberately share the same semantic resolution path. */
     fun preview(
