@@ -238,7 +238,9 @@ class FolderSpringAnimatorSet(val animatorSet: AnimatorSet) {
                 val isOpening = animationData.isOpening
                 val initialColor = folder.folderIcon.mBackground.resolvedColor
                 val finalColor =
-                    resolveFolderBackgroundColor(folder.context, folder.isInAppDrawer)
+                    PrimeFolderLongPressHelper.getVisualOverrides(folder.context, folder.mInfo)
+                        ?.openColor
+                        ?: resolveFolderBackgroundColor(folder.context, folder.isInAppDrawer)
                 folderBackground.mutate()
                 folderBackground.setColor(if (isOpening) initialColor else finalColor)
                 // TODO: convert to spring animation?
@@ -256,10 +258,14 @@ class FolderSpringAnimatorSet(val animatorSet: AnimatorSet) {
                         override fun onAnimationEnd(animation: Animator) {
                             if (isOpening) {
                                 folderBackground.setColor(
-                                    resolveFolderBackgroundColor(
+                                    PrimeFolderLongPressHelper.getVisualOverrides(
                                         folder.context,
-                                        folder.isInAppDrawer,
-                                    )
+                                        folder.mInfo,
+                                    )?.openColor
+                                        ?: resolveFolderBackgroundColor(
+                                            folder.context,
+                                            folder.isInAppDrawer,
+                                        )
                                 )
                             }
                         }
