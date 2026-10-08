@@ -164,6 +164,8 @@ fun PreferenceNavigation(
                     ThemeColorRole.GLOBAL_ACCENT -> "Couleur des éléments modifiables"
                     ThemeColorRole.GLOBAL_SETTINGS_BACKGROUND -> "Interface — fond des menus"
                     ThemeColorRole.GLOBAL_SETTINGS_CARD_BACKGROUND -> "Interface — fond des cartes"
+                    ThemeColorRole.GLOBAL_NOTIFICATION_DOT -> "Pastille de notification — fond"
+                    ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT -> "Pastille de notification — texte / compteur"
                     ThemeColorRole.DRAWER_BACKGROUND -> "Tiroir — fond"
                     ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE -> "Recherche — fond inactif"
                     ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE -> "Recherche — fond actif"
