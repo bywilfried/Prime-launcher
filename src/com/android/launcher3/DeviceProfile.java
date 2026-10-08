@@ -265,6 +265,10 @@ public class DeviceProfile {
     public final Rect widgetPadding = new Rect();
 
     // Notification dots
+    private ThemeManager mPrimeDotThemeManager;
+    private boolean mPrimeShowNotificationCount;
+    private Typeface mPrimeDotTypeface;
+
     public final DotRenderer mDotRendererWorkSpace;
     public final DotRenderer mDotRendererAllApps;
 
@@ -757,6 +761,10 @@ public class DeviceProfile {
         int countColor = app.lawnchair.theme.NotificationDotThemeColors.resolve(context,
                 app.lawnchair.theme.ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT, counterColorOption);
 
+        mPrimeDotThemeManager = themeManager;
+        mPrimeShowNotificationCount = showNotificationCount;
+        mPrimeDotTypeface = typeface;
+
         // This is done last, after iconSizePx is calculated above.
         mDotRendererWorkSpace = createDotRenderer(themeManager, iconSizePx, dotRendererCache, showNotificationCount, typeface, dotColor, countColor);
         mDotRendererAllApps = createDotRenderer(themeManager,
@@ -812,6 +820,18 @@ public class DeviceProfile {
     }
 
     // Lawnchair
+    /** A renderer for one icon, not shared between apps with different colors. */
+    public DotRenderer createPerIconDotRenderer(boolean allApps, int background, int textColor) {
+        if (mPrimeDotThemeManager == null) {
+            return allApps ? mDotRendererAllApps : mDotRendererWorkSpace;
+        }
+        return new DotRenderer(
+                allApps ? getAllAppsProfile().getIconSizePx() : iconSizePx,
+                mPrimeDotThemeManager.getIconShape().getPath(DEFAULT_DOT_SIZE),
+                DEFAULT_DOT_SIZE, mPrimeShowNotificationCount, mPrimeDotTypeface,
+                background, textColor);
+    }
+
     private static DotRenderer createDotRenderer(
         @NonNull ThemeManager themeManager, int size, @NonNull SparseArray<DotRenderer> cache, boolean showNotificationCount, Typeface typeface, int dotColor, int countColor) {
         // This cache is keyed by icon size, not by the semantic badge colors.
