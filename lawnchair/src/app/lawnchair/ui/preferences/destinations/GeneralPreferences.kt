@@ -232,6 +232,7 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
                             .takeIf { it != 0 } ?: ThemeColors.official(context, profile, role, variant),
                     ),
                     description = if (override == ColorOption.Default) "Valeur du thème" else "Personnalisée",
+                    iconColorPreview = override == ColorOption.IconColor,
                     onClick = { navController.navigate(ThemeColorSelection(role.id, variant.name)) },
                 )
             }
@@ -254,6 +255,7 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
                             .takeIf { it != 0 } ?: ThemeColors.official(context, profile, role, variant),
                     ),
                     description = if (override == ColorOption.Default) "Valeur du thème" else "Personnalisée",
+                    automaticContrastPreview = override == ColorOption.Default && dotTextColor == ColorOption.Default,
                     onClick = { navController.navigate(ThemeColorSelection(role.id, variant.name)) },
                 )
             }
