@@ -306,13 +306,15 @@ fun PreferenceNavigation(
             val primeThemeDark = isSelectedThemeDark
             val inheritedColor = when (route.colorKey) {
                 "folderClosedText", "folderText" -> MaterialTheme.colorScheme.onSurface.toArgb()
-                else -> app.lawnchair.util.resolveFolderBackgroundColor(context)
+                "folderColor" -> app.lawnchair.util.resolveFolderPreviewColor(context, route.drawer)
+                else -> app.lawnchair.util.resolveFolderBackgroundColor(context, route.drawer)
             }
             PrimeColorSelection(
                 label = route.label,
                 appliedColor = when (route.colorKey) {
                     "folderClosedText" -> stored.closedLabelColor
                     "folderText" -> stored.textColor
+                    "folderOpenColor" -> stored.openColor
                     else -> stored.color
                 }?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default,
                 defaultPreviewColor = inheritedColor,
@@ -328,6 +330,7 @@ fun PreferenceNavigation(
                     val updated = when (route.colorKey) {
                         "folderClosedText" -> o.copy(closedLabelColor = resolved)
                         "folderText" -> o.copy(textColor = resolved)
+                        "folderOpenColor" -> o.copy(openColor = resolved)
                         else -> o.copy(color = resolved)
                     }
                     if (route.drawer) {
@@ -514,13 +517,15 @@ fun PreferenceNavigation(
             val inheritedBackground = configuration.defaultDrawerBackgroundColor
                 ?: resolveOption(tabsProfile.appDrawerBackgroundColor, MaterialTheme.colorScheme.surface.toArgb())
             val inheritedTab = tabsProfile.defaultTabsColor ?: masterActiveTab
-            val inheritedFolder = tab?.visualOverrides?.folderColor ?: app.lawnchair.util.resolveFolderBackgroundColor(context)
+            val inheritedFolder = tab?.visualOverrides?.folderColor ?: app.lawnchair.util.resolveFolderPreviewColor(context, true)
+            val inheritedOpenFolder = tab?.visualOverrides?.folderOpenColor ?: app.lawnchair.util.resolveFolderBackgroundColor(context, true)
             val inheritedFolderText = tab?.visualOverrides?.folderTextColor ?: inheritedText
             val inheritedClosedText = tab?.visualOverrides?.drawerTextColor ?: inheritedText
             val defaultPreviewColor = when (route.colorKey) {
                 "tab" -> inheritedTab
                 "background" -> inheritedBackground
                 "folderColor" -> inheritedFolder
+                "folderOpenColor" -> inheritedOpenFolder
                 "folderText" -> inheritedFolderText
                 "folderClosedText" -> inheritedClosedText
                 else -> inheritedText
@@ -529,6 +534,7 @@ fun PreferenceNavigation(
                 "tab" -> tab?.visualOverrides?.tabColor
                 "background" -> tab?.visualOverrides?.drawerBackgroundColor
                 "folderColor" -> folder?.visualOverrides?.color ?: tab?.visualOverrides?.folderColor
+                "folderOpenColor" -> folder?.visualOverrides?.openColor ?: tab?.visualOverrides?.folderOpenColor
                 "drawerText" -> tab?.visualOverrides?.drawerTextColor
                 "folderText" -> folder?.visualOverrides?.textColor ?: tab?.visualOverrides?.folderTextColor
                 "folderClosedText" -> folder?.visualOverrides?.closedLabelColor ?: tab?.visualOverrides?.drawerTextColor
@@ -546,7 +552,7 @@ fun PreferenceNavigation(
                         else option.colorPreferenceEntry.lightColor(context)
                     }
                     val currentTab = repository.getTab(route.tabId) ?: return@PrimeColorSelection
-                    if (route.folderId != null && (route.colorKey == "folderColor" || route.colorKey == "folderText" || route.colorKey == "folderClosedText")) {
+                    if (route.folderId != null && (route.colorKey == "folderColor" || route.colorKey == "folderOpenColor" || route.colorKey == "folderText" || route.colorKey == "folderClosedText")) {
                         val currentFolder = currentTab.folders.firstOrNull { it.id == route.folderId } ?: return@PrimeColorSelection
                         repository.setFolderVisualOverrides(
                             route.tabId,
@@ -554,6 +560,7 @@ fun PreferenceNavigation(
                             when (route.colorKey) {
                                 "folderText" -> currentFolder.visualOverrides.copy(textColor = resolved)
                                 "folderClosedText" -> currentFolder.visualOverrides.copy(closedLabelColor = resolved)
+                                "folderOpenColor" -> currentFolder.visualOverrides.copy(openColor = resolved)
                                 else -> currentFolder.visualOverrides.copy(color = resolved)
                             },
                         )
@@ -564,6 +571,7 @@ fun PreferenceNavigation(
                             when (route.colorKey) {
                                 "tab" -> overrides.copy(tabColor = resolved)
                                 "folderColor" -> overrides.copy(folderColor = resolved)
+                                "folderOpenColor" -> overrides.copy(folderOpenColor = resolved)
                                 "drawerText" -> overrides.copy(drawerTextColor = resolved)
                                 "folderText" -> overrides.copy(folderTextColor = resolved)
                                 else -> overrides.copy(drawerBackgroundColor = resolved)
