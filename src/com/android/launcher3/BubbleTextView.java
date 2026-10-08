@@ -287,6 +287,9 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     @ViewDebug.ExportedProperty(category = "launcher")
     private DotInfo mDotInfo;
     private DotRenderer mDotRenderer;
+    private int mPrimePerIconDotColor = Color.TRANSPARENT;
+    private int mPrimePerIconTextColor = Color.TRANSPARENT;
+    private boolean mPrimePerIconAllApps;
     @ViewDebug.ExportedProperty(category = "launcher", deepExport = true)
     protected DotRenderer.DrawParams mDotParams;
     private Animator mDotScaleAnim;
@@ -432,6 +435,8 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         mDotInfo = null;
         mDotParams.dotColor = Color.TRANSPARENT;
         mDotParams.appColor = Color.TRANSPARENT;
+        mPrimePerIconDotColor = Color.TRANSPARENT;
+        mPrimePerIconTextColor = Color.TRANSPARENT;
         cancelDotScaleAnim();
         mDotParams.scale = 0f;
         mForceHideDot = false;
@@ -1055,6 +1060,30 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             final int scrollX = getScrollX();
             final int scrollY = getScrollY();
             canvas.translate(scrollX, scrollY);
+            if (app.lawnchair.theme.NotificationDotThemeColors.isPerIconColor(getContext())) {
+                int background = mDotParams.appColor;
+                if (Color.alpha(background) == 0) {
+                    background = app.lawnchair.theme.ThemeColors.official(
+                            getContext(),
+                            app.lawnchair.theme.ThemeProfile.Companion.current(getContext()),
+                            app.lawnchair.theme.ThemeColorRole.GLOBAL_NOTIFICATION_DOT,
+                            app.lawnchair.theme.ThemeVariantKt.effectiveThemeVariant(getContext()));
+                }
+                int textColor = app.lawnchair.theme.NotificationDotThemeColors.isAutomaticText(getContext())
+                        ? app.lawnchair.theme.NotificationDotThemeColors.contrastForBackground(background)
+                        : app.lawnchair.theme.NotificationDotThemeColors.resolve(
+                                getContext(), app.lawnchair.theme.ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT,
+                                PreferenceCacheExtensionsKt.firstCached(pref2.getNotificationDotTextColor()));
+                boolean allApps = mDisplay == DISPLAY_ALL_APPS || mDisplay == DISPLAY_PREDICTION_ROW;
+                if (mPrimePerIconDotColor != background || mPrimePerIconTextColor != textColor
+                        || mPrimePerIconAllApps != allApps) {
+                    mDotRenderer = mActivity.getDeviceProfile()
+                            .createPerIconDotRenderer(allApps, background, textColor);
+                    mPrimePerIconDotColor = background;
+                    mPrimePerIconTextColor = textColor;
+                    mPrimePerIconAllApps = allApps;
+                }
+            }
             mDotRenderer.draw(canvas, mDotParams, mDotInfo == null ? -1 : mDotInfo.getNotificationCount());
             canvas.translate(-scrollX, -scrollY);
         }
@@ -1501,6 +1530,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             } else {
                 mDotRenderer = mActivity.getDeviceProfile().mDotRendererWorkSpace;
             }
+            mPrimePerIconDotColor = Color.TRANSPARENT;
             if (wasDotted || isDotted) {
                 // Animate when a dot is first added or when it is removed.
                 if (animate && (wasDotted ^ isDotted) && isShown()) {
