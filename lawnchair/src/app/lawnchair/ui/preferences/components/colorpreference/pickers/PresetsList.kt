@@ -26,6 +26,8 @@ fun PresetsList(
     isPresetSelected: (ColorOption) -> Boolean,
     modifier: Modifier = Modifier,
     automaticContrastDefault: Boolean = false,
+    adaptiveFolderDefault: Boolean = false,
+    perIconDefault: Boolean = false,
 ) {
     val mMSDLPlayerWrapper = MSDLPlayerWrapper.INSTANCE.get(LocalContext.current)
     PreferenceGroup(
@@ -41,7 +43,10 @@ fun PresetsList(
                             selected = isPresetSelected(entry.value),
                             onClick = null,
                         )
-                        if (automaticContrastDefault && entry.value == ColorOption.Default) {
+                        if (perIconDefault && entry.value == ColorOption.Default) {
+                            app.lawnchair.ui.preferences.components.colorpreference.IconColorDot(
+                                modifier = Modifier.padding(start = 16.dp))
+                        } else if ((automaticContrastDefault || adaptiveFolderDefault) && entry.value == ColorOption.Default) {
                             app.lawnchair.ui.preferences.components.colorpreference.ContrastColorDot(
                                 modifier = Modifier.padding(start = 16.dp))
                         } else {
