@@ -14,12 +14,12 @@ enum class ThemeColorRole(val id: String, val section: Section) {
     GLOBAL_NOTIFICATION_DOT_TEXT("global.notification_dot_text", Section.GLOBAL),
 
     HOME_ICON_TEXT("home.icon_text", Section.HOME),
-    HOME_HOTSEAT_BACKGROUND("home.hotseat.background", Section.HOME),
-    HOME_SEARCH_BACKGROUND("home.search.background", Section.HOME),
-    HOME_SEARCH_TEXT("home.search.text", Section.HOME),
-    HOME_SEARCH_HINT("home.search.hint", Section.HOME),
-    HOME_SEARCH_ICON("home.search.icon", Section.HOME),
-    HOME_SEARCH_BORDER("home.search.border", Section.HOME),
+    HOME_HOTSEAT_BACKGROUND("home.hotseat.background", Section.DOCK),
+    HOME_SEARCH_BACKGROUND("home.search.background", Section.DOCK),
+    HOME_SEARCH_TEXT("home.search.text", Section.DOCK),
+    HOME_SEARCH_HINT("home.search.hint", Section.DOCK),
+    HOME_SEARCH_ICON("home.search.icon", Section.DOCK),
+    HOME_SEARCH_BORDER("home.search.border", Section.DOCK),
     HOME_FOLDER_CLOSED_BACKGROUND("home.folder.closed.background", Section.HOME),
     HOME_FOLDER_CLOSED_TEXT("home.folder.closed.text", Section.HOME),
     HOME_FOLDER_OPEN_BACKGROUND("home.folder.open.background", Section.HOME),
@@ -30,6 +30,16 @@ enum class ThemeColorRole(val id: String, val section: Section) {
     HOME_POPUP_BACKGROUND("home.popup.background", Section.HOME),
     HOME_POPUP_TEXT("home.popup.text", Section.HOME),
     HOME_POPUP_ICON("home.popup.icon", Section.HOME),
+
+    // Dock-specific roles use independent IDs; legacy home.search IDs remain stable.
+    DOCK_ICON_TEXT("dock.icon_text", Section.DOCK),
+    DOCK_FOLDER_CLOSED_BACKGROUND("dock.folder.closed.background", Section.DOCK),
+    DOCK_FOLDER_CLOSED_TEXT("dock.folder.closed.text", Section.DOCK),
+    DOCK_FOLDER_OPEN_BACKGROUND("dock.folder.open.background", Section.DOCK),
+    DOCK_FOLDER_OPEN_TEXT("dock.folder.open.text", Section.DOCK),
+    DOCK_FOLDER_OPEN_HINT("dock.folder.open.hint", Section.DOCK),
+    DOCK_FOLDER_PAGINATION("dock.folder.pagination", Section.DOCK),
+    DOCK_FOLDER_BORDER("dock.folder.border", Section.DOCK),
 
     DRAWER_BACKGROUND("drawer.background", Section.DRAWER),
     DRAWER_TEXT("drawer.text", Section.DRAWER),
@@ -63,6 +73,7 @@ enum class ThemeColorRole(val id: String, val section: Section) {
     enum class Section {
         GLOBAL,
         HOME,
+        DOCK,
         DRAWER,
         TABS,
     }
