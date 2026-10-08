@@ -16,6 +16,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import app.lawnchair.theme.ThemeColors
+import app.lawnchair.preferences2.preferenceManager2
+import app.lawnchair.preferences2.asState
 import app.lawnchair.theme.ThemeProfile
 import app.lawnchair.theme.color.ColorOption
 import app.lawnchair.ui.preferences.LocalNavController
@@ -185,7 +187,20 @@ private fun ThemeSection(
                     ) {
                         val profile = ThemeProfile.current(context)
                         val override = ThemeColorOverrides(context).get(profile, variant, role)
-                        val preview = ThemeColors.resolve(context, profile, role, variant)
+                        val prefs2 = preferenceManager2()
+                        val preview = when (role) {
+                            ThemeColorRole.GLOBAL_NOTIFICATION_DOT -> {
+                                val legacy = prefs2.notificationDotColor.asState().value
+                                app.lawnchair.theme.NotificationDotThemeColors.resolve(context, role, legacy)
+                                    .takeIf { it != 0 } ?: ThemeColors.official(context, profile, role, variant)
+                            }
+                            ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT -> {
+                                val legacy = prefs2.notificationDotTextColor.asState().value
+                                app.lawnchair.theme.NotificationDotThemeColors.resolve(context, role, legacy)
+                                    .takeIf { it != 0 } ?: ThemeColors.official(context, profile, role, variant)
+                            }
+                            else -> ThemeColors.resolve(context, profile, role, variant)
+                        }
                         ColorPreference(
                             label = roleLabel(role),
                             selectedColor = override,
