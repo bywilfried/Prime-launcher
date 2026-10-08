@@ -185,10 +185,12 @@ fun PrimeColorSelection(
     defaultPreviewColor: Int? = null,
     defaultDynamicColor: ColorOption.DynamicColor? = null,
     automaticContrastDefaultLabel: Boolean = false,
+    perIconDotOption: Boolean = false,
 ) {
     val context = LocalContext.current
     val themeFallbackColor = defaultPreviewColor ?: MaterialTheme.colorScheme.surfaceVariant.toArgb()
-    val displayedDynamicEntries: List<ColorPreferenceEntry<ColorOption>> = dynamicEntries.map { entry ->
+    val displayedDynamicEntries: List<ColorPreferenceEntry<ColorOption>> =
+        (if (perIconDotOption) dynamicEntries + ColorOption.IconColor.colorPreferenceEntry else dynamicEntries).map { entry ->
         if (entry.value == ColorOption.Default) {
             ColorPreferenceEntry<ColorOption>(
                 value = ColorOption.Default,
@@ -309,6 +311,7 @@ fun PrimeColorSelection(
                             dynamicEntries = displayedDynamicEntries,
                             onPresetClick = onPresetClick,
                             isPresetSelected = { it == currentAppliedColor },
+                            automaticContrastDefault = automaticContrastDefaultLabel,
                         )
                         SwatchGrid(
                             modifier = Modifier.padding(top = 12.dp),
