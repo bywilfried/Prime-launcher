@@ -140,12 +140,13 @@ fun PrimeHomeFolderAdvancedPreference(folderId: Int, drawer: Boolean = false) {
     PreferenceLayout(label = stringResource(id = R.string.folders_label), backArrowVisible = true) {
         PreferenceGroup(heading = "Dossier fermé") {
             HomeFolderShapePreference(stringResource(id = R.string.folder_shape_label), value.shape, prefs2.folderShape.getAdapter().state.value, folderId, "folderShape", drawer)
-            HomeFolderColorPreference("Couleur de l’arrière-plan des icônes", value.color, defaultFolderColor, folderId, "folderColor", drawer)
+            HomeFolderColorPreference("Couleur du dossier fermé", value.color, app.lawnchair.util.resolveFolderPreviewColor(context, drawer), folderId, "folderColor", drawer)
             NullableFloatSlider(stringResource(id = R.string.folder_preview_bg_opacity_label), value.previewOpacity, prefs2.folderPreviewBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, true) { update(value.copy(previewOpacity = it)) }
             NullableSwitch("Afficher le nom du dossier fermé", value.showFolderLabel, true) { update(value.copy(showFolderLabel = it)) }
             HomeFolderColorPreference("Couleur du nom du dossier fermé", value.closedLabelColor, defaultTextColor, folderId, "folderClosedText", drawer)
         }
         PreferenceGroup(heading = "Dossier ouvert") {
+            HomeFolderColorPreference("Couleur du dossier ouvert", value.openColor, defaultFolderColor, folderId, "folderOpenColor", drawer)
             NullableFloatSlider(stringResource(id = R.string.folder_bg_opacity_label), value.backgroundOpacity, prefs2.folderBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, true) { update(value.copy(backgroundOpacity = it)) }
             HomeFolderColorPreference("Couleur du texte dans le dossier ouvert", value.textColor, defaultTextColor, folderId, "folderText", drawer)
         }
@@ -300,7 +301,8 @@ private fun PrimeCategoryFolderOptions(
     val defaultFolderColor = app.lawnchair.util.resolveFolderBackgroundColor(context)
     PreferenceGroup(heading = stringResource(id = R.string.general_label)) {
         NullableShapePreference(stringResource(id = R.string.folder_shape_label), value.folderShape, prefs2.folderShape.getAdapter().state.value, tabId, "folderShape")
-        NullableColorPreference("Couleur de l’arrière-plan des icônes", value.folderColor, defaultFolderColor, tabId, "folderColor")
+        NullableColorPreference("Couleur du dossier fermé", value.folderColor, app.lawnchair.util.resolveFolderPreviewColor(context, true), tabId, "folderColor")
+        NullableColorPreference("Couleur du dossier ouvert", value.folderOpenColor, defaultFolderColor, tabId, "folderOpenColor")
         NullableColorPreference("Couleur du texte dans les dossiers", value.folderTextColor, defaultTextColor, tabId, "folderText")
         NullableFloatSlider(stringResource(id = R.string.folder_preview_bg_opacity_label), value.folderPreviewOpacity, prefs2.folderPreviewBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, showAsPercentage = true) {
             update(value.copy(folderPreviewOpacity = it))
@@ -342,7 +344,7 @@ private fun PrimeFolderOptions(
 
     PreferenceGroup(heading = "Dossier fermé") {
         NullableShapePreference(stringResource(id = R.string.folder_shape_label), value.shape, resolveInheritedShape(context, inherited.shape, prefs2.folderShape.getAdapter().state.value), tabId, "folderShape", folderId)
-        NullableColorPreference("Couleur de l’arrière-plan des icônes", value.color, inherited.color ?: app.lawnchair.util.resolveFolderBackgroundColor(context), tabId, "folderColor", folderId)
+        NullableColorPreference("Couleur du dossier fermé", value.color, inherited.color ?: app.lawnchair.util.resolveFolderPreviewColor(context, true), tabId, "folderColor", folderId)
         NullableFloatSlider(stringResource(id = R.string.folder_preview_bg_opacity_label), value.previewOpacity, inherited.previewOpacity ?: prefs2.folderPreviewBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, showAsPercentage = true) {
             update(value.copy(previewOpacity = it))
         }
@@ -353,6 +355,7 @@ private fun PrimeFolderOptions(
     }
 
     PreferenceGroup(heading = "Dossier ouvert") {
+        NullableColorPreference("Couleur du dossier ouvert", value.openColor, inherited.openColor ?: app.lawnchair.util.resolveFolderBackgroundColor(context, true), tabId, "folderOpenColor", folderId)
         NullableFloatSlider(stringResource(id = R.string.folder_bg_opacity_label), value.backgroundOpacity, inherited.backgroundOpacity ?: prefs2.folderBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, showAsPercentage = true) {
             update(value.copy(backgroundOpacity = it))
         }
