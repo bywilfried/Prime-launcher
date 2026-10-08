@@ -108,6 +108,27 @@ object ThemeColors {
         }
     }
 
+    /**
+     * The Dock's uncustomized background follows the actual drawer renderer.
+     * Keep the Dock's legacy preference and Prime overrides higher priority.
+     * The caller supplies the live drawer color; this resolver never changes the drawer.
+     */
+    @JvmStatic
+    fun resolveDockBackgroundFromDrawer(
+        context: Context,
+        legacyOption: ColorOption,
+        drawerColor: Int?,
+    ): Int {
+        val profile = ThemeProfile.current(context)
+        val variant = context.effectiveThemeVariant()
+        val dockOverride = ThemeColorOverrides(context).get(
+            profile, variant, ThemeColorRole.HOME_HOTSEAT_BACKGROUND,
+        )
+        return if (legacyOption == ColorOption.Default &&
+            dockOverride == ColorOption.Default && drawerColor != null
+        ) drawerColor else resolveDockBackgroundForVariant(context, legacyOption, variant)
+    }
+
     /** Preview and runtime deliberately share the same semantic resolution path. */
     fun preview(
         context: Context,
