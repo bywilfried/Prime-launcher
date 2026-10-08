@@ -176,18 +176,44 @@ fun PreferenceNavigation(
                     ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND -> "Onglets de catégorie — actif"
                     ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND -> "Onglets de catégorie — inactif"
                     ThemeColorRole.TABS_CATEGORY_TEXT -> "Onglets de catégorie — texte"
+                    ThemeColorRole.HOME_FOLDER_OPEN_TEXT -> "Dossier ouvert — texte"
+                    ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND -> "Dossier ouvert — fond"
+                    ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND -> "Dossier fermé — fond"
+                    ThemeColorRole.HOME_FOLDER_CLOSED_TEXT -> "Dossier fermé — texte"
+                    ThemeColorRole.HOME_FOLDER_OPEN_HINT -> "Dossier ouvert — texte indicatif"
+                    ThemeColorRole.DOCK_FOLDER_OPEN_TEXT -> "Dossier ouvert — texte"
+                    ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND -> "Dossier ouvert — fond"
+                    ThemeColorRole.DOCK_FOLDER_CLOSED_BACKGROUND -> "Dossier fermé — fond"
+                    ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT -> "Dossier fermé — texte"
+                    ThemeColorRole.DOCK_FOLDER_OPEN_HINT -> "Dossier ouvert — texte indicatif"
+                    ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT -> "Dossier ouvert — texte"
+                    ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND -> "Dossier ouvert — fond"
+                    ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND -> "Dossier fermé — fond"
+                    ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> "Dossier fermé — texte"
+                    ThemeColorRole.DRAWER_FOLDER_OPEN_HINT -> "Dossier ouvert — texte indicatif"
                     else -> role.id
                 },
                 appliedColor = applied,
                 // The Default swatch is the parent/theme value, never the current override.
-                defaultPreviewColor = if (role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT) {
-                    NotificationDotThemeColors.resolve(
-                        context,
-                        role,
-                        preferenceManager2().notificationDotTextColor.asState().value,
+                defaultPreviewColor = when (role) {
+                    ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT -> NotificationDotThemeColors.resolve(
+                        context, role, preferenceManager2().notificationDotTextColor.asState().value
                     )
-                } else {
-                    ThemeColors.official(context, profile, role, variant)
+                    ThemeColorRole.HOME_FOLDER_OPEN_TEXT,
+                    ThemeColorRole.DOCK_FOLDER_OPEN_TEXT,
+                    ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT -> {
+                        val backgroundRole = when (role) {
+                            ThemeColorRole.HOME_FOLDER_OPEN_TEXT -> ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND
+                            ThemeColorRole.DOCK_FOLDER_OPEN_TEXT -> ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND
+                            else -> ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND
+                        }
+                        ThemeColors.resolveOpenFolderTitleColorForVariant(
+                            context, role,
+                            ThemeColors.resolve(context, profile, backgroundRole, variant),
+                            variant,
+                        )
+                    }
+                    else -> ThemeColors.resolve(context, profile, role, variant)
                 },
                 defaultDynamicColor = ThemeColors.officialDynamicRecipe(role, variant),
                 automaticContrastDefaultLabel = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT,
