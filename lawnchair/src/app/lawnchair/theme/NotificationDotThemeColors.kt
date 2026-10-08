@@ -6,8 +6,8 @@ import app.lawnchair.theme.color.ColorOption
 /**
  * Bridge for Launcher3's Java DotRenderer consumers.
  *
- * Preserve the existing preference semantics (including Default = 0, which
- * allows DotRenderer to choose its automatic color) until a Prime override exists.
+ * Prime's theme default uses the same semantic color as its settings preview.
+ * Explicit Legacy colors remain supported when no Prime override exists.
  */
 object NotificationDotThemeColors {
     @JvmStatic
@@ -21,7 +21,7 @@ object NotificationDotThemeColors {
             return ThemeColors.resolve(context, profile, role, variant)
         }
         return when (legacyOption) {
-            ColorOption.Default -> 0
+            ColorOption.Default -> ThemeColors.official(context, profile, role, variant)
             is ColorOption.CustomColor -> legacyOption.color
             else -> if (variant == ThemeVariant.DARK) {
                 legacyOption.colorPreferenceEntry.darkColor(context)
