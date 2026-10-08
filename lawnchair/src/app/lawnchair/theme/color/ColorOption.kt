@@ -124,6 +124,18 @@ sealed class ColorOption {
         override fun toString() = "custom|#${String.format("%08x", color)}"
     }
 
+    /** Per-app notification dot background, resolved only when drawing an icon. */
+    object IconColor : ColorOption() {
+        override val isSupported = true
+        override val colorPreferenceEntry = ColorPreferenceEntry<ColorOption>(
+            this,
+            { "Selon la couleur de l'icône" },
+            { 0 },
+            { 0 },
+        )
+        override fun toString() = "icon_color"
+    }
+
     object Default : ColorOption() {
         override val isSupported = false
 
@@ -143,6 +155,7 @@ sealed class ColorOption {
             "system_accent" -> SystemAccent
             "wallpaper_primary" -> WallpaperPrimary
             "default" -> Default
+            "icon_color" -> IconColor
             else -> if (stringValue.startsWith("dynamic|")) instantiateDynamicColor(stringValue)
             else instantiateCustomColor(stringValue)
         }
