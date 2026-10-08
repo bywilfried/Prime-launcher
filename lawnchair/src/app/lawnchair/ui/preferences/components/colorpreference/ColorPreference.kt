@@ -65,6 +65,8 @@ fun ColorPreference(
     modifier: Modifier = Modifier,
     description: String? = null,
     previewColor: ColorOption? = null,
+    automaticContrastPreview: Boolean = false,
+    iconColorPreview: Boolean = false,
 ) {
     val mMSDLPlayerWrapper = MSDLPlayerWrapper.INSTANCE.get(LocalContext.current)
     PreferenceTemplate(
