@@ -43,7 +43,6 @@ import android.util.Property;
 import android.view.View;
 import android.view.animation.Interpolator;
 
-import java.util.Locale;
 
 import androidx.annotation.VisibleForTesting;
 
@@ -51,7 +50,6 @@ import com.android.launcher3.CellLayout;
 import com.android.launcher3.DeviceProfile;
 import com.android.launcher3.Flags;
 import com.android.launcher3.R;
-import com.android.launcher3.PrimeDebugLog;
 import com.android.launcher3.celllayout.DelegatedCellDrawing;
 import com.android.launcher3.graphics.ShapeDelegate;
 import com.android.launcher3.graphics.ThemeManager;
@@ -322,9 +320,6 @@ public class PreviewBackground extends DelegatedCellDrawing {
         invalidate();
     }
 
-    private static String colorHex(Integer color) {
-        return color == null ? "null" : String.format(Locale.US, "#%08X", color);
-    }
 
     public void setPrimeShape(IconShape shape) {
         mPrimeShape = shape == null ? null : new PathShapeDelegate(shape);
