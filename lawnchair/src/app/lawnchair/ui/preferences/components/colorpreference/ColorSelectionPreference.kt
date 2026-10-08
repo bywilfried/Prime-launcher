@@ -250,7 +250,10 @@ fun PrimeColorSelection(
             }
             Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
                 Button(
-                    enabled = !selectedColorApplied.value,
+                    // Allow explicitly reapplying a color even when it matches the
+                    // currently selected swatch. This also gives users a clear way
+                    // to confirm a custom hex value after choosing a preset.
+                    enabled = true,
                     onClick = {
                         val option = ColorOption.CustomColor(selectedColor.intValue)
                         currentAppliedColor = option
