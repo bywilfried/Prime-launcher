@@ -140,9 +140,18 @@ object ThemeColors {
         context: Context,
         role: ThemeColorRole,
         backgroundColor: Int,
+    ): Int = resolveOpenFolderTitleColorForVariant(
+        context, role, backgroundColor, context.effectiveThemeVariant()
+    )
+
+    @JvmStatic
+    fun resolveOpenFolderTitleColorForVariant(
+        context: Context,
+        role: ThemeColorRole,
+        backgroundColor: Int,
+        variant: ThemeVariant,
     ): Int {
         val profile = ThemeProfile.current(context)
-        val variant = context.effectiveThemeVariant()
         if (ThemeColorOverrides(context).get(profile, variant, role) != ColorOption.Default) {
             return resolve(context, profile, role, variant)
         }
