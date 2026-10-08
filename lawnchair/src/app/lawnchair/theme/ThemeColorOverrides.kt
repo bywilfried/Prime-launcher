@@ -24,6 +24,13 @@ class ThemeColorOverrides(private val context: Context) {
         if (option == ColorOption.Default) editor.remove(key) else editor.putString(key, option.toString())
         editor.apply()
         notifyThemeChanged()
+        if (role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT ||
+            role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT) {
+            // DotRenderer instances are created inside DeviceProfile. Recreating
+            // the activity alone does not rebuild that profile or its renderers.
+            ReloadHelper(context).reloadGrid()
+            ReloadHelper(context).reloadTaskbar()
+        }
     }
 
     fun resetVariant(profile: ThemeProfile, variant: ThemeVariant) {
