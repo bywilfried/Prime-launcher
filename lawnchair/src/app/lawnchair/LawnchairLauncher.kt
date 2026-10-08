@@ -277,6 +277,11 @@ class LawnchairLauncher : QuickstepLauncher() {
             // created. Recreate the launcher on a light/dark variant switch so those resources
             // cannot keep the previous configuration's colors.
             ThemeColorInvalidation.invalidate()
+            // DeviceProfile owns the DotRenderer colors. A launcher recreation alone
+            // can retain the old profile, leaving notification dots on the previous
+            // light/dark variant. Refresh IDP before recreating the activity.
+            com.android.launcher3.InvariantDeviceProfile.INSTANCE.get(this)
+                .onConfigChanged(applicationContext)
             recreate()
         }
     }
