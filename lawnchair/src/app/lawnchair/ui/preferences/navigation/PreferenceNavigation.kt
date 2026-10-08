@@ -18,6 +18,9 @@ import app.lawnchair.theme.color.tokens.ColorTokens
 import app.lawnchair.theme.ThemeColorOverrides
 import app.lawnchair.theme.ThemeColorRole
 import app.lawnchair.theme.ThemeColors
+import app.lawnchair.theme.NotificationDotThemeColors
+import app.lawnchair.preferences2.preferenceManager2
+import app.lawnchair.preferences2.asState
 import app.lawnchair.theme.ThemeProfile
 import app.lawnchair.theme.ThemeVariant
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -177,7 +180,15 @@ fun PreferenceNavigation(
                 },
                 appliedColor = applied,
                 // The Default swatch is the parent/theme value, never the current override.
-                defaultPreviewColor = ThemeColors.official(context, profile, role, variant),
+                defaultPreviewColor = if (role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT) {
+                    NotificationDotThemeColors.resolve(
+                        context,
+                        role,
+                        preferenceManager2().notificationDotTextColor.asState().value,
+                    )
+                } else {
+                    ThemeColors.official(context, profile, role, variant)
+                },
                 defaultDynamicColor = ThemeColors.officialDynamicRecipe(role, variant),
                 automaticContrastDefaultLabel = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT,
                 onApply = { option ->
