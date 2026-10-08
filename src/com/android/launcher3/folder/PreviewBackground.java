@@ -202,11 +202,6 @@ public class PreviewBackground extends DelegatedCellDrawing {
         boolean isDrawerFolder = invalidateDelegate instanceof FolderIcon
                 && ((FolderIcon) invalidateDelegate).isInAppDrawer();
         mBgColor = LawnchairUtilsKt.resolveFolderPreviewColor(context, isDrawerFolder);
-        PrimeDebugLog.d("PrimeFolderColor",
-                "CLOSED setup scope=" + (isDrawerFolder ? "DRAWER" : "HOME")
-                        + " semantic=" + colorHex(mBgColor)
-                        + " prime=" + colorHex(mPrimeColor)
-                        + " drawn=" + colorHex(getResolvedColor()));
         ta.recycle();
 
         DeviceProfile grid = activity.getDeviceProfile();
@@ -313,10 +308,6 @@ public class PreviewBackground extends DelegatedCellDrawing {
 
     public void setPrimeColor(Integer color) {
         mPrimeColor = color;
-        PrimeDebugLog.d("PrimeFolderColor",
-                "CLOSED primeOverride prime=" + colorHex(mPrimeColor)
-                        + " semantic=" + colorHex(mBgColor)
-                        + " drawn=" + colorHex(getResolvedColor()));
         invalidate();
     }
 
