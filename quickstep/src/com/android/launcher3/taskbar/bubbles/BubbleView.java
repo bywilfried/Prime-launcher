@@ -263,10 +263,12 @@ public class BubbleView extends ConstraintLayout {
         }
         mDotColor = bubble.getDotColor();
         ColorOption dotColorOption = PreferenceCacheExtensionsKt.firstCached(preferenceManager2.getNotificationDotColor());
-        int dotColor = dotColorOption.getColorPreferenceEntry().getLightColor().invoke(getContext());
+        int dotColor = app.lawnchair.theme.NotificationDotThemeColors.resolve(getContext(),
+                app.lawnchair.theme.ThemeColorRole.GLOBAL_NOTIFICATION_DOT, dotColorOption);
         ColorOption counterColorOption = PreferenceCacheExtensionsKt
                 .firstCached(preferenceManager2.getNotificationDotTextColor(), preferenceManager2);
-        int countColor = counterColorOption.getColorPreferenceEntry().getLightColor().invoke(getContext());
+        int countColor = app.lawnchair.theme.NotificationDotThemeColors.resolve(getContext(),
+                app.lawnchair.theme.ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT, counterColorOption);
         mDotRenderer = new DotRenderer(mBubbleSize, bubble.getDotPath(), DEFAULT_PATH_SIZE, false, null, dotColor,
                 countColor);
         String contentDesc = bubble.getInfo().getTitle();
