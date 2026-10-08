@@ -197,7 +197,8 @@ public class PreviewBackground extends DelegatedCellDrawing {
 
         TypedArray ta = context.getTheme().obtainStyledAttributes(R.styleable.FolderIconPreview);
         ColorOption dotColorOption = PreferenceCacheExtensionsKt.firstCached(preferenceManager2.getNotificationDotColor());
-        mDotColor = dotColorOption.getColorPreferenceEntry().getLightColor().invoke(context);
+        mDotColor = app.lawnchair.theme.NotificationDotThemeColors.resolve(context,
+                app.lawnchair.theme.ThemeColorRole.GLOBAL_NOTIFICATION_DOT, dotColorOption);
         mStrokeColor = ColorTokens.FolderIconBorderColor.resolveColor(context);
         boolean isDrawerFolder = invalidateDelegate instanceof FolderIcon
                 && ((FolderIcon) invalidateDelegate).isInAppDrawer();
