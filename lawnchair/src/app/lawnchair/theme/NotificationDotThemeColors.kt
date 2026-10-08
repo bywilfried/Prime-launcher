@@ -20,6 +20,10 @@ object NotificationDotThemeColors {
         val variant = context.effectiveThemeVariant()
         val profile = ThemeProfile.current(context)
         val override = ThemeColorOverrides(context).get(profile, variant, role)
+        if (override == ColorOption.IconColor) {
+            // The real color is per icon; DeviceProfile uses this only as a fallback.
+            return ThemeColors.official(context, profile, role, variant)
+        }
         if (override != ColorOption.Default) {
             return ThemeColors.resolve(context, profile, role, variant)
         }
@@ -41,6 +45,20 @@ object NotificationDotThemeColors {
             }
         }
     }
+
+    @JvmStatic
+    fun isPerIconColor(context: Context): Boolean =
+        ThemeColorOverrides(context).get(ThemeProfile.current(context), context.effectiveThemeVariant(),
+            ThemeColorRole.GLOBAL_NOTIFICATION_DOT) == ColorOption.IconColor
+
+    @JvmStatic
+    fun isAutomaticText(context: Context): Boolean =
+        ThemeColorOverrides(context).get(ThemeProfile.current(context), context.effectiveThemeVariant(),
+            ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT) == ColorOption.Default &&
+            PreferenceManager2.getInstance(context).notificationDotTextColor.firstCached() == ColorOption.Default
+
+    @JvmStatic
+    fun contrastForBackground(background: Int): Int = contrastTextColor(background)
 
     /** Choose the higher WCAG contrast ratio against the actual dot background. */
     private fun contrastTextColor(background: Int): Int {
