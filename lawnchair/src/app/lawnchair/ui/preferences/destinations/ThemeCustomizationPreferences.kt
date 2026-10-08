@@ -215,6 +215,22 @@ private fun ThemeSection(
                                 val legacy = prefs2.hotseatBackgroundColor.asState().value
                                 ThemeColors.resolveDockBackgroundForVariant(context, legacy, variant)
                             }
+                            ThemeColorRole.HOME_FOLDER_OPEN_TEXT,
+                            ThemeColorRole.DOCK_FOLDER_OPEN_TEXT,
+                            ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT -> {
+                                val backgroundRole = when (role) {
+                                    ThemeColorRole.HOME_FOLDER_OPEN_TEXT -> ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND
+                                    ThemeColorRole.DOCK_FOLDER_OPEN_TEXT -> ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND
+                                    else -> ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND
+                                }
+                                if (override == ColorOption.Default) {
+                                    ThemeColors.resolveOpenFolderTitleColorForVariant(
+                                        context, role,
+                                        ThemeColors.resolve(context, profile, backgroundRole, variant),
+                                        variant,
+                                    )
+                                } else ThemeColors.resolve(context, profile, role, variant)
+                            }
                             ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT -> {
                                 val legacy = prefs2.notificationDotTextColor.asState().value
                                 app.lawnchair.theme.NotificationDotThemeColors.resolve(context, role, legacy)
