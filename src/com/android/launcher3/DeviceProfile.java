@@ -748,12 +748,14 @@ public class DeviceProfile {
 
         // Load dot color
         ColorOption dotColorOption = PreferenceCacheExtensionsKt.firstCached(preferenceManager2.getNotificationDotColor());
-        int dotColor = dotColorOption.getColorPreferenceEntry().getLightColor().invoke(context);
+        int dotColor = app.lawnchair.theme.NotificationDotThemeColors.resolve(context,
+                app.lawnchair.theme.ThemeColorRole.GLOBAL_NOTIFICATION_DOT, dotColorOption);
 
         // Load counter color
         ColorOption counterColorOption = PreferenceCacheExtensionsKt
                 .firstCached(preferenceManager2.getNotificationDotTextColor());
-        int countColor = counterColorOption.getColorPreferenceEntry().getLightColor().invoke(context);
+        int countColor = app.lawnchair.theme.NotificationDotThemeColors.resolve(context,
+                app.lawnchair.theme.ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT, counterColorOption);
 
         // This is done last, after iconSizePx is calculated above.
         mDotRendererWorkSpace = createDotRenderer(themeManager, iconSizePx, dotRendererCache, showNotificationCount, typeface, dotColor, countColor);
