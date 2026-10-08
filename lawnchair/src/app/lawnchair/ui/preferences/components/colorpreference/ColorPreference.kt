@@ -76,7 +76,11 @@ fun ColorPreference(
             Text(text = description ?: selectedColor.colorPreferenceEntry.label())
         },
         endWidget = {
-            ColorDot((previewColor ?: selectedColor).colorPreferenceEntry)
+            when {
+                automaticContrastPreview -> ContrastColorDot()
+                iconColorPreview -> IconColorDot()
+                else -> ColorDot((previewColor ?: selectedColor).colorPreferenceEntry)
+            }
         },
         onClick = {
             mMSDLPlayerWrapper.playToken(MSDLToken.TAP_MEDIUM_EMPHASIS)
