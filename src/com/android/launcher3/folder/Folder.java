@@ -797,12 +797,17 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         // This keeps CLOSED_BACKGROUND and OPEN_BACKGROUND independent end-to-end.
         int semanticOpenColor =
                 LawnchairUtilsKt.resolveFolderBackgroundColor(getContext(), isInAppDrawer());
-        mBackground.setColor(semanticOpenColor);
+        int openColor = primeOverrides != null && primeOverrides.getOpenColor() != null
+                ? primeOverrides.getOpenColor()
+                : semanticOpenColor;
+        mBackground.setColor(openColor);
         PrimeDebugLog.d("PrimeFolderColor",
                 "OPEN apply scope=" + (isInAppDrawer() ? "DRAWER" : "HOME")
                         + " semantic=" + colorHex(semanticOpenColor)
                         + " legacyPrimeColor=" + colorHex(
                                 primeOverrides != null ? primeOverrides.getColor() : null)
+                        + " openOverride=" + colorHex(
+                                primeOverrides != null ? primeOverrides.getOpenColor() : null)
                         + " drawable=" + colorHex(mBackground.getColor() != null
                                 ? mBackground.getColor().getDefaultColor() : null));
         if (primeOverrides != null && primeOverrides.getBackgroundOpacity() != null) {
