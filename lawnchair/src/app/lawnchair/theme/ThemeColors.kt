@@ -146,32 +146,27 @@ object ThemeColors {
         if (ThemeColorOverrides(context).get(profile, variant, role) != ColorOption.Default) {
             return resolve(context, profile, role, variant)
         }
-        // Preserve the background hue and find the smallest lightness change meeting WCAG AA.
         val backdrop = if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE
         val opaqueBackground = ColorUtils.compositeColors(backgroundColor, backdrop)
-        val darkCandidate = harmonizedContrastColor(opaqueBackground, Color.BLACK)
-        val lightCandidate = harmonizedContrastColor(opaqueBackground, Color.WHITE)
-        val darkDistance = colorDistance(opaqueBackground, darkCandidate)
-        val lightDistance = colorDistance(opaqueBackground, lightCandidate)
-        return if (darkDistance <= lightDistance) darkCandidate else lightCandidate
-    }
-
-    private fun harmonizedContrastColor(background: Int, target: Int): Int {
-        var low = 0.0
-        var high = 1.0
-        repeat(18) {
-            val amount = (low + high) / 2
-            val candidate = ColorUtils.blendARGB(background, target, amount.toFloat())
-            if (ColorUtils.calculateContrast(candidate, background) >= 4.5) high = amount
-            else low = amount
+        val hsl = FloatArray(3)
+        ColorUtils.colorToHSL(opaqueBackground, hsl)
+        // Contrast depends on the actual surface, not merely on the theme variant.
+        val lighten = ColorUtils.calculateLuminance(opaqueBackground) < 0.179
+        var low = if (lighten) hsl[2] else 0f
+        var high = if (lighten) 1f else hsl[2]
+        repeat(20) {
+            val mid = (low + high) / 2f
+            hsl[2] = mid
+            val candidate = ColorUtils.HSLToColor(hsl)
+            if (ColorUtils.calculateContrast(candidate, opaqueBackground) >= 4.5) {
+                if (lighten) high = mid else low = mid
+            } else {
+                if (lighten) low = mid else high = mid
+            }
         }
-        return ColorUtils.blendARGB(background, target, high.toFloat())
+        hsl[2] = if (lighten) high else low
+        return ColorUtils.HSLToColor(hsl)
     }
-
-    private fun colorDistance(a: Int, b: Int): Int =
-        kotlin.math.abs(Color.red(a) - Color.red(b)) +
-            kotlin.math.abs(Color.green(a) - Color.green(b)) +
-            kotlin.math.abs(Color.blue(a) - Color.blue(b))
 
     /** Preview and runtime deliberately share the same semantic resolution path. */
     fun preview(
