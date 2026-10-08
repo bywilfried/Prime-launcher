@@ -59,7 +59,8 @@ object ThemeColors {
             ThemeColorRole.DRAWER_SEARCH_HINT,
             ThemeColorRole.DRAWER_SEARCH_ICON,
             ThemeColorRole.TABS_CATEGORY_TEXT -> if (dark) recipe("Neutral1", 50) else recipe("Neutral1", 900)
-            ThemeColorRole.DRAWER_BACKGROUND -> if (dark) recipe("Neutral2", 600, 6) else recipe("Neutral2", 600, 87)
+            ThemeColorRole.DRAWER_BACKGROUND,
+            ThemeColorRole.HOME_HOTSEAT_BACKGROUND -> if (dark) recipe("Neutral2", 600, 6) else recipe("Neutral2", 600, 87)
             ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE,
             ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE,
             ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND ->
@@ -169,7 +170,8 @@ object ThemeColors {
         ThemeColorRole.DRAWER_POPUP_ICON ->
             resolveLegacyToken(context, ColorTokens.TextColorPrimary, variant)
         // Mirror the historical drawer runtime branch so the default swatch matches the drawer.
-        ThemeColorRole.DRAWER_BACKGROUND -> legacyDrawerBackground(context, variant)
+        ThemeColorRole.DRAWER_BACKGROUND,
+        ThemeColorRole.HOME_HOTSEAT_BACKGROUND -> legacyDrawerBackground(context, variant)
         // Category tabs keep their historical contrast hierarchy, but derive their hue from the
         // current Lawnchair dynamic palette. Changing accent source/style therefore keeps the
         // drawer and its tabs visually coherent without storing fixed greys.
