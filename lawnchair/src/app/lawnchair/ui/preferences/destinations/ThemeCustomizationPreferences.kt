@@ -84,7 +84,14 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier) {
             onToggle = { expanded = if (expanded == it) null else it },
         )
         ThemeSection(
-            title = "Tiroir",
+            title = "Dock",
+            variant = variant,
+            section = ThemeColorRole.Section.DOCK,
+            expanded = expanded,
+            onToggle = { expanded = if (expanded == it) null else it },
+        )
+        ThemeSection(
+            title = "Tiroir des applications",
             variant = variant,
             section = ThemeColorRole.Section.DRAWER,
             expanded = expanded,
@@ -250,7 +257,7 @@ private fun roleLabel(role: ThemeColorRole): String = when (role) {
     ThemeColorRole.GLOBAL_NOTIFICATION_DOT -> "Pastille de notification — fond"
     ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT -> "Pastille de notification — texte / compteur"
     ThemeColorRole.HOME_ICON_TEXT -> "Texte des icônes"
-    ThemeColorRole.HOME_HOTSEAT_BACKGROUND -> "Hotseat — fond"
+    ThemeColorRole.HOME_HOTSEAT_BACKGROUND -> "Dock — fond"
     ThemeColorRole.HOME_SEARCH_BACKGROUND -> "Recherche — fond"
     ThemeColorRole.HOME_SEARCH_TEXT -> "Recherche — texte"
     ThemeColorRole.HOME_SEARCH_HINT -> "Recherche — texte indicatif"
@@ -266,6 +273,14 @@ private fun roleLabel(role: ThemeColorRole): String = when (role) {
     ThemeColorRole.HOME_POPUP_BACKGROUND -> "Menus contextuels — fond"
     ThemeColorRole.HOME_POPUP_TEXT -> "Menus contextuels — texte"
     ThemeColorRole.HOME_POPUP_ICON -> "Menus contextuels — icônes"
+    ThemeColorRole.DOCK_ICON_TEXT -> "Texte des icônes"
+    ThemeColorRole.DOCK_FOLDER_CLOSED_BACKGROUND -> "Dossier fermé — fond"
+    ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT -> "Dossier fermé — texte"
+    ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND -> "Dossier ouvert — fond"
+    ThemeColorRole.DOCK_FOLDER_OPEN_TEXT -> "Dossier ouvert — texte"
+    ThemeColorRole.DOCK_FOLDER_OPEN_HINT -> "Dossier ouvert — texte indicatif"
+    ThemeColorRole.DOCK_FOLDER_PAGINATION -> "Dossiers — pagination"
+    ThemeColorRole.DOCK_FOLDER_BORDER -> "Dossiers — bordure"
     ThemeColorRole.DRAWER_BACKGROUND -> "Général — fond"
     ThemeColorRole.DRAWER_TEXT -> "Général — texte"
     ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE -> "Recherche — fond inactif"
