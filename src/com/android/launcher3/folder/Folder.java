@@ -97,7 +97,6 @@ import com.android.launcher3.Flags;
 import com.android.launcher3.Launcher;
 import com.android.launcher3.OnAlarmListener;
 import com.android.launcher3.R;
-import com.android.launcher3.PrimeDebugLog;
 import com.android.launcher3.ShortcutAndWidgetContainer;
 import com.android.launcher3.Utilities;
 import com.android.launcher3.accessibility.AccessibleDragListenerAdapter;
@@ -132,7 +131,6 @@ import com.android.launcher3.views.ScrimView;
 import com.android.launcher3.widget.PendingAddShortcutInfo;
 
 import com.androidinternal.graphics.ColorUtils;
-import java.util.Locale;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
@@ -801,15 +799,6 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
                 ? primeOverrides.getOpenColor()
                 : semanticOpenColor;
         mBackground.setColor(openColor);
-        PrimeDebugLog.d("PrimeFolderColor",
-                "OPEN apply scope=" + (isInAppDrawer() ? "DRAWER" : "HOME")
-                        + " semantic=" + colorHex(semanticOpenColor)
-                        + " legacyPrimeColor=" + colorHex(
-                                primeOverrides != null ? primeOverrides.getColor() : null)
-                        + " openOverride=" + colorHex(
-                                primeOverrides != null ? primeOverrides.getOpenColor() : null)
-                        + " drawable=" + colorHex(mBackground.getColor() != null
-                                ? mBackground.getColor().getDefaultColor() : null));
         if (primeOverrides != null && primeOverrides.getBackgroundOpacity() != null) {
             mBackground.setAlpha(Math.round(255 * primeOverrides.getBackgroundOpacity()));
         } else {
@@ -819,9 +808,6 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         invalidate();
     }
 
-    private static String colorHex(Integer color) {
-        return color == null ? "null" : String.format(Locale.US, "#%08X", color);
-    }
 
     public void reapplyItemInfo() {
         mItemsInvalidated = true;
