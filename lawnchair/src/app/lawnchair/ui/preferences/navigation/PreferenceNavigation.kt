@@ -179,6 +179,7 @@ fun PreferenceNavigation(
                 // The Default swatch is the parent/theme value, never the current override.
                 defaultPreviewColor = ThemeColors.official(context, profile, role, variant),
                 defaultDynamicColor = ThemeColors.officialDynamicRecipe(role, variant),
+                automaticContrastDefaultLabel = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT,
                 onApply = { option ->
                     overrides.set(profile, variant, role, option)
                     applied = option
