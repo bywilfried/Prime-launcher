@@ -1072,6 +1072,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         app.lawnchair.theme.ThemeColors.recordLegacyDrawerOfficial(primeVariant, defaultColor);
 
         int newColor = LawnchairUtilsKt.getAllAppsBackgroundColor(mActivityContext, defaultColor);
+        app.lawnchair.theme.ThemeColors.recordLiveDrawerBackground(primeVariant, newColor);
         if (mCachedBottomSheetBgColor != newColor) {
             mCachedBottomSheetBgColor = newColor;
             return true;
