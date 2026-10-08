@@ -191,6 +191,7 @@ fun PreferenceNavigation(
                 },
                 defaultDynamicColor = ThemeColors.officialDynamicRecipe(role, variant),
                 automaticContrastDefaultLabel = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT,
+                perIconDotOption = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT,
                 onApply = { option ->
                     overrides.set(profile, variant, role, option)
                     applied = option
