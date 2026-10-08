@@ -170,6 +170,7 @@ private fun ThemeSection(
                         role == ThemeColorRole.GLOBAL_ACCENT ||
                         role == ThemeColorRole.GLOBAL_SETTINGS_BACKGROUND ||
                         role == ThemeColorRole.GLOBAL_SETTINGS_CARD_BACKGROUND ||
+                        role == ThemeColorRole.HOME_HOTSEAT_BACKGROUND ||
                         role == ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND ||
                         role == ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND ||
                         role == ThemeColorRole.HOME_POPUP_BACKGROUND ||
@@ -200,6 +201,10 @@ private fun ThemeSection(
                                 val legacy = prefs2.notificationDotColor.asState().value
                                 app.lawnchair.theme.NotificationDotThemeColors.resolve(context, role, legacy)
                                     .takeIf { it != 0 } ?: ThemeColors.official(context, profile, role, variant)
+                            }
+                            ThemeColorRole.HOME_HOTSEAT_BACKGROUND -> {
+                                val legacy = prefs2.hotseatBackgroundColor.asState().value
+                                ThemeColors.resolveDockBackgroundForVariant(context, legacy, variant)
                             }
                             ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT -> {
                                 val legacy = prefs2.notificationDotTextColor.asState().value
