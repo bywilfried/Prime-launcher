@@ -243,9 +243,8 @@ private fun ThemeSection(
                             selectedColor = override,
                             previewColor = ColorOption.CustomColor(preview),
                             iconColorPreview = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT && override == ColorOption.IconColor,
-                            automaticContrastPreview = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT &&
-                                override == ColorOption.Default &&
-                                prefs2.notificationDotTextColor.asState().value == ColorOption.Default,
+                            // Always display the resolved color, not a generic "A" glyph.
+                            automaticContrastPreview = false,
                             description = if (override == ColorOption.Default) {
                                 "Valeur du thème"
                             } else {
