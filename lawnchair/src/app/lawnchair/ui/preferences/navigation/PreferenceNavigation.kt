@@ -218,6 +218,10 @@ fun PreferenceNavigation(
                 defaultDynamicColor = ThemeColors.officialDynamicRecipe(role, variant),
                 automaticContrastDefaultLabel = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT,
                 perIconDotOption = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT,
+                adaptiveFolderDefault = role == ThemeColorRole.HOME_FOLDER_OPEN_TEXT ||
+                    role == ThemeColorRole.DOCK_FOLDER_OPEN_TEXT ||
+                    role == ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT,
+                perIconDefault = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT,
                 onApply = { option ->
                     overrides.set(profile, variant, role, option)
                     applied = option
