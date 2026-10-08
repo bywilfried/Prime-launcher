@@ -69,8 +69,7 @@ object ThemeColors {
             ThemeColorRole.DRAWER_SEARCH_SELECTED_RESULT_BACKGROUND ->
                 if (dark) recipe("Neutral1", 700) else recipe("Neutral1", 0)
             ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND,
-            ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND ->
-                if (dark) recipe("Neutral1", 900, 12) else recipe("Accent2", 200)
+            ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND,
             ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND,
             ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND ->
                 if (dark) recipe("Accent2", 800, 28) else recipe("Accent2", 200, 92)
@@ -131,8 +130,7 @@ object ThemeColors {
         ThemeColorRole.GLOBAL_NOTIFICATION_DOT ->
             resolveLegacyToken(context, ColorTokens.DotColor, variant)
         ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND,
-        ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND ->
-            resolveLegacyToken(context, ColorTokens.FolderPreviewColor, variant)
+        ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND,
         ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND,
         ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND,
         ThemeColorRole.DRAWER_POPUP_BACKGROUND ->
