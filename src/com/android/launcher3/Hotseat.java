@@ -202,13 +202,36 @@ public class Hotseat extends FrameLayout implements Insettable {
         setClipToPadding(false);
     }
 
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        // Launcher initializes All Apps after the Hotseat constructor.
+        post(this::setUpBackground);
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasWindowFocus) {
+        super.onWindowFocusChanged(hasWindowFocus);
+        if (hasWindowFocus) {
+            // Re-resolve after returning from theme settings or wallpaper changes.
+            post(this::setUpBackground);
+        }
+    }
+
     private void setUpBackground() {
         if(!preferenceManager.getHotseatBG().get()) return;
 
         var bgColor = PreferenceCacheExtensionsKt.firstCached(preferenceManager2.getHotseatBackgroundColor());
         var transparency = preferenceManager.getHotseatBGAlpha().get();
         var alphaValue = (transparency * 255) / 100;
-        var baseColor = ThemeColors.resolveDockBackground(getContext(), bgColor);
+        // The drawer is the source of truth for the uncustomized Dock background.
+        // During construction the drawer may not yet be initialized; refresh after attach.
+        Integer drawerColor = null;
+        if (mActivity instanceof Launcher launcher && launcher.getAppsView() != null) {
+            drawerColor = launcher.getAppsView().getPrimeDrawerOpaqueBackgroundColor();
+        }
+        var baseColor = ThemeColors.resolveDockBackgroundFromDrawer(
+                getContext(), bgColor, drawerColor);
         var finalColor = Color.argb(alphaValue, Color.red(baseColor), Color.green(baseColor), Color.blue(baseColor));
         int insetHorizontalLeft = preferenceManager.getHotseatBGHorizontalInsetLeft().get();
         int insetHorizontalRight = preferenceManager.getHotseatBGHorizontalInsetRight().get();
