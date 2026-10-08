@@ -167,7 +167,7 @@ object ThemeColors {
             val mid = (low + high) / 2f
             hsl[2] = mid
             val candidate = ColorUtils.HSLToColor(hsl)
-            if (ColorUtils.calculateContrast(candidate, opaqueBackground) >= 4.5) {
+            if (ColorUtils.calculateContrast(candidate, opaqueBackground) >= 7.0) {
                 if (lighten) high = mid else low = mid
             } else {
                 if (lighten) low = mid else high = mid
