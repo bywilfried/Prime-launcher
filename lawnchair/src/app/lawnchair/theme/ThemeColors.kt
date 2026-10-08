@@ -159,6 +159,11 @@ object ThemeColors {
         val opaqueBackground = ColorUtils.compositeColors(backgroundColor, backdrop)
         val hsl = FloatArray(3)
         ColorUtils.colorToHSL(opaqueBackground, hsl)
+        // Light-theme text should feel like a muted ink rather than a vivid primary hue.
+        // Keep dark-theme rendering unchanged, and retain the same 7:1 contrast target.
+        if (variant == ThemeVariant.LIGHT) {
+            hsl[1] = (hsl[1] * 0.42f).coerceAtMost(0.38f)
+        }
         // Contrast depends on the actual surface, not merely on the theme variant.
         val lighten = ColorUtils.calculateLuminance(opaqueBackground) < 0.179
         var low = if (lighten) hsl[2] else 0f
