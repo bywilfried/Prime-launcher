@@ -182,16 +182,22 @@ fun PreferenceNavigation(
                     ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> "Onglets de catégorie — texte inactif"
                     ThemeColorRole.HOME_FOLDER_OPEN_TEXT -> "Dossier ouvert — texte"
                     ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND -> "Dossier ouvert — fond"
+                    ThemeColorRole.HOME_FOLDER_CLOSED_BORDER -> "Dossier fermé — bordure"
+                    ThemeColorRole.HOME_FOLDER_OPEN_BORDER -> "Dossier ouvert — bordure"
                     ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND -> "Dossier fermé — fond"
                     ThemeColorRole.HOME_FOLDER_CLOSED_TEXT -> "Dossier fermé — texte"
                     ThemeColorRole.HOME_FOLDER_OPEN_HINT -> "Dossier ouvert — texte indicatif"
                     ThemeColorRole.DOCK_FOLDER_OPEN_TEXT -> "Dossier ouvert — texte"
                     ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND -> "Dossier ouvert — fond"
+                    ThemeColorRole.DOCK_FOLDER_CLOSED_BORDER -> "Dossier fermé — bordure"
+                    ThemeColorRole.DOCK_FOLDER_OPEN_BORDER -> "Dossier ouvert — bordure"
                     ThemeColorRole.DOCK_FOLDER_CLOSED_BACKGROUND -> "Dossier fermé — fond"
                     ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT -> "Dossier fermé — texte"
                     ThemeColorRole.DOCK_FOLDER_OPEN_HINT -> "Dossier ouvert — texte indicatif"
                     ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT -> "Dossier ouvert — texte"
                     ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND -> "Dossier ouvert — fond"
+                    ThemeColorRole.DRAWER_FOLDER_CLOSED_BORDER -> "Dossier fermé — bordure"
+                    ThemeColorRole.DRAWER_FOLDER_OPEN_BORDER -> "Dossier ouvert — bordure"
                     ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND -> "Dossier fermé — fond"
                     ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> "Dossier fermé — texte"
                     ThemeColorRole.DRAWER_FOLDER_OPEN_HINT -> "Dossier ouvert — texte indicatif"
@@ -203,6 +209,22 @@ fun PreferenceNavigation(
                     ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT -> NotificationDotThemeColors.resolve(
                         context, role, preferenceManager2().notificationDotTextColor.asState().value
                     )
+                    ThemeColorRole.HOME_FOLDER_CLOSED_BORDER,
+                    ThemeColorRole.HOME_FOLDER_OPEN_BORDER,
+                    ThemeColorRole.DOCK_FOLDER_CLOSED_BORDER,
+                    ThemeColorRole.DOCK_FOLDER_OPEN_BORDER,
+                    ThemeColorRole.DRAWER_FOLDER_CLOSED_BORDER,
+                    ThemeColorRole.DRAWER_FOLDER_OPEN_BORDER -> {
+                        val backgroundRole = when (role) {
+                            ThemeColorRole.HOME_FOLDER_CLOSED_BORDER -> ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND
+                            ThemeColorRole.HOME_FOLDER_OPEN_BORDER -> ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND
+                            ThemeColorRole.DOCK_FOLDER_CLOSED_BORDER -> ThemeColorRole.DOCK_FOLDER_CLOSED_BACKGROUND
+                            ThemeColorRole.DOCK_FOLDER_OPEN_BORDER -> ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND
+                            ThemeColorRole.DRAWER_FOLDER_CLOSED_BORDER -> ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND
+                            else -> ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND
+                        }
+                        ThemeColors.resolve(context, profile, backgroundRole, variant)
+                    }
                     ThemeColorRole.HOME_FOLDER_OPEN_TEXT,
                     ThemeColorRole.DOCK_FOLDER_OPEN_TEXT,
                     ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT,
