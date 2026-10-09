@@ -796,6 +796,14 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
                 ? primeOverrides.getOpenColor()
                 : semanticOpenColor;
         mBackground.setColor(openColor);
+        app.lawnchair.theme.ThemeColorRole borderRole = isInAppDrawer()
+                ? app.lawnchair.theme.ThemeColorRole.DRAWER_FOLDER_OPEN_BORDER
+                : (mInfo.container == com.android.launcher3.LauncherSettings.Favorites.CONTAINER_HOTSEAT
+                    || mInfo.container == com.android.launcher3.LauncherSettings.Favorites.CONTAINER_HOTSEAT_PREDICTION)
+                    ? app.lawnchair.theme.ThemeColorRole.DOCK_FOLDER_OPEN_BORDER
+                    : app.lawnchair.theme.ThemeColorRole.HOME_FOLDER_OPEN_BORDER;
+        mBackground.setStroke(Math.round(getResources().getDisplayMetrics().density),
+                app.lawnchair.theme.ThemeColors.resolveFolderBorder(getContext(), borderRole, openColor));
         app.lawnchair.theme.ThemeColorRole childLabelRole;
         if (isInAppDrawer()) {
             childLabelRole = app.lawnchair.theme.ThemeColorRole.DRAWER_FOLDER_ICON_TEXT;
