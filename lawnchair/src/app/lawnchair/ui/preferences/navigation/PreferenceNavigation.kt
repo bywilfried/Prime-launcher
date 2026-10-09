@@ -178,6 +178,8 @@ fun PreferenceNavigation(
                     ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND -> "Onglets de catégorie — actif"
                     ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND -> "Onglets de catégorie — inactif"
                     ThemeColorRole.TABS_CATEGORY_TEXT -> "Onglets de catégorie — texte"
+                    ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT -> "Onglets de catégorie — texte actif"
+                    ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> "Onglets de catégorie — texte inactif"
                     ThemeColorRole.HOME_FOLDER_OPEN_TEXT -> "Dossier ouvert — texte"
                     ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND -> "Dossier ouvert — fond"
                     ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND -> "Dossier fermé — fond"
@@ -240,6 +242,8 @@ fun PreferenceNavigation(
                     role == ThemeColorRole.DRAWER_ICON_TEXT ||
                     role == ThemeColorRole.DRAWER_FOLDER_ICON_TEXT ||
                     role == ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT,
+                categoryTabText = role == ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT ||
+                    role == ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT,
                 automaticContrastDefaultLabel = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT,
                 notificationDotBackground = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT,
                 adaptiveFolderDefault = role == ThemeColorRole.HOME_FOLDER_OPEN_TEXT ||
