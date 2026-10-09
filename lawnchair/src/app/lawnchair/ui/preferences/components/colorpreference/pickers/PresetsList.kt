@@ -46,6 +46,9 @@ fun PresetsList(
                         if (perIconDefault && entry.value == ColorOption.Default) {
                             app.lawnchair.ui.preferences.components.colorpreference.IconColorDot(
                                 modifier = Modifier.padding(start = 16.dp))
+                        } else if (entry.value == ColorOption.AdaptiveThemeText) {
+                            app.lawnchair.ui.preferences.components.colorpreference.DynamicContrastColorDot(
+                                modifier = Modifier.padding(start = 16.dp))
                         } else if (adaptiveFolderDefault && entry.value == ColorOption.Default) {
                             app.lawnchair.ui.preferences.components.colorpreference.DynamicContrastColorDot(
                                 modifier = Modifier.padding(start = 16.dp))
