@@ -99,6 +99,9 @@ object ThemeColors {
     fun resolveDockBackgroundForVariant(context: Context, legacyOption: ColorOption, variant: ThemeVariant): Int {
         val role = ThemeColorRole.HOME_HOTSEAT_BACKGROUND
         val profile = ThemeProfile.current(context)
+        if (ThemeColorOverrides(context).get(profile, variant, role) == ColorOption.AdaptiveThemeText) {
+            return adaptiveTextAgainstSurface(backgroundColor, variant)
+        }
         if (ThemeColorOverrides(context).get(profile, variant, role) != ColorOption.Default) {
             return resolve(context, profile, role, variant)
         }
@@ -169,6 +172,57 @@ object ThemeColors {
             hsl[1] = (hsl[1] * 0.42f).coerceAtMost(0.38f)
         }
         // Contrast depends on the actual surface, not merely on the theme variant.
+        val lighten = ColorUtils.calculateLuminance(opaqueBackground) < 0.179
+        var low = if (lighten) hsl[2] else 0f
+        var high = if (lighten) 1f else hsl[2]
+        repeat(20) {
+            val mid = (low + high) / 2f
+            hsl[2] = mid
+            val candidate = ColorUtils.HSLToColor(hsl)
+            if (ColorUtils.calculateContrast(candidate, opaqueBackground) >= 7.0) {
+                if (lighten) high = mid else low = mid
+            } else {
+                if (lighten) low = mid else high = mid
+            }
+        }
+        hsl[2] = if (lighten) high else low
+        return ColorUtils.HSLToColor(hsl)
+    }
+
+    /** Resolve an icon label or closed-folder label against the surface behind it. */
+    @JvmStatic
+    fun resolveIconLabelColor(context: Context, role: ThemeColorRole, backgroundColor: Int): Int =
+        resolveIconLabelColorForVariant(context, role, backgroundColor, context.effectiveThemeVariant())
+
+    @JvmStatic
+    fun resolveIconLabelColorForVariant(
+        context: Context,
+        role: ThemeColorRole,
+        backgroundColor: Int,
+        variant: ThemeVariant,
+    ): Int {
+        val profile = ThemeProfile.current(context)
+        return when (ThemeColorOverrides(context).get(profile, variant, role)) {
+            ColorOption.Default -> {
+                val backdrop = if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE
+                val opaque = ColorUtils.compositeColors(backgroundColor, backdrop)
+                if (ColorUtils.calculateContrast(Color.BLACK, opaque) >=
+                    ColorUtils.calculateContrast(Color.WHITE, opaque)) Color.BLACK else Color.WHITE
+            }
+            ColorOption.AdaptiveThemeText ->
+                adaptiveTextAgainstSurface(backgroundColor, variant)
+            else -> resolve(context, profile, role, variant)
+        }
+    }
+
+    private fun adaptiveTextAgainstSurface(backgroundColor: Int, variant: ThemeVariant): Int {
+        val backdrop = if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE
+        val opaqueBackground = ColorUtils.compositeColors(backgroundColor, backdrop)
+        val hsl = FloatArray(3)
+        ColorUtils.colorToHSL(opaqueBackground, hsl)
+        if (variant == ThemeVariant.LIGHT) {
+            hsl[1] = (hsl[1] * 0.42f).coerceAtMost(0.38f)
+        }
         val lighten = ColorUtils.calculateLuminance(opaqueBackground) < 0.179
         var low = if (lighten) hsl[2] else 0f
         var high = if (lighten) 1f else hsl[2]
