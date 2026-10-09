@@ -190,6 +190,7 @@ fun PrimeColorSelection(
     perIconDefault: Boolean = false,
     notificationDotBackground: Boolean = false,
     iconLabelText: Boolean = false,
+    categoryTabText: Boolean = false,
 ) {
     val context = LocalContext.current
     val themeFallbackColor = defaultPreviewColor ?: MaterialTheme.colorScheme.surfaceVariant.toArgb()
@@ -207,8 +208,10 @@ fun PrimeColorSelection(
         lightColor = { themeFallbackColor },
         darkColor = { themeFallbackColor },
     ) else null
+    val blackWhiteTabPreset = if (categoryTabText) ColorOption.AutomaticBlackWhite.colorPreferenceEntry else null
+    val themedTabPreset = if (categoryTabText) adaptiveTextPreset ?: ColorOption.AdaptiveThemeText.colorPreferenceEntry else null
     val displayedDynamicEntries: List<ColorPreferenceEntry<ColorOption>> =
-        (if (notificationDotBackground) dynamicEntries.filterNot { it.value == ColorOption.IconColor } + listOfNotNull(dotThemePreset) else if (perIconDotOption) dynamicEntries + ColorOption.IconColor.colorPreferenceEntry else dynamicEntries + listOfNotNull(adaptiveTextPreset)).map { entry ->
+        (if (notificationDotBackground) dynamicEntries.filterNot { it.value == ColorOption.IconColor } + listOfNotNull(dotThemePreset) else if (perIconDotOption) dynamicEntries + ColorOption.IconColor.colorPreferenceEntry else dynamicEntries + listOfNotNull(adaptiveTextPreset, blackWhiteTabPreset, themedTabPreset)).map { entry ->
         if (entry.value == ColorOption.Default) {
             ColorPreferenceEntry<ColorOption>(
                 value = ColorOption.Default,
