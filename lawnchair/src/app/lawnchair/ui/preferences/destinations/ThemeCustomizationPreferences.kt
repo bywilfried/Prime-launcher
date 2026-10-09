@@ -189,7 +189,7 @@ private fun ThemeSection(
         )
         ExpandAndShrink(visible = expanded == section) {
             androidx.compose.foundation.layout.Column {
-                rolesForUi(section).forEach { role ->
+                rolesForUi(section).filter { it != ThemeColorRole.TABS_CATEGORY_TEXT }.forEach { role ->
                     if (role == ThemeColorRole.HOME_ICON_TEXT ||
                         role == ThemeColorRole.HOME_FOLDER_ICON_TEXT ||
                         role == ThemeColorRole.HOME_FOLDER_CLOSED_TEXT ||
@@ -238,7 +238,8 @@ private fun ThemeSection(
                         role == ThemeColorRole.DRAWER_SEARCH_SELECTED_RESULT_BACKGROUND ||
                         role == ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND ||
                         role == ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND ||
-                        role == ThemeColorRole.TABS_CATEGORY_TEXT
+                        role == ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT ||
+                        role == ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT
                     ) {
                         val profile = ThemeProfile.current(context)
                         val override = ThemeColorOverrides(context).get(profile, variant, role)
@@ -404,5 +405,7 @@ private fun roleLabel(role: ThemeColorRole): String = when (role) {
     ThemeColorRole.DRAWER_POPUP_ICON -> "Menus contextuels — icônes"
     ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND -> "Onglets de catégorie — actif"
     ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND -> "Onglets de catégorie — inactif"
-    ThemeColorRole.TABS_CATEGORY_TEXT -> "Onglets de catégorie — texte"
+    ThemeColorRole.TABS_CATEGORY_TEXT -> "Onglets de catégorie — texte (ancien réglage)"
+    ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT -> "Onglets de catégorie — texte actif"
+    ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> "Onglets de catégorie — texte inactif"
 }
