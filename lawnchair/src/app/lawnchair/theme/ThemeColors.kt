@@ -234,6 +234,10 @@ object ThemeColors {
             resolveLegacyToken(context, ColorTokens.SurfaceContainerHighest, variant)
         ThemeColorRole.GLOBAL_NOTIFICATION_DOT ->
             resolveLegacyToken(context, ColorTokens.DotColor, variant)
+        ThemeColorRole.HOME_FOLDER_PAGINATION,
+        ThemeColorRole.DOCK_FOLDER_PAGINATION,
+        ThemeColorRole.DRAWER_FOLDER_PAGINATION ->
+            resolveLegacyToken(context, ColorTokens.pageIndicatorDotColor, variant)
         ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND,
         ThemeColorRole.DOCK_FOLDER_CLOSED_BACKGROUND,
         ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND,
