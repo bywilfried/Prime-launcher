@@ -198,8 +198,10 @@ private fun ThemeSection(
                         role == ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND ||
                         role == ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND ||
                         role == ThemeColorRole.HOME_FOLDER_OPEN_TEXT ||
+                        role == ThemeColorRole.HOME_FOLDER_OPEN_HINT ||
                         role == ThemeColorRole.DOCK_FOLDER_OPEN_TEXT ||
                         role == ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT ||
+                        role == ThemeColorRole.DRAWER_FOLDER_OPEN_HINT ||
                         role == ThemeColorRole.DOCK_FOLDER_CLOSED_BACKGROUND ||
                         role == ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT ||
                         role == ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND ||
@@ -269,7 +271,7 @@ private fun ThemeSection(
                             iconColorPreview = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT &&
                                 (override == ColorOption.IconColor || override == ColorOption.Default),
                             // Always display the resolved color, not a generic "A" glyph.
-                            automaticContrastPreview = override == ColorOption.Default &&
+                            dynamicContrastPreview = override == ColorOption.Default &&
                                 (role == ThemeColorRole.HOME_FOLDER_OPEN_TEXT ||
                                     role == ThemeColorRole.DOCK_FOLDER_OPEN_TEXT ||
                                     role == ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT ||
