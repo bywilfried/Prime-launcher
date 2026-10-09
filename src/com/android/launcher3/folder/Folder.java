@@ -796,6 +796,24 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
                 ? primeOverrides.getOpenColor()
                 : semanticOpenColor;
         mBackground.setColor(openColor);
+        app.lawnchair.theme.ThemeColorRole childLabelRole;
+        if (isInAppDrawer()) {
+            childLabelRole = app.lawnchair.theme.ThemeColorRole.DRAWER_FOLDER_ICON_TEXT;
+        } else if (mInfo.container == com.android.launcher3.LauncherSettings.Favorites.CONTAINER_HOTSEAT
+                || mInfo.container == com.android.launcher3.LauncherSettings.Favorites.CONTAINER_HOTSEAT_PREDICTION) {
+            childLabelRole = app.lawnchair.theme.ThemeColorRole.DOCK_FOLDER_ICON_TEXT;
+        } else {
+            childLabelRole = app.lawnchair.theme.ThemeColorRole.HOME_FOLDER_ICON_TEXT;
+        }
+        int childLabelColor = app.lawnchair.theme.ThemeColors.resolveIconLabelColor(
+                getContext(), childLabelRole, openColor);
+        mContent.iterateOverItems((item, itemView) -> {
+            if (itemView instanceof BubbleTextView bubble
+                    && (primeOverrides == null || primeOverrides.getTextColor() == null)) {
+                bubble.setTextColor(childLabelColor);
+            }
+            return false;
+        });
         // A single contrast algorithm serves Home, Dock and Drawer, but each has its own
         // independently persisted light/dark text override.
         app.lawnchair.theme.ThemeColorRole titleRole;
