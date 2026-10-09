@@ -136,6 +136,10 @@ object ThemeColors {
      * per-folder overrides. A user-selected text color always takes precedence.
      */
     @JvmStatic
+    fun resolveFolderPaginationColor(context: Context, role: ThemeColorRole): Int =
+        resolve(context, ThemeProfile.current(context), role, context.effectiveThemeVariant())
+
+    @JvmStatic
     fun resolveOpenFolderTitleColor(
         context: Context,
         role: ThemeColorRole,
