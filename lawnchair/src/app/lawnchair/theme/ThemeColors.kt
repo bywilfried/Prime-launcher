@@ -186,6 +186,16 @@ object ThemeColors {
         return ColorUtils.HSLToColor(hsl)
     }
 
+    /** Conservative wallpaper-backed label surface until pixel-level wallpaper sampling is wired. */
+    @JvmStatic
+    fun resolveWorkspaceLabelSurface(context: Context, role: ThemeColorRole): Int {
+        val variant = context.effectiveThemeVariant()
+        val backdrop = if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE
+        if (role != ThemeColorRole.DOCK_ICON_TEXT) return backdrop
+        val dock = resolveIconLabelSurface(context, role)
+        return ColorUtils.compositeColors(dock, backdrop)
+    }
+
     /** Surface behind regular drawer/dock icon labels; use the live theme, not wallpaper accents. */
     @JvmStatic
     fun resolveIconLabelSurface(context: Context, role: ThemeColorRole): Int {
