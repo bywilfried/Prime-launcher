@@ -186,6 +186,18 @@ object ThemeColors {
         return ColorUtils.HSLToColor(hsl)
     }
 
+    /** Surface behind regular drawer/dock icon labels; use the live theme, not wallpaper accents. */
+    @JvmStatic
+    fun resolveIconLabelSurface(context: Context, role: ThemeColorRole): Int {
+        val variant = context.effectiveThemeVariant()
+        val profile = ThemeProfile.current(context)
+        return when (role) {
+            ThemeColorRole.DRAWER_ICON_TEXT -> resolve(context, profile, ThemeColorRole.DRAWER_BACKGROUND, variant)
+            ThemeColorRole.DOCK_ICON_TEXT -> resolve(context, profile, ThemeColorRole.HOME_HOTSEAT_BACKGROUND, variant)
+            else -> Color.TRANSPARENT
+        }
+    }
+
     /** Resolve an icon label or closed-folder label against the surface behind it. */
     @JvmStatic
     fun resolveIconLabelColor(context: Context, role: ThemeColorRole, backgroundColor: Int): Int =
