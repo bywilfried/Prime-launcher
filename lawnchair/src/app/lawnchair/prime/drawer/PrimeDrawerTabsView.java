@@ -360,11 +360,11 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                     : modeTabColor != null ? modeTabColor : resolveDefaultTabColor();
             recordActiveTabColorSource(selectedColor, modeTabColor, activeColor);
             background.setColor(activeColor);
-            pill.setTextColor(resolveTabTextColor(activeColor));
+            pill.setTextColor(resolveTabTextColor(activeColor, true));
         } else {
             int inactiveColor = resolveInactiveTabColor();
             background.setColor(inactiveColor);
-            pill.setTextColor(resolveTabTextColor(inactiveColor));
+            pill.setTextColor(resolveTabTextColor(inactiveColor, false));
         }
         pill.setBackground(background);
     }
@@ -924,11 +924,11 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                     : modeTabColor != null ? modeTabColor : resolveDefaultTabColor();
             recordActiveTabColorSource(selectedColor, modeTabColor, activeColor);
             background.setColor(activeColor);
-            pill.setTextColor(resolveTabTextColor(activeColor));
+            pill.setTextColor(resolveTabTextColor(activeColor, true));
         } else {
             int inactiveColor = resolveInactiveTabColor();
             background.setColor(inactiveColor);
-            pill.setTextColor(resolveTabTextColor(inactiveColor));
+            pill.setTextColor(resolveTabTextColor(inactiveColor, false));
         }
         pill.setBackground(background);
         pill.setOnClickListener(v -> action.run());
@@ -965,30 +965,36 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                 app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND, variant);
     }
 
-    private int resolveTabTextColor(int backgroundColor) {
+    private int resolveTabTextColor(int backgroundColor, boolean selected) {
         app.lawnchair.theme.ThemeProfile profile =
                 app.lawnchair.theme.ThemeProfile.Companion.current(getContext());
         app.lawnchair.theme.ThemeVariant variant =
                 app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(getContext());
-        app.lawnchair.theme.color.ColorOption override =
-                new app.lawnchair.theme.ThemeColorOverrides(getContext()).get(
-                        profile, variant,
-                        app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_TEXT);
-
-        // Legacy's official text is automatic: keep maximum contrast with the actual pill
-        // background, including category/mode colors. An explicit theme customization wins.
-        if (override == app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
-            // Pick whichever of near-black / white has the higher WCAG contrast ratio.
-            // A fixed luminance threshold can choose the wrong side for mid-tone dynamic colors.
-            double backgroundLuminance =
-                    androidx.core.graphics.ColorUtils.calculateLuminance(backgroundColor);
-            double blackContrast = (backgroundLuminance + 0.05) / 0.05;
-            double whiteContrast = 1.05 / (backgroundLuminance + 0.05);
+        app.lawnchair.theme.ThemeColorRole role = selected
+                ? app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT
+                : app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT;
+        app.lawnchair.theme.ThemeColorOverrides overrides =
+                new app.lawnchair.theme.ThemeColorOverrides(getContext());
+        app.lawnchair.theme.color.ColorOption choice = overrides.get(profile, variant, role);
+        if (choice == app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
+            // Preserve the existing default and legacy customization until each new role
+            // is explicitly customized. New active/inactive selections take precedence.
+            app.lawnchair.theme.color.ColorOption legacy = overrides.get(profile, variant,
+                    app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_TEXT);
+            if (legacy != app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
+                return app.lawnchair.theme.ThemeColors.INSTANCE.resolve(getContext(), profile,
+                        app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_TEXT, variant);
+            }
+            double luminance = androidx.core.graphics.ColorUtils.calculateLuminance(
+                    androidx.core.graphics.ColorUtils.compositeColors(backgroundColor,
+                            variant == app.lawnchair.theme.ThemeVariant.DARK
+                                    ? 0xFF000000 : 0xFFFFFFFF));
+            double blackContrast = (luminance + 0.05) / 0.05;
+            double whiteContrast = 1.05 / (luminance + 0.05);
             return blackContrast >= whiteContrast ? 0xFF111111 : 0xFFFFFFFF;
         }
-        return app.lawnchair.theme.ThemeColors.INSTANCE.resolve(
-                getContext(), profile,
-                app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_TEXT, variant);
+        return app.lawnchair.theme.ThemeColors.resolveIconLabelColorForVariant(
+                getContext(), role, backgroundColor, variant);
     }
 
     private int resolveInactiveTabColor() {
