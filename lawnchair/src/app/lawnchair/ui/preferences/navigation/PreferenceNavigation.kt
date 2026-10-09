@@ -201,10 +201,13 @@ fun PreferenceNavigation(
                     )
                     ThemeColorRole.HOME_FOLDER_OPEN_TEXT,
                     ThemeColorRole.DOCK_FOLDER_OPEN_TEXT,
-                    ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT -> {
+                    ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT,
+                    ThemeColorRole.HOME_FOLDER_OPEN_HINT,
+                    ThemeColorRole.DOCK_FOLDER_OPEN_HINT,
+                    ThemeColorRole.DRAWER_FOLDER_OPEN_HINT -> {
                         val backgroundRole = when (role) {
-                            ThemeColorRole.HOME_FOLDER_OPEN_TEXT -> ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND
-                            ThemeColorRole.DOCK_FOLDER_OPEN_TEXT -> ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND
+                            ThemeColorRole.HOME_FOLDER_OPEN_TEXT, ThemeColorRole.HOME_FOLDER_OPEN_HINT -> ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND
+                            ThemeColorRole.DOCK_FOLDER_OPEN_TEXT, ThemeColorRole.DOCK_FOLDER_OPEN_HINT -> ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND
                             else -> ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND
                         }
                         ThemeColors.resolveOpenFolderTitleColorForVariant(
@@ -220,7 +223,10 @@ fun PreferenceNavigation(
                 perIconDotOption = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT,
                 adaptiveFolderDefault = role == ThemeColorRole.HOME_FOLDER_OPEN_TEXT ||
                     role == ThemeColorRole.DOCK_FOLDER_OPEN_TEXT ||
-                    role == ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT,
+                    role == ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT ||
+                    role == ThemeColorRole.HOME_FOLDER_OPEN_HINT ||
+                    role == ThemeColorRole.DOCK_FOLDER_OPEN_HINT ||
+                    role == ThemeColorRole.DRAWER_FOLDER_OPEN_HINT,
                 perIconDefault = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT,
                 onApply = { option ->
                     overrides.set(profile, variant, role, option)
