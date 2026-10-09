@@ -72,6 +72,23 @@ fun ContrastColorDot(modifier: Modifier = Modifier) {
     }
 }
 
+/** Symbolic adaptive theme color: different hues and luminances, not binary black/white. */
+@Composable
+fun DynamicContrastColorDot(modifier: Modifier = Modifier) {
+    Canvas(
+        modifier = modifier.size(30.dp).clip(CircleShape)
+            .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape),
+    ) {
+        val colors = listOf(Color(0xFF356E5D), Color(0xFFB8E5D3),
+            Color(0xFF6D549C), Color(0xFFD9C5F3))
+        colors.forEachIndexed { index, color ->
+            drawRect(color, topLeft = Offset((index % 2) * size.width / 2f,
+                (index / 2) * size.height / 2f),
+                size = Size(size.width / 2f, size.height / 2f))
+        }
+    }
+}
+
 @Composable
 fun IconColorDot(modifier: Modifier = Modifier) {
     Canvas(
