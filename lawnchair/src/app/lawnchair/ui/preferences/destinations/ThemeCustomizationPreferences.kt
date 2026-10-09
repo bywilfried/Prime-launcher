@@ -189,7 +189,12 @@ private fun ThemeSection(
         )
         ExpandAndShrink(visible = expanded == section) {
             androidx.compose.foundation.layout.Column {
-                rolesForUi(section).filter { it != ThemeColorRole.TABS_CATEGORY_TEXT }.forEach { role ->
+                rolesForUi(section).filter { role ->
+                    role != ThemeColorRole.TABS_CATEGORY_TEXT &&
+                        role != ThemeColorRole.HOME_FOLDER_BORDER &&
+                        role != ThemeColorRole.DOCK_FOLDER_BORDER &&
+                        role != ThemeColorRole.DRAWER_FOLDER_BORDER
+                }.forEach { role ->
                     if (role == ThemeColorRole.HOME_ICON_TEXT ||
                         role == ThemeColorRole.HOME_FOLDER_ICON_TEXT ||
                         role == ThemeColorRole.HOME_FOLDER_CLOSED_TEXT ||
