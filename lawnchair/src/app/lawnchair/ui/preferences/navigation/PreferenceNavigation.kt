@@ -169,6 +169,8 @@ fun PreferenceNavigation(
                     ThemeColorRole.GLOBAL_SETTINGS_CARD_BACKGROUND -> "Interface — fond des cartes"
                     ThemeColorRole.GLOBAL_NOTIFICATION_DOT -> "Pastille de notification — fond"
                     ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT -> "Pastille de notification — texte / compteur"
+                    ThemeColorRole.HOME_ICON_TEXT, ThemeColorRole.DOCK_ICON_TEXT, ThemeColorRole.DRAWER_TEXT -> "Texte des icônes"
+                    ThemeColorRole.HOME_FOLDER_ICON_TEXT, ThemeColorRole.DOCK_FOLDER_ICON_TEXT, ThemeColorRole.DRAWER_FOLDER_ICON_TEXT -> "Dossier ouvert — texte des icônes"
                     ThemeColorRole.DRAWER_BACKGROUND -> "Tiroir — fond"
                     ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE -> "Recherche — fond inactif"
                     ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE -> "Recherche — fond actif"
@@ -216,9 +218,28 @@ fun PreferenceNavigation(
                             variant,
                         )
                     }
+                    ThemeColorRole.HOME_ICON_TEXT,
+                    ThemeColorRole.HOME_FOLDER_ICON_TEXT,
+                    ThemeColorRole.HOME_FOLDER_CLOSED_TEXT,
+                    ThemeColorRole.DOCK_ICON_TEXT,
+                    ThemeColorRole.DOCK_FOLDER_ICON_TEXT,
+                    ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT,
+                    ThemeColorRole.DRAWER_TEXT,
+                    ThemeColorRole.DRAWER_FOLDER_ICON_TEXT,
+                    ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> ThemeColors.resolveIconLabelColorForVariant(context, role,
+                        if (variant == ThemeVariant.DARK) android.graphics.Color.BLACK else android.graphics.Color.WHITE, variant)
                     else -> ThemeColors.resolve(context, profile, role, variant)
                 },
                 defaultDynamicColor = ThemeColors.officialDynamicRecipe(role, variant),
+                iconLabelText = role == ThemeColorRole.HOME_ICON_TEXT ||
+                    role == ThemeColorRole.HOME_FOLDER_ICON_TEXT ||
+                    role == ThemeColorRole.HOME_FOLDER_CLOSED_TEXT ||
+                    role == ThemeColorRole.DOCK_ICON_TEXT ||
+                    role == ThemeColorRole.DOCK_FOLDER_ICON_TEXT ||
+                    role == ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT ||
+                    role == ThemeColorRole.DRAWER_TEXT ||
+                    role == ThemeColorRole.DRAWER_FOLDER_ICON_TEXT ||
+                    role == ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT,
                 automaticContrastDefaultLabel = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT,
                 notificationDotBackground = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT,
                 adaptiveFolderDefault = role == ThemeColorRole.HOME_FOLDER_OPEN_TEXT ||
