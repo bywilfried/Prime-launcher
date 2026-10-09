@@ -124,6 +124,15 @@ sealed class ColorOption {
         override fun toString() = "custom|#${String.format("%08x", color)}"
     }
 
+    /** Explicit black/white contrast option, independent from the theme default. */
+    object AutomaticBlackWhite : ColorOption() {
+        override val isSupported = true
+        override val colorPreferenceEntry = ColorPreferenceEntry<ColorOption>(
+            this, { "Noir/blanc automatique" }, { Color.WHITE }, { Color.WHITE },
+        )
+        override fun toString() = "automatic_black_white"
+    }
+
     /** Contrast-aware theme-hued icon and folder labels, resolved against their actual surface. */
     object AdaptiveThemeText : ColorOption() {
         override val isSupported = true
@@ -169,6 +178,7 @@ sealed class ColorOption {
             "default" -> Default
             "icon_color" -> IconColor
             "adaptive_theme_text" -> AdaptiveThemeText
+            "automatic_black_white" -> AutomaticBlackWhite
             else -> if (stringValue.startsWith("dynamic|")) instantiateDynamicColor(stringValue)
             else instantiateCustomColor(stringValue)
         }
