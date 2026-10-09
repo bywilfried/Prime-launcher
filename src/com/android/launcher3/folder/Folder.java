@@ -827,6 +827,17 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         int hintColor = app.lawnchair.theme.ThemeColors.resolveOpenFolderTitleColor(
                 getContext(), hintRole, openColor);
         mFolderName.setHintTextColor(hintColor);
+        app.lawnchair.theme.ThemeColorRole paginationRole;
+        if (isInAppDrawer()) {
+            paginationRole = app.lawnchair.theme.ThemeColorRole.DRAWER_FOLDER_PAGINATION;
+        } else if (mInfo.container == com.android.launcher3.LauncherSettings.Favorites.CONTAINER_HOTSEAT
+                || mInfo.container == com.android.launcher3.LauncherSettings.Favorites.CONTAINER_HOTSEAT_PREDICTION) {
+            paginationRole = app.lawnchair.theme.ThemeColorRole.DOCK_FOLDER_PAGINATION;
+        } else {
+            paginationRole = app.lawnchair.theme.ThemeColorRole.HOME_FOLDER_PAGINATION;
+        }
+        mPageIndicator.setPaintColor(app.lawnchair.theme.ThemeColors.resolveFolderPaginationColor(
+                getContext(), paginationRole));
         if (primeOverrides != null && primeOverrides.getBackgroundOpacity() != null) {
             mBackground.setAlpha(Math.round(255 * primeOverrides.getBackgroundOpacity()));
         } else {
