@@ -265,6 +265,24 @@ private fun ThemeSection(
                                 val legacy = prefs2.hotseatBackgroundColor.asState().value
                                 ThemeColors.resolveDockBackgroundForVariant(context, legacy, variant)
                             }
+                            ThemeColorRole.HOME_FOLDER_CLOSED_BORDER,
+                            ThemeColorRole.HOME_FOLDER_OPEN_BORDER,
+                            ThemeColorRole.DOCK_FOLDER_CLOSED_BORDER,
+                            ThemeColorRole.DOCK_FOLDER_OPEN_BORDER,
+                            ThemeColorRole.DRAWER_FOLDER_CLOSED_BORDER,
+                            ThemeColorRole.DRAWER_FOLDER_OPEN_BORDER -> {
+                                val backgroundRole = when (role) {
+                                    ThemeColorRole.HOME_FOLDER_CLOSED_BORDER -> ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND
+                                    ThemeColorRole.HOME_FOLDER_OPEN_BORDER -> ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND
+                                    ThemeColorRole.DOCK_FOLDER_CLOSED_BORDER -> ThemeColorRole.DOCK_FOLDER_CLOSED_BACKGROUND
+                                    ThemeColorRole.DOCK_FOLDER_OPEN_BORDER -> ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND
+                                    ThemeColorRole.DRAWER_FOLDER_CLOSED_BORDER -> ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND
+                                    else -> ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND
+                                }
+                                if (override == ColorOption.Default)
+                                    ThemeColors.resolve(context, profile, backgroundRole, variant)
+                                else ThemeColors.resolve(context, profile, role, variant)
+                            }
                             ThemeColorRole.HOME_FOLDER_OPEN_TEXT,
                             ThemeColorRole.DOCK_FOLDER_OPEN_TEXT,
                             ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT -> {
