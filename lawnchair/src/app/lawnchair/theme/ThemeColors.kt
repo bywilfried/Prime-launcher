@@ -198,6 +198,16 @@ object ThemeColors {
         return ColorUtils.compositeColors(dock, backdrop)
     }
 
+    /** Folder border defaults to the corresponding folder surface, not an unrelated token. */
+    @JvmStatic
+    fun resolveFolderBorder(context: Context, role: ThemeColorRole, surfaceColor: Int): Int {
+        val profile = ThemeProfile.current(context)
+        val variant = context.effectiveThemeVariant()
+        val choice = ThemeColorOverrides(context).get(profile, variant, role)
+        return if (choice == app.lawnchair.theme.color.ColorOption.Default) surfaceColor
+        else resolve(context, profile, role, variant)
+    }
+
     /** Surface behind regular drawer/dock icon labels; use the live theme, not wallpaper accents. */
     @JvmStatic
     fun resolveIconLabelSurface(context: Context, role: ThemeColorRole): Int {
