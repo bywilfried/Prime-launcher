@@ -26,6 +26,7 @@ import app.lawnchair.ui.preferences.navigation.ThemeColorSelection
 import app.lawnchair.theme.ThemeColorRole
 import app.lawnchair.theme.ThemeColorOverrides
 import app.lawnchair.theme.ThemeVariant
+import app.lawnchair.theme.effectiveThemeVariant
 import app.lawnchair.ui.preferences.LocalIsExpandedScreen
 import app.lawnchair.ui.preferences.components.layout.ExpandAndShrink
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
@@ -41,11 +42,11 @@ import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
  */
 @Composable
 fun ThemeCustomizationPreferences(modifier: Modifier = Modifier) {
-    var variant by rememberSaveable { mutableStateOf(ThemeVariant.LIGHT) }
+    val context = LocalContext.current
+    var variant by rememberSaveable { mutableStateOf(context.effectiveThemeVariant()) }
     var expanded by rememberSaveable { mutableStateOf<ThemeColorRole.Section?>(null) }
     var confirmThemeReset by rememberSaveable { mutableStateOf(false) }
     var confirmVariantReset by rememberSaveable { mutableStateOf(false) }
-    val context = LocalContext.current
     val profile = ThemeProfile.current(context)
     val overrides = remember(context) { ThemeColorOverrides(context) }
 
