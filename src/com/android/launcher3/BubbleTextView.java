@@ -785,22 +785,13 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         } else {
             return;
         }
-        int surface = android.graphics.Color.TRANSPARENT;
-        if (role == app.lawnchair.theme.ThemeColorRole.DRAWER_ICON_TEXT
-                || role == app.lawnchair.theme.ThemeColorRole.DOCK_ICON_TEXT) {
-            // Wallpaper primary color is not the surface behind drawer/dock labels.
-            surface = app.lawnchair.theme.ThemeColors.resolveIconLabelSurface(getContext(), role);
-        } else {
-            try {
-                android.app.WallpaperColors colors = android.app.WallpaperManager.getInstance(getContext())
-                        .getWallpaperColors(android.app.WallpaperManager.FLAG_SYSTEM);
-                if (colors != null && colors.getPrimaryColor() != null) {
-                    surface = colors.getPrimaryColor().toArgb();
-                }
-            } catch (RuntimeException ignored) {
-                // Wallpaper unavailable: preserve the existing fallback.
-            }
-        }
+        // WallpaperColors.getPrimaryColor() describes the overall wallpaper palette, not
+        // the pixels behind this label. It can select black text on a dark workspace.
+        // For wallpaper-backed labels, use the active variant as a stable contrast fallback
+        // until per-label wallpaper sampling is available. Keep drawer surface resolution.
+        int surface = role == app.lawnchair.theme.ThemeColorRole.DRAWER_ICON_TEXT
+                ? app.lawnchair.theme.ThemeColors.resolveIconLabelSurface(getContext(), role)
+                : app.lawnchair.theme.ThemeColors.resolveWorkspaceLabelSurface(getContext(), role);
         setTextColor(app.lawnchair.theme.ThemeColors.resolveIconLabelColor(
                 getContext(), role, surface));
     }
