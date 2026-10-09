@@ -66,6 +66,7 @@ fun ColorPreference(
     description: String? = null,
     previewColor: ColorOption? = null,
     automaticContrastPreview: Boolean = false,
+    dynamicContrastPreview: Boolean = false,
     iconColorPreview: Boolean = false,
 ) {
     val mMSDLPlayerWrapper = MSDLPlayerWrapper.INSTANCE.get(LocalContext.current)
@@ -78,6 +79,7 @@ fun ColorPreference(
         endWidget = {
             when {
                 automaticContrastPreview -> ContrastColorDot()
+                dynamicContrastPreview -> DynamicContrastColorDot()
                 iconColorPreview -> IconColorDot()
                 else -> ColorDot((previewColor ?: selectedColor).colorPreferenceEntry)
             }
