@@ -138,7 +138,7 @@ sealed class ColorOption {
         override val isSupported = true
         override val colorPreferenceEntry = ColorPreferenceEntry<ColorOption>(
             this,
-            { "Automatique — tons du thème" },
+            { "Contraste automatique" },
             { 0 },
             { 0 },
         )
