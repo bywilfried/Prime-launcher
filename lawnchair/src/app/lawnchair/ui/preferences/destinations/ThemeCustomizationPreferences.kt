@@ -190,7 +190,16 @@ private fun ThemeSection(
         ExpandAndShrink(visible = expanded == section) {
             androidx.compose.foundation.layout.Column {
                 rolesForUi(section).forEach { role ->
-                    if (role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT ||
+                    if (role == ThemeColorRole.HOME_ICON_TEXT ||
+                        role == ThemeColorRole.HOME_FOLDER_ICON_TEXT ||
+                        role == ThemeColorRole.HOME_FOLDER_CLOSED_TEXT ||
+                        role == ThemeColorRole.DOCK_ICON_TEXT ||
+                        role == ThemeColorRole.DOCK_FOLDER_ICON_TEXT ||
+                        role == ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT ||
+                        role == ThemeColorRole.DRAWER_TEXT ||
+                        role == ThemeColorRole.DRAWER_FOLDER_ICON_TEXT ||
+                        role == ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT ||
+                        role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT ||
                         role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT ||
                         role == ThemeColorRole.GLOBAL_ACCENT ||
                         role == ThemeColorRole.GLOBAL_SETTINGS_BACKGROUND ||
@@ -263,6 +272,16 @@ private fun ThemeSection(
                                 app.lawnchair.theme.NotificationDotThemeColors.resolve(context, role, legacy)
                                     .takeIf { it != 0 } ?: ThemeColors.official(context, profile, role, variant)
                             }
+                            ThemeColorRole.HOME_ICON_TEXT,
+                            ThemeColorRole.HOME_FOLDER_ICON_TEXT,
+                            ThemeColorRole.HOME_FOLDER_CLOSED_TEXT,
+                            ThemeColorRole.DOCK_ICON_TEXT,
+                            ThemeColorRole.DOCK_FOLDER_ICON_TEXT,
+                            ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT,
+                            ThemeColorRole.DRAWER_TEXT,
+                            ThemeColorRole.DRAWER_FOLDER_ICON_TEXT,
+                            ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> ThemeColors.resolveIconLabelColorForVariant(context, role,
+                                if (variant == ThemeVariant.DARK) android.graphics.Color.BLACK else android.graphics.Color.WHITE, variant)
                             else -> ThemeColors.resolve(context, profile, role, variant)
                         }
                         ColorPreference(
@@ -280,7 +299,16 @@ private fun ThemeSection(
                                     role == ThemeColorRole.DOCK_FOLDER_OPEN_HINT ||
                                     role == ThemeColorRole.DRAWER_FOLDER_OPEN_HINT),
                             automaticContrastPreview = override == ColorOption.Default &&
-                                role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT,
+                                (role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT ||
+                                role == ThemeColorRole.HOME_ICON_TEXT ||
+                                role == ThemeColorRole.HOME_FOLDER_ICON_TEXT ||
+                                role == ThemeColorRole.HOME_FOLDER_CLOSED_TEXT ||
+                                role == ThemeColorRole.DOCK_ICON_TEXT ||
+                                role == ThemeColorRole.DOCK_FOLDER_ICON_TEXT ||
+                                role == ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT ||
+                                role == ThemeColorRole.DRAWER_TEXT ||
+                                role == ThemeColorRole.DRAWER_FOLDER_ICON_TEXT ||
+                                role == ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT),
                             description = if (override == ColorOption.Default) {
                                 "Valeur du thème"
                             } else {
