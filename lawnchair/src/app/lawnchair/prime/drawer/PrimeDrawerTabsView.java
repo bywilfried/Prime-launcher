@@ -993,6 +993,13 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             double whiteContrast = 1.05 / (luminance + 0.05);
             return blackContrast >= whiteContrast ? 0xFF111111 : 0xFFFFFFFF;
         }
+        if (choice == app.lawnchair.theme.color.ColorOption.AutomaticBlackWhite.INSTANCE) {
+            int opaque = androidx.core.graphics.ColorUtils.compositeColors(backgroundColor,
+                    variant == app.lawnchair.theme.ThemeVariant.DARK ? 0xFF000000 : 0xFFFFFFFF);
+            double luminance = androidx.core.graphics.ColorUtils.calculateLuminance(opaque);
+            return (luminance + 0.05) / 0.05 >= 1.05 / (luminance + 0.05)
+                    ? 0xFF111111 : 0xFFFFFFFF;
+        }
         return app.lawnchair.theme.ThemeColors.resolveIconLabelColorForVariant(
                 getContext(), role, backgroundColor, variant);
     }
