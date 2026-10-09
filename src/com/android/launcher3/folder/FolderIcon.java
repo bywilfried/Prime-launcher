@@ -306,18 +306,11 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
             labelSurface = app.lawnchair.theme.ThemeColors.resolveIconLabelSurface(getContext(),
                     app.lawnchair.theme.ThemeColorRole.DRAWER_ICON_TEXT);
         } else if (closedLabelRole == app.lawnchair.theme.ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT) {
-            labelSurface = app.lawnchair.theme.ThemeColors.resolveIconLabelSurface(getContext(),
+            labelSurface = app.lawnchair.theme.ThemeColors.resolveWorkspaceLabelSurface(getContext(),
                     app.lawnchair.theme.ThemeColorRole.DOCK_ICON_TEXT);
         } else {
-            try {
-                android.app.WallpaperColors wallpaperColors = android.app.WallpaperManager.getInstance(getContext())
-                        .getWallpaperColors(android.app.WallpaperManager.FLAG_SYSTEM);
-                if (wallpaperColors != null && wallpaperColors.getPrimaryColor() != null) {
-                    labelSurface = wallpaperColors.getPrimaryColor().toArgb();
-                }
-            } catch (RuntimeException ignored) {
-                // Keep the existing Home fallback when wallpaper colors are unavailable.
-            }
+            labelSurface = app.lawnchair.theme.ThemeColors.resolveWorkspaceLabelSurface(getContext(),
+                    app.lawnchair.theme.ThemeColorRole.HOME_ICON_TEXT);
         }
         int labelColor = overrides != null && overrides.getClosedLabelColor() != null
                 ? overrides.getClosedLabelColor()
