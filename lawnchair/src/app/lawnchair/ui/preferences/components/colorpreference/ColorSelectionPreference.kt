@@ -192,19 +192,27 @@ fun PrimeColorSelection(
 ) {
     val context = LocalContext.current
     val themeFallbackColor = defaultPreviewColor ?: MaterialTheme.colorScheme.surfaceVariant.toArgb()
+    val dotThemePreset = if (notificationDotBackground) defaultDynamicColor?.let { recipe ->
+        ColorPreferenceEntry<ColorOption>(
+            value = recipe,
+            label = { "Couleur dynamique du thème" },
+            lightColor = { themeFallbackColor },
+            darkColor = { themeFallbackColor },
+        )
+    } else null
     val displayedDynamicEntries: List<ColorPreferenceEntry<ColorOption>> =
-        (if (notificationDotBackground) dynamicEntries.filterNot { it.value == ColorOption.IconColor } else if (perIconDotOption) dynamicEntries + ColorOption.IconColor.colorPreferenceEntry else dynamicEntries).map { entry ->
+        (if (notificationDotBackground) dynamicEntries.filterNot { it.value == ColorOption.IconColor } + listOfNotNull(dotThemePreset) else if (perIconDotOption) dynamicEntries + ColorOption.IconColor.colorPreferenceEntry else dynamicEntries).map { entry ->
         if (entry.value == ColorOption.Default) {
             ColorPreferenceEntry<ColorOption>(
                 value = ColorOption.Default,
                 label = if (adaptiveFolderDefault) {
-                    { "Automatique — adaptée au fond du dossier" }
+                    { "Par défaut : automatique selon le fond du dossier" }
                 } else if (perIconDefault) {
-                    { "Selon la couleur de l’icône (par défaut)" }
+                    { "Par défaut : selon la couleur de l’icône" }
                 } else if (automaticContrastDefaultLabel) {
-                    { "Couleur par défaut — Contraste automatique" }
+                    { "Par défaut : contraste automatique noir/blanc" }
                 } else {
-                    entry.label
+                    { "Par défaut : couleur du thème" }
                 },
                 lightColor = { themeFallbackColor },
                 darkColor = { themeFallbackColor },
