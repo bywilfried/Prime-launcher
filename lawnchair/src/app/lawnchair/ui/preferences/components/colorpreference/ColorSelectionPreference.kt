@@ -204,7 +204,7 @@ fun PrimeColorSelection(
     } else null
     val adaptiveTextPreset = if (iconLabelText) ColorPreferenceEntry<ColorOption>(
         value = ColorOption.AdaptiveThemeText,
-        label = { "Automatique — tons du thème" },
+        label = { "Contraste automatique" },
         lightColor = { themeFallbackColor },
         darkColor = { themeFallbackColor },
     ) else null
