@@ -813,9 +813,20 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         int effectiveTitleColor = primeOverrides != null && primeOverrides.getTextColor() != null
                 ? primeOverrides.getTextColor() : titleColor;
         mFolderName.setTextColor(effectiveTitleColor);
-        // Empty folder names render the hint ("Modifier le nom"), not the text itself.
-        // Keep the hint in sync with the exact same role/override and contrast calculation.
-        mFolderName.setHintTextColor(effectiveTitleColor);
+        // The unnamed-folder hint has its own independently configurable theme role.
+        // Its Legacy default uses the same adaptive contrast algorithm as the title.
+        app.lawnchair.theme.ThemeColorRole hintRole;
+        if (isInAppDrawer()) {
+            hintRole = app.lawnchair.theme.ThemeColorRole.DRAWER_FOLDER_OPEN_HINT;
+        } else if (mInfo.container == com.android.launcher3.LauncherSettings.Favorites.CONTAINER_HOTSEAT
+                || mInfo.container == com.android.launcher3.LauncherSettings.Favorites.CONTAINER_HOTSEAT_PREDICTION) {
+            hintRole = app.lawnchair.theme.ThemeColorRole.DOCK_FOLDER_OPEN_HINT;
+        } else {
+            hintRole = app.lawnchair.theme.ThemeColorRole.HOME_FOLDER_OPEN_HINT;
+        }
+        int hintColor = app.lawnchair.theme.ThemeColors.resolveOpenFolderTitleColor(
+                getContext(), hintRole, openColor);
+        mFolderName.setHintTextColor(hintColor);
         if (primeOverrides != null && primeOverrides.getBackgroundOpacity() != null) {
             mBackground.setAlpha(Math.round(255 * primeOverrides.getBackgroundOpacity()));
         } else {
