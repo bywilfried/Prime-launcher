@@ -216,8 +216,14 @@ private fun ThemeSection(
                         role == ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT ||
                         role == ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND ||
                         role == ThemeColorRole.DOCK_FOLDER_OPEN_HINT ||
+                        role == ThemeColorRole.HOME_FOLDER_CLOSED_BORDER ||
+                        role == ThemeColorRole.HOME_FOLDER_OPEN_BORDER ||
                         role == ThemeColorRole.HOME_FOLDER_PAGINATION ||
+                        role == ThemeColorRole.DOCK_FOLDER_CLOSED_BORDER ||
+                        role == ThemeColorRole.DOCK_FOLDER_OPEN_BORDER ||
                         role == ThemeColorRole.DOCK_FOLDER_PAGINATION ||
+                        role == ThemeColorRole.DRAWER_FOLDER_CLOSED_BORDER ||
+                        role == ThemeColorRole.DRAWER_FOLDER_OPEN_BORDER ||
                         role == ThemeColorRole.DRAWER_FOLDER_PAGINATION ||
                         role == ThemeColorRole.DOCK_FOLDER_BORDER ||
                         role == ThemeColorRole.HOME_POPUP_BACKGROUND ||
