@@ -199,10 +199,20 @@ public class PreviewBackground extends DelegatedCellDrawing {
         ColorOption dotColorOption = PreferenceCacheExtensionsKt.firstCached(preferenceManager2.getNotificationDotColor());
         mDotColor = app.lawnchair.theme.NotificationDotThemeColors.resolve(context,
                 app.lawnchair.theme.ThemeColorRole.GLOBAL_NOTIFICATION_DOT, dotColorOption);
-        mStrokeColor = ColorTokens.FolderIconBorderColor.resolveColor(context);
         boolean isDrawerFolder = invalidateDelegate instanceof FolderIcon
                 && ((FolderIcon) invalidateDelegate).isInAppDrawer();
         mBgColor = LawnchairUtilsKt.resolveFolderPreviewColor(context, isDrawerFolder);
+        boolean isDockFolder = invalidateDelegate instanceof FolderIcon
+                && ((FolderIcon) invalidateDelegate).mInfo != null
+                && (((FolderIcon) invalidateDelegate).mInfo.container
+                        == com.android.launcher3.LauncherSettings.Favorites.CONTAINER_HOTSEAT
+                    || ((FolderIcon) invalidateDelegate).mInfo.container
+                        == com.android.launcher3.LauncherSettings.Favorites.CONTAINER_HOTSEAT_PREDICTION);
+        app.lawnchair.theme.ThemeColorRole borderRole = isDrawerFolder
+                ? app.lawnchair.theme.ThemeColorRole.DRAWER_FOLDER_CLOSED_BORDER
+                : isDockFolder ? app.lawnchair.theme.ThemeColorRole.DOCK_FOLDER_CLOSED_BORDER
+                : app.lawnchair.theme.ThemeColorRole.HOME_FOLDER_CLOSED_BORDER;
+        mStrokeColor = app.lawnchair.theme.ThemeColors.resolveFolderBorder(context, borderRole, mBgColor);
         ta.recycle();
 
         DeviceProfile grid = activity.getDeviceProfile();
