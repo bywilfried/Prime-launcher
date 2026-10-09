@@ -277,8 +277,9 @@ private fun ThemeSection(
                                     role == ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT ||
                                     role == ThemeColorRole.HOME_FOLDER_OPEN_HINT ||
                                     role == ThemeColorRole.DOCK_FOLDER_OPEN_HINT ||
-                                    role == ThemeColorRole.DRAWER_FOLDER_OPEN_HINT ||
-                                    role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT),
+                                    role == ThemeColorRole.DRAWER_FOLDER_OPEN_HINT),
+                            automaticContrastPreview = override == ColorOption.Default &&
+                                role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT,
                             description = if (override == ColorOption.Default) {
                                 "Valeur du thème"
                             } else {
