@@ -810,8 +810,12 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         int titleColor = app.lawnchair.theme.ThemeColors.resolveOpenFolderTitleColor(
                 getContext(), titleRole, openColor);
         // Explicit per-folder text overrides are intentionally stronger than automatic color.
-        mFolderName.setTextColor(primeOverrides != null && primeOverrides.getTextColor() != null
-                ? primeOverrides.getTextColor() : titleColor);
+        int effectiveTitleColor = primeOverrides != null && primeOverrides.getTextColor() != null
+                ? primeOverrides.getTextColor() : titleColor;
+        mFolderName.setTextColor(effectiveTitleColor);
+        // Empty folder names render the hint ("Modifier le nom"), not the text itself.
+        // Keep the hint in sync with the exact same role/override and contrast calculation.
+        mFolderName.setHintTextColor(effectiveTitleColor);
         if (primeOverrides != null && primeOverrides.getBackgroundOpacity() != null) {
             mBackground.setAlpha(Math.round(255 * primeOverrides.getBackgroundOpacity()));
         } else {
