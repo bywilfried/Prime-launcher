@@ -220,6 +220,18 @@ fun PreferenceNavigation(
                             variant,
                         )
                     }
+                    ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT,
+                    ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> {
+                        val backgroundRole = if (role == ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT)
+                            ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND
+                        else ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND
+                        val background = ThemeColors.resolve(context, profile, backgroundRole, variant)
+                        val opaque = androidx.core.graphics.ColorUtils.compositeColors(background,
+                            if (variant == ThemeVariant.DARK) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
+                        if (androidx.core.graphics.ColorUtils.calculateContrast(android.graphics.Color.BLACK, opaque) >=
+                            androidx.core.graphics.ColorUtils.calculateContrast(android.graphics.Color.WHITE, opaque))
+                            android.graphics.Color.BLACK else android.graphics.Color.WHITE
+                    }
                     ThemeColorRole.HOME_ICON_TEXT,
                     ThemeColorRole.HOME_FOLDER_ICON_TEXT,
                     ThemeColorRole.HOME_FOLDER_CLOSED_TEXT,
