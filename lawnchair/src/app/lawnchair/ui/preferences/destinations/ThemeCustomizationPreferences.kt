@@ -279,9 +279,11 @@ private fun ThemeSection(
                                     ThemeColorRole.DRAWER_FOLDER_CLOSED_BORDER -> ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND
                                     else -> ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND
                                 }
-                                if (override == ColorOption.Default)
-                                    ThemeColors.resolve(context, profile, backgroundRole, variant)
-                                else ThemeColors.resolve(context, profile, role, variant)
+                                ThemeColors.resolveFolderBorderForVariant(
+                                    context, role,
+                                    ThemeColors.resolve(context, profile, backgroundRole, variant),
+                                    variant,
+                                )
                             }
                             ThemeColorRole.HOME_FOLDER_OPEN_TEXT,
                             ThemeColorRole.DOCK_FOLDER_OPEN_TEXT,
