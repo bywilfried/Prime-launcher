@@ -71,6 +71,8 @@ enum class ThemeColorRole(val id: String, val section: Section) {
     TABS_CATEGORY_ACTIVE_BACKGROUND("tabs.category.active.background", Section.TABS),
     TABS_CATEGORY_INACTIVE_BACKGROUND("tabs.category.inactive.background", Section.TABS),
     TABS_CATEGORY_TEXT("tabs.category.text", Section.TABS),
+    TABS_CATEGORY_ACTIVE_TEXT("tabs.category.active.text", Section.TABS),
+    TABS_CATEGORY_INACTIVE_TEXT("tabs.category.inactive.text", Section.TABS),
 
     ;
 
