@@ -201,8 +201,13 @@ object ThemeColors {
     /** Folder border defaults to the corresponding folder surface, not an unrelated token. */
     @JvmStatic
     fun resolveFolderBorder(context: Context, role: ThemeColorRole, surfaceColor: Int): Int {
+        return resolveFolderBorderForVariant(context, role, surfaceColor, context.effectiveThemeVariant())
+    }
+
+    /** Effective border color for a specific light/dark variant, including its independent override. */
+    @JvmStatic
+    fun resolveFolderBorderForVariant(context: Context, role: ThemeColorRole, surfaceColor: Int, variant: ThemeVariant): Int {
         val profile = ThemeProfile.current(context)
-        val variant = context.effectiveThemeVariant()
         val choice = ThemeColorOverrides(context).get(profile, variant, role)
         return if (choice == app.lawnchair.theme.color.ColorOption.Default) surfaceColor
         else resolve(context, profile, role, variant)
