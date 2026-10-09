@@ -66,7 +66,9 @@ object ThemeColors {
             ThemeColorRole.DRAWER_SEARCH_TEXT,
             ThemeColorRole.DRAWER_SEARCH_HINT,
             ThemeColorRole.DRAWER_SEARCH_ICON,
-            ThemeColorRole.TABS_CATEGORY_TEXT -> if (dark) recipe("Neutral1", 50) else recipe("Neutral1", 900)
+            ThemeColorRole.TABS_CATEGORY_TEXT,
+            ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT,
+            ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> if (dark) recipe("Neutral1", 50) else recipe("Neutral1", 900)
             ThemeColorRole.DRAWER_BACKGROUND,
             ThemeColorRole.HOME_HOTSEAT_BACKGROUND -> if (dark) recipe("Neutral2", 600, 6) else recipe("Neutral2", 600, 87)
             ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE,
@@ -362,7 +364,9 @@ object ThemeColors {
             )
         ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND ->
             resolveLegacyToken(context, ColorTokens.AllAppsTabBackgroundSelected, variant)
-        ThemeColorRole.TABS_CATEGORY_TEXT ->
+        ThemeColorRole.TABS_CATEGORY_TEXT,
+        ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT,
+        ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT ->
             resolveLegacyToken(context, ColorTokens.TextColorPrimary, variant)
         // Roles are added to the official Legacy palette as their runtime consumers are wired.
         // Until then this fallback is preview-only and must not be treated as their final token.
