@@ -220,7 +220,7 @@ fun PreferenceNavigation(
                 },
                 defaultDynamicColor = ThemeColors.officialDynamicRecipe(role, variant),
                 automaticContrastDefaultLabel = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT,
-                perIconDotOption = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT,
+                notificationDotBackground = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT,
                 adaptiveFolderDefault = role == ThemeColorRole.HOME_FOLDER_OPEN_TEXT ||
                     role == ThemeColorRole.DOCK_FOLDER_OPEN_TEXT ||
                     role == ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT ||
