@@ -238,30 +238,37 @@ object ThemeColors {
 
     private fun adaptiveTextAgainstSurface(backgroundColor: Int, variant: ThemeVariant): Int {
         val backdrop = if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE
-        val opaqueBackground = ColorUtils.compositeColors(backgroundColor, backdrop)
+        val surface = ColorUtils.compositeColors(backgroundColor, backdrop)
         val hsl = FloatArray(3)
-        ColorUtils.colorToHSL(opaqueBackground, hsl)
-        // Light-theme text should feel like a muted ink rather than a vivid primary hue.
-        // Keep dark-theme rendering unchanged, and retain the same 7:1 contrast target.
-        if (variant == ThemeVariant.LIGHT) {
-            hsl[1] = (hsl[1] * 0.42f).coerceAtMost(0.38f)
-        }
-        // Contrast depends on the actual surface, not merely on the theme variant.
-        val lighten = ColorUtils.calculateLuminance(opaqueBackground) < 0.179
-        var low = if (lighten) hsl[2] else 0f
-        var high = if (lighten) 1f else hsl[2]
-        repeat(20) {
+        ColorUtils.colorToHSL(surface, hsl)
+        // Preserve the surface hue, even for saturated tab colors. Target WCAG AA
+        // (4.5:1) rather than forcing near-black at the previous 7:1 target.
+        if (variant == ThemeVariant.LIGHT) hsl[1] = (hsl[1] * 0.65f).coerceAtMost(0.75f)
+        val lighten = ColorUtils.calculateLuminance(surface) < 0.179
+        val originalLightness = hsl[2]
+        var low = if (lighten) originalLightness else 0f
+        var high = if (lighten) 1f else originalLightness
+        repeat(22) {
             val mid = (low + high) / 2f
             hsl[2] = mid
             val candidate = ColorUtils.HSLToColor(hsl)
-            if (ColorUtils.calculateContrast(candidate, opaqueBackground) >= 7.0) {
-                if (lighten) high = mid else low = mid
+            val sufficient = ColorUtils.calculateContrast(candidate, surface) >= 4.5
+            if (lighten) {
+                if (sufficient) high = mid else low = mid
             } else {
-                if (lighten) low = mid else high = mid
+                if (sufficient) low = mid else high = mid
             }
         }
         hsl[2] = if (lighten) high else low
-        return ColorUtils.HSLToColor(hsl)
+        val tinted = ColorUtils.HSLToColor(hsl)
+        if (ColorUtils.calculateContrast(tinted, surface) >= 4.5) return tinted
+        // If the chosen direction cannot achieve AA, try the opposite direction
+        // with the same hue before falling back to a neutral readable color.
+        hsl[2] = if (lighten) 0f else 1f
+        val opposite = ColorUtils.HSLToColor(hsl)
+        if (ColorUtils.calculateContrast(opposite, surface) >= 4.5) return opposite
+        return if (ColorUtils.calculateContrast(Color.BLACK, surface) >=
+            ColorUtils.calculateContrast(Color.WHITE, surface)) Color.BLACK else Color.WHITE
     }
 
     /** Preview and runtime deliberately share the same semantic resolution path. */
