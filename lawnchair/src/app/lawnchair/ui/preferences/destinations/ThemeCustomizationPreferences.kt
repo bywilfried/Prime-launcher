@@ -196,7 +196,7 @@ private fun ThemeSection(
                         role == ThemeColorRole.DOCK_ICON_TEXT ||
                         role == ThemeColorRole.DOCK_FOLDER_ICON_TEXT ||
                         role == ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT ||
-                        role == ThemeColorRole.DRAWER_TEXT ||
+                        role == ThemeColorRole.DRAWER_ICON_TEXT ||
                         role == ThemeColorRole.DRAWER_FOLDER_ICON_TEXT ||
                         role == ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT ||
                         role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT ||
@@ -278,7 +278,7 @@ private fun ThemeSection(
                             ThemeColorRole.DOCK_ICON_TEXT,
                             ThemeColorRole.DOCK_FOLDER_ICON_TEXT,
                             ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT,
-                            ThemeColorRole.DRAWER_TEXT,
+                            ThemeColorRole.DRAWER_ICON_TEXT,
                             ThemeColorRole.DRAWER_FOLDER_ICON_TEXT,
                             ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> ThemeColors.resolveIconLabelColorForVariant(context, role,
                                 if (variant == ThemeVariant.DARK) android.graphics.Color.BLACK else android.graphics.Color.WHITE, variant)
@@ -378,6 +378,7 @@ private fun roleLabel(role: ThemeColorRole): String = when (role) {
     ThemeColorRole.DOCK_FOLDER_BORDER -> "Dossiers — bordure"
     ThemeColorRole.DRAWER_BACKGROUND -> "Général — fond"
     ThemeColorRole.DRAWER_TEXT -> "Général — texte"
+    ThemeColorRole.DRAWER_ICON_TEXT -> "Texte des icônes"
     ThemeColorRole.DRAWER_FOLDER_ICON_TEXT -> "Dossier ouvert — texte des icônes"
     ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE -> "Recherche — fond inactif"
     ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE -> "Recherche — fond actif"
