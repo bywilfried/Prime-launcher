@@ -761,11 +761,42 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                 setText(label);
             }
         }
+        applyPrimeSemanticLabelColor(info);
         if (info.contentDescription != null) {
             setContentDescription(info.isDisabled()
                     ? getContext().getString(R.string.disabled_app_label, info.contentDescription)
                     : info.contentDescription);
         }
+    }
+
+    /** Theme labels use separate roles for Home, Dock and Drawer. Folder children are
+     * handled by Folder when its actual open surface is known. */
+    private void applyPrimeSemanticLabelColor(ItemInfo info) {
+        if (mDisplay == DISPLAY_FOLDER || mDisplay == DISPLAY_DRAWER_FOLDER || info == null) return;
+        app.lawnchair.theme.ThemeColorRole role;
+        if (mDisplay == DISPLAY_ALL_APPS || mDisplay == DISPLAY_PREDICTION_ROW
+                || mDisplay == DISPLAY_SEARCH_RESULT_APP_ROW) {
+            role = app.lawnchair.theme.ThemeColorRole.DRAWER_TEXT;
+        } else if (mDisplay == DISPLAY_WORKSPACE) {
+            role = info.container == LauncherSettings.Favorites.CONTAINER_HOTSEAT
+                    || info.container == LauncherSettings.Favorites.CONTAINER_HOTSEAT_PREDICTION
+                    ? app.lawnchair.theme.ThemeColorRole.DOCK_ICON_TEXT
+                    : app.lawnchair.theme.ThemeColorRole.HOME_ICON_TEXT;
+        } else {
+            return;
+        }
+        int surface = android.graphics.Color.TRANSPARENT;
+        try {
+            android.app.WallpaperColors colors = android.app.WallpaperManager.getInstance(getContext())
+                    .getWallpaperColors(android.app.WallpaperManager.FLAG_SYSTEM);
+            if (colors != null && colors.getPrimaryColor() != null) {
+                surface = colors.getPrimaryColor().toArgb();
+            }
+        } catch (RuntimeException ignored) {
+            // Fall back to the active theme background if wallpaper colors are unavailable.
+        }
+        setTextColor(app.lawnchair.theme.ThemeColors.resolveIconLabelColor(
+                getContext(), role, surface));
     }
 
     @Override
