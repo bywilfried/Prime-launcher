@@ -99,9 +99,6 @@ object ThemeColors {
     fun resolveDockBackgroundForVariant(context: Context, legacyOption: ColorOption, variant: ThemeVariant): Int {
         val role = ThemeColorRole.HOME_HOTSEAT_BACKGROUND
         val profile = ThemeProfile.current(context)
-        if (ThemeColorOverrides(context).get(profile, variant, role) == ColorOption.AdaptiveThemeText) {
-            return adaptiveTextAgainstSurface(backgroundColor, variant)
-        }
         if (ThemeColorOverrides(context).get(profile, variant, role) != ColorOption.Default) {
             return resolve(context, profile, role, variant)
         }
