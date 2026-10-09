@@ -124,6 +124,18 @@ sealed class ColorOption {
         override fun toString() = "custom|#${String.format("%08x", color)}"
     }
 
+    /** Contrast-aware theme-hued icon and folder labels, resolved against their actual surface. */
+    object AdaptiveThemeText : ColorOption() {
+        override val isSupported = true
+        override val colorPreferenceEntry = ColorPreferenceEntry<ColorOption>(
+            this,
+            { "Automatique — tons du thème" },
+            { 0 },
+            { 0 },
+        )
+        override fun toString() = "adaptive_theme_text"
+    }
+
     /** Per-app notification dot background, resolved only when drawing an icon. */
     object IconColor : ColorOption() {
         override val isSupported = true
@@ -156,6 +168,7 @@ sealed class ColorOption {
             "wallpaper_primary" -> WallpaperPrimary
             "default" -> Default
             "icon_color" -> IconColor
+            "adaptive_theme_text" -> AdaptiveThemeText
             else -> if (stringValue.startsWith("dynamic|")) instantiateDynamicColor(stringValue)
             else instantiateCustomColor(stringValue)
         }
