@@ -189,6 +189,7 @@ fun PrimeColorSelection(
     adaptiveFolderDefault: Boolean = false,
     perIconDefault: Boolean = false,
     notificationDotBackground: Boolean = false,
+    iconLabelText: Boolean = false,
 ) {
     val context = LocalContext.current
     val themeFallbackColor = defaultPreviewColor ?: MaterialTheme.colorScheme.surfaceVariant.toArgb()
@@ -200,12 +201,20 @@ fun PrimeColorSelection(
             darkColor = { themeFallbackColor },
         )
     } else null
+    val adaptiveTextPreset = if (iconLabelText) ColorPreferenceEntry<ColorOption>(
+        value = ColorOption.AdaptiveThemeText,
+        label = { "Automatique — tons du thème" },
+        lightColor = { themeFallbackColor },
+        darkColor = { themeFallbackColor },
+    ) else null
     val displayedDynamicEntries: List<ColorPreferenceEntry<ColorOption>> =
-        (if (notificationDotBackground) dynamicEntries.filterNot { it.value == ColorOption.IconColor } + listOfNotNull(dotThemePreset) else if (perIconDotOption) dynamicEntries + ColorOption.IconColor.colorPreferenceEntry else dynamicEntries).map { entry ->
+        (if (notificationDotBackground) dynamicEntries.filterNot { it.value == ColorOption.IconColor } + listOfNotNull(dotThemePreset) else if (perIconDotOption) dynamicEntries + ColorOption.IconColor.colorPreferenceEntry else dynamicEntries + listOfNotNull(adaptiveTextPreset)).map { entry ->
         if (entry.value == ColorOption.Default) {
             ColorPreferenceEntry<ColorOption>(
                 value = ColorOption.Default,
-                label = if (adaptiveFolderDefault) {
+                label = if (iconLabelText) {
+                    { "Par défaut : noir/blanc automatique" }
+                } else if (adaptiveFolderDefault) {
                     { "Par défaut : automatique selon le fond du dossier" }
                 } else if (perIconDefault) {
                     { "Par défaut : selon la couleur de l’icône" }
