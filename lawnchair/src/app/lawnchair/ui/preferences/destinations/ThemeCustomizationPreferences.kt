@@ -200,9 +200,6 @@ private fun ThemeSection(
                         role == ThemeColorRole.HOME_FOLDER_OPEN_TEXT ||
                         role == ThemeColorRole.DOCK_FOLDER_OPEN_TEXT ||
                         role == ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT ||
-                                    role == ThemeColorRole.HOME_FOLDER_OPEN_HINT ||
-                                    role == ThemeColorRole.DOCK_FOLDER_OPEN_HINT ||
-                                    role == ThemeColorRole.DRAWER_FOLDER_OPEN_HINT ||
                         role == ThemeColorRole.DOCK_FOLDER_CLOSED_BACKGROUND ||
                         role == ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT ||
                         role == ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND ||
@@ -276,6 +273,9 @@ private fun ThemeSection(
                                 (role == ThemeColorRole.HOME_FOLDER_OPEN_TEXT ||
                                     role == ThemeColorRole.DOCK_FOLDER_OPEN_TEXT ||
                                     role == ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT ||
+                                    role == ThemeColorRole.HOME_FOLDER_OPEN_HINT ||
+                                    role == ThemeColorRole.DOCK_FOLDER_OPEN_HINT ||
+                                    role == ThemeColorRole.DRAWER_FOLDER_OPEN_HINT ||
                                     role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT),
                             description = if (override == ColorOption.Default) {
                                 "Valeur du thème"
