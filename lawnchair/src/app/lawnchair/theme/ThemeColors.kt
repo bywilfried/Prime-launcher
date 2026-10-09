@@ -1,5 +1,267 @@
+package app.lawnchair.theme
+
+import android.content.Context
+import android.graphics.Color
+import androidx.core.graphics.ColorUtils
+import app.lawnchair.theme.color.ColorOption
+import app.lawnchair.theme.color.tokens.ColorTokens
+import app.lawnchair.ui.theme.getSystemAccent
+
+/**
+ * Official theme values and the first common semantic resolver.
+ *
+ * Legacy official values are resolved from the same dynamic palette used by the launcher.
+ * Fixed values are only used when the historical role itself was fixed.
+ */
+object ThemeColors {
+    // The drawer can choose between several historical base colors depending on the live blur
+    // state. Keep the last base actually selected by All Apps so settings can preview that exact
+    // official value instead of guessing from a Context that has no launcher blur state.
+    private val legacyDrawerOfficialByVariant = mutableMapOf<ThemeVariant, Int>()
+    private val liveDrawerBackgroundByVariant = mutableMapOf<ThemeVariant, Int>()
+
+    @JvmStatic
+    fun recordLiveDrawerBackground(variant: ThemeVariant, color: Int) {
+        liveDrawerBackgroundByVariant[variant] = color
+    }
+
+    @JvmStatic
+    fun recordLegacyDrawerOfficial(variant: ThemeVariant, color: Int) {
+        legacyDrawerOfficialByVariant[variant] = color
+    }
+
+    fun official(
+        context: Context,
+        profile: ThemeProfile,
+        role: ThemeColorRole,
+        variant: ThemeVariant,
+    ): Int {
+        val officialVariant = profile.variants.officialFallbackFor(variant)
+        return when (profile.id) {
+            ThemeProfile.LEGACY.id -> legacy(context, role, officialVariant)
+            else -> legacy(context, role, officialVariant)
+        }
+    }
+
+    /**
+     * Editable dynamic recipe equivalent to the official Legacy semantic value.
+     * This is used only to seed the dynamic editor; runtime still resolves the real tokens above.
+     */
+    fun officialDynamicRecipe(role: ThemeColorRole, variant: ThemeVariant): ColorOption.DynamicColor? {
+        fun recipe(swatch: String, shade: Int, lStar: Int? = null) =
+            ColorOption.DynamicColor(swatch, shade, lStar)
+        val dark = variant == ThemeVariant.DARK
+        return when (role) {
+            ThemeColorRole.GLOBAL_ACCENT -> if (dark) recipe("Accent1", 100, 72) else recipe("Accent1", 600, 42)
+            ThemeColorRole.GLOBAL_SETTINGS_BACKGROUND -> if (dark) recipe("Neutral1", 500, 6) else recipe("Neutral1", 500, 98)
+            ThemeColorRole.GLOBAL_SETTINGS_CARD_BACKGROUND -> if (dark) recipe("Neutral1", 500, 22) else recipe("Neutral1", 500, 90)
+            // Match ColorTokens.DotColor in light and dark variants.
+            ThemeColorRole.GLOBAL_NOTIFICATION_DOT -> if (dark) recipe("Accent1", 200) else recipe("Accent2", 600)
+            ThemeColorRole.HOME_POPUP_BACKGROUND -> if (dark) recipe("Accent2", 800, 20) else recipe("Accent2", 200, 98)
+            ThemeColorRole.DRAWER_POPUP_BACKGROUND -> if (dark) recipe("Accent2", 800, 28) else recipe("Accent2", 200, 92)
+            ThemeColorRole.HOME_POPUP_TEXT,
+            ThemeColorRole.DRAWER_POPUP_TEXT,
+            ThemeColorRole.HOME_POPUP_ICON,
+            ThemeColorRole.DRAWER_POPUP_ICON,
+            ThemeColorRole.DRAWER_SEARCH_TEXT,
+            ThemeColorRole.DRAWER_SEARCH_HINT,
+            ThemeColorRole.DRAWER_SEARCH_ICON,
+            ThemeColorRole.TABS_CATEGORY_TEXT,
+            ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT,
+            ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> if (dark) recipe("Neutral1", 50) else recipe("Neutral1", 900)
+            ThemeColorRole.DRAWER_BACKGROUND,
+            ThemeColorRole.HOME_HOTSEAT_BACKGROUND -> if (dark) recipe("Neutral2", 600, 6) else recipe("Neutral2", 600, 87)
+            ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE,
+            ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE,
+            ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND ->
+                if (dark) recipe("Accent2", 600, 34) else recipe("Accent2", 200, 72)
+            ThemeColorRole.DRAWER_SEARCH_BORDER -> if (dark) recipe("Accent1", 100) else recipe("Accent1", 600)
+            ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND ->
+                if (dark) recipe("Accent2", 800, 14) else recipe("Accent2", 300, 58)
+            // Blur highlight includes alpha, which the dynamic recipe editor cannot represent yet.
+            ThemeColorRole.DRAWER_SEARCH_SELECTED_RESULT_BACKGROUND ->
+                if (dark) recipe("Neutral1", 700) else recipe("Neutral1", 0)
+            ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND,
+            ThemeColorRole.DOCK_FOLDER_CLOSED_BACKGROUND,
+            ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND,
+            ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND,
+            ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND,
+            ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND ->
+                if (dark) recipe("Accent2", 800, 28) else recipe("Accent2", 200, 92)
+            else -> null
+        }
+    }
+
+    /** Dock background: Prime override wins; otherwise preserve the existing Dock preference. */
+    @JvmStatic
+    fun resolveDockBackground(context: Context, legacyOption: ColorOption): Int {
+        return resolveDockBackgroundForVariant(context, legacyOption, context.effectiveThemeVariant())
+    }
+
+    fun resolveDockBackgroundForVariant(context: Context, legacyOption: ColorOption, variant: ThemeVariant): Int {
+        val role = ThemeColorRole.HOME_HOTSEAT_BACKGROUND
+        val profile = ThemeProfile.current(context)
+        if (ThemeColorOverrides(context).get(profile, variant, role) != ColorOption.Default) {
+            return resolve(context, profile, role, variant)
+        }
+        return when (legacyOption) {
+            ColorOption.Default -> official(context, profile, role, variant)
+            is ColorOption.CustomColor -> legacyOption.color
+            else -> if (variant == ThemeVariant.DARK) legacyOption.colorPreferenceEntry.darkColor(context)
+                else legacyOption.colorPreferenceEntry.lightColor(context)
+        }
+    }
+
+    /**
+     * The Dock's uncustomized background follows the actual drawer renderer.
+     * Keep the Dock's legacy preference and Prime overrides higher priority.
+     * The caller supplies the live drawer color; this resolver never changes the drawer.
+     */
+    @JvmStatic
+    fun resolveDockBackgroundFromDrawer(
+        context: Context,
+        legacyOption: ColorOption,
+        drawerColor: Int?,
+    ): Int {
+        val profile = ThemeProfile.current(context)
+        val variant = context.effectiveThemeVariant()
+        val dockOverride = ThemeColorOverrides(context).get(
+            profile, variant, ThemeColorRole.HOME_HOTSEAT_BACKGROUND,
+        )
+        return if (legacyOption == ColorOption.Default &&
+            dockOverride == ColorOption.Default && drawerColor != null
+        ) drawerColor else resolveDockBackgroundForVariant(context, legacyOption, variant)
+    }
+
+    /**
+     * Harmonized open-folder title. The folder supplies its effective background, including
+     * per-folder overrides. A user-selected text color always takes precedence.
+     */
+    @JvmStatic
+    fun resolveFolderPaginationColor(context: Context, role: ThemeColorRole): Int =
+        resolve(context, ThemeProfile.current(context), role, context.effectiveThemeVariant())
+
+    @JvmStatic
+    fun resolveOpenFolderTitleColor(
+        context: Context,
+        role: ThemeColorRole,
+        backgroundColor: Int,
+    ): Int = resolveOpenFolderTitleColorForVariant(
+        context, role, backgroundColor, context.effectiveThemeVariant()
+    )
+
+    @JvmStatic
+    fun resolveOpenFolderTitleColorForVariant(
+        context: Context,
+        role: ThemeColorRole,
+        backgroundColor: Int,
+        variant: ThemeVariant,
+    ): Int {
+        val profile = ThemeProfile.current(context)
+        if (ThemeColorOverrides(context).get(profile, variant, role) != ColorOption.Default) {
+            return resolve(context, profile, role, variant)
+        }
+        val backdrop = if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE
+        val opaqueBackground = ColorUtils.compositeColors(backgroundColor, backdrop)
+        val hsl = FloatArray(3)
+        ColorUtils.colorToHSL(opaqueBackground, hsl)
+        // Light-theme text should feel like a muted ink rather than a vivid primary hue.
+        // Keep dark-theme rendering unchanged, and retain the same 7:1 contrast target.
+        if (variant == ThemeVariant.LIGHT) {
+            hsl[1] = (hsl[1] * 0.42f).coerceAtMost(0.38f)
+        }
+        // Contrast depends on the actual surface, not merely on the theme variant.
+        val lighten = ColorUtils.calculateLuminance(opaqueBackground) < 0.179
+        var low = if (lighten) hsl[2] else 0f
+        var high = if (lighten) 1f else hsl[2]
+        repeat(20) {
+            val mid = (low + high) / 2f
+            hsl[2] = mid
+            val candidate = ColorUtils.HSLToColor(hsl)
+            if (ColorUtils.calculateContrast(candidate, opaqueBackground) >= 7.0) {
+                if (lighten) high = mid else low = mid
+            } else {
+                if (lighten) low = mid else high = mid
+            }
+        }
+        hsl[2] = if (lighten) high else low
+        return ColorUtils.HSLToColor(hsl)
+    }
+
+    /** Conservative wallpaper-backed label surface until pixel-level wallpaper sampling is wired. */
+    @JvmStatic
+    fun resolveWorkspaceLabelSurface(context: Context, role: ThemeColorRole): Int {
+        val variant = context.effectiveThemeVariant()
+        val backdrop = if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE
+        if (role != ThemeColorRole.DOCK_ICON_TEXT) return backdrop
+        val dock = resolveIconLabelSurface(context, role)
+        return ColorUtils.compositeColors(dock, backdrop)
+    }
+
+    /** Surface behind regular drawer/dock icon labels; use the live theme, not wallpaper accents. */
+    @JvmStatic
+    fun resolveIconLabelSurface(context: Context, role: ThemeColorRole): Int {
+        val variant = context.effectiveThemeVariant()
+        val profile = ThemeProfile.current(context)
+        return when (role) {
+            ThemeColorRole.DRAWER_ICON_TEXT -> resolve(context, profile, ThemeColorRole.DRAWER_BACKGROUND, variant)
+            ThemeColorRole.DOCK_ICON_TEXT -> resolve(context, profile, ThemeColorRole.HOME_HOTSEAT_BACKGROUND, variant)
+            else -> Color.TRANSPARENT
+        }
+    }
+
+    /** Resolve an icon label or closed-folder label against the surface behind it. */
+    @JvmStatic
+    fun resolveIconLabelColor(context: Context, role: ThemeColorRole, backgroundColor: Int): Int =
+        resolveIconLabelColorForVariant(context, role, backgroundColor, context.effectiveThemeVariant())
+
+    @JvmStatic
+    fun resolveIconLabelColorForVariant(
+        context: Context,
+        role: ThemeColorRole,
+        backgroundColor: Int,
+        variant: ThemeVariant,
+    ): Int {
+        val profile = ThemeProfile.current(context)
+        return when (ThemeColorOverrides(context).get(profile, variant, role)) {
+            ColorOption.Default -> {
+                val backdrop = if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE
+                val opaque = ColorUtils.compositeColors(backgroundColor, backdrop)
+                if (ColorUtils.calculateContrast(Color.BLACK, opaque) >=
+                    ColorUtils.calculateContrast(Color.WHITE, opaque)) Color.BLACK else Color.WHITE
+            }
+            ColorOption.AdaptiveThemeText ->
+                adaptiveTextAgainstSurface(backgroundColor, variant)
+            else -> resolve(context, profile, role, variant)
+        }
+    }
+
     private fun adaptiveTextAgainstSurface(backgroundColor: Int, variant: ThemeVariant): Int {
-        return adaptiveTextAgainstSurface(backgroundColor, variant)
+        val backdrop = if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE
+        val opaqueBackground = ColorUtils.compositeColors(backgroundColor, backdrop)
+        val hsl = FloatArray(3)
+        ColorUtils.colorToHSL(opaqueBackground, hsl)
+        // Light-theme text should feel like a muted ink rather than a vivid primary hue.
+        // Keep dark-theme rendering unchanged, and retain the same 7:1 contrast target.
+        if (variant == ThemeVariant.LIGHT) {
+            hsl[1] = (hsl[1] * 0.42f).coerceAtMost(0.38f)
+        }
+        // Contrast depends on the actual surface, not merely on the theme variant.
+        val lighten = ColorUtils.calculateLuminance(opaqueBackground) < 0.179
+        var low = if (lighten) hsl[2] else 0f
+        var high = if (lighten) 1f else hsl[2]
+        repeat(20) {
+            val mid = (low + high) / 2f
+            hsl[2] = mid
+            val candidate = ColorUtils.HSLToColor(hsl)
+            if (ColorUtils.calculateContrast(candidate, opaqueBackground) >= 7.0) {
+                if (lighten) high = mid else low = mid
+            } else {
+                if (lighten) low = mid else high = mid
+            }
+        }
+        hsl[2] = if (lighten) high else low
+        return ColorUtils.HSLToColor(hsl)
     }
 
     /** Preview and runtime deliberately share the same semantic resolution path. */
