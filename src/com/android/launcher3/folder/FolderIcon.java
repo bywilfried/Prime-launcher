@@ -292,9 +292,30 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
             shape = IconShape.Companion.fromString(overrides.getShape(), getContext());
         }
         mBackground.setPrimeShape(shape);
-        if (overrides != null && overrides.getClosedLabelColor() != null) {
-            mFolderName.setTextColor(overrides.getClosedLabelColor());
+        app.lawnchair.theme.ThemeColorRole closedLabelRole;
+        if (isInAppDrawer()) {
+            closedLabelRole = app.lawnchair.theme.ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT;
+        } else if (mInfo.container == com.android.launcher3.LauncherSettings.Favorites.CONTAINER_HOTSEAT
+                || mInfo.container == com.android.launcher3.LauncherSettings.Favorites.CONTAINER_HOTSEAT_PREDICTION) {
+            closedLabelRole = app.lawnchair.theme.ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT;
+        } else {
+            closedLabelRole = app.lawnchair.theme.ThemeColorRole.HOME_FOLDER_CLOSED_TEXT;
         }
+        int labelSurface = android.graphics.Color.TRANSPARENT;
+        try {
+            android.app.WallpaperColors wallpaperColors = android.app.WallpaperManager.getInstance(getContext())
+                    .getWallpaperColors(android.app.WallpaperManager.FLAG_SYSTEM);
+            if (wallpaperColors != null && wallpaperColors.getPrimaryColor() != null) {
+                labelSurface = wallpaperColors.getPrimaryColor().toArgb();
+            }
+        } catch (RuntimeException ignored) {
+            // Theme fallback handles wallpaper color unavailability.
+        }
+        int labelColor = overrides != null && overrides.getClosedLabelColor() != null
+                ? overrides.getClosedLabelColor()
+                : app.lawnchair.theme.ThemeColors.resolveIconLabelColor(
+                        getContext(), closedLabelRole, labelSurface);
+        mFolderName.setTextColor(labelColor);
         mPrimeForceShowLabel = overrides != null
                 && Boolean.TRUE.equals(overrides.getShowFolderLabel());
         if (overrides != null && overrides.getShowFolderLabel() != null) {
