@@ -786,14 +786,20 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             return;
         }
         int surface = android.graphics.Color.TRANSPARENT;
-        try {
-            android.app.WallpaperColors colors = android.app.WallpaperManager.getInstance(getContext())
-                    .getWallpaperColors(android.app.WallpaperManager.FLAG_SYSTEM);
-            if (colors != null && colors.getPrimaryColor() != null) {
-                surface = colors.getPrimaryColor().toArgb();
+        if (role == app.lawnchair.theme.ThemeColorRole.DRAWER_ICON_TEXT
+                || role == app.lawnchair.theme.ThemeColorRole.DOCK_ICON_TEXT) {
+            // Wallpaper primary color is not the surface behind drawer/dock labels.
+            surface = app.lawnchair.theme.ThemeColors.resolveIconLabelSurface(getContext(), role);
+        } else {
+            try {
+                android.app.WallpaperColors colors = android.app.WallpaperManager.getInstance(getContext())
+                        .getWallpaperColors(android.app.WallpaperManager.FLAG_SYSTEM);
+                if (colors != null && colors.getPrimaryColor() != null) {
+                    surface = colors.getPrimaryColor().toArgb();
+                }
+            } catch (RuntimeException ignored) {
+                // Wallpaper unavailable: preserve the existing fallback.
             }
-        } catch (RuntimeException ignored) {
-            // Fall back to the active theme background if wallpaper colors are unavailable.
         }
         setTextColor(app.lawnchair.theme.ThemeColors.resolveIconLabelColor(
                 getContext(), role, surface));
