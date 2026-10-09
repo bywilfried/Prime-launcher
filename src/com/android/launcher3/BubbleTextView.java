@@ -776,7 +776,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         app.lawnchair.theme.ThemeColorRole role;
         if (mDisplay == DISPLAY_ALL_APPS || mDisplay == DISPLAY_PREDICTION_ROW
                 || mDisplay == DISPLAY_SEARCH_RESULT_APP_ROW) {
-            role = app.lawnchair.theme.ThemeColorRole.DRAWER_TEXT;
+            role = app.lawnchair.theme.ThemeColorRole.DRAWER_ICON_TEXT;
         } else if (mDisplay == DISPLAY_WORKSPACE) {
             role = info.container == LauncherSettings.Favorites.CONTAINER_HOTSEAT
                     || info.container == LauncherSettings.Favorites.CONTAINER_HOTSEAT_PREDICTION
