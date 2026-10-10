@@ -29,6 +29,12 @@ import app.lawnchair.qsb.providers.PixelSearch
 import app.lawnchair.qsb.providers.QsbSearchProvider
 import app.lawnchair.ui.preferences.PreferenceActivity
 import app.lawnchair.ui.preferences.navigation.Search
+import app.lawnchair.theme.ThemeColorOverrides
+import app.lawnchair.theme.ThemeColorRole
+import app.lawnchair.theme.ThemeColors
+import app.lawnchair.theme.ThemeProfile
+import app.lawnchair.theme.color.ColorOption
+import app.lawnchair.theme.effectiveThemeVariant
 import app.lawnchair.ui.theme.LawnchairTheme
 import app.lawnchair.util.ProvideLifecycleState
 import app.lawnchair.util.repeatOnAttached
@@ -90,14 +96,26 @@ class LawnQsbLayout(context: Context, attrs: AttributeSet?) : FrameLayout(contex
                             showLens = lensIntent != null,
                         )
 
+                        val profile = ThemeProfile.current(context)
+                        val variant = context.effectiveThemeVariant()
+                        val overrides = ThemeColorOverrides(context)
+                        fun resolvedQsbColor(role: ThemeColorRole, legacy: Int): Int =
+                            if (overrides.get(profile, variant, role) == ColorOption.Default) legacy
+                            else ThemeColors.resolve(context, profile, role, variant)
                         val style = buildQsbStyle(
                             context = LocalContext.current,
                             themed = themed,
-                            backgroundColor = getHotseatBackgroundColor(context, themed),
+                            backgroundColor = resolvedQsbColor(
+                                ThemeColorRole.HOME_SEARCH_BACKGROUND,
+                                getHotseatBackgroundColor(context, themed),
+                            ),
                             backgroundAlpha = prefs.hotseatQsbAlpha.observeAsState().value,
                             cornerRadius = prefs.hotseatQsbCornerRadius.observeAsState().value,
                             // Use light color as strokeColor is a static color that doesn't use darkColor
-                            strokeColor = prefs2.strokeColorStyle.asState().value.colorPreferenceEntry.lightColor.invoke(context),
+                            strokeColor = resolvedQsbColor(
+                                ThemeColorRole.HOME_SEARCH_BORDER,
+                                prefs2.strokeColorStyle.asState().value.colorPreferenceEntry.lightColor.invoke(context),
+                            ),
                             strokeWidth = prefs.hotseatQsbStrokeWidth.observeAsState().value,
                         )
 
