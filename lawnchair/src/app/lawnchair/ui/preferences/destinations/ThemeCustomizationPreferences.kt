@@ -195,68 +195,6 @@ private fun ThemeSection(
                         role != ThemeColorRole.DOCK_FOLDER_BORDER &&
                         role != ThemeColorRole.DRAWER_FOLDER_BORDER
                 }.forEach { role ->
-                    if (role == ThemeColorRole.HOME_ICON_TEXT ||
-                        role == ThemeColorRole.HOME_FOLDER_ICON_TEXT ||
-                        role == ThemeColorRole.HOME_FOLDER_CLOSED_TEXT ||
-                        role == ThemeColorRole.DOCK_ICON_TEXT ||
-                        role == ThemeColorRole.DOCK_FOLDER_ICON_TEXT ||
-                        role == ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT ||
-                        role == ThemeColorRole.DRAWER_ICON_TEXT ||
-                        role == ThemeColorRole.DRAWER_FOLDER_ICON_TEXT ||
-                        role == ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT ||
-                        role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT ||
-                        role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT ||
-                        role == ThemeColorRole.GLOBAL_ACCENT ||
-                        role == ThemeColorRole.GLOBAL_SETTINGS_BACKGROUND ||
-                        role == ThemeColorRole.GLOBAL_SETTINGS_CARD_BACKGROUND ||
-                        role == ThemeColorRole.HOME_SEARCH_BACKGROUND ||
-                        role == ThemeColorRole.HOME_SEARCH_TEXT ||
-                        role == ThemeColorRole.HOME_SEARCH_HINT ||
-                        role == ThemeColorRole.HOME_SEARCH_ICON ||
-                        role == ThemeColorRole.HOME_SEARCH_BORDER ||
-                        role == ThemeColorRole.HOME_HOTSEAT_BACKGROUND ||
-                        role == ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND ||
-                        role == ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND ||
-                        role == ThemeColorRole.HOME_FOLDER_OPEN_TEXT ||
-                        role == ThemeColorRole.HOME_FOLDER_OPEN_HINT ||
-                        role == ThemeColorRole.DOCK_FOLDER_OPEN_TEXT ||
-                        role == ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT ||
-                        role == ThemeColorRole.DRAWER_FOLDER_OPEN_HINT ||
-                        role == ThemeColorRole.DOCK_FOLDER_CLOSED_BACKGROUND ||
-                        role == ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT ||
-                        role == ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND ||
-                        role == ThemeColorRole.DOCK_FOLDER_OPEN_HINT ||
-                        role == ThemeColorRole.HOME_FOLDER_CLOSED_BORDER ||
-                        role == ThemeColorRole.HOME_FOLDER_OPEN_BORDER ||
-                        role == ThemeColorRole.HOME_FOLDER_PAGINATION ||
-                        role == ThemeColorRole.DOCK_FOLDER_CLOSED_BORDER ||
-                        role == ThemeColorRole.DOCK_FOLDER_OPEN_BORDER ||
-                        role == ThemeColorRole.DOCK_FOLDER_PAGINATION ||
-                        role == ThemeColorRole.DRAWER_FOLDER_CLOSED_BORDER ||
-                        role == ThemeColorRole.DRAWER_FOLDER_OPEN_BORDER ||
-                        role == ThemeColorRole.DRAWER_FOLDER_PAGINATION ||
-                        role == ThemeColorRole.DOCK_FOLDER_BORDER ||
-                        role == ThemeColorRole.HOME_POPUP_BACKGROUND ||
-                        role == ThemeColorRole.HOME_POPUP_TEXT ||
-                        role == ThemeColorRole.HOME_POPUP_ICON ||
-                        role == ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND ||
-                        role == ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND ||
-                        role == ThemeColorRole.DRAWER_POPUP_BACKGROUND ||
-                        role == ThemeColorRole.DRAWER_POPUP_TEXT ||
-                        role == ThemeColorRole.DRAWER_POPUP_ICON ||
-                        role == ThemeColorRole.DRAWER_BACKGROUND ||
-                        role == ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE ||
-                        role == ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE ||
-                        role == ThemeColorRole.DRAWER_SEARCH_TEXT ||
-                        role == ThemeColorRole.DRAWER_SEARCH_HINT ||
-                        role == ThemeColorRole.DRAWER_SEARCH_ICON ||
-                        role == ThemeColorRole.DRAWER_SEARCH_BORDER ||
-                        role == ThemeColorRole.DRAWER_SEARCH_SELECTED_RESULT_BACKGROUND ||
-                        role == ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND ||
-                        role == ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND ||
-                        role == ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT ||
-                        role == ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT
-                    ) {
                         val profile = ThemeProfile.current(context)
                         val override = ThemeColorOverrides(context).get(profile, variant, role)
                         val prefs2 = preferenceManager2()
@@ -359,12 +297,7 @@ private fun ThemeSection(
                                 )
                             },
                         )
-                    } else {
-                        PreferenceTemplate(
-                            title = { Text(roleLabel(role)) },
-                            description = { Text("Valeur du thème · raccordement à valider") },
-                        )
-                    }
+
                 }
             }
         }
