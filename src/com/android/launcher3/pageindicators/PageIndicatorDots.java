@@ -293,7 +293,11 @@ public class PageIndicatorDots extends View implements Insettable, PageIndicator
     public void setPaintColor(int color) {
         mHasExternalPaintColor = true;
         mExternalPaintColor = color;
-        ThemeColors.recordWorkspacePaginationDefault(getContext(), color);
+        // A paint update while customization is active is not an original theme value.
+        if (!ThemeColors.hasHomePageIndicatorOverride(getContext(), true)
+                && !ThemeColors.hasHomePageIndicatorOverride(getContext(), false)) {
+            ThemeColors.recordWorkspacePaginationDefault(getContext(), color);
+        }
         mPaginationPaint.setColor(color);
         invalidate();
     }
