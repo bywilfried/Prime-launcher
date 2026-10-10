@@ -36,19 +36,13 @@ object ThemeColors {
             if (active) ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE else ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE,
         ) != ColorOption.Default
 
-    // The workspace supplies its original pagination paint independently of the theme token.
-    // Retain that value so the Default swatch can show the actual launcher color.
-    private val workspacePaginationDefaults = mutableMapOf<ThemeVariant, Int>()
-
-    @JvmStatic
-    fun recordWorkspacePaginationDefault(context: Context, color: Int) {
-        workspacePaginationDefaults[context.effectiveThemeVariant()] = color
-    }
-
+    // Launcher.setupViews() uses the wallpaper-aware workspace text contrast,
+    // not the generic page-indicator token, for the original pagination paint.
     @JvmStatic
     fun workspacePaginationDefault(context: Context, variant: ThemeVariant): Int =
-        workspacePaginationDefaults[variant]
-            ?: resolveLegacyToken(context, ColorTokens.pageIndicatorDotColor, variant)
+        if (com.android.launcher3.util.Themes.getAttrBoolean(
+                context, com.android.launcher3.R.attr.isWorkspaceDarkText,
+            )) Color.BLACK else Color.WHITE
 
     @JvmStatic
     fun recordLiveDrawerBackground(variant: ThemeVariant, color: Int) {
