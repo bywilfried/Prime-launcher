@@ -320,6 +320,9 @@ object ThemeColors {
         val official = official(context, profile, role, variant)
         return when (val override = ThemeColorOverrides(context).get(profile, variant, role)) {
             ColorOption.Default -> official
+            ColorOption.ThemePalette -> resolveLegacyToken(
+                context, ColorTokens.pageIndicatorDotColor, variant,
+            )
             is ColorOption.CustomColor -> override.color
             else -> if (variant == ThemeVariant.DARK) {
                 override.colorPreferenceEntry.darkColor(context)
