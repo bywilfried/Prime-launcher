@@ -36,6 +36,20 @@ object ThemeColors {
             if (active) ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE else ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE,
         ) != ColorOption.Default
 
+    // The workspace supplies its original pagination paint independently of the theme token.
+    // Retain that value so the Default swatch can show the actual launcher color.
+    private val workspacePaginationDefaults = mutableMapOf<ThemeVariant, Int>()
+
+    @JvmStatic
+    fun recordWorkspacePaginationDefault(context: Context, color: Int) {
+        workspacePaginationDefaults[context.effectiveThemeVariant()] = color
+    }
+
+    @JvmStatic
+    fun workspacePaginationDefault(context: Context, variant: ThemeVariant): Int =
+        workspacePaginationDefaults[variant]
+            ?: resolveLegacyToken(context, ColorTokens.pageIndicatorDotColor, variant)
+
     @JvmStatic
     fun recordLiveDrawerBackground(variant: ThemeVariant, color: Int) {
         liveDrawerBackgroundByVariant[variant] = color
@@ -348,7 +362,8 @@ object ThemeColors {
         ThemeColorRole.GLOBAL_NOTIFICATION_DOT ->
             resolveLegacyToken(context, ColorTokens.DotColor, variant)
         ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE,
-        ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE,
+        ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE ->
+            workspacePaginationDefault(context, variant)
         ThemeColorRole.HOME_FOLDER_PAGINATION,
         ThemeColorRole.DOCK_FOLDER_PAGINATION,
         ThemeColorRole.DRAWER_FOLDER_PAGINATION ->
