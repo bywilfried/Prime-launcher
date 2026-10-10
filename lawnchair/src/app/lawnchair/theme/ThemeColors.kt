@@ -29,6 +29,14 @@ object ThemeColors {
     )
 
     @JvmStatic
+    fun hasHomePageIndicatorOverride(context: Context, active: Boolean): Boolean =
+        ThemeColorOverrides(context).get(
+            ThemeProfile.current(context),
+            context.effectiveThemeVariant(),
+            if (active) ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE else ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE,
+        ) != ColorOption.Default
+
+    @JvmStatic
     fun recordLiveDrawerBackground(variant: ThemeVariant, color: Int) {
         liveDrawerBackgroundByVariant[variant] = color
     }
