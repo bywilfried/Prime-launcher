@@ -79,7 +79,9 @@ object DrawableTokens {
             context,
             R.drawable.bg_widgets_header,
         )
-        unselected?.setTint(ColorTokens.Surface.resolveColor(context, scheme, uiColorMode))
+        unselected?.setTint(app.lawnchair.theme.ThemeColors.resolveFolderPaginationColor(
+            context, app.lawnchair.theme.ThemeColorRole.DRAWER_PROFILE_TAB_UNSELECTED_BACKGROUND,
+        ))
 
         val selected = AppCompatResources.getDrawable(
             context,
@@ -141,7 +143,15 @@ object DrawableTokens {
         )
 
         // Prefer the user-selected tab color when set; otherwise the themed default.
-        val selectedColor = AllAppsTabColors.selectedBackground(context, scheme, uiColorMode)
+        val selectedRole = app.lawnchair.theme.ThemeColorRole.DRAWER_PROFILE_TAB_SELECTED_BACKGROUND
+        val variant = if (uiColorMode.isDarkTheme) app.lawnchair.theme.ThemeVariant.DARK
+            else app.lawnchair.theme.ThemeVariant.LIGHT
+        val selectedOption = app.lawnchair.theme.ThemeColorOverrides(context).get(
+            app.lawnchair.theme.ThemeProfile.current(context), variant, selectedRole,
+        )
+        val selectedColor = if (selectedOption == app.lawnchair.theme.color.ColorOption.Default)
+            AllAppsTabColors.selectedBackground(context, scheme, uiColorMode)
+        else app.lawnchair.theme.ThemeColors.resolveFolderPaginationColor(context, selectedRole)
 
         selected?.setTint(selectedColor)
 
