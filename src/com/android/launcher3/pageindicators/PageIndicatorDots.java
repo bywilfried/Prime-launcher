@@ -87,12 +87,16 @@ public class PageIndicatorDots extends View implements Insettable, PageIndicator
     private static final int INVISIBLE_ALPHA = 0;
     private Paint mPaginationPaint;
     private boolean mHasExternalPaintColor;
+    private int mExternalPaintColor;
 
     private void applyPageColor(boolean active) {
         // Explicit theme customizations take precedence over legacy paint colors supplied
         // by the workspace. Without an override, preserve the existing external color.
         if (mHasExternalPaintColor
-                && !ThemeColors.hasHomePageIndicatorOverride(getContext(), active)) return;
+                && !ThemeColors.hasHomePageIndicatorOverride(getContext(), active)) {
+            mPaginationPaint.setColor(mExternalPaintColor);
+            return;
+        }
         int alpha = mPaginationPaint.getAlpha();
         mPaginationPaint.setColor(ThemeColors.resolveHomePageIndicator(getContext(), active));
         mPaginationPaint.setAlpha(alpha);
@@ -288,7 +292,10 @@ public class PageIndicatorDots extends View implements Insettable, PageIndicator
     @Override
     public void setPaintColor(int color) {
         mHasExternalPaintColor = true;
+        mExternalPaintColor = color;
+        ThemeColors.recordWorkspacePaginationDefault(getContext(), color);
         mPaginationPaint.setColor(color);
+        invalidate();
     }
 
     private void hideAfterDelay() {
