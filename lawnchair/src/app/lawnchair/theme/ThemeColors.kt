@@ -21,6 +21,14 @@ object ThemeColors {
     private val liveDrawerBackgroundByVariant = mutableMapOf<ThemeVariant, Int>()
 
     @JvmStatic
+    fun resolveHomePageIndicator(context: Context, active: Boolean): Int = resolve(
+        context,
+        ThemeProfile.current(context),
+        if (active) ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE else ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE,
+        context.effectiveThemeVariant(),
+    )
+
+    @JvmStatic
     fun recordLiveDrawerBackground(variant: ThemeVariant, color: Int) {
         liveDrawerBackgroundByVariant[variant] = color
     }
