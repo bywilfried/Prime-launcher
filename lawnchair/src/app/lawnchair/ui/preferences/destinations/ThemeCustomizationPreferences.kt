@@ -15,6 +15,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import app.lawnchair.qsb.getHotseatBackgroundColor
 import app.lawnchair.theme.ThemeColors
 import app.lawnchair.preferences2.preferenceManager2
 import app.lawnchair.preferences2.asState
@@ -199,6 +200,18 @@ private fun ThemeSection(
                         val override = ThemeColorOverrides(context).get(profile, variant, role)
                         val prefs2 = preferenceManager2()
                         val preview = when (role) {
+                            // Preview the exact Dock QSB defaults, including the existing
+                            // "apply accent color" switch and its separate border preference.
+                            ThemeColorRole.HOME_SEARCH_BACKGROUND -> {
+                                if (override == ColorOption.Default) {
+                                    getHotseatBackgroundColor(context, prefs2.themedHotseatQsb.asState().value)
+                                } else ThemeColors.resolve(context, profile, role, variant)
+                            }
+                            ThemeColorRole.HOME_SEARCH_BORDER -> {
+                                if (override == ColorOption.Default) {
+                                    prefs2.strokeColorStyle.asState().value.colorPreferenceEntry.lightColor(context)
+                                } else ThemeColors.resolve(context, profile, role, variant)
+                            }
                             ThemeColorRole.GLOBAL_NOTIFICATION_DOT -> {
                                 val legacy = prefs2.notificationDotColor.asState().value
                                 app.lawnchair.theme.NotificationDotThemeColors.resolve(context, role, legacy)
