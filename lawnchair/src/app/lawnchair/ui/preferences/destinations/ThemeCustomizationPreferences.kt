@@ -207,6 +207,15 @@ private fun ThemeSection(
                                     getHotseatBackgroundColor(context, prefs2.themedHotseatQsb.asState().value)
                                 } else ThemeColors.resolve(context, profile, role, variant)
                             }
+                            ThemeColorRole.HOME_SEARCH_ICON -> {
+                                if (override == ColorOption.Default) {
+                                    ThemeColors.resolveLegacyToken(
+                                        context,
+                                        app.lawnchair.theme.color.tokens.ColorTokens.ColorAccent,
+                                        variant,
+                                    )
+                                } else ThemeColors.resolve(context, profile, role, variant)
+                            }
                             ThemeColorRole.HOME_SEARCH_BORDER -> {
                                 if (override == ColorOption.Default) {
                                     prefs2.strokeColorStyle.asState().value.colorPreferenceEntry.lightColor(context)
@@ -278,8 +287,11 @@ private fun ThemeSection(
                             label = roleLabel(role),
                             selectedColor = override,
                             previewColor = ColorOption.CustomColor(preview),
-                            iconColorPreview = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT &&
-                                (override == ColorOption.IconColor || override == ColorOption.Default),
+                            iconColorPreview = (role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT &&
+                                (override == ColorOption.IconColor || override == ColorOption.Default)) ||
+                                (role == ThemeColorRole.HOME_SEARCH_ICON &&
+                                    override == ColorOption.Default &&
+                                    !prefs2.themedHotseatQsb.asState().value),
                             // Always display the resolved color, not a generic "A" glyph.
                             dynamicContrastPreview = override == ColorOption.Default &&
                                 (role == ThemeColorRole.HOME_FOLDER_OPEN_TEXT ||
