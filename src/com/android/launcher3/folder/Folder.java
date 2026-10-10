@@ -862,7 +862,7 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         } else {
             paginationRole = app.lawnchair.theme.ThemeColorRole.HOME_FOLDER_PAGINATION;
         }
-        mPageIndicator.setPaintColor(app.lawnchair.theme.ThemeColors.resolveFolderPaginationColor(
+        mPageIndicator.setFolderPaginationColor(app.lawnchair.theme.ThemeColors.resolveFolderPaginationColor(
                 getContext(), paginationRole));
         if (primeOverrides != null && primeOverrides.getBackgroundOpacity() != null) {
             mBackground.setAlpha(Math.round(255 * primeOverrides.getBackgroundOpacity()));
