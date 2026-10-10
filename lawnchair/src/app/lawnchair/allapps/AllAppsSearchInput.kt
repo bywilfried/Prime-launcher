@@ -204,6 +204,13 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
                     variant,
                 )
 
+                val iconOverride = app.lawnchair.theme.ThemeColorOverrides(context)
+                    .get(profile, variant, ThemeColorRole.DRAWER_SEARCH_ICON)
+                val iconTint = if (iconOverride == app.lawnchair.theme.color.ColorOption.Default) null
+                    else ThemeColors.resolve(context, profile, ThemeColorRole.DRAWER_SEARCH_ICON, variant)
+                val borderOverride = app.lawnchair.theme.ThemeColorOverrides(context)
+                    .get(profile, variant, ThemeColorRole.DRAWER_SEARCH_BORDER)
+
                 val backgroundAlpha by animateIntAsState(
                     100,
                 )
@@ -218,8 +225,9 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
                     strokeColor = borderColor,
                     // Preserve Legacy's borderless search bar geometry. The semantic border
                     // color is resolved now and is ready for styles/modes that expose a stroke.
-                    strokeWidth = 0f,
-                )
+                    strokeWidth = if (borderOverride == app.lawnchair.theme.color.ColorOption.Default)
+                        0f else context.resources.displayMetrics.density,
+                ).copy(iconTint = iconTint)
 
                 val actions = QsbActions(
                     onQsbClick = {
