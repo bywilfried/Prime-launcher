@@ -87,9 +87,16 @@ public class PageIndicatorDots extends View implements Insettable, PageIndicator
     private static final int INVISIBLE_ALPHA = 0;
     private Paint mPaginationPaint;
     private boolean mHasExternalPaintColor;
+    private boolean mFolderPagination;
     private int mExternalPaintColor;
 
     private void applyPageColor(boolean active) {
+        if (mFolderPagination) {
+            int alpha = mPaginationPaint.getAlpha();
+            mPaginationPaint.setColor(mExternalPaintColor);
+            mPaginationPaint.setAlpha(alpha);
+            return;
+        }
         // Explicit theme customizations take precedence over legacy paint colors supplied
         // by the workspace. Without an override, preserve the existing external color.
         if (mHasExternalPaintColor
@@ -287,6 +294,12 @@ public class PageIndicatorDots extends View implements Insettable, PageIndicator
         } else if (!shouldAutoHide) {
             mDelayedPaginationFadeHandler.removeCallbacksAndMessages(null);
         }
+    }
+
+    /** Folder indicators use their own semantic color, never workspace page overrides. */
+    public void setFolderPaginationColor(int color) {
+        mFolderPagination = true;
+        setPaintColor(color);
     }
 
     @Override
