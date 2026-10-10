@@ -331,6 +331,8 @@ object ThemeColors {
             resolveLegacyToken(context, ColorTokens.SurfaceContainerHighest, variant)
         ThemeColorRole.GLOBAL_NOTIFICATION_DOT ->
             resolveLegacyToken(context, ColorTokens.DotColor, variant)
+        ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE,
+        ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE,
         ThemeColorRole.HOME_FOLDER_PAGINATION,
         ThemeColorRole.DOCK_FOLDER_PAGINATION,
         ThemeColorRole.DRAWER_FOLDER_PAGINATION ->
