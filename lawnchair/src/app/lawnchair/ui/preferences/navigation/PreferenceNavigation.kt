@@ -281,6 +281,8 @@ fun PreferenceNavigation(
                 categoryTabText = role == ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT ||
                     role == ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT,
                 automaticContrastDefaultLabel = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT,
+                workspacePagination = role == ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE ||
+                    role == ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE,
                 notificationDotBackground = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT,
                 adaptiveFolderDefault = role == ThemeColorRole.HOME_FOLDER_OPEN_TEXT ||
                     role == ThemeColorRole.DOCK_FOLDER_OPEN_TEXT ||
