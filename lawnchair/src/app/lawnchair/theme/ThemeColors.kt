@@ -100,7 +100,13 @@ object ThemeColors {
             ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND ->
                 if (dark) recipe("Accent2", 600, 34) else recipe("Accent2", 200, 72)
             ThemeColorRole.DRAWER_SEARCH_BORDER -> if (dark) recipe("Accent1", 100) else recipe("Accent1", 600)
-            ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND ->
+            ThemeColorRole.DRAWER_PROFILE_TAB_SELECTED_BACKGROUND ->
+            resolveLegacyToken(context, ColorTokens.AllAppsTabBackgroundSelected, variant)
+        ThemeColorRole.DRAWER_PROFILE_TAB_UNSELECTED_BACKGROUND ->
+            resolveLegacyToken(context, ColorTokens.Surface, variant)
+        ThemeColorRole.DRAWER_PROFILE_TAB_TEXT ->
+            resolveLegacyToken(context, ColorTokens.TextColorSecondary, variant)
+        ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND ->
                 if (dark) recipe("Accent2", 800, 14) else recipe("Accent2", 300, 58)
             // Blur highlight includes alpha, which the dynamic recipe editor cannot represent yet.
             ThemeColorRole.DRAWER_SEARCH_SELECTED_RESULT_BACKGROUND ->
