@@ -191,6 +191,7 @@ fun PrimeColorSelection(
     notificationDotBackground: Boolean = false,
     iconLabelText: Boolean = false,
     categoryTabText: Boolean = false,
+    workspacePagination: Boolean = false,
 ) {
     val context = LocalContext.current
     val themeFallbackColor = defaultPreviewColor ?: MaterialTheme.colorScheme.surfaceVariant.toArgb()
@@ -210,12 +211,15 @@ fun PrimeColorSelection(
     ) else null
     val blackWhiteTabPreset = if (categoryTabText) ColorOption.AutomaticBlackWhite.colorPreferenceEntry else null
     val themedTabPreset = if (categoryTabText) adaptiveTextPreset ?: ColorOption.AdaptiveThemeText.colorPreferenceEntry else null
+    val workspaceThemePreset = if (workspacePagination) ColorOption.ThemePalette.colorPreferenceEntry else null
     val displayedDynamicEntries: List<ColorPreferenceEntry<ColorOption>> =
-        (if (notificationDotBackground) dynamicEntries.filterNot { it.value == ColorOption.IconColor } + listOfNotNull(dotThemePreset) else if (perIconDotOption) dynamicEntries + ColorOption.IconColor.colorPreferenceEntry else dynamicEntries + listOfNotNull(adaptiveTextPreset, blackWhiteTabPreset, themedTabPreset)).map { entry ->
+        (if (notificationDotBackground) dynamicEntries.filterNot { it.value == ColorOption.IconColor } + listOfNotNull(dotThemePreset) else if (perIconDotOption) dynamicEntries + ColorOption.IconColor.colorPreferenceEntry else dynamicEntries + listOfNotNull(workspaceThemePreset, adaptiveTextPreset, blackWhiteTabPreset, themedTabPreset)).map { entry ->
         if (entry.value == ColorOption.Default) {
             ColorPreferenceEntry<ColorOption>(
                 value = ColorOption.Default,
-                label = if (iconLabelText) {
+                label = if (workspacePagination) {
+                    { "Par défaut : contraste automatique noir/blanc" }
+                } else if (iconLabelText) {
                     { "Par défaut : noir/blanc automatique" }
                 } else if (adaptiveFolderDefault) {
                     { "Par défaut : automatique selon le fond du dossier" }
@@ -338,7 +342,7 @@ fun PrimeColorSelection(
                             dynamicEntries = displayedDynamicEntries,
                             onPresetClick = onPresetClick,
                             isPresetSelected = { it == currentAppliedColor },
-                            automaticContrastDefault = automaticContrastDefaultLabel,
+                            automaticContrastDefault = automaticContrastDefaultLabel || workspacePagination,
                             adaptiveFolderDefault = adaptiveFolderDefault,
                             perIconDefault = perIconDefault,
                         )
