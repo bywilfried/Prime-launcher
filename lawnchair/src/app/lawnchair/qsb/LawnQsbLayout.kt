@@ -121,7 +121,9 @@ class LawnQsbLayout(context: Context, attrs: AttributeSet?) : FrameLayout(contex
 
                         val iconOverride = overrides.get(profile, variant, ThemeColorRole.HOME_SEARCH_ICON)
                         val coloredStyle = style.copy(
-                            iconTint = if (iconOverride == ColorOption.Default) null
+                            // The existing "apply accent color" switch also controls whether
+                            // Prime may tint the icons. Off always preserves provider artwork.
+                            iconTint = if (!themed || iconOverride == ColorOption.Default) null
                                 else ThemeColors.resolve(context, profile, ThemeColorRole.HOME_SEARCH_ICON, variant),
                         )
 
