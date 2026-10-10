@@ -665,6 +665,9 @@ public class PageIndicatorDots extends View implements Insettable, PageIndicator
                         }
                     }
                     applyPageColor(true);
+                    // This visual-refresh path must select the semantic color for each dot.
+                    // Without this, inactive dots reuse the previous paint color.
+                    applyPageColor(i == Math.round(mCurrentPosition));
                     canvas.drawRoundRect(sTempRect, mDotRadius, mDotRadius, mPaginationPaint);
 
                     sTempRect.left = x;
