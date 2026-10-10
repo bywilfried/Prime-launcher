@@ -396,6 +396,8 @@ private fun roleLabel(role: ThemeColorRole): String = when (role) {
     ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND -> "Dossier ouvert — fond"
     ThemeColorRole.HOME_FOLDER_OPEN_TEXT -> "Dossier ouvert — texte"
     ThemeColorRole.HOME_FOLDER_OPEN_HINT -> "Dossier ouvert — texte indicatif"
+    ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE -> "Pages de l’accueil — indicateur actif"
+    ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE -> "Pages de l’accueil — indicateurs inactifs"
     ThemeColorRole.HOME_FOLDER_PAGINATION -> "Dossiers — pagination"
     ThemeColorRole.HOME_FOLDER_CLOSED_BORDER -> "Dossier fermé — bordure"
     ThemeColorRole.HOME_FOLDER_OPEN_BORDER -> "Dossier ouvert — bordure"
