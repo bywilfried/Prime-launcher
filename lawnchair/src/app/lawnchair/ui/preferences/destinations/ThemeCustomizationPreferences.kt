@@ -264,10 +264,6 @@ private fun ThemeSection(
                         ColorPreference(
                             label = roleLabel(role),
                             selectedColor = override,
-                            description = if ((role == ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE ||
-                                    role == ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE) &&
-                                override == ColorOption.Default) "Contraste automatique (noir/blanc)"
-                                else null,
                             previewColor = ColorOption.CustomColor(preview),
                             iconColorPreview = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT &&
                                 (override == ColorOption.IconColor || override == ColorOption.Default),
@@ -291,9 +287,12 @@ private fun ThemeSection(
                                 role == ThemeColorRole.DRAWER_FOLDER_ICON_TEXT ||
                                 role == ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT),
                             description = if (override == ColorOption.Default) {
-                                "Valeur du thème"
+                                if (role == ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE ||
+                                    role == ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE)
+                                    "Contraste automatique (noir/blanc)"
+                                else "Valeur du thème"
                             } else {
-                                "Personnalisée"
+                                override.colorPreferenceEntry.label()
                             },
                             onClick = {
                                 navController.navigate(
