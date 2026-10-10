@@ -209,6 +209,11 @@ private fun ThemeSection(
                         role == ThemeColorRole.GLOBAL_ACCENT ||
                         role == ThemeColorRole.GLOBAL_SETTINGS_BACKGROUND ||
                         role == ThemeColorRole.GLOBAL_SETTINGS_CARD_BACKGROUND ||
+                        role == ThemeColorRole.HOME_SEARCH_BACKGROUND ||
+                        role == ThemeColorRole.HOME_SEARCH_TEXT ||
+                        role == ThemeColorRole.HOME_SEARCH_HINT ||
+                        role == ThemeColorRole.HOME_SEARCH_ICON ||
+                        role == ThemeColorRole.HOME_SEARCH_BORDER ||
                         role == ThemeColorRole.HOME_HOTSEAT_BACKGROUND ||
                         role == ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND ||
                         role == ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND ||
