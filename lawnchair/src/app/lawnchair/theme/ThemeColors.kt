@@ -401,10 +401,14 @@ object ThemeColors {
         ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE,
         ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND ->
             resolveLegacyToken(context, ColorTokens.AllAppsTabBackground, variant)
-        ThemeColorRole.DRAWER_SEARCH_TEXT,
-        ThemeColorRole.DRAWER_SEARCH_HINT,
-        ThemeColorRole.DRAWER_SEARCH_ICON ->
+        ThemeColorRole.DRAWER_SEARCH_TEXT ->
             resolveLegacyToken(context, ColorTokens.TextColorPrimary, variant)
+        ThemeColorRole.DRAWER_SEARCH_HINT ->
+            resolveLegacyToken(context, ColorTokens.TextColorSecondary, variant)
+        // This role tints the drawer search cursor, selection handles and highlight,
+        // not the multicolour search-provider artwork in the Dock.
+        ThemeColorRole.DRAWER_SEARCH_ICON ->
+            resolveLegacyToken(context, ColorTokens.ColorAccent, variant)
         ThemeColorRole.DRAWER_SEARCH_BORDER ->
             resolveLegacyToken(context, ColorTokens.ColorAccent, variant)
         ThemeColorRole.DRAWER_SEARCH_SELECTED_RESULT_BACKGROUND ->
