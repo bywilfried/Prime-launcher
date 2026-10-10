@@ -422,9 +422,50 @@ object ThemeColors {
         ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT,
         ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT ->
             resolveLegacyToken(context, ColorTokens.TextColorPrimary, variant)
-        // Roles are added to the official Legacy palette as their runtime consumers are wired.
-        // Until then this fallback is preview-only and must not be treated as their final token.
-        else -> context.getSystemAccent(variant == ThemeVariant.DARK)
+        // Never use the system accent as a placeholder for a theme default:
+        // it makes unrelated backgrounds, text and borders all appear turquoise.
+        ThemeColorRole.DRAWER_PROFILE_TAB_SELECTED_BACKGROUND ->
+            resolveLegacyToken(context, ColorTokens.AllAppsTabBackgroundSelected, variant)
+        ThemeColorRole.DRAWER_PROFILE_TAB_UNSELECTED_BACKGROUND ->
+            resolveLegacyToken(context, ColorTokens.Surface, variant)
+        ThemeColorRole.DRAWER_PROFILE_TAB_TEXT,
+        ThemeColorRole.DRAWER_TEXT,
+        ThemeColorRole.HOME_SEARCH_TEXT,
+        ThemeColorRole.HOME_SEARCH_HINT,
+        ThemeColorRole.HOME_SEARCH_ICON,
+        ThemeColorRole.HOME_FOLDER_OPEN_HINT,
+        ThemeColorRole.DOCK_FOLDER_OPEN_HINT,
+        ThemeColorRole.DRAWER_FOLDER_OPEN_HINT,
+        ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT ->
+            resolveLegacyToken(context, ColorTokens.TextColorPrimary, variant)
+        ThemeColorRole.HOME_SEARCH_BACKGROUND ->
+            resolveLegacyToken(context, ColorTokens.AllAppsTabBackground, variant)
+        ThemeColorRole.HOME_SEARCH_BORDER ->
+            resolveLegacyToken(context, ColorTokens.ColorAccent, variant)
+        ThemeColorRole.HOME_ICON_TEXT,
+        ThemeColorRole.HOME_FOLDER_ICON_TEXT,
+        ThemeColorRole.HOME_FOLDER_CLOSED_TEXT,
+        ThemeColorRole.DOCK_ICON_TEXT,
+        ThemeColorRole.DOCK_FOLDER_ICON_TEXT,
+        ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT,
+        ThemeColorRole.DRAWER_ICON_TEXT,
+        ThemeColorRole.DRAWER_FOLDER_ICON_TEXT,
+        ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT,
+        ThemeColorRole.HOME_FOLDER_OPEN_TEXT,
+        ThemeColorRole.DOCK_FOLDER_OPEN_TEXT,
+        ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT ->
+            resolveLegacyToken(context, ColorTokens.TextColorPrimary, variant)
+        ThemeColorRole.HOME_FOLDER_BORDER,
+        ThemeColorRole.DOCK_FOLDER_BORDER,
+        ThemeColorRole.DRAWER_FOLDER_BORDER,
+        ThemeColorRole.HOME_FOLDER_CLOSED_BORDER,
+        ThemeColorRole.HOME_FOLDER_OPEN_BORDER,
+        ThemeColorRole.DOCK_FOLDER_CLOSED_BORDER,
+        ThemeColorRole.DOCK_FOLDER_OPEN_BORDER,
+        ThemeColorRole.DRAWER_FOLDER_CLOSED_BORDER,
+        ThemeColorRole.DRAWER_FOLDER_OPEN_BORDER ->
+            resolveDrawerPopupBackground(context, variant)
+        else -> resolveLegacyToken(context, ColorTokens.TextColorPrimary, variant)
     }
 
     private fun resolveDrawerPopupBackground(context: Context, variant: ThemeVariant): Int =
