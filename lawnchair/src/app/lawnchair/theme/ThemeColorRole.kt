@@ -27,6 +27,8 @@ enum class ThemeColorRole(val id: String, val section: Section) {
     HOME_FOLDER_OPEN_TEXT("home.folder.open.text", Section.HOME),
     HOME_FOLDER_OPEN_HINT("home.folder.open.hint", Section.HOME),
     HOME_FOLDER_PAGINATION("home.folder.pagination", Section.HOME),
+    HOME_PAGE_INDICATOR_ACTIVE("home.page_indicator.active", Section.HOME),
+    HOME_PAGE_INDICATOR_INACTIVE("home.page_indicator.inactive", Section.HOME),
     HOME_FOLDER_BORDER("home.folder.border", Section.HOME),
     HOME_FOLDER_CLOSED_BORDER("home.folder.closed.border", Section.HOME),
     HOME_FOLDER_OPEN_BORDER("home.folder.open.border", Section.HOME),
