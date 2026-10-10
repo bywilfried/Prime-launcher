@@ -180,6 +180,8 @@ fun PreferenceNavigation(
                     ThemeColorRole.TABS_CATEGORY_TEXT -> "Onglets de catégorie — texte"
                     ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT -> "Onglets de catégorie — texte actif"
                     ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> "Onglets de catégorie — texte inactif"
+                    ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE -> "Pages de l’accueil — indicateur actif"
+                    ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE -> "Pages de l’accueil — indicateurs inactifs"
                     ThemeColorRole.HOME_FOLDER_OPEN_TEXT -> "Dossier ouvert — texte"
                     ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND -> "Dossier ouvert — fond"
                     ThemeColorRole.HOME_FOLDER_CLOSED_BORDER -> "Dossier fermé — bordure"
