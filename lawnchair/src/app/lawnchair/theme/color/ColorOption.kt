@@ -124,6 +124,24 @@ sealed class ColorOption {
         override fun toString() = "custom|#${String.format("%08x", color)}"
     }
 
+    /** Follow the Prime theme's own pagination palette, independently of wallpaper contrast. */
+    object ThemePalette : ColorOption() {
+        override val isSupported = true
+        override val colorPreferenceEntry = ColorPreferenceEntry<ColorOption>(
+            this,
+            { "Couleur du thème" },
+            { context -> app.lawnchair.theme.ThemeColors.resolveLegacyToken(
+                context, app.lawnchair.theme.color.tokens.ColorTokens.pageIndicatorDotColor,
+                app.lawnchair.theme.ThemeVariant.LIGHT,
+            ) },
+            { context -> app.lawnchair.theme.ThemeColors.resolveLegacyToken(
+                context, app.lawnchair.theme.color.tokens.ColorTokens.pageIndicatorDotColor,
+                app.lawnchair.theme.ThemeVariant.DARK,
+            ) },
+        )
+        override fun toString() = "theme_palette"
+    }
+
     /** Explicit black/white contrast option, independent from the theme default. */
     object AutomaticBlackWhite : ColorOption() {
         override val isSupported = true
@@ -179,6 +197,7 @@ sealed class ColorOption {
             "icon_color" -> IconColor
             "adaptive_theme_text" -> AdaptiveThemeText
             "automatic_black_white" -> AutomaticBlackWhite
+            "theme_palette" -> ThemePalette
             else -> if (stringValue.startsWith("dynamic|")) instantiateDynamicColor(stringValue)
             else instantiateCustomColor(stringValue)
         }
