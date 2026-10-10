@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Color
 import androidx.core.graphics.ColorUtils
 import app.lawnchair.theme.color.ColorOption
+import app.lawnchair.theme.color.tokens.AllAppsTabColors
 import app.lawnchair.theme.color.tokens.ColorTokens
 import app.lawnchair.ui.theme.getSystemAccent
 
@@ -425,10 +426,17 @@ object ThemeColors {
         // Never use the system accent as a placeholder for a theme default:
         // it makes unrelated backgrounds, text and borders all appear turquoise.
         ThemeColorRole.DRAWER_PROFILE_TAB_SELECTED_BACKGROUND ->
-            resolveLegacyToken(context, ColorTokens.AllAppsTabBackgroundSelected, variant)
+            AllAppsTabColors.selectedBackground(
+                context, ThemeProvider.INSTANCE.get(context).colorScheme,
+                if (variant == ThemeVariant.DARK) UiColorMode.Dark else UiColorMode.Light,
+            )
         ThemeColorRole.DRAWER_PROFILE_TAB_UNSELECTED_BACKGROUND ->
             resolveLegacyToken(context, ColorTokens.Surface, variant)
-        ThemeColorRole.DRAWER_PROFILE_TAB_TEXT,
+        ThemeColorRole.DRAWER_PROFILE_TAB_TEXT ->
+            AllAppsTabColors.selectedText(
+                context, ThemeProvider.INSTANCE.get(context).colorScheme,
+                if (variant == ThemeVariant.DARK) UiColorMode.Dark else UiColorMode.Light,
+            )
         ThemeColorRole.DRAWER_TEXT,
         ThemeColorRole.HOME_SEARCH_TEXT,
         ThemeColorRole.HOME_SEARCH_HINT,
