@@ -264,6 +264,10 @@ private fun ThemeSection(
                         ColorPreference(
                             label = roleLabel(role),
                             selectedColor = override,
+                            description = if ((role == ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE ||
+                                    role == ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE) &&
+                                override == ColorOption.Default) "Contraste automatique (noir/blanc)"
+                                else null,
                             previewColor = ColorOption.CustomColor(preview),
                             iconColorPreview = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT &&
                                 (override == ColorOption.IconColor || override == ColorOption.Default),
