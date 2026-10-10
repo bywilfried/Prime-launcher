@@ -541,8 +541,7 @@ public class PageIndicatorDots extends View implements Insettable, PageIndicator
                     } else {
                         mPaginationPaint.setAlpha(DOT_ALPHA);
                         applyPageColor(false);
-                        applyPageColor(i == mActivePage);
-                    canvas.drawCircle(x, y, mDotRadius * mEntryAnimationRadiusFactors[i],
+                        canvas.drawCircle(x, y, mDotRadius * mEntryAnimationRadiusFactors[i],
                                 mPaginationPaint);
                         x += circleGap;
                     }
@@ -556,6 +555,7 @@ public class PageIndicatorDots extends View implements Insettable, PageIndicator
                 }
                 for (int i = 0; i < mEntryAnimationRadiusFactors.length; i++) {
                     mPaginationPaint.setAlpha(i == mActivePage ? PAGE_INDICATOR_ALPHA : DOT_ALPHA);
+                    applyPageColor(i == mActivePage);
                     canvas.drawCircle(x, y, mDotRadius * mEntryAnimationRadiusFactors[i],
                             mPaginationPaint);
                     x += circleGap;
