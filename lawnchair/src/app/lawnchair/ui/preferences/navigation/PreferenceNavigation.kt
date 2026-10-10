@@ -266,7 +266,7 @@ fun PreferenceNavigation(
                     ThemeColorRole.DRAWER_FOLDER_ICON_TEXT,
                     ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> ThemeColors.resolveIconLabelColorForVariant(context, role,
                         if (variant == ThemeVariant.DARK) android.graphics.Color.BLACK else android.graphics.Color.WHITE, variant)
-                    else -> ThemeColors.resolve(context, profile, role, variant)
+                    else -> ThemeColors.official(context, profile, role, variant)
                 },
                 defaultDynamicColor = ThemeColors.officialDynamicRecipe(role, variant),
                 iconLabelText = role == ThemeColorRole.HOME_ICON_TEXT ||
