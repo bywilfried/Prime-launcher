@@ -119,6 +119,12 @@ class LawnQsbLayout(context: Context, attrs: AttributeSet?) : FrameLayout(contex
                             strokeWidth = prefs.hotseatQsbStrokeWidth.observeAsState().value,
                         )
 
+                        val iconOverride = overrides.get(profile, variant, ThemeColorRole.HOME_SEARCH_ICON)
+                        val coloredStyle = style.copy(
+                            iconTint = if (iconOverride == ColorOption.Default) null
+                                else ThemeColors.resolve(context, profile, ThemeColorRole.HOME_SEARCH_ICON, variant),
+                        )
+
                         val actions = QsbActions(
                             onQsbClick = {
                                 val launcher = context.launcher
@@ -148,7 +154,7 @@ class LawnQsbLayout(context: Context, attrs: AttributeSet?) : FrameLayout(contex
 
                         LawnQsbUi(
                             state = state,
-                            style = style,
+                            style = coloredStyle,
                             actions = actions,
                         )
                     }
