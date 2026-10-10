@@ -31,6 +31,10 @@ class FallbackSearchInputView(context: Context, attrs: AttributeSet?) : Extended
     fun applyPrimeSearchTheme() {
         setTextColor(resolvePrimeColor(ThemeColorRole.DRAWER_SEARCH_TEXT))
         setHintTextColor(resolvePrimeColor(ThemeColorRole.DRAWER_SEARCH_HINT))
+        val iconColor = resolvePrimeColor(ThemeColorRole.DRAWER_SEARCH_ICON)
+        setCursorColor(iconColor)
+        setTextSelectHandleColor(iconColor)
+        highlightColor = ColorUtils.setAlphaComponent(iconColor, 82)
     }
 
     private fun resolvePrimeColor(role: ThemeColorRole): Int {
@@ -69,6 +73,7 @@ class FallbackSearchInputView(context: Context, attrs: AttributeSet?) : Extended
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
+        applyPrimeSearchTheme()
         if (layoutDirection == LAYOUT_DIRECTION_RTL) {
             @SuppressLint("RtlHardcoded")
             gravity = Gravity.RIGHT or Gravity.CENTER
