@@ -24,6 +24,11 @@ object NotificationDotThemeColors {
             // The real color is per icon; DeviceProfile uses this only as a fallback.
             return ThemeColors.official(context, profile, role, variant)
         }
+        if (override == ColorOption.AutomaticBlackWhite &&
+            role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT) {
+            val dotOption = PreferenceManager2.getInstance(context).notificationDotColor.firstCached()
+            return contrastTextColor(resolve(context, ThemeColorRole.GLOBAL_NOTIFICATION_DOT, dotOption))
+        }
         if (override != ColorOption.Default && override != ColorOption.LegacyBehavior) {
             return ThemeColors.resolve(context, profile, role, variant)
         }
@@ -56,7 +61,10 @@ object NotificationDotThemeColors {
     @JvmStatic
     fun isAutomaticText(context: Context): Boolean =
         ThemeColorOverrides(context).get(ThemeProfile.current(context), context.effectiveThemeVariant(),
-            ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT).let { it == ColorOption.Default || it == ColorOption.LegacyBehavior } &&
+            ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT).let {
+                it == ColorOption.Default || it == ColorOption.LegacyBehavior ||
+                    it == ColorOption.AutomaticBlackWhite
+            } &&
             PreferenceManager2.getInstance(context).notificationDotTextColor.firstCached() == ColorOption.Default
 
     @JvmStatic
