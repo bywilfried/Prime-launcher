@@ -326,7 +326,18 @@ object ThemeColors {
         variant: ThemeVariant,
     ): Int {
         val profile = ThemeProfile.current(context)
-        return when (ThemeColorOverrides(context).get(profile, variant, role)) {
+        // The active category takes precedence even when the parent theme is untouched.
+        // Only a genuinely inherited/default choice should use the historical automatic
+        // icon-label contrast fallback.
+        val repository = app.lawnchair.prime.drawer.PrimeDrawerTabsRepository(context)
+        val categoryId = if (role.section == ThemeColorRole.Section.DRAWER &&
+            repository.isTabsModeEnabled()) repository.getConfiguration().selectedTabId else null
+        val categoryOption = categoryId?.let {
+            CategoryThemeColorOverrides(context).get(it, profile, variant, role)
+        } ?: ColorOption.Default
+        val option = if (categoryOption != ColorOption.Default) categoryOption
+            else ThemeColorOverrides(context).get(profile, variant, role)
+        return when (option) {
             ColorOption.Default, ColorOption.LegacyBehavior, ColorOption.AutomaticBlackWhite -> {
                 val backdrop = if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE
                 val opaque = ColorUtils.compositeColors(backgroundColor, backdrop)
@@ -335,7 +346,9 @@ object ThemeColors {
             }
             ColorOption.AdaptiveThemeText ->
                 adaptiveTextAgainstSurface(backgroundColor, variant)
-            else -> resolve(context, profile, role, variant)
+            else -> if (categoryId != null && categoryOption != ColorOption.Default)
+                resolveForCategory(context, profile, role, variant, categoryId)
+            else resolveTheme(context, profile, role, variant)
         }
     }
 
