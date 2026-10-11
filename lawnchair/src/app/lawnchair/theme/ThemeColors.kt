@@ -55,6 +55,36 @@ object ThemeColors {
         legacyDrawerOfficialByVariant[variant] = color
     }
 
+    /**
+     * Describes the inherited theme behaviour, not an editable override.
+     * Keep this independent of the choice's position in the preset list.
+     * A future theme profile can provide a different description here.
+     */
+    fun officialDefaultDescription(profile: ThemeProfile, role: ThemeColorRole): String {
+        return when (role) {
+            ThemeColorRole.HOME_ICON_TEXT,
+            ThemeColorRole.HOME_FOLDER_ICON_TEXT,
+            ThemeColorRole.HOME_FOLDER_CLOSED_TEXT,
+            ThemeColorRole.DOCK_ICON_TEXT,
+            ThemeColorRole.DOCK_FOLDER_ICON_TEXT,
+            ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT,
+            ThemeColorRole.DRAWER_ICON_TEXT,
+            ThemeColorRole.DRAWER_FOLDER_ICON_TEXT,
+            ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> "noir/blanc automatique"
+            ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE,
+            ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE,
+            ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT -> "contraste automatique noir/blanc"
+            ThemeColorRole.HOME_FOLDER_OPEN_TEXT,
+            ThemeColorRole.DOCK_FOLDER_OPEN_TEXT,
+            ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT,
+            ThemeColorRole.HOME_FOLDER_OPEN_HINT,
+            ThemeColorRole.DOCK_FOLDER_OPEN_HINT,
+            ThemeColorRole.DRAWER_FOLDER_OPEN_HINT -> "automatique selon le fond du dossier"
+            ThemeColorRole.GLOBAL_NOTIFICATION_DOT -> "selon la couleur de l’icône"
+            else -> "couleur du thème"
+        }
+    }
+
     fun official(
         context: Context,
         profile: ThemeProfile,
