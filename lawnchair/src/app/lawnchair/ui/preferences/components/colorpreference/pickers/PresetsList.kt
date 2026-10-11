@@ -43,7 +43,8 @@ fun PresetsList(
                             selected = isPresetSelected(entry.value),
                             onClick = null,
                         )
-                        if (perIconDefault && entry.value == ColorOption.Default) {
+                        if (entry.value == ColorOption.IconColor ||
+                            (perIconDefault && entry.value == ColorOption.Default)) {
                             app.lawnchair.ui.preferences.components.colorpreference.IconColorDot(
                                 modifier = Modifier.padding(start = 16.dp))
                         } else if (entry.value == ColorOption.AdaptiveThemeText) {
@@ -52,7 +53,8 @@ fun PresetsList(
                         } else if (adaptiveFolderDefault && entry.value == ColorOption.Default) {
                             app.lawnchair.ui.preferences.components.colorpreference.DynamicContrastColorDot(
                                 modifier = Modifier.padding(start = 16.dp))
-                        } else if (automaticContrastDefault && entry.value == ColorOption.Default) {
+                        } else if (entry.value == ColorOption.AutomaticBlackWhite ||
+                            (automaticContrastDefault && entry.value == ColorOption.Default)) {
                             app.lawnchair.ui.preferences.components.colorpreference.ContrastColorDot(
                                 modifier = Modifier.padding(start = 16.dp))
                         } else {
