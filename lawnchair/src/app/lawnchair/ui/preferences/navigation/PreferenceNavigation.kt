@@ -151,7 +151,10 @@ fun PreferenceNavigation(
         composable<General>(
             deepLinks = getDeepLink(General),
         ) { GeneralPreferences() }
-        composable<ThemeCustomization> { ThemeCustomizationPreferences() }
+        composable<ThemeCustomization> { backStackEntry ->
+            val route: ThemeCustomization = backStackEntry.toRoute()
+            ThemeCustomizationPreferences(openDrawerSection = route.openDrawerSection)
+        }
         composable<ThemeColorSelection> { backStackEntry ->
             val route: ThemeColorSelection = backStackEntry.toRoute()
             val context = LocalContext.current
