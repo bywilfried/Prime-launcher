@@ -416,6 +416,55 @@ object ThemeColors {
 
 
     /**
+     * Category-aware semantic resolution. A missing category choice delegates to the
+     * current parent theme, not to the official Legacy palette.
+     *
+     * Callers must provide the category whose content they are rendering; never infer
+     * it from a settings screen or a stale global selection.
+     */
+    fun resolveForCategory(
+        context: Context,
+        profile: ThemeProfile,
+        role: ThemeColorRole,
+        variant: ThemeVariant,
+        tabId: String,
+    ): Int {
+        if (role.section != ThemeColorRole.Section.DRAWER &&
+            role.section != ThemeColorRole.Section.TABS) {
+            return resolve(context, profile, role, variant)
+        }
+        val option = CategoryThemeColorOverrides(context).get(tabId, profile, variant, role)
+        return when (option) {
+            ColorOption.Default -> resolve(context, profile, role, variant)
+            ColorOption.LegacyBehavior -> official(context, profile, role, variant)
+            ColorOption.AutomaticBlackWhite -> {
+                when (role) {
+                    ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT,
+                    ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> {
+                        val backgroundRole = if (role == ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT)
+                            ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND
+                        else ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND
+                        val background = resolveForCategory(context, profile, backgroundRole, variant, tabId)
+                        val opaque = ColorUtils.compositeColors(
+                            background, if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE,
+                        )
+                        if (ColorUtils.calculateContrast(Color.BLACK, opaque) >=
+                            ColorUtils.calculateContrast(Color.WHITE, opaque)) Color.BLACK else Color.WHITE
+                    }
+                    else -> resolve(context, profile, role, variant)
+                }
+            }
+            ColorOption.ThemePalette ->
+                resolveLegacyToken(context, ColorTokens.pageIndicatorDotColor, variant)
+            is ColorOption.CustomColor -> option.color
+            else -> if (variant == ThemeVariant.DARK)
+                option.colorPreferenceEntry.darkColor(context)
+            else option.colorPreferenceEntry.lightColor(context)
+        }
+    }
+
+
+    /**
      * Resolves a Lawnchair token for an explicit Prime variant, bypassing a stale View theme.
      */
     @JvmStatic
