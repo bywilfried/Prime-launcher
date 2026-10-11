@@ -28,6 +28,7 @@ fun PresetsList(
     automaticContrastDefault: Boolean = false,
     adaptiveFolderDefault: Boolean = false,
     perIconDefault: Boolean = false,
+    blackWhiteDefault: Boolean = false,
 ) {
     val mMSDLPlayerWrapper = MSDLPlayerWrapper.INSTANCE.get(LocalContext.current)
     PreferenceGroup(
@@ -54,7 +55,7 @@ fun PresetsList(
                             app.lawnchair.ui.preferences.components.colorpreference.DynamicContrastColorDot(
                                 modifier = Modifier.padding(start = 16.dp))
                         } else if (entry.value == ColorOption.AutomaticBlackWhite ||
-                            (automaticContrastDefault && entry.value == ColorOption.Default)) {
+                            ((automaticContrastDefault || blackWhiteDefault) && entry.value == ColorOption.Default)) {
                             app.lawnchair.ui.preferences.components.colorpreference.ContrastColorDot(
                                 modifier = Modifier.padding(start = 16.dp))
                         } else {
