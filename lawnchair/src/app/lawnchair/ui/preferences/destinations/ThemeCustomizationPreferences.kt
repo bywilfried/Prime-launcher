@@ -35,6 +35,7 @@ import app.lawnchair.ui.preferences.LocalNavController
 import app.lawnchair.ui.preferences.components.colorpreference.ColorPreference
 import app.lawnchair.ui.preferences.navigation.ThemeColorSelection
 import app.lawnchair.theme.ThemeColorRole
+import app.lawnchair.theme.CategoryThemeColorOverrides
 import app.lawnchair.theme.ThemeColorOverrides
 import app.lawnchair.theme.ThemeVariant
 import app.lawnchair.theme.effectiveThemeVariant
@@ -52,11 +53,11 @@ import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
  * Persistence/export actions are intentionally disabled until the sparse override store is added.
  */
 @Composable
-fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSection: Boolean = false) {
+fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSection: Boolean = false, categoryTabId: String? = null) {
     val context = LocalContext.current
     var variant by rememberSaveable { mutableStateOf(context.effectiveThemeVariant()) }
-    var expanded by rememberSaveable(openDrawerSection) {
-        mutableStateOf<ThemeColorRole.Section?>(if (openDrawerSection) ThemeColorRole.Section.DRAWER else null)
+    var expanded by rememberSaveable(openDrawerSection, categoryTabId) {
+        mutableStateOf<ThemeColorRole.Section?>(if (openDrawerSection || categoryTabId != null) ThemeColorRole.Section.DRAWER else null)
     }
     var confirmThemeReset by rememberSaveable { mutableStateOf(false) }
     var confirmVariantReset by rememberSaveable { mutableStateOf(false) }
@@ -65,7 +66,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
 
     PreferenceLayout(
         backArrowVisible = !LocalIsExpandedScreen.current,
-        label = "Personnaliser les couleurs du thème",
+        label = if (categoryTabId == null) "Personnaliser les couleurs du thème" else "Couleurs de la catégorie",
         modifier = modifier,
     ) {
         PreferenceGroup(heading = "Legacy") {
@@ -84,21 +85,21 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             )
         }
 
-        ThemeSection(
+        if (categoryTabId == null) ThemeSection(
             title = "Global",
             variant = variant,
             section = ThemeColorRole.Section.GLOBAL,
             expanded = expanded,
             onToggle = { expanded = if (expanded == it) null else it },
         )
-        ThemeSection(
+        if (categoryTabId == null) ThemeSection(
             title = "Accueil",
             variant = variant,
             section = ThemeColorRole.Section.HOME,
             expanded = expanded,
             onToggle = { expanded = if (expanded == it) null else it },
         )
-        ThemeSection(
+        if (categoryTabId == null) ThemeSection(
             title = "Dock",
             variant = variant,
             section = ThemeColorRole.Section.DOCK,
@@ -107,13 +108,14 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
         )
         ThemeSection(
             title = "Tiroir des applications",
+            categoryTabId = categoryTabId,
             variant = variant,
             section = ThemeColorRole.Section.DRAWER,
             expanded = expanded,
             onToggle = { expanded = if (expanded == it) null else it },
         )
 
-        PreferenceGroup(heading = "Gestion du thème") {
+        PreferenceGroup(heading = if (categoryTabId == null) "Gestion du thème" else "Gestion de la catégorie") {
             PreferenceTemplate(
                 title = { Text("Réinitialiser la variante") },
                 description = { Text("Supprimera les personnalisations de la variante affichée.") },
@@ -146,7 +148,8 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             },
             confirmButton = {
                 TextButton(onClick = {
-                    overrides.resetVariant(profile, variant)
+                    if (categoryTabId == null) overrides.resetVariant(profile, variant)
+                    else CategoryThemeColorOverrides(context).resetVariant(categoryTabId, profile, variant)
                     confirmVariantReset = false
                 }) {
                     Text("Réinitialiser")
@@ -168,7 +171,8 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             confirmButton = {
                 TextButton(
                     onClick = {
-                        overrides.resetTheme(profile)
+                        if (categoryTabId == null) overrides.resetTheme(profile)
+                        else CategoryThemeColorOverrides(context).resetTheme(categoryTabId, profile)
                         confirmThemeReset = false
                     },
                 ) {
@@ -191,6 +195,7 @@ private fun ThemeSection(
     variant: ThemeVariant,
     expanded: ThemeColorRole.Section?,
     onToggle: (ThemeColorRole.Section) -> Unit,
+    categoryTabId: String? = null,
 ) {
     val context = LocalContext.current
     val navController = LocalNavController.current
@@ -209,7 +214,8 @@ private fun ThemeSection(
                         role != ThemeColorRole.DRAWER_FOLDER_BORDER
                 }.forEach { role ->
                         val profile = ThemeProfile.current(context)
-                        val override = ThemeColorOverrides(context).get(profile, variant, role)
+                        val override = if (categoryTabId == null) ThemeColorOverrides(context).get(profile, variant, role)
+                            else CategoryThemeColorOverrides(context).get(categoryTabId, profile, variant, role)
                         val prefs2 = preferenceManager2()
                         val preview = when (role) {
                             // Preview the exact Dock QSB defaults, including the existing
@@ -339,15 +345,17 @@ private fun ThemeSection(
                             },
                             onClick = {
                                 navController.navigate(
-                                    ThemeColorSelection(role.id, variant.name),
+                                    ThemeColorSelection(role.id, variant.name, categoryTabId),
                                 )
                             },
                         )
                         if (!isInherited) {
                             IconButton(
                                 onClick = {
-                                    ThemeColorOverrides(context).set(
+                                    if (categoryTabId == null) ThemeColorOverrides(context).set(
                                         profile, variant, role, ColorOption.Default,
+                                    ) else CategoryThemeColorOverrides(context).set(
+                                        categoryTabId, profile, variant, role, ColorOption.Default,
                                     )
                                 },
                                 modifier = Modifier.align(androidx.compose.ui.Alignment.TopEnd)
