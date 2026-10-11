@@ -462,6 +462,22 @@ object ThemeColors {
      * Folder-specific colors always win over the parent surface. The parent can
      * itself be a customized drawer category; Default is never a fixed snapshot.
      */
+    /** Java-facing folder role resolution: preserve the existing inherited behavior unless
+     * this exact folder has a semantic override for the requested role. */
+    @JvmStatic
+    fun resolveIndividualFolderColor(
+        context: Context,
+        role: ThemeColorRole,
+        folderKey: String,
+        inheritedColor: Int,
+    ): Int {
+        val profile = ThemeProfile.current(context)
+        val variant = context.effectiveThemeVariant()
+        val choice = FolderThemeColorOverrides(context).get(folderKey, profile, variant, role)
+        return if (choice == ColorOption.Default) inheritedColor
+        else resolveForFolder(context, profile, role, variant, folderKey)
+    }
+
     fun resolveForFolder(
         context: Context,
         profile: ThemeProfile,
