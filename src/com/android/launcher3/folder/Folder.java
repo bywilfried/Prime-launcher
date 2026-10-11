@@ -815,6 +815,13 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         }
         int childLabelColor = app.lawnchair.theme.ThemeColors.resolveIconLabelColor(
                 getContext(), childLabelRole, openColor);
+        // Folder-specific icon labels must not inherit the folder title color.
+        String semanticFolderKey = (isInAppDrawer() ? "drawer:"
+                : (mInfo.container == com.android.launcher3.LauncherSettings.Favorites.CONTAINER_HOTSEAT
+                || mInfo.container == com.android.launcher3.LauncherSettings.Favorites.CONTAINER_HOTSEAT_PREDICTION)
+                ? "dock:" : "home:") + mInfo.id;
+        childLabelColor = app.lawnchair.theme.ThemeColors.resolveIndividualFolderColor(
+                getContext(), childLabelRole, semanticFolderKey, childLabelColor);
         mContent.iterateOverItems((item, itemView) -> {
             if (itemView instanceof BubbleTextView bubble
                     && (primeOverrides == null || primeOverrides.getTextColor() == null)) {
@@ -838,6 +845,8 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         // Explicit per-folder text overrides are intentionally stronger than automatic color.
         int effectiveTitleColor = primeOverrides != null && primeOverrides.getTextColor() != null
                 ? primeOverrides.getTextColor() : titleColor;
+        effectiveTitleColor = app.lawnchair.theme.ThemeColors.resolveIndividualFolderColor(
+                getContext(), titleRole, semanticFolderKey, effectiveTitleColor);
         mFolderName.setTextColor(effectiveTitleColor);
         // The unnamed-folder hint has its own independently configurable theme role.
         // Its Legacy default uses the same adaptive contrast algorithm as the title.
