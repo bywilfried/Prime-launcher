@@ -203,12 +203,12 @@ private fun ThemeSection(
                             // Preview the exact Dock QSB defaults, including the existing
                             // "apply accent color" switch and its separate border preference.
                             ThemeColorRole.HOME_SEARCH_BACKGROUND -> {
-                                if (override == ColorOption.Default) {
+                                if (override == ColorOption.Default || override == ColorOption.LegacyBehavior) {
                                     getHotseatBackgroundColor(context, prefs2.themedHotseatQsb.asState().value)
                                 } else ThemeColors.resolve(context, profile, role, variant)
                             }
                             ThemeColorRole.HOME_SEARCH_ICON -> {
-                                if (override == ColorOption.Default) {
+                                if (override == ColorOption.Default || override == ColorOption.LegacyBehavior) {
                                     ThemeColors.resolveLegacyToken(
                                         context,
                                         app.lawnchair.theme.color.tokens.ColorTokens.ColorAccent,
@@ -217,7 +217,7 @@ private fun ThemeSection(
                                 } else ThemeColors.resolve(context, profile, role, variant)
                             }
                             ThemeColorRole.HOME_SEARCH_BORDER -> {
-                                if (override == ColorOption.Default) {
+                                if (override == ColorOption.Default || override == ColorOption.LegacyBehavior) {
                                     prefs2.strokeColorStyle.asState().value.colorPreferenceEntry.lightColor(context)
                                 } else ThemeColors.resolve(context, profile, role, variant)
                             }
@@ -258,7 +258,7 @@ private fun ThemeSection(
                                     ThemeColorRole.DOCK_FOLDER_OPEN_TEXT -> ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND
                                     else -> ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND
                                 }
-                                if (override == ColorOption.Default) {
+                                if (override == ColorOption.Default || override == ColorOption.LegacyBehavior) {
                                     ThemeColors.resolveOpenFolderTitleColorForVariant(
                                         context, role,
                                         ThemeColors.resolve(context, profile, backgroundRole, variant),
@@ -288,19 +288,19 @@ private fun ThemeSection(
                             selectedColor = override,
                             previewColor = ColorOption.CustomColor(preview),
                             iconColorPreview = (role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT &&
-                                (override == ColorOption.IconColor || override == ColorOption.Default)) ||
+                                (override == ColorOption.IconColor || override == ColorOption.Default || override == ColorOption.LegacyBehavior)) ||
                                 (role == ThemeColorRole.HOME_SEARCH_ICON &&
-                                    override == ColorOption.Default &&
+                                    (override == ColorOption.Default || override == ColorOption.LegacyBehavior) &&
                                     !prefs2.themedHotseatQsb.asState().value),
                             // Always display the resolved color, not a generic "A" glyph.
-                            dynamicContrastPreview = override == ColorOption.Default &&
+                            dynamicContrastPreview = (override == ColorOption.Default || override == ColorOption.LegacyBehavior) &&
                                 (role == ThemeColorRole.HOME_FOLDER_OPEN_TEXT ||
                                     role == ThemeColorRole.DOCK_FOLDER_OPEN_TEXT ||
                                     role == ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT ||
                                     role == ThemeColorRole.HOME_FOLDER_OPEN_HINT ||
                                     role == ThemeColorRole.DOCK_FOLDER_OPEN_HINT ||
                                     role == ThemeColorRole.DRAWER_FOLDER_OPEN_HINT),
-                            automaticContrastPreview = override == ColorOption.Default &&
+                            automaticContrastPreview = (override == ColorOption.Default || override == ColorOption.LegacyBehavior) &&
                                 (role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT ||
                                 role == ThemeColorRole.HOME_ICON_TEXT ||
                                 role == ThemeColorRole.HOME_FOLDER_ICON_TEXT ||
@@ -311,7 +311,9 @@ private fun ThemeSection(
                                 role == ThemeColorRole.DRAWER_TEXT ||
                                 role == ThemeColorRole.DRAWER_FOLDER_ICON_TEXT ||
                                 role == ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT),
-                            description = if (override == ColorOption.Default) {
+                            description = if (override == ColorOption.LegacyBehavior) {
+                                "Comportement Legacy (fixé)"
+                            } else if (override == ColorOption.Default) {
                                 if (role == ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE ||
                                     role == ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE)
                                     "Contraste automatique (noir/blanc)"
