@@ -203,13 +203,13 @@ fun PrimeColorSelection(
         ColorPreferenceEntry<ColorOption>(
             value = recipe,
             label = { "Couleur dynamique du thème" },
-            lightColor = { themeFallbackColor },
-            darkColor = { themeFallbackColor },
+            lightColor = { ctx -> recipe.colorPreferenceEntry.lightColor(ctx) },
+            darkColor = { ctx -> recipe.colorPreferenceEntry.darkColor(ctx) },
         )
     }
     val explicitLegacyPreset = ColorPreferenceEntry<ColorOption>(
         value = ColorOption.LegacyBehavior,
-        label = { "Comportement Legacy (fixé)" },
+        label = { "Valeur d’origine Legacy" },
         lightColor = { themeFallbackColor },
         darkColor = { themeFallbackColor },
     )
@@ -225,11 +225,18 @@ fun PrimeColorSelection(
         ColorOption.AutomaticBlackWhite.colorPreferenceEntry else null
     val themedTabPreset = if (categoryTabText) adaptiveTextPreset ?: ColorOption.AdaptiveThemeText.colorPreferenceEntry else null
     val workspaceThemePreset = if (workspacePagination) ColorOption.ThemePalette.colorPreferenceEntry else null
+    val explicitDotTextContrast = if (automaticContrastDefaultLabel)
+        ColorOption.AutomaticBlackWhite.colorPreferenceEntry else null
+    val hasExplicitEquivalent = notificationDotBackground || iconLabelText || workspacePagination ||
+        categoryTabText || automaticContrastDefaultLabel || defaultDynamicColor != null
+    val legacyEntries = if (!hasExplicitEquivalent || appliedColor == ColorOption.LegacyBehavior)
+        listOf(explicitLegacyPreset) else emptyList()
     val displayedDynamicEntries: List<ColorPreferenceEntry<ColorOption>> =
-        ((if (notificationDotBackground) dynamicEntries.filterNot { it.value == ColorOption.IconColor }
-          else if (perIconDotOption) dynamicEntries + ColorOption.IconColor.colorPreferenceEntry
-          else dynamicEntries + listOfNotNull(workspaceThemePreset, adaptiveTextPreset, blackWhiteTabPreset, themedTabPreset)
-        ) + listOf(explicitLegacyPreset) + listOfNotNull(explicitThemeRecipe)).distinctBy { it.value }.map { entry ->
+        (dynamicEntries + listOfNotNull(
+            if (notificationDotBackground || perIconDotOption) ColorOption.IconColor.colorPreferenceEntry else null,
+            workspaceThemePreset, adaptiveTextPreset, blackWhiteTabPreset, themedTabPreset,
+            explicitDotTextContrast, explicitThemeRecipe,
+        ) + legacyEntries).distinctBy { it.value }.map { entry ->
         if (entry.value == ColorOption.Default) {
             ColorPreferenceEntry<ColorOption>(
                 value = ColorOption.Default,
