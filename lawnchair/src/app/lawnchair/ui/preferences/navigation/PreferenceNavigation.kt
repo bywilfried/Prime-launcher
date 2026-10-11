@@ -269,6 +269,7 @@ fun PreferenceNavigation(
                     else -> ThemeColors.official(context, profile, role, variant)
                 },
                 defaultDynamicColor = ThemeColors.officialDynamicRecipe(role, variant),
+                themeDefaultDescription = ThemeColors.officialDefaultDescription(profile, role),
                 iconLabelText = role == ThemeColorRole.HOME_ICON_TEXT ||
                     role == ThemeColorRole.HOME_FOLDER_ICON_TEXT ||
                     role == ThemeColorRole.HOME_FOLDER_CLOSED_TEXT ||
