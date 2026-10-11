@@ -416,7 +416,7 @@ object ThemeColors {
                     val surfaceRole = if (role == ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT)
                         ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND
                     else ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND
-                    val surface = resolve(context, profile, surfaceRole, variant)
+                    val surface = resolveTheme(context, profile, surfaceRole, variant)
                     val opaque = ColorUtils.compositeColors(
                         surface, if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE,
                     )
