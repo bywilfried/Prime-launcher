@@ -111,7 +111,10 @@ fun PrimeDrawerFolderAdvancedPreference(tabId: String, folderId: String) {
                 label = "Tout remettre par défaut",
                 subtitle = "Supprime toutes les personnalisations de ce dossier et rétablit l’héritage.",
                 confirmationText = "Tout remettre par défaut pour ce dossier ?",
-                onClick = { update(PrimeDrawerFolderVisualOverrides()) },
+                onClick = {
+                    update(PrimeDrawerFolderVisualOverrides())
+                    app.lawnchair.theme.FolderThemeColorOverrides(context).resetFolder(app.lawnchair.theme.FolderThemeColorOverrides.category(tabId, folderId))
+                },
             )
         }
     }
@@ -183,7 +186,10 @@ fun PrimeHomeFolderAdvancedPreference(folderId: Int, drawer: Boolean = false) {
                 label = "Tout remettre par défaut",
                 subtitle = "Supprime toutes les personnalisations de ce dossier et rétablit l’héritage.",
                 confirmationText = "Tout remettre par défaut pour ce dossier ?",
-                onClick = { update(PrimeDrawerFolderVisualOverrides()) },
+                onClick = {
+                    update(PrimeDrawerFolderVisualOverrides())
+                    app.lawnchair.theme.FolderThemeColorOverrides(context).resetFolder(if (drawer) app.lawnchair.theme.FolderThemeColorOverrides.drawer(folderId) else app.lawnchair.theme.FolderThemeColorOverrides.home(folderId))
+                },
             )
         }
     }
