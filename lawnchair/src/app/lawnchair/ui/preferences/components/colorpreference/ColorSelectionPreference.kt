@@ -184,6 +184,7 @@ fun PrimeColorSelection(
     staticEntries: List<ColorPreferenceEntry<ColorOption>> = staticColors,
     defaultPreviewColor: Int? = null,
     defaultDynamicColor: ColorOption.DynamicColor? = null,
+    themeDefaultDescription: String = "Couleur du thème",
     automaticContrastDefaultLabel: Boolean = false,
     perIconDotOption: Boolean = false,
     adaptiveFolderDefault: Boolean = false,
@@ -217,19 +218,7 @@ fun PrimeColorSelection(
         if (entry.value == ColorOption.Default) {
             ColorPreferenceEntry<ColorOption>(
                 value = ColorOption.Default,
-                label = if (workspacePagination) {
-                    { "Par défaut : contraste automatique noir/blanc" }
-                } else if (iconLabelText) {
-                    { "Par défaut : noir/blanc automatique" }
-                } else if (adaptiveFolderDefault) {
-                    { "Par défaut : automatique selon le fond du dossier" }
-                } else if (perIconDefault) {
-                    { "Par défaut : selon la couleur de l’icône" }
-                } else if (automaticContrastDefaultLabel) {
-                    { "Par défaut : contraste automatique noir/blanc" }
-                } else {
-                    { "Par défaut : couleur du thème" }
-                },
+                label = { "Par défaut · $themeDefaultDescription" },
                 lightColor = { themeFallbackColor },
                 darkColor = { themeFallbackColor },
             )
