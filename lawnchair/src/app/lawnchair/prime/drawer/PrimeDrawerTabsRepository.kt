@@ -291,7 +291,8 @@ class PrimeDrawerTabsRepository(context: Context) {
     fun getDrawerFolderVisualOverrides(folderId: Int): PrimeDrawerFolderVisualOverrides {
         val root = runCatching { JSONObject(prefs.getString(PREF_DRAWER_FOLDER_OVERRIDES, "{}")) }
             .getOrElse { JSONObject() }
-        return root.optJSONObject(folderId.toString()).toFolderVisualOverrides()
+        return folderThemeColors(root.optJSONObject(folderId.toString()).toFolderVisualOverrides(),
+            app.lawnchair.theme.FolderThemeColorOverrides.drawer(folderId), app.lawnchair.theme.ThemeColorRole.Section.DRAWER)
     }
 
     fun setDrawerFolderVisualOverrides(folderId: Int, overrides: PrimeDrawerFolderVisualOverrides) {
@@ -311,7 +312,8 @@ class PrimeDrawerTabsRepository(context: Context) {
     fun getHomeFolderVisualOverrides(folderId: Int): PrimeDrawerFolderVisualOverrides {
         val root = runCatching { JSONObject(prefs.getString(PREF_HOME_FOLDER_OVERRIDES, "{}")) }
             .getOrElse { JSONObject() }
-        return root.optJSONObject(folderId.toString()).toFolderVisualOverrides()
+        return folderThemeColors(root.optJSONObject(folderId.toString()).toFolderVisualOverrides(),
+            app.lawnchair.theme.FolderThemeColorOverrides.home(folderId), app.lawnchair.theme.ThemeColorRole.Section.HOME)
     }
 
     fun setHomeFolderVisualOverrides(folderId: Int, overrides: PrimeDrawerFolderVisualOverrides) {
@@ -337,12 +339,46 @@ class PrimeDrawerTabsRepository(context: Context) {
         prefs.edit { putString(PREF_HOME_FOLDER_OVERRIDES, root.toString()) }
     }
 
+    private fun folderThemeColors(
+        stored: PrimeDrawerFolderVisualOverrides,
+        folderKey: String,
+        section: app.lawnchair.theme.ThemeColorRole.Section,
+        tabId: String? = null,
+    ): PrimeDrawerFolderVisualOverrides {
+        val profile = app.lawnchair.theme.ThemeProfile.current(appContext)
+        val variant = appContext.effectiveThemeVariant()
+        fun color(role: app.lawnchair.theme.ThemeColorRole) =
+            app.lawnchair.theme.ThemeColors.resolveForFolder(
+                appContext, profile, role, variant, folderKey, tabId,
+            )
+        return when (section) {
+            app.lawnchair.theme.ThemeColorRole.Section.HOME -> stored.copy(
+                color = color(app.lawnchair.theme.ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND),
+                openColor = color(app.lawnchair.theme.ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND),
+                textColor = color(app.lawnchair.theme.ThemeColorRole.HOME_FOLDER_OPEN_TEXT),
+                closedLabelColor = color(app.lawnchair.theme.ThemeColorRole.HOME_FOLDER_CLOSED_TEXT),
+            )
+            app.lawnchair.theme.ThemeColorRole.Section.DOCK -> stored.copy(
+                color = color(app.lawnchair.theme.ThemeColorRole.DOCK_FOLDER_CLOSED_BACKGROUND),
+                openColor = color(app.lawnchair.theme.ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND),
+                textColor = color(app.lawnchair.theme.ThemeColorRole.DOCK_FOLDER_OPEN_TEXT),
+                closedLabelColor = color(app.lawnchair.theme.ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT),
+            )
+            else -> stored.copy(
+                color = color(app.lawnchair.theme.ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND),
+                openColor = color(app.lawnchair.theme.ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND),
+                textColor = color(app.lawnchair.theme.ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT),
+                closedLabelColor = color(app.lawnchair.theme.ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT),
+            )
+        }
+    }
+
     fun getResolvedFolderVisualOverrides(tabId: String, folderId: String): PrimeDrawerFolderVisualOverrides? {
         val tab = getConfiguration().tabs.firstOrNull { it.id == tabId } ?: return null
         val folder = tab.folders.firstOrNull { it.id == folderId } ?: return null
         val category = tab.visualOverrides
         val own = folder.visualOverrides
-        return PrimeDrawerFolderVisualOverrides(
+        return folderThemeColors(PrimeDrawerFolderVisualOverrides(
             previewOpacity = own.previewOpacity ?: category.folderPreviewOpacity,
             backgroundOpacity = own.backgroundOpacity ?: category.folderBackgroundOpacity,            columns = own.columns ?: category.folderColumns,
             rows = own.rows ?: category.folderRows,
@@ -355,7 +391,8 @@ class PrimeDrawerTabsRepository(context: Context) {
             openColor = own.openColor ?: category.folderOpenColor,
             textColor = own.textColor ?: category.folderTextColor ?: tabsModeTextColor(),
             closedLabelColor = own.closedLabelColor ?: category.drawerTextColor ?: tabsModeTextColor(),
-        )
+        ), app.lawnchair.theme.FolderThemeColorOverrides.category(tabId, folderId),
+            app.lawnchair.theme.ThemeColorRole.Section.DRAWER, tabId)
     }
 
     fun getTabVisualOverrides(tabId: String): PrimeDrawerVisualOverrides? {
