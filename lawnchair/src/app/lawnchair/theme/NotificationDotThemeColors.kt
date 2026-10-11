@@ -27,7 +27,9 @@ object NotificationDotThemeColors {
         if (override != ColorOption.Default && override != ColorOption.LegacyBehavior) {
             return ThemeColors.resolve(context, profile, role, variant)
         }
-        return when (if (override == ColorOption.LegacyBehavior) ColorOption.Default else legacyOption) {
+        val effectiveLegacyOption: ColorOption =
+            if (override == ColorOption.LegacyBehavior) ColorOption.Default else legacyOption
+        return when (effectiveLegacyOption) {
             ColorOption.Default -> {
                 if (role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT) {
                     val dotOption = PreferenceManager2.getInstance(context).notificationDotColor.firstCached()
