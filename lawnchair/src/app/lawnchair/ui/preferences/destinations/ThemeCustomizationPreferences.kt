@@ -52,10 +52,12 @@ import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
  * Persistence/export actions are intentionally disabled until the sparse override store is added.
  */
 @Composable
-fun ThemeCustomizationPreferences(modifier: Modifier = Modifier) {
+fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSection: Boolean = false) {
     val context = LocalContext.current
     var variant by rememberSaveable { mutableStateOf(context.effectiveThemeVariant()) }
-    var expanded by rememberSaveable { mutableStateOf<ThemeColorRole.Section?>(null) }
+    var expanded by rememberSaveable(openDrawerSection) {
+        mutableStateOf<ThemeColorRole.Section?>(if (openDrawerSection) ThemeColorRole.Section.DRAWER else null)
+    }
     var confirmThemeReset by rememberSaveable { mutableStateOf(false) }
     var confirmVariantReset by rememberSaveable { mutableStateOf(false) }
     val profile = ThemeProfile.current(context)
