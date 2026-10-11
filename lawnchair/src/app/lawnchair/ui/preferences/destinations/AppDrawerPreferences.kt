@@ -208,6 +208,22 @@ fun AppDrawerPreferences(
                         label = stringResource(id = R.string.prime_tabs_hide_all),
                         enabled = canHideAll,
                     )
+                    val showAddCategory = remember(context) {
+                        androidx.compose.runtime.mutableStateOf(
+                            context.getSharedPreferences("prime_drawer_tab_ui", android.content.Context.MODE_PRIVATE)
+                                .getBoolean("show_add_category_tab", true),
+                        )
+                    }
+                    SwitchPreference(
+                        checked = showAddCategory.value,
+                        onCheckedChange = { visible ->
+                            showAddCategory.value = visible
+                            context.getSharedPreferences("prime_drawer_tab_ui", android.content.Context.MODE_PRIVATE)
+                                .edit().putBoolean("show_add_category_tab", visible).apply()
+                            app.lawnchair.preferences2.ReloadHelper(context).recreate()
+                        },
+                        label = "Afficher l’onglet + (ajouter une catégorie)",
+                    )
                     SwitchPreference(
                         checked = hideUnclassifiedAdapter.state.value,
                         onCheckedChange = { hide ->
