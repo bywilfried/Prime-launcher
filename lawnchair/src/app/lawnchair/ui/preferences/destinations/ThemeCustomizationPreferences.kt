@@ -302,12 +302,7 @@ private fun ThemeSection(
                             else -> ThemeColors.resolveTheme(context, profile, role, variant)
                         }
                         val categoryPreview = if (categoryTabId == null || override == ColorOption.Default) preview
-                            else when (override) {
-                                is ColorOption.CustomColor -> override.color
-                                ColorOption.LegacyBehavior -> ThemeColors.official(context, profile, role, variant)
-                                else -> if (variant == ThemeVariant.DARK) override.colorPreferenceEntry.darkColor(context)
-                                    else override.colorPreferenceEntry.lightColor(context)
-                            }
+                            else ThemeColors.resolveForCategory(context, profile, role, variant, categoryTabId)
                         val isInherited = override == ColorOption.Default
                         val rolePreferenceAlpha = if (isInherited) 0.58f else 1f
                         Box {
