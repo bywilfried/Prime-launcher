@@ -227,9 +227,11 @@ fun PrimeColorSelection(
     val workspaceThemePreset = if (workspacePagination) ColorOption.ThemePalette.colorPreferenceEntry else null
     val explicitDotTextContrast = if (automaticContrastDefaultLabel)
         ColorOption.AutomaticBlackWhite.colorPreferenceEntry else null
-    val hasExplicitEquivalent = notificationDotBackground || iconLabelText || workspacePagination ||
-        categoryTabText || automaticContrastDefaultLabel || defaultDynamicColor != null
-    val legacyEntries = if (!hasExplicitEquivalent || appliedColor == ColorOption.LegacyBehavior)
+    // Only suppress the Legacy fallback when an independently selectable option reproduces
+    // the actual semantic behavior. A similar-looking dynamic swatch is not proof of equivalence.
+    val hasExactExplicitEquivalent = notificationDotBackground || iconLabelText ||
+        workspacePagination || automaticContrastDefaultLabel
+    val legacyEntries = if (!hasExactExplicitEquivalent || appliedColor == ColorOption.LegacyBehavior)
         listOf(explicitLegacyPreset) else emptyList()
     val displayedDynamicEntries: List<ColorPreferenceEntry<ColorOption>> =
         (dynamicEntries + listOfNotNull(
