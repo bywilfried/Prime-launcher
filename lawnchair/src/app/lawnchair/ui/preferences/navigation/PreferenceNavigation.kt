@@ -206,68 +206,10 @@ fun PreferenceNavigation(
                     else -> role.id
                 },
                 appliedColor = applied,
-                // The Default swatch is the parent/theme value, never the current override.
-                defaultPreviewColor = when (role) {
-                    ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT -> NotificationDotThemeColors.resolve(
-                        context, role, preferenceManager2().notificationDotTextColor.asState().value
-                    )
-                    ThemeColorRole.HOME_FOLDER_CLOSED_BORDER,
-                    ThemeColorRole.HOME_FOLDER_OPEN_BORDER,
-                    ThemeColorRole.DOCK_FOLDER_CLOSED_BORDER,
-                    ThemeColorRole.DOCK_FOLDER_OPEN_BORDER,
-                    ThemeColorRole.DRAWER_FOLDER_CLOSED_BORDER,
-                    ThemeColorRole.DRAWER_FOLDER_OPEN_BORDER -> {
-                        val backgroundRole = when (role) {
-                            ThemeColorRole.HOME_FOLDER_CLOSED_BORDER -> ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND
-                            ThemeColorRole.HOME_FOLDER_OPEN_BORDER -> ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND
-                            ThemeColorRole.DOCK_FOLDER_CLOSED_BORDER -> ThemeColorRole.DOCK_FOLDER_CLOSED_BACKGROUND
-                            ThemeColorRole.DOCK_FOLDER_OPEN_BORDER -> ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND
-                            ThemeColorRole.DRAWER_FOLDER_CLOSED_BORDER -> ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND
-                            else -> ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND
-                        }
-                        ThemeColors.resolve(context, profile, backgroundRole, variant)
-                    }
-                    ThemeColorRole.HOME_FOLDER_OPEN_TEXT,
-                    ThemeColorRole.DOCK_FOLDER_OPEN_TEXT,
-                    ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT,
-                    ThemeColorRole.HOME_FOLDER_OPEN_HINT,
-                    ThemeColorRole.DOCK_FOLDER_OPEN_HINT,
-                    ThemeColorRole.DRAWER_FOLDER_OPEN_HINT -> {
-                        val backgroundRole = when (role) {
-                            ThemeColorRole.HOME_FOLDER_OPEN_TEXT, ThemeColorRole.HOME_FOLDER_OPEN_HINT -> ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND
-                            ThemeColorRole.DOCK_FOLDER_OPEN_TEXT, ThemeColorRole.DOCK_FOLDER_OPEN_HINT -> ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND
-                            else -> ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND
-                        }
-                        ThemeColors.resolveOpenFolderTitleColorForVariant(
-                            context, role,
-                            ThemeColors.resolve(context, profile, backgroundRole, variant),
-                            variant,
-                        )
-                    }
-                    ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT,
-                    ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> {
-                        val backgroundRole = if (role == ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT)
-                            ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND
-                        else ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND
-                        val background = ThemeColors.resolve(context, profile, backgroundRole, variant)
-                        val opaque = androidx.core.graphics.ColorUtils.compositeColors(background,
-                            if (variant == ThemeVariant.DARK) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
-                        if (androidx.core.graphics.ColorUtils.calculateContrast(android.graphics.Color.BLACK, opaque) >=
-                            androidx.core.graphics.ColorUtils.calculateContrast(android.graphics.Color.WHITE, opaque))
-                            android.graphics.Color.BLACK else android.graphics.Color.WHITE
-                    }
-                    ThemeColorRole.HOME_ICON_TEXT,
-                    ThemeColorRole.HOME_FOLDER_ICON_TEXT,
-                    ThemeColorRole.HOME_FOLDER_CLOSED_TEXT,
-                    ThemeColorRole.DOCK_ICON_TEXT,
-                    ThemeColorRole.DOCK_FOLDER_ICON_TEXT,
-                    ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT,
-                    ThemeColorRole.DRAWER_ICON_TEXT,
-                    ThemeColorRole.DRAWER_FOLDER_ICON_TEXT,
-                    ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> ThemeColors.resolveIconLabelColorForVariant(context, role,
-                        if (variant == ThemeVariant.DARK) android.graphics.Color.BLACK else android.graphics.Color.WHITE, variant)
-                    else -> ThemeColors.official(context, profile, role, variant)
-                },
+                // Never resolve the selected override to preview the inherited default.
+                // Semantic defaults (black/white, per-icon, folder contrast) use
+                // dedicated illustrative dots in PresetsList.
+                defaultPreviewColor = ThemeColors.official(context, profile, role, variant),
                 defaultDynamicColor = ThemeColors.officialDynamicRecipe(role, variant),
                 themeDefaultDescription = ThemeColors.officialDefaultDescription(profile, role),
                 iconLabelText = role == ThemeColorRole.HOME_ICON_TEXT ||
