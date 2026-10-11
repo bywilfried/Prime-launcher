@@ -460,21 +460,33 @@ object ThemeColors {
         return when (option) {
             ColorOption.Default -> resolveTheme(context, profile, role, variant)
             ColorOption.LegacyBehavior -> official(context, profile, role, variant)
-            ColorOption.AutomaticBlackWhite -> {
-                when (role) {
-                    ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT,
-                    ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> {
-                        val backgroundRole = if (role == ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT)
-                            ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND
-                        else ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND
-                        val background = resolveForCategory(context, profile, backgroundRole, variant, tabId)
+            ColorOption.AutomaticBlackWhite, ColorOption.AdaptiveThemeText -> {
+                val backgroundRole = when (role) {
+                    ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND
+                    ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND
+                    ThemeColorRole.DRAWER_TEXT, ThemeColorRole.DRAWER_ICON_TEXT,
+                    ThemeColorRole.DRAWER_FOLDER_ICON_TEXT -> ThemeColorRole.DRAWER_BACKGROUND
+                    ThemeColorRole.DRAWER_SEARCH_TEXT, ThemeColorRole.DRAWER_SEARCH_HINT,
+                    ThemeColorRole.DRAWER_SEARCH_ICON -> ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE
+                    ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT,
+                    ThemeColorRole.DRAWER_FOLDER_OPEN_HINT -> ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND
+                    ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND
+                    ThemeColorRole.DRAWER_POPUP_TEXT, ThemeColorRole.DRAWER_POPUP_ICON ->
+                        ThemeColorRole.DRAWER_POPUP_BACKGROUND
+                    else -> null
+                }
+                if (backgroundRole == null) resolveTheme(context, profile, role, variant)
+                else {
+                    val background = resolveForCategory(context, profile, backgroundRole, variant, tabId)
+                    if (option == ColorOption.AdaptiveThemeText)
+                        adaptiveTextAgainstSurface(background, variant)
+                    else {
                         val opaque = ColorUtils.compositeColors(
                             background, if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE,
                         )
                         if (ColorUtils.calculateContrast(Color.BLACK, opaque) >=
                             ColorUtils.calculateContrast(Color.WHITE, opaque)) Color.BLACK else Color.WHITE
                     }
-                    else -> resolveTheme(context, profile, role, variant)
                 }
             }
             ColorOption.ThemePalette ->
