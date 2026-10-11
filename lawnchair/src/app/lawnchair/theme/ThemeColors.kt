@@ -244,7 +244,8 @@ object ThemeColors {
     ): Int {
         val profile = ThemeProfile.current(context)
         if (ThemeColorOverrides(context).get(profile, variant, role).let {
-                it != ColorOption.Default && it != ColorOption.LegacyBehavior
+                it != ColorOption.Default && it != ColorOption.LegacyBehavior &&
+                    it != ColorOption.AdaptiveThemeText
             }) {
             return resolve(context, profile, role, variant)
         }
