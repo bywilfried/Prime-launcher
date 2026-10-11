@@ -35,6 +35,9 @@ class CategoryThemeColorOverrides(context: Context) {
     fun resetTheme(tabId: String, profile: ThemeProfile) =
         removeMatching(prefix(tabId, profile))
 
+    fun hasOverrides(tabId: String, profile: ThemeProfile, variant: ThemeVariant): Boolean =
+        prefs.all.keys.any { it.startsWith(prefix(tabId, profile, variant)) }
+
     fun resetCategory(tabId: String) =
         removeMatching("${tabId.length}:$tabId.")
 
