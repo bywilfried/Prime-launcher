@@ -29,6 +29,7 @@ import app.lawnchair.preferences2.preferenceManager2
 import app.lawnchair.ui.preferences.LocalNavController
 import app.lawnchair.ui.preferences.components.colorpreference.ColorPreference
 import app.lawnchair.theme.color.ColorOption
+import app.lawnchair.ui.preferences.navigation.ThemeCustomization
 import app.lawnchair.ui.preferences.navigation.PrimeDrawerCategoryColor
 import app.lawnchair.ui.preferences.navigation.PrimeDrawerShape
 import app.lawnchair.ui.preferences.navigation.PrimeHomeFolderColor
@@ -241,6 +242,11 @@ private fun PrimeCategoryDrawerOptions(
     }
     val defaultTabColor = modeTabColor ?: masterTabColor
     PreferenceGroup(heading = stringResource(id = R.string.style)) {
+        ClickablePreference(
+            label = "Personnalisation des couleurs de la catégorie",
+            subtitle = "Couleurs par thème et variante, avec héritage du thème parent",
+            onClick = { app.lawnchair.ui.preferences.LocalNavController.current.navigate(ThemeCustomization(categoryTabId = tabId)) },
+        )
         NullableColorPreference("Couleur de l’onglet de cette catégorie", value.tabColor, defaultTabColor, tabId, "tab")
         NullableColorPreference("Couleur d’arrière-plan", value.drawerBackgroundColor, defaultBackgroundColor, tabId, "background")
         NullableColorPreference("Couleur du texte", value.drawerTextColor, defaultTextColor, tabId, "drawerText")
