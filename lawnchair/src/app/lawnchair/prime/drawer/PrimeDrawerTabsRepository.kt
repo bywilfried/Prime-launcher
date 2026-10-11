@@ -1,6 +1,7 @@
 package app.lawnchair.prime.drawer
 
 import android.content.Context
+import app.lawnchair.theme.effectiveThemeVariant
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.android.launcher3.LauncherPrefs
@@ -364,9 +365,18 @@ class PrimeDrawerTabsRepository(context: Context) {
         val configuration = getConfiguration()
         val selected = configuration.tabs.firstOrNull { it.id == tabId }
             ?.visualOverrides ?: PrimeDrawerVisualOverrides()
+        // Bridge the existing drawer renderer to the semantic category theme system.
+        // The three legacy color fields remain in persisted JSON for compatibility,
+        // but must no longer override the theme/category color hierarchy.
+        val profile = app.lawnchair.theme.ThemeProfile.current(appContext)
+        val variant = appContext.effectiveThemeVariant()
+        fun color(role: app.lawnchair.theme.ThemeColorRole) =
+            app.lawnchair.theme.ThemeColors.resolveForCategory(appContext, profile, role, variant, tabId)
         return selected.copy(
-            drawerTextColor = selected.drawerTextColor ?: tabsModeTextColor(),
-        ).takeUnless { it == PrimeDrawerVisualOverrides() }
+            tabColor = color(app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND),
+            drawerBackgroundColor = color(app.lawnchair.theme.ThemeColorRole.DRAWER_BACKGROUND),
+            drawerTextColor = color(app.lawnchair.theme.ThemeColorRole.DRAWER_TEXT),
+        )
     }
 
     fun isTabsModeEnabled(): Boolean = primePrefs.drawerTabsEnabled.get()
