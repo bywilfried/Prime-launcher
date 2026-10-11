@@ -92,14 +92,14 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             expanded = expanded,
             onToggle = { expanded = if (expanded == it) null else it },
         )
-        if (categoryTabId == null) ThemeSection(
+        if (categoryTabId == null && folderKey == null) ThemeSection(
             title = "Accueil",
             variant = variant,
             section = ThemeColorRole.Section.HOME,
             expanded = expanded,
             onToggle = { expanded = if (expanded == it) null else it },
         )
-        if (categoryTabId == null) ThemeSection(
+        if (categoryTabId == null && folderKey == null) ThemeSection(
             title = "Dock",
             variant = variant,
             section = ThemeColorRole.Section.DOCK,
