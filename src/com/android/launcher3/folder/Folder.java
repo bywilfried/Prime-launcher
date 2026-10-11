@@ -813,15 +813,15 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         } else {
             childLabelRole = app.lawnchair.theme.ThemeColorRole.HOME_FOLDER_ICON_TEXT;
         }
-        int childLabelColor = app.lawnchair.theme.ThemeColors.resolveIconLabelColor(
+        int inheritedChildLabelColor = app.lawnchair.theme.ThemeColors.resolveIconLabelColor(
                 getContext(), childLabelRole, openColor);
         // Folder-specific icon labels must not inherit the folder title color.
         String semanticFolderKey = (isInAppDrawer() ? "drawer:"
                 : (mInfo.container == com.android.launcher3.LauncherSettings.Favorites.CONTAINER_HOTSEAT
                 || mInfo.container == com.android.launcher3.LauncherSettings.Favorites.CONTAINER_HOTSEAT_PREDICTION)
                 ? "dock:" : "home:") + mInfo.id;
-        childLabelColor = app.lawnchair.theme.ThemeColors.resolveIndividualFolderColor(
-                getContext(), childLabelRole, semanticFolderKey, childLabelColor);
+        final int childLabelColor = app.lawnchair.theme.ThemeColors.resolveIndividualFolderColor(
+                getContext(), childLabelRole, semanticFolderKey, inheritedChildLabelColor);
         mContent.iterateOverItems((item, itemView) -> {
             if (itemView instanceof BubbleTextView bubble
                     && (primeOverrides == null || primeOverrides.getTextColor() == null)) {
