@@ -346,7 +346,7 @@ private fun ThemeSection(
                                 if (role == ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE ||
                                     role == ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE)
                                     "Contraste automatique (noir/blanc)"
-                                else if (categoryTabId != null) "Valeur du thème parent" else "Valeur du thème"
+                                else if (categoryTabId != null) "Hérité du thème principal ou de sa personnalisation" else "Valeur du thème"
                             } else {
                                 override.colorPreferenceEntry.label()
                             },
