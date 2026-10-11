@@ -234,7 +234,10 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                 return true;
             });
         }
-        addPill("+", false, null, null, true, () -> showCreateTabDialog(parent));
+        if (getContext().getSharedPreferences("prime_drawer_tab_ui", Context.MODE_PRIVATE)
+                .getBoolean("show_add_category_tab", true)) {
+            addPill("+", false, null, null, true, () -> showCreateTabDialog(parent));
+        }
         ensureSelectedTabVisible(configuration.getSelectedTabId());
     }
 
