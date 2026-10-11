@@ -215,7 +215,7 @@ fun PreferenceNavigation(
                 // Semantic defaults (black/white, per-icon, folder contrast) use
                 // dedicated illustrative dots in PresetsList.
                 defaultPreviewColor = if (route.categoryTabId == null) ThemeColors.official(context, profile, role, variant)
-                    else ThemeColors.resolve(context, profile, role, variant),
+                    else ThemeColors.resolveTheme(context, profile, role, variant),
                 defaultDynamicColor = ThemeColors.officialDynamicRecipe(role, variant),
                 themeDefaultDescription = ThemeColors.officialDefaultDescription(profile, role),
                 iconLabelText = role == ThemeColorRole.HOME_ICON_TEXT ||
