@@ -153,7 +153,7 @@ fun PreferenceNavigation(
         ) { GeneralPreferences() }
         composable<ThemeCustomization> { backStackEntry ->
             val route: ThemeCustomization = backStackEntry.toRoute()
-            ThemeCustomizationPreferences(openDrawerSection = route.openDrawerSection)
+            ThemeCustomizationPreferences(openDrawerSection = route.openDrawerSection, categoryTabId = route.categoryTabId)
         }
         composable<ThemeColorSelection> { backStackEntry ->
             val route: ThemeColorSelection = backStackEntry.toRoute()
@@ -162,8 +162,10 @@ fun PreferenceNavigation(
             val variant = runCatching { ThemeVariant.valueOf(route.variant) }.getOrDefault(ThemeVariant.LIGHT)
             val profile = ThemeProfile.current(context)
             val overrides = remember(context) { ThemeColorOverrides(context) }
-            var applied by remember(route.roleId, route.variant) {
-                mutableStateOf(overrides.get(profile, variant, role))
+            val categoryOverrides = remember(context) { app.lawnchair.theme.CategoryThemeColorOverrides(context) }
+            var applied by remember(route.roleId, route.variant, route.categoryTabId) {
+                mutableStateOf(if (route.categoryTabId == null) overrides.get(profile, variant, role)
+                    else categoryOverrides.get(route.categoryTabId, profile, variant, role))
             }
             PrimeColorSelection(
                 label = when (role) {
@@ -212,7 +214,8 @@ fun PreferenceNavigation(
                 // Never resolve the selected override to preview the inherited default.
                 // Semantic defaults (black/white, per-icon, folder contrast) use
                 // dedicated illustrative dots in PresetsList.
-                defaultPreviewColor = ThemeColors.official(context, profile, role, variant),
+                defaultPreviewColor = if (route.categoryTabId == null) ThemeColors.official(context, profile, role, variant)
+                    else ThemeColors.resolve(context, profile, role, variant),
                 defaultDynamicColor = ThemeColors.officialDynamicRecipe(role, variant),
                 themeDefaultDescription = ThemeColors.officialDefaultDescription(profile, role),
                 iconLabelText = role == ThemeColorRole.HOME_ICON_TEXT ||
@@ -238,7 +241,8 @@ fun PreferenceNavigation(
                     role == ThemeColorRole.DRAWER_FOLDER_OPEN_HINT,
                 perIconDefault = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT,
                 onApply = { option ->
-                    overrides.set(profile, variant, role, option)
+                    if (route.categoryTabId == null) overrides.set(profile, variant, role, option)
+                    else categoryOverrides.set(route.categoryTabId, profile, variant, role, option)
                     applied = option
                     // Runtime consumers observe semantic theme overrides themselves. Do not restart
                     // or recreate the launcher for a color edit.
