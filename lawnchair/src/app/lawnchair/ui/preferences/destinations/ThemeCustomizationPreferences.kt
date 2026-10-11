@@ -314,7 +314,7 @@ private fun ThemeSection(
                                     role == ThemeColorRole.HOME_FOLDER_OPEN_HINT ||
                                     role == ThemeColorRole.DOCK_FOLDER_OPEN_HINT ||
                                     role == ThemeColorRole.DRAWER_FOLDER_OPEN_HINT),
-                            automaticContrastPreview = (override == ColorOption.Default || override == ColorOption.LegacyBehavior) &&
+                            automaticContrastPreview = (override == ColorOption.Default || override == ColorOption.LegacyBehavior || override == ColorOption.AutomaticBlackWhite) &&
                                 (role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT ||
                                 role == ThemeColorRole.HOME_ICON_TEXT ||
                                 role == ThemeColorRole.HOME_FOLDER_ICON_TEXT ||
