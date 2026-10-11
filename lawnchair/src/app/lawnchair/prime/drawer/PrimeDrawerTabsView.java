@@ -196,7 +196,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             }
             final String tabId = tab.getId();
             Integer tabColor = tab.getVisualOverrides().getTabColor();
-            TextView pill = addPill(label, tabId.equals(configuration.getSelectedTabId()), tabColor, false, () ->
+            TextView pill = addPill(label, tabId.equals(configuration.getSelectedTabId()), tabColor, tabId, false, () ->
                     selectTab(parent, tabId, getDirectTabDirection(tabId)));
             pill.setTag(tabId);
             pill.setOnTouchListener((v, event) -> {
@@ -234,7 +234,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                 return true;
             });
         }
-        addPill("+", false, null, true, () -> showCreateTabDialog(parent));
+        addPill("+", false, null, null, true, () -> showCreateTabDialog(parent));
         ensureSelectedTabVisible(configuration.getSelectedTabId());
     }
 
@@ -326,7 +326,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             applyPillSelectionStyle(
                     (TextView) child,
                     childTabId.equals(tabId),
-                    childTab.getVisualOverrides().getTabColor());
+                    childTab.getVisualOverrides().getTabColor(), childTabId);
         }
     }
 
@@ -349,7 +349,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
     }
 
     private void applyPillSelectionStyle(
-            TextView pill, boolean selected, @Nullable Integer selectedColor) {
+            TextView pill, boolean selected, @Nullable Integer selectedColor, String tabId) {
         GradientDrawable background = new GradientDrawable();
         background.setShape(GradientDrawable.RECTANGLE);
         background.setCornerRadius(dp(16));
@@ -360,11 +360,11 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                     : modeTabColor != null ? modeTabColor : resolveDefaultTabColor();
             recordActiveTabColorSource(selectedColor, modeTabColor, activeColor);
             background.setColor(activeColor);
-            pill.setTextColor(resolveTabTextColor(activeColor, true));
+            pill.setTextColor(resolveTabTextColor(activeColor, true, tabId));
         } else {
             int inactiveColor = resolveInactiveTabColor();
             background.setColor(inactiveColor);
-            pill.setTextColor(resolveTabTextColor(inactiveColor, false));
+            pill.setTextColor(resolveTabTextColor(inactiveColor, false, tabId));
         }
         pill.setBackground(background);
     }
@@ -906,7 +906,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
     }
 
     private TextView addPill(String label, boolean selected, @Nullable Integer selectedColor,
-            boolean compactAction, Runnable action) {
+            @Nullable String tabId, boolean compactAction, Runnable action) {
         TextView pill = new TextView(getContext());
         pill.setText(label);
         pill.setGravity(Gravity.CENTER);
@@ -965,7 +965,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                 app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND, variant);
     }
 
-    private int resolveTabTextColor(int backgroundColor, boolean selected) {
+    private int resolveTabTextColor(int backgroundColor, boolean selected, String tabId) {
         app.lawnchair.theme.ThemeProfile profile =
                 app.lawnchair.theme.ThemeProfile.Companion.current(getContext());
         app.lawnchair.theme.ThemeVariant variant =
@@ -973,6 +973,17 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         app.lawnchair.theme.ThemeColorRole role = selected
                 ? app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT
                 : app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT;
+        // A category's explicit text choice must win even if the parent theme
+        // has never been customized. Resolve against this pill's own category ID.
+        if (tabId != null) {
+            app.lawnchair.theme.color.ColorOption categoryChoice =
+                    new app.lawnchair.theme.CategoryThemeColorOverrides(getContext())
+                            .get(tabId, profile, variant, role);
+            if (categoryChoice != app.lawnchair.theme.color.ColorOption.Default.INSTANCE) {
+                return app.lawnchair.theme.ThemeColors.INSTANCE.resolveForCategory(
+                        getContext(), profile, role, variant, tabId);
+            }
+        }
         app.lawnchair.theme.ThemeColorOverrides overrides =
                 new app.lawnchair.theme.ThemeColorOverrides(getContext());
         app.lawnchair.theme.color.ColorOption choice = overrides.get(profile, variant, role);
