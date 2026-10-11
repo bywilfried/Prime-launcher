@@ -458,6 +458,61 @@ object ThemeColors {
      * Callers must provide the category whose content they are rendering; never infer
      * it from a settings screen or a stale global selection.
      */
+    /**
+     * Folder-specific colors always win over the parent surface. The parent can
+     * itself be a customized drawer category; Default is never a fixed snapshot.
+     */
+    fun resolveForFolder(
+        context: Context,
+        profile: ThemeProfile,
+        role: ThemeColorRole,
+        variant: ThemeVariant,
+        folderKey: String,
+        parentTabId: String? = null,
+    ): Int {
+        fun inherited(): Int = if (parentTabId != null)
+            resolveForCategory(context, profile, role, variant, parentTabId)
+        else resolveTheme(context, profile, role, variant)
+
+        val option = FolderThemeColorOverrides(context).get(folderKey, profile, variant, role)
+        return when (option) {
+            ColorOption.Default -> inherited()
+            ColorOption.LegacyBehavior -> official(context, profile, role, variant)
+            ColorOption.AutomaticBlackWhite, ColorOption.AdaptiveThemeText -> {
+                val surfaceRole = when (role) {
+                    ThemeColorRole.HOME_FOLDER_CLOSED_TEXT -> ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND
+                    ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT -> ThemeColorRole.DOCK_FOLDER_CLOSED_BACKGROUND
+                    ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND
+                    ThemeColorRole.HOME_FOLDER_OPEN_TEXT, ThemeColorRole.HOME_FOLDER_OPEN_HINT,
+                    ThemeColorRole.HOME_FOLDER_ICON_TEXT -> ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND
+                    ThemeColorRole.DOCK_FOLDER_OPEN_TEXT, ThemeColorRole.DOCK_FOLDER_OPEN_HINT,
+                    ThemeColorRole.DOCK_FOLDER_ICON_TEXT -> ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND
+                    ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT, ThemeColorRole.DRAWER_FOLDER_OPEN_HINT,
+                    ThemeColorRole.DRAWER_FOLDER_ICON_TEXT -> ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND
+                    else -> null
+                }
+                if (surfaceRole == null) inherited()
+                else {
+                    val surface = resolveForFolder(context, profile, surfaceRole, variant, folderKey, parentTabId)
+                    if (option == ColorOption.AdaptiveThemeText)
+                        adaptiveTextAgainstSurface(surface, variant)
+                    else {
+                        val opaque = ColorUtils.compositeColors(
+                            surface, if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE,
+                        )
+                        if (ColorUtils.calculateContrast(Color.BLACK, opaque) >=
+                            ColorUtils.calculateContrast(Color.WHITE, opaque)) Color.BLACK else Color.WHITE
+                    }
+                }
+            }
+            ColorOption.ThemePalette -> resolveLegacyToken(context, ColorTokens.pageIndicatorDotColor, variant)
+            is ColorOption.CustomColor -> option.color
+            else -> if (variant == ThemeVariant.DARK)
+                option.colorPreferenceEntry.darkColor(context)
+            else option.colorPreferenceEntry.lightColor(context)
+        }
+    }
+
     fun resolveForCategory(
         context: Context,
         profile: ThemeProfile,
