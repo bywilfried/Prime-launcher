@@ -924,11 +924,11 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                     : modeTabColor != null ? modeTabColor : resolveDefaultTabColor();
             recordActiveTabColorSource(selectedColor, modeTabColor, activeColor);
             background.setColor(activeColor);
-            pill.setTextColor(resolveTabTextColor(activeColor, true));
+            pill.setTextColor(resolveTabTextColor(activeColor, true, tabId));
         } else {
             int inactiveColor = resolveInactiveTabColor();
             background.setColor(inactiveColor);
-            pill.setTextColor(resolveTabTextColor(inactiveColor, false));
+            pill.setTextColor(resolveTabTextColor(inactiveColor, false, tabId));
         }
         pill.setBackground(background);
         pill.setOnClickListener(v -> action.run());
