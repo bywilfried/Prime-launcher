@@ -162,7 +162,9 @@ object ThemeColors {
     fun resolveDockBackgroundForVariant(context: Context, legacyOption: ColorOption, variant: ThemeVariant): Int {
         val role = ThemeColorRole.HOME_HOTSEAT_BACKGROUND
         val profile = ThemeProfile.current(context)
-        if (ThemeColorOverrides(context).get(profile, variant, role) != ColorOption.Default) {
+        if (ThemeColorOverrides(context).get(profile, variant, role).let {
+                it != ColorOption.Default && it != ColorOption.LegacyBehavior
+            }) {
             return resolve(context, profile, role, variant)
         }
         return when (legacyOption) {
@@ -300,7 +302,7 @@ object ThemeColors {
     ): Int {
         val profile = ThemeProfile.current(context)
         return when (ThemeColorOverrides(context).get(profile, variant, role)) {
-            ColorOption.Default -> {
+            ColorOption.Default, ColorOption.LegacyBehavior -> {
                 val backdrop = if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE
                 val opaque = ColorUtils.compositeColors(backgroundColor, backdrop)
                 if (ColorUtils.calculateContrast(Color.BLACK, opaque) >=
@@ -357,6 +359,7 @@ object ThemeColors {
         val official = official(context, profile, role, variant)
         return when (val override = ThemeColorOverrides(context).get(profile, variant, role)) {
             ColorOption.Default -> official
+            ColorOption.LegacyBehavior -> legacy(context, role, variant)
             ColorOption.ThemePalette -> resolveLegacyToken(
                 context, ColorTokens.pageIndicatorDotColor, variant,
             )
