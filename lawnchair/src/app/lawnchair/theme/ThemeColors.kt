@@ -60,30 +60,52 @@ object ThemeColors {
      * Keep this independent of the choice's position in the preset list.
      * A future theme profile can provide a different description here.
      */
-    fun officialDefaultDescription(profile: ThemeProfile, role: ThemeColorRole): String {
-        return when (role) {
-            ThemeColorRole.HOME_ICON_TEXT,
-            ThemeColorRole.HOME_FOLDER_ICON_TEXT,
-            ThemeColorRole.HOME_FOLDER_CLOSED_TEXT,
-            ThemeColorRole.DOCK_ICON_TEXT,
-            ThemeColorRole.DOCK_FOLDER_ICON_TEXT,
-            ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT,
-            ThemeColorRole.DRAWER_ICON_TEXT,
-            ThemeColorRole.DRAWER_FOLDER_ICON_TEXT,
-            ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> "noir/blanc automatique"
-            ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE,
-            ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE,
-            ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT -> "contraste automatique noir/blanc"
-            ThemeColorRole.HOME_FOLDER_OPEN_TEXT,
-            ThemeColorRole.DOCK_FOLDER_OPEN_TEXT,
-            ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT,
-            ThemeColorRole.HOME_FOLDER_OPEN_HINT,
-            ThemeColorRole.DOCK_FOLDER_OPEN_HINT,
-            ThemeColorRole.DRAWER_FOLDER_OPEN_HINT -> "automatique selon le fond du dossier"
-            ThemeColorRole.GLOBAL_NOTIFICATION_DOT -> "selon la couleur de l’icône"
-            else -> "couleur du thème"
-        }
+    /**
+     * Official role policies are keyed by profile, never by the user's saved choice.
+     * A new theme can replace its policies here without migrating existing Default overrides.
+     * Legacy keeps its historical semantic renderers and dynamic palette intact.
+     */
+    enum class OfficialBehavior(val description: String) {
+        LEGACY_PALETTE("couleur dynamique du thème"),
+        ICON_CONTRAST("noir/blanc automatique"),
+        PAGINATION_CONTRAST("contraste automatique noir/blanc"),
+        FOLDER_SURFACE_CONTRAST("automatique selon le fond du dossier"),
+        PER_ICON_DOT("selon la couleur de l’icône"),
+        THEME_COLOR("couleur du thème"),
     }
+
+    fun officialBehavior(profile: ThemeProfile, role: ThemeColorRole): OfficialBehavior =
+        when (profile.id) {
+            ThemeProfile.LEGACY.id -> legacyOfficialBehavior(role)
+            // Until a profile registers its own policy, preserve the Legacy behavior.
+            else -> legacyOfficialBehavior(role)
+        }
+
+    private fun legacyOfficialBehavior(role: ThemeColorRole): OfficialBehavior = when (role) {
+        ThemeColorRole.HOME_ICON_TEXT,
+        ThemeColorRole.HOME_FOLDER_ICON_TEXT,
+        ThemeColorRole.HOME_FOLDER_CLOSED_TEXT,
+        ThemeColorRole.DOCK_ICON_TEXT,
+        ThemeColorRole.DOCK_FOLDER_ICON_TEXT,
+        ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT,
+        ThemeColorRole.DRAWER_ICON_TEXT,
+        ThemeColorRole.DRAWER_FOLDER_ICON_TEXT,
+        ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> OfficialBehavior.ICON_CONTRAST
+        ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE,
+        ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE,
+        ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT -> OfficialBehavior.PAGINATION_CONTRAST
+        ThemeColorRole.HOME_FOLDER_OPEN_TEXT,
+        ThemeColorRole.DOCK_FOLDER_OPEN_TEXT,
+        ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT,
+        ThemeColorRole.HOME_FOLDER_OPEN_HINT,
+        ThemeColorRole.DOCK_FOLDER_OPEN_HINT,
+        ThemeColorRole.DRAWER_FOLDER_OPEN_HINT -> OfficialBehavior.FOLDER_SURFACE_CONTRAST
+        ThemeColorRole.GLOBAL_NOTIFICATION_DOT -> OfficialBehavior.PER_ICON_DOT
+        else -> OfficialBehavior.THEME_COLOR
+    }
+
+    fun officialDefaultDescription(profile: ThemeProfile, role: ThemeColorRole): String =
+        officialBehavior(profile, role).description
 
     fun official(
         context: Context,
