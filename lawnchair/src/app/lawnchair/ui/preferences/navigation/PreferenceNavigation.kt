@@ -208,6 +208,7 @@ fun PreferenceNavigation(
                     ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND -> "Dossier fermé — fond"
                     ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> "Dossier fermé — texte"
                     ThemeColorRole.DRAWER_FOLDER_OPEN_HINT -> "Dossier ouvert — texte indicatif"
+                    ThemeColorRole.DRAWER_TEXT -> "Général — texte"
                     else -> role.id
                 },
                 appliedColor = applied,
@@ -218,7 +219,8 @@ fun PreferenceNavigation(
                     else ThemeColors.resolveTheme(context, profile, role, variant),
                 defaultDynamicColor = ThemeColors.officialDynamicRecipe(role, variant),
                 themeDefaultDescription = ThemeColors.officialDefaultDescription(profile, role),
-                iconLabelText = role == ThemeColorRole.HOME_ICON_TEXT ||
+                iconLabelText = role == ThemeColorRole.DRAWER_TEXT ||
+                    role == ThemeColorRole.HOME_ICON_TEXT ||
                     role == ThemeColorRole.HOME_FOLDER_ICON_TEXT ||
                     role == ThemeColorRole.HOME_FOLDER_CLOSED_TEXT ||
                     role == ThemeColorRole.DOCK_ICON_TEXT ||
@@ -233,7 +235,8 @@ fun PreferenceNavigation(
                 workspacePagination = role == ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE ||
                     role == ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE,
                 notificationDotBackground = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT,
-                adaptiveFolderDefault = role == ThemeColorRole.HOME_FOLDER_OPEN_TEXT ||
+                adaptiveFolderDefault = role == ThemeColorRole.DRAWER_TEXT ||
+                    role == ThemeColorRole.HOME_FOLDER_OPEN_TEXT ||
                     role == ThemeColorRole.DOCK_FOLDER_OPEN_TEXT ||
                     role == ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT ||
                     role == ThemeColorRole.HOME_FOLDER_OPEN_HINT ||
