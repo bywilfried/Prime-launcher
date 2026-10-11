@@ -175,6 +175,19 @@ sealed class ColorOption {
         override fun toString() = "icon_color"
     }
 
+    /**
+     * Explicitly pins the original Legacy rendering rule for a role.
+     * Unlike Default this remains Legacy even if another profile changes its defaults.
+     * The semantic color is resolved by ThemeColors, not this generic preview entry.
+     */
+    object LegacyBehavior : ColorOption() {
+        override val isSupported = true
+        override val colorPreferenceEntry = ColorPreferenceEntry<ColorOption>(
+            this, { "Comportement Legacy (fixé)" }, { 0 }, { 0 },
+        )
+        override fun toString() = "legacy_behavior"
+    }
+
     object Default : ColorOption() {
         override val isSupported = false
 
@@ -198,6 +211,7 @@ sealed class ColorOption {
             "adaptive_theme_text" -> AdaptiveThemeText
             "automatic_black_white" -> AutomaticBlackWhite
             "theme_palette" -> ThemePalette
+            "legacy_behavior" -> LegacyBehavior
             else -> if (stringValue.startsWith("dynamic|")) instantiateDynamicColor(stringValue)
             else instantiateCustomColor(stringValue)
         }
