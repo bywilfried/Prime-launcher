@@ -365,6 +365,7 @@ fun PrimeColorSelection(
                             automaticContrastDefault = automaticContrastDefaultLabel || workspacePagination,
                             adaptiveFolderDefault = adaptiveFolderDefault,
                             perIconDefault = perIconDefault,
+                            blackWhiteDefault = iconLabelText || categoryTabText,
                         )
                         SwatchGrid(
                             modifier = Modifier.padding(top = 12.dp),
