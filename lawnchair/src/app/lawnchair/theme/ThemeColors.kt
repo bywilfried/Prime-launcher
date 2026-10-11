@@ -162,9 +162,9 @@ object ThemeColors {
     fun resolveDockBackgroundForVariant(context: Context, legacyOption: ColorOption, variant: ThemeVariant): Int {
         val role = ThemeColorRole.HOME_HOTSEAT_BACKGROUND
         val profile = ThemeProfile.current(context)
-        if (ThemeColorOverrides(context).get(profile, variant, role).let {
-                it != ColorOption.Default && it != ColorOption.LegacyBehavior
-            }) {
+        val override = ThemeColorOverrides(context).get(profile, variant, role)
+        if (override == ColorOption.LegacyBehavior) return legacy(context, role, variant)
+        if (override != ColorOption.Default) {
             return resolve(context, profile, role, variant)
         }
         return when (legacyOption) {
@@ -274,7 +274,7 @@ object ThemeColors {
     fun resolveFolderBorderForVariant(context: Context, role: ThemeColorRole, surfaceColor: Int, variant: ThemeVariant): Int {
         val profile = ThemeProfile.current(context)
         val choice = ThemeColorOverrides(context).get(profile, variant, role)
-        return if (choice == app.lawnchair.theme.color.ColorOption.Default) surfaceColor
+        return if (choice == ColorOption.Default || choice == ColorOption.LegacyBehavior) surfaceColor
         else resolve(context, profile, role, variant)
     }
 
