@@ -55,6 +55,7 @@ import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
 @Composable
 fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSection: Boolean = false, categoryTabId: String? = null, folderKey: String? = null, folderSection: String? = null) {
     val context = LocalContext.current
+    var bulkResetRevision by remember { mutableStateOf(0) }
     var variant by rememberSaveable { mutableStateOf(context.effectiveThemeVariant()) }
     var expanded by rememberSaveable(openDrawerSection, categoryTabId, folderKey) {
         mutableStateOf<ThemeColorRole.Section?>(if (folderKey != null) ThemeColorRole.Section.valueOf(folderSection ?: "HOME") else if (openDrawerSection || categoryTabId != null) ThemeColorRole.Section.DRAWER else null)
@@ -90,6 +91,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             variant = variant,
             section = ThemeColorRole.Section.GLOBAL,
             expanded = expanded,
+            bulkResetRevision = bulkResetRevision,
             onToggle = { expanded = if (expanded == it) null else it },
         )
         if (categoryTabId == null && folderKey == null) ThemeSection(
@@ -97,6 +99,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             variant = variant,
             section = ThemeColorRole.Section.HOME,
             expanded = expanded,
+            bulkResetRevision = bulkResetRevision,
             onToggle = { expanded = if (expanded == it) null else it },
         )
         if (categoryTabId == null && folderKey == null) ThemeSection(
@@ -104,6 +107,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             variant = variant,
             section = ThemeColorRole.Section.DOCK,
             expanded = expanded,
+            bulkResetRevision = bulkResetRevision,
             onToggle = { expanded = if (expanded == it) null else it },
         )
         if (folderKey != null) ThemeSection(
@@ -113,6 +117,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             variant = variant,
             section = ThemeColorRole.Section.valueOf(folderSection ?: "HOME"),
             expanded = expanded,
+            bulkResetRevision = bulkResetRevision,
             onToggle = { expanded = if (expanded == it) null else it },
         )
         if (folderKey == null) ThemeSection(
@@ -121,6 +126,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             variant = variant,
             section = ThemeColorRole.Section.DRAWER,
             expanded = expanded,
+            bulkResetRevision = bulkResetRevision,
             onToggle = { expanded = if (expanded == it) null else it },
         )
 
@@ -160,6 +166,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
                     if (folderKey != null) app.lawnchair.theme.FolderThemeColorOverrides(context).resetVariant(folderKey, profile, variant)
                     else if (categoryTabId == null) overrides.resetVariant(profile, variant)
                     else CategoryThemeColorOverrides(context).resetVariant(categoryTabId, profile, variant)
+                    bulkResetRevision++
                     confirmVariantReset = false
                 }) {
                     Text("Réinitialiser")
@@ -184,6 +191,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
                         if (folderKey != null) app.lawnchair.theme.FolderThemeColorOverrides(context).resetTheme(folderKey, profile)
                         else if (categoryTabId == null) overrides.resetTheme(profile)
                         else CategoryThemeColorOverrides(context).resetTheme(categoryTabId, profile)
+                        bulkResetRevision++
                         confirmThemeReset = false
                     },
                 ) {
@@ -205,6 +213,7 @@ private fun ThemeSection(
     section: ThemeColorRole.Section,
     variant: ThemeVariant,
     expanded: ThemeColorRole.Section?,
+    bulkResetRevision: Int,
     onToggle: (ThemeColorRole.Section) -> Unit,
     categoryTabId: String? = null,
     folderKey: String? = null,
@@ -233,7 +242,8 @@ private fun ThemeSection(
                             mutableStateOf(0)
                         }
                         val override = run {
-                            resetRevision // Snapshot read invalidates this row on reset.
+                            bulkResetRevision // Recompose on variant/theme reset.
+                            resetRevision // Recompose on individual reset.
                             if (folderKey != null) app.lawnchair.theme.FolderThemeColorOverrides(context).get(folderKey, profile, variant, role)
                             else if (categoryTabId == null) ThemeColorOverrides(context).get(profile, variant, role)
                             else CategoryThemeColorOverrides(context).get(categoryTabId, profile, variant, role)
