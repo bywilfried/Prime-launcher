@@ -53,11 +53,11 @@ import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
  * Persistence/export actions are intentionally disabled until the sparse override store is added.
  */
 @Composable
-fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSection: Boolean = false, categoryTabId: String? = null) {
+fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSection: Boolean = false, categoryTabId: String? = null, folderKey: String? = null, folderSection: String? = null) {
     val context = LocalContext.current
     var variant by rememberSaveable { mutableStateOf(context.effectiveThemeVariant()) }
-    var expanded by rememberSaveable(openDrawerSection, categoryTabId) {
-        mutableStateOf<ThemeColorRole.Section?>(if (openDrawerSection || categoryTabId != null) ThemeColorRole.Section.DRAWER else null)
+    var expanded by rememberSaveable(openDrawerSection, categoryTabId, folderKey) {
+        mutableStateOf<ThemeColorRole.Section?>(if (folderKey != null) ThemeColorRole.Section.valueOf(folderSection ?: "HOME") else if (openDrawerSection || categoryTabId != null) ThemeColorRole.Section.DRAWER else null)
     }
     var confirmThemeReset by rememberSaveable { mutableStateOf(false) }
     var confirmVariantReset by rememberSaveable { mutableStateOf(false) }
@@ -66,7 +66,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
 
     PreferenceLayout(
         backArrowVisible = !LocalIsExpandedScreen.current,
-        label = if (categoryTabId == null) "Personnaliser les couleurs du thème" else "Couleurs de la catégorie",
+        label = if (folderKey != null) "Couleurs du dossier" else if (categoryTabId == null) "Personnaliser les couleurs du thème" else "Couleurs de la catégorie",
         modifier = modifier,
     ) {
         PreferenceGroup(heading = "Legacy") {
@@ -85,7 +85,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             )
         }
 
-        if (categoryTabId == null) ThemeSection(
+        if (categoryTabId == null && folderKey == null) ThemeSection(
             title = "Global",
             variant = variant,
             section = ThemeColorRole.Section.GLOBAL,
@@ -106,7 +106,16 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             expanded = expanded,
             onToggle = { expanded = if (expanded == it) null else it },
         )
-        ThemeSection(
+        if (folderKey != null) ThemeSection(
+            title = "Couleurs du dossier",
+            categoryTabId = categoryTabId,
+            folderKey = folderKey,
+            variant = variant,
+            section = ThemeColorRole.Section.valueOf(folderSection ?: "HOME"),
+            expanded = expanded,
+            onToggle = { expanded = if (expanded == it) null else it },
+        )
+        if (folderKey == null) ThemeSection(
             title = "Tiroir des applications",
             categoryTabId = categoryTabId,
             variant = variant,
@@ -115,7 +124,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             onToggle = { expanded = if (expanded == it) null else it },
         )
 
-        PreferenceGroup(heading = if (categoryTabId == null) "Gestion du thème" else "Gestion de la catégorie") {
+        PreferenceGroup(heading = if (folderKey != null) "Gestion du dossier" else if (categoryTabId == null) "Gestion du thème" else "Gestion de la catégorie") {
             PreferenceTemplate(
                 title = { Text("Réinitialiser la variante") },
                 description = { Text("Supprimera les personnalisations de la variante affichée.") },
@@ -148,7 +157,8 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             },
             confirmButton = {
                 TextButton(onClick = {
-                    if (categoryTabId == null) overrides.resetVariant(profile, variant)
+                    if (folderKey != null) app.lawnchair.theme.FolderThemeColorOverrides(context).resetVariant(folderKey, profile, variant)
+                    else if (categoryTabId == null) overrides.resetVariant(profile, variant)
                     else CategoryThemeColorOverrides(context).resetVariant(categoryTabId, profile, variant)
                     confirmVariantReset = false
                 }) {
@@ -171,7 +181,8 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             confirmButton = {
                 TextButton(
                     onClick = {
-                        if (categoryTabId == null) overrides.resetTheme(profile)
+                        if (folderKey != null) app.lawnchair.theme.FolderThemeColorOverrides(context).resetTheme(folderKey, profile)
+                        else if (categoryTabId == null) overrides.resetTheme(profile)
                         else CategoryThemeColorOverrides(context).resetTheme(categoryTabId, profile)
                         confirmThemeReset = false
                     },
@@ -196,6 +207,7 @@ private fun ThemeSection(
     expanded: ThemeColorRole.Section?,
     onToggle: (ThemeColorRole.Section) -> Unit,
     categoryTabId: String? = null,
+    folderKey: String? = null,
 ) {
     val context = LocalContext.current
     val navController = LocalNavController.current
@@ -208,6 +220,7 @@ private fun ThemeSection(
         ExpandAndShrink(visible = expanded == section) {
             androidx.compose.foundation.layout.Column {
                 rolesForUi(section).filter { role ->
+                    (folderKey == null || role.id.contains("folder.")) &&
                     role != ThemeColorRole.TABS_CATEGORY_TEXT &&
                         role != ThemeColorRole.HOME_FOLDER_BORDER &&
                         role != ThemeColorRole.DOCK_FOLDER_BORDER &&
@@ -216,12 +229,13 @@ private fun ThemeSection(
                         val profile = ThemeProfile.current(context)
                         // Observe an immediate local reset so Compose redraws this row without
                         // requiring the user to leave and reopen the editor.
-                        var resetRevision by remember(profile, variant, role, categoryTabId) {
+                        var resetRevision by remember(profile, variant, role, categoryTabId, folderKey) {
                             mutableStateOf(0)
                         }
                         val override = run {
                             resetRevision // Snapshot read invalidates this row on reset.
-                            if (categoryTabId == null) ThemeColorOverrides(context).get(profile, variant, role)
+                            if (folderKey != null) app.lawnchair.theme.FolderThemeColorOverrides(context).get(folderKey, profile, variant, role)
+                            else if (categoryTabId == null) ThemeColorOverrides(context).get(profile, variant, role)
                             else CategoryThemeColorOverrides(context).get(categoryTabId, profile, variant, role)
                         }
                         val prefs2 = preferenceManager2()
@@ -309,7 +323,8 @@ private fun ThemeSection(
                                 if (variant == ThemeVariant.DARK) android.graphics.Color.BLACK else android.graphics.Color.WHITE, variant)
                             else -> ThemeColors.resolveTheme(context, profile, role, variant)
                         }
-                        val categoryPreview = if (categoryTabId == null || override == ColorOption.Default) preview
+                        val categoryPreview = if (folderKey != null) ThemeColors.resolveForFolder(context, profile, role, variant, folderKey, categoryTabId)
+                            else if (categoryTabId == null || override == ColorOption.Default) preview
                             else ThemeColors.resolveForCategory(context, profile, role, variant, categoryTabId)
                         val isInherited = override == ColorOption.Default
                         val rolePreferenceAlpha = if (isInherited) 0.58f else 1f
@@ -349,20 +364,22 @@ private fun ThemeSection(
                                 if (role == ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE ||
                                     role == ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE)
                                     "Contraste automatique (noir/blanc)"
-                                else if (categoryTabId != null) "Hérité du thème principal ou de sa personnalisation" else "Valeur du thème"
+                                else if (folderKey != null) "Hérité des couleurs du parent" else if (categoryTabId != null) "Hérité du thème principal ou de sa personnalisation" else "Valeur du thème"
                             } else {
                                 override.colorPreferenceEntry.label()
                             },
                             onClick = {
                                 navController.navigate(
-                                    ThemeColorSelection(role.id, variant.name, categoryTabId),
+                                    ThemeColorSelection(role.id, variant.name, categoryTabId, folderKey),
                                 )
                             },
                         )
                         if (!isInherited) {
                             IconButton(
                                 onClick = {
-                                    if (categoryTabId == null) ThemeColorOverrides(context).set(
+                                    if (folderKey != null) app.lawnchair.theme.FolderThemeColorOverrides(context).set(
+                                        folderKey, profile, variant, role, ColorOption.Default,
+                                    ) else if (categoryTabId == null) ThemeColorOverrides(context).set(
                                         profile, variant, role, ColorOption.Default,
                                     ) else CategoryThemeColorOverrides(context).set(
                                         categoryTabId, profile, variant, role, ColorOption.Default,
