@@ -375,7 +375,8 @@ class PrimeDrawerTabsRepository(context: Context) {
         return selected.copy(
             tabColor = color(app.lawnchair.theme.ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND),
             drawerBackgroundColor = color(app.lawnchair.theme.ThemeColorRole.DRAWER_BACKGROUND),
-            drawerTextColor = color(app.lawnchair.theme.ThemeColorRole.DRAWER_TEXT),
+            // The renderer uses drawerTextColor for app icon labels, not general drawer copy.
+            drawerTextColor = color(app.lawnchair.theme.ThemeColorRole.DRAWER_ICON_TEXT),
         )
     }
 
