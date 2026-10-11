@@ -480,9 +480,11 @@ object ThemeColors {
             ColorOption.LegacyBehavior -> official(context, profile, role, variant)
             ColorOption.AutomaticBlackWhite, ColorOption.AdaptiveThemeText -> {
                 val surfaceRole = when (role) {
-                    ThemeColorRole.HOME_FOLDER_CLOSED_TEXT -> ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND
-                    ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT -> ThemeColorRole.DOCK_FOLDER_CLOSED_BACKGROUND
-                    ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND
+                    // Closed-folder labels sit *outside* the folder icon/background.
+                    // Their contrast surface is the surrounding launcher area.
+                    ThemeColorRole.HOME_FOLDER_CLOSED_TEXT -> null // Wallpaper needs its own surface sampling.
+                    ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT -> ThemeColorRole.HOME_HOTSEAT_BACKGROUND
+                    ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> ThemeColorRole.DRAWER_BACKGROUND
                     ThemeColorRole.HOME_FOLDER_OPEN_TEXT, ThemeColorRole.HOME_FOLDER_OPEN_HINT,
                     ThemeColorRole.HOME_FOLDER_ICON_TEXT -> ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND
                     ThemeColorRole.DOCK_FOLDER_OPEN_TEXT, ThemeColorRole.DOCK_FOLDER_OPEN_HINT,
@@ -493,7 +495,11 @@ object ThemeColors {
                 }
                 if (surfaceRole == null) inherited()
                 else {
-                    val surface = resolveForFolder(context, profile, surfaceRole, variant, folderKey, parentTabId)
+                    val surface = if (surfaceRole == ThemeColorRole.DRAWER_BACKGROUND && parentTabId != null)
+                        resolveForCategory(context, profile, surfaceRole, variant, parentTabId)
+                    else if (surfaceRole == ThemeColorRole.HOME_HOTSEAT_BACKGROUND)
+                        resolveTheme(context, profile, surfaceRole, variant)
+                    else resolveForFolder(context, profile, surfaceRole, variant, folderKey, parentTabId)
                     if (option == ColorOption.AdaptiveThemeText)
                         adaptiveTextAgainstSurface(surface, variant)
                     else {
