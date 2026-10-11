@@ -246,7 +246,7 @@ fun PrimeColorSelection(
     var currentAppliedColor by remember(appliedColor) { mutableStateOf(appliedColor) }
     val selectedColor = remember(appliedColor, defaultPreviewColor) {
         mutableIntStateOf(
-            if (appliedColor == ColorOption.Default && defaultPreviewColor != null) {
+            if ((appliedColor == ColorOption.Default || appliedColor == ColorOption.LegacyBehavior) && defaultPreviewColor != null) {
                 defaultPreviewColor
             } else {
                 appliedColor.forCustomPicker(context)
@@ -273,7 +273,7 @@ fun PrimeColorSelection(
         (appliedColor as? ColorOption.DynamicColor) ?: defaultDynamicColor
     }
     val onPresetClick = { option: ColorOption ->
-        selectedColor.intValue = if (option == ColorOption.Default) {
+        selectedColor.intValue = if (option == ColorOption.Default || option == ColorOption.LegacyBehavior) {
             themeFallbackColor
         } else {
             option.forCustomPicker(context)
