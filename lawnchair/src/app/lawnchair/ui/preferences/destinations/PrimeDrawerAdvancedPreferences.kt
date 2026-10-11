@@ -206,6 +206,7 @@ private fun PrimeCategoryDrawerOptions(
     update: (PrimeDrawerVisualOverrides) -> Unit,
 ) {
     val context = LocalContext.current
+    val navController = LocalNavController.current
     val prefs = preferenceManager()
     val prefs2 = preferenceManager2()
     val repository = remember { PrimeDrawerTabsRepository(context) }
@@ -245,7 +246,7 @@ private fun PrimeCategoryDrawerOptions(
         ClickablePreference(
             label = "Personnalisation des couleurs de la catégorie",
             subtitle = "Couleurs par thème et variante, avec héritage du thème parent",
-            onClick = { app.lawnchair.ui.preferences.LocalNavController.current.navigate(ThemeCustomization(categoryTabId = tabId)) },
+            onClick = { navController.navigate(ThemeCustomization(categoryTabId = tabId)) },
         )
         NullableColorPreference("Couleur de l’onglet de cette catégorie", value.tabColor, defaultTabColor, tabId, "tab")
         NullableColorPreference("Couleur d’arrière-plan", value.drawerBackgroundColor, defaultBackgroundColor, tabId, "background")
