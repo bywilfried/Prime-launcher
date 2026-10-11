@@ -251,9 +251,6 @@ private fun PrimeCategoryDrawerOptions(
             subtitle = "Couleurs par thème et variante, avec héritage du thème parent",
             onClick = { navController.navigate(ThemeCustomization(categoryTabId = tabId)) },
         )
-        NullableColorPreference("Couleur de l’onglet de cette catégorie", value.tabColor, defaultTabColor, tabId, "tab")
-        NullableColorPreference("Couleur d’arrière-plan", value.drawerBackgroundColor, defaultBackgroundColor, tabId, "background")
-        NullableColorPreference("Couleur du texte", value.drawerTextColor, defaultTextColor, tabId, "drawerText")
         NullableFloatSlider(stringResource(id = R.string.background_opacity), value.drawerBackgroundOpacity, prefs.drawerOpacity.getAdapter().state.value, 0f..1f, 0.1f, showAsPercentage = true) {
             update(value.copy(drawerBackgroundOpacity = it))
         }
