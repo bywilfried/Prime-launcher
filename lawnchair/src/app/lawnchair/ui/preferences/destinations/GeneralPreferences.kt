@@ -204,7 +204,7 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
             }
             NavigationActionPreference(
                 label = "Personnalisation",
-                destination = ThemeCustomization,
+                destination = ThemeCustomization(),
                 subtitle = "Modifier les couleurs du thème sélectionné",
             )
         }
