@@ -4,6 +4,9 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,6 +21,8 @@ import app.lawnchair.prime.drawer.PrimeDrawerTab
 import app.lawnchair.prime.drawer.PrimeDrawerTabsRepository
 import app.lawnchair.ui.preferences.LocalNavController
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
+import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
+import app.lawnchair.ui.preferences.components.controls.ClickablePreference
 import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
 import app.lawnchair.ui.preferences.components.reorderable.ReorderableDragHandle
 import app.lawnchair.ui.preferences.components.reorderable.ReorderablePreferenceGroup
@@ -33,11 +38,20 @@ fun PrimeDrawerCategoriesPreference() {
     val hideUnclassified by prefs.drawerTabsHideUnclassified.getAdapter().state
     var tabs by remember { mutableStateOf(repository.getConfiguration().tabs) }
     val navController = LocalNavController.current
+    var showAddDialog by remember { mutableStateOf(false) }
+    var newCategoryName by remember { mutableStateOf("") }
 
     PreferenceLayout(
         label = stringResource(id = R.string.prime_categories_manage),
         backArrowVisible = true,
     ) {
+        PreferenceGroup {
+            ClickablePreference(
+                label = "Ajouter une catégorie",
+                subtitle = "Créer un nouvel onglet dans le tiroir",
+                onClick = { newCategoryName = ""; showAddDialog = true },
+            )
+        }
         ReorderablePreferenceGroup(
             label = null,
             items = tabs,
@@ -66,6 +80,34 @@ fun PrimeDrawerCategoriesPreference() {
                 },
             )
         }
+    }
+    if (showAddDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddDialog = false },
+            title = { Text("Nouvelle catégorie") },
+            text = {
+                OutlinedTextField(
+                    value = newCategoryName,
+                    onValueChange = { newCategoryName = it },
+                    label = { Text("Nom de la catégorie") },
+                    singleLine = true,
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = newCategoryName.isNotBlank(),
+                    onClick = {
+                        val created = repository.createTab(newCategoryName.trim())
+                        tabs = repository.getConfiguration().tabs
+                        showAddDialog = false
+                        navController.navigate(PrimeDrawerCategory(created.id))
+                    },
+                ) { Text("Créer") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddDialog = false }) { Text("Annuler") }
+            },
+        )
     }
 }
 
