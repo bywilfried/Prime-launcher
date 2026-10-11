@@ -381,6 +381,29 @@ object ThemeColors {
         role: ThemeColorRole,
         variant: ThemeVariant,
     ): Int {
+        // Only Tabs mode has a selected Prime category. Other drawer modes keep the
+        // existing global theme behavior.
+        if (role.section == ThemeColorRole.Section.DRAWER ||
+            role.section == ThemeColorRole.Section.TABS) {
+            val repository = app.lawnchair.prime.drawer.PrimeDrawerTabsRepository(context)
+            if (repository.isTabsModeEnabled()) {
+                val tabId = repository.getConfiguration().selectedTabId
+                val option = CategoryThemeColorOverrides(context).get(tabId, profile, variant, role)
+                if (option != ColorOption.Default) {
+                    return resolveForCategory(context, profile, role, variant, tabId)
+                }
+            }
+        }
+        return resolveTheme(context, profile, role, variant)
+    }
+
+    /** Parent theme color, without any category-specific override. */
+    fun resolveTheme(
+        context: Context,
+        profile: ThemeProfile,
+        role: ThemeColorRole,
+        variant: ThemeVariant,
+    ): Int {
         val official = official(context, profile, role, variant)
         return when (val override = ThemeColorOverrides(context).get(profile, variant, role)) {
             ColorOption.Default -> official
@@ -431,11 +454,11 @@ object ThemeColors {
     ): Int {
         if (role.section != ThemeColorRole.Section.DRAWER &&
             role.section != ThemeColorRole.Section.TABS) {
-            return resolve(context, profile, role, variant)
+            return resolveTheme(context, profile, role, variant)
         }
         val option = CategoryThemeColorOverrides(context).get(tabId, profile, variant, role)
         return when (option) {
-            ColorOption.Default -> resolve(context, profile, role, variant)
+            ColorOption.Default -> resolveTheme(context, profile, role, variant)
             ColorOption.LegacyBehavior -> official(context, profile, role, variant)
             ColorOption.AutomaticBlackWhite -> {
                 when (role) {
@@ -451,7 +474,7 @@ object ThemeColors {
                         if (ColorUtils.calculateContrast(Color.BLACK, opaque) >=
                             ColorUtils.calculateContrast(Color.WHITE, opaque)) Color.BLACK else Color.WHITE
                     }
-                    else -> resolve(context, profile, role, variant)
+                    else -> resolveTheme(context, profile, role, variant)
                 }
             }
             ColorOption.ThemePalette ->
