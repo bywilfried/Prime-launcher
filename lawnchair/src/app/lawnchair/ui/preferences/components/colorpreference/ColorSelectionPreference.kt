@@ -207,6 +207,12 @@ fun PrimeColorSelection(
             darkColor = { themeFallbackColor },
         )
     }
+    val explicitLegacyPreset = ColorPreferenceEntry<ColorOption>(
+        value = ColorOption.LegacyBehavior,
+        label = { "Comportement Legacy (fixé)" },
+        lightColor = { themeFallbackColor },
+        darkColor = { themeFallbackColor },
+    )
     val adaptiveTextPreset = if (iconLabelText) ColorPreferenceEntry<ColorOption>(
         value = ColorOption.AdaptiveThemeText,
         label = { "Contraste automatique" },
@@ -223,7 +229,7 @@ fun PrimeColorSelection(
         ((if (notificationDotBackground) dynamicEntries.filterNot { it.value == ColorOption.IconColor }
           else if (perIconDotOption) dynamicEntries + ColorOption.IconColor.colorPreferenceEntry
           else dynamicEntries + listOfNotNull(workspaceThemePreset, adaptiveTextPreset, blackWhiteTabPreset, themedTabPreset)
-        ) + listOfNotNull(explicitThemeRecipe)).distinctBy { it.value }.map { entry ->
+        ) + listOf(explicitLegacyPreset) + listOfNotNull(explicitThemeRecipe)).distinctBy { it.value }.map { entry ->
         if (entry.value == ColorOption.Default) {
             ColorPreferenceEntry<ColorOption>(
                 value = ColorOption.Default,
