@@ -7,13 +7,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.ProvideTextStyle
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -356,7 +353,7 @@ private fun ThemeSection(
                                     .size(40.dp),
                             ) {
                                 Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.Undo,
+                                    imageVector = Icons.Default.Refresh,
                                     contentDescription = "Rétablir la valeur par défaut de ${roleLabel(role)}",
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
