@@ -221,7 +221,9 @@ object ThemeColors {
         variant: ThemeVariant,
     ): Int {
         val profile = ThemeProfile.current(context)
-        if (ThemeColorOverrides(context).get(profile, variant, role) != ColorOption.Default) {
+        if (ThemeColorOverrides(context).get(profile, variant, role).let {
+                it != ColorOption.Default && it != ColorOption.LegacyBehavior
+            }) {
             return resolve(context, profile, role, variant)
         }
         val backdrop = if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE
@@ -302,7 +304,7 @@ object ThemeColors {
     ): Int {
         val profile = ThemeProfile.current(context)
         return when (ThemeColorOverrides(context).get(profile, variant, role)) {
-            ColorOption.Default, ColorOption.LegacyBehavior -> {
+            ColorOption.Default, ColorOption.LegacyBehavior, ColorOption.AutomaticBlackWhite -> {
                 val backdrop = if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE
                 val opaque = ColorUtils.compositeColors(backgroundColor, backdrop)
                 if (ColorUtils.calculateContrast(Color.BLACK, opaque) >=
