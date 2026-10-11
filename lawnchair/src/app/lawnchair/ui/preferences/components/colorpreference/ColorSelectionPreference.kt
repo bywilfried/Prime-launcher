@@ -196,7 +196,10 @@ fun PrimeColorSelection(
 ) {
     val context = LocalContext.current
     val themeFallbackColor = defaultPreviewColor ?: MaterialTheme.colorScheme.surfaceVariant.toArgb()
-    val dotThemePreset = if (notificationDotBackground) defaultDynamicColor?.let { recipe ->
+    // A theme default is inherited; an explicit dynamic recipe is persisted.
+    // Offer the latter for every role that actually has a supported recipe,
+    // without inventing a palette recipe for contrast-based or multicolor roles.
+    val explicitThemeRecipe = defaultDynamicColor?.let { recipe ->
         ColorPreferenceEntry<ColorOption>(
             value = recipe,
             label = { "Couleur dynamique du thème" },
@@ -217,7 +220,10 @@ fun PrimeColorSelection(
     val themedTabPreset = if (categoryTabText) adaptiveTextPreset ?: ColorOption.AdaptiveThemeText.colorPreferenceEntry else null
     val workspaceThemePreset = if (workspacePagination) ColorOption.ThemePalette.colorPreferenceEntry else null
     val displayedDynamicEntries: List<ColorPreferenceEntry<ColorOption>> =
-        (if (notificationDotBackground) dynamicEntries.filterNot { it.value == ColorOption.IconColor } + listOfNotNull(dotThemePreset) else if (perIconDotOption) dynamicEntries + ColorOption.IconColor.colorPreferenceEntry else dynamicEntries + listOfNotNull(workspaceThemePreset, adaptiveTextPreset, blackWhiteTabPreset, themedTabPreset)).map { entry ->
+        ((if (notificationDotBackground) dynamicEntries.filterNot { it.value == ColorOption.IconColor }
+          else if (perIconDotOption) dynamicEntries + ColorOption.IconColor.colorPreferenceEntry
+          else dynamicEntries + listOfNotNull(workspaceThemePreset, adaptiveTextPreset, blackWhiteTabPreset, themedTabPreset)
+        ) + listOfNotNull(explicitThemeRecipe)).distinctBy { it.value }.map { entry ->
         if (entry.value == ColorOption.Default) {
             ColorPreferenceEntry<ColorOption>(
                 value = ColorOption.Default,
