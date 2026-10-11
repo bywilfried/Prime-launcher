@@ -301,6 +301,13 @@ private fun ThemeSection(
                                 if (variant == ThemeVariant.DARK) android.graphics.Color.BLACK else android.graphics.Color.WHITE, variant)
                             else -> ThemeColors.resolve(context, profile, role, variant)
                         }
+                        val categoryPreview = if (categoryTabId == null || override == ColorOption.Default) preview
+                            else when (override) {
+                                is ColorOption.CustomColor -> override.color
+                                ColorOption.LegacyBehavior -> ThemeColors.official(context, profile, role, variant)
+                                else -> if (variant == ThemeVariant.DARK) override.colorPreferenceEntry.darkColor(context)
+                                    else override.colorPreferenceEntry.lightColor(context)
+                            }
                         val isInherited = override == ColorOption.Default
                         val rolePreferenceAlpha = if (isInherited) 0.58f else 1f
                         Box {
@@ -308,7 +315,7 @@ private fun ThemeSection(
                             label = roleLabel(role),
                             selectedColor = override,
                             modifier = Modifier.graphicsLayer { alpha = rolePreferenceAlpha },
-                            previewColor = ColorOption.CustomColor(preview),
+                            previewColor = ColorOption.CustomColor(categoryPreview),
                             iconColorPreview = (role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT &&
                                 (override == ColorOption.IconColor || override == ColorOption.Default || override == ColorOption.LegacyBehavior)) ||
                                 (role == ThemeColorRole.HOME_SEARCH_ICON &&
@@ -339,7 +346,7 @@ private fun ThemeSection(
                                 if (role == ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE ||
                                     role == ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE)
                                     "Contraste automatique (noir/blanc)"
-                                else "Valeur du thème"
+                                else if (categoryTabId != null) "Valeur du thème parent" else "Valeur du thème"
                             } else {
                                 override.colorPreferenceEntry.label()
                             },
