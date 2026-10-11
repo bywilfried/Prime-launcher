@@ -16,6 +16,7 @@ import org.json.JSONObject
  * drawer and Prime tabs must never mutate either mode's organization.
  */
 class PrimeDrawerTabsRepository(context: Context) {
+    private val appContext = context.applicationContext
     private val prefs = LauncherPrefs.getPrefs(context)
     private val primePrefs = app.lawnchair.preferences.PreferenceManager.getInstance(context)
     private fun tabsModeTextColor(): Int? {
@@ -76,7 +77,7 @@ class PrimeDrawerTabsRepository(context: Context) {
                 selectedTabId = configuration.selectedTabId.takeUnless { it == tabId } ?: ALL_TAB_ID,
             ),
         )
-        app.lawnchair.theme.CategoryThemeColorOverrides(context).resetCategory(tabId)
+        app.lawnchair.theme.CategoryThemeColorOverrides(appContext).resetCategory(tabId)
         if (remainingTabs.none { !it.isSystem } &&
             primePrefs.drawerTabsHideUnclassified.get() &&
             primePrefs.drawerTabsHideAll.get()
