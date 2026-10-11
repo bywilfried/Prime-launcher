@@ -223,7 +223,7 @@ private fun ThemeSection(
                             ThemeColorRole.HOME_SEARCH_BACKGROUND -> {
                                 if (override == ColorOption.Default || override == ColorOption.LegacyBehavior) {
                                     getHotseatBackgroundColor(context, prefs2.themedHotseatQsb.asState().value)
-                                } else ThemeColors.resolve(context, profile, role, variant)
+                                } else ThemeColors.resolveTheme(context, profile, role, variant)
                             }
                             ThemeColorRole.HOME_SEARCH_ICON -> {
                                 if (override == ColorOption.Default || override == ColorOption.LegacyBehavior) {
@@ -232,12 +232,12 @@ private fun ThemeSection(
                                         app.lawnchair.theme.color.tokens.ColorTokens.ColorAccent,
                                         variant,
                                     )
-                                } else ThemeColors.resolve(context, profile, role, variant)
+                                } else ThemeColors.resolveTheme(context, profile, role, variant)
                             }
                             ThemeColorRole.HOME_SEARCH_BORDER -> {
                                 if (override == ColorOption.Default || override == ColorOption.LegacyBehavior) {
                                     prefs2.strokeColorStyle.asState().value.colorPreferenceEntry.lightColor(context)
-                                } else ThemeColors.resolve(context, profile, role, variant)
+                                } else ThemeColors.resolveTheme(context, profile, role, variant)
                             }
                             ThemeColorRole.GLOBAL_NOTIFICATION_DOT -> {
                                 val legacy = prefs2.notificationDotColor.asState().value
@@ -264,7 +264,7 @@ private fun ThemeSection(
                                 }
                                 ThemeColors.resolveFolderBorderForVariant(
                                     context, role,
-                                    ThemeColors.resolve(context, profile, backgroundRole, variant),
+                                    ThemeColors.resolveTheme(context, profile, backgroundRole, variant),
                                     variant,
                                 )
                             }
@@ -279,10 +279,10 @@ private fun ThemeSection(
                                 if (override == ColorOption.Default || override == ColorOption.LegacyBehavior) {
                                     ThemeColors.resolveOpenFolderTitleColorForVariant(
                                         context, role,
-                                        ThemeColors.resolve(context, profile, backgroundRole, variant),
+                                        ThemeColors.resolveTheme(context, profile, backgroundRole, variant),
                                         variant,
                                     )
-                                } else ThemeColors.resolve(context, profile, role, variant)
+                                } else ThemeColors.resolveTheme(context, profile, role, variant)
                             }
                             ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT -> {
                                 val legacy = prefs2.notificationDotTextColor.asState().value
@@ -299,7 +299,7 @@ private fun ThemeSection(
                             ThemeColorRole.DRAWER_FOLDER_ICON_TEXT,
                             ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> ThemeColors.resolveIconLabelColorForVariant(context, role,
                                 if (variant == ThemeVariant.DARK) android.graphics.Color.BLACK else android.graphics.Color.WHITE, variant)
-                            else -> ThemeColors.resolve(context, profile, role, variant)
+                            else -> ThemeColors.resolveTheme(context, profile, role, variant)
                         }
                         val categoryPreview = if (categoryTabId == null || override == ColorOption.Default) preview
                             else when (override) {
