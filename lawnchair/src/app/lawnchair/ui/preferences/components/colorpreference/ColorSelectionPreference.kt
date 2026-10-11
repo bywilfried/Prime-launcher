@@ -225,19 +225,26 @@ fun PrimeColorSelection(
         ColorOption.AutomaticBlackWhite.colorPreferenceEntry else null
     val themedTabPreset = if (categoryTabText) adaptiveTextPreset ?: ColorOption.AdaptiveThemeText.colorPreferenceEntry else null
     val workspaceThemePreset = if (workspacePagination) ColorOption.ThemePalette.colorPreferenceEntry else null
+    val explicitFolderContrast = if (adaptiveFolderDefault)
+        ColorPreferenceEntry<ColorOption>(
+            value = ColorOption.AdaptiveThemeText,
+            label = { "Selon le fond du dossier" },
+            lightColor = { themeFallbackColor },
+            darkColor = { themeFallbackColor },
+        ) else null
     val explicitDotTextContrast = if (automaticContrastDefaultLabel)
         ColorOption.AutomaticBlackWhite.colorPreferenceEntry else null
     // Only suppress the Legacy fallback when an independently selectable option reproduces
     // the actual semantic behavior. A similar-looking dynamic swatch is not proof of equivalence.
     val hasExactExplicitEquivalent = notificationDotBackground || iconLabelText ||
-        workspacePagination || automaticContrastDefaultLabel
+        workspacePagination || automaticContrastDefaultLabel || adaptiveFolderDefault
     val legacyEntries = if (!hasExactExplicitEquivalent || appliedColor == ColorOption.LegacyBehavior)
         listOf(explicitLegacyPreset) else emptyList()
     val displayedDynamicEntries: List<ColorPreferenceEntry<ColorOption>> =
         (dynamicEntries + listOfNotNull(
             if (notificationDotBackground || perIconDotOption) ColorOption.IconColor.colorPreferenceEntry else null,
             workspaceThemePreset, adaptiveTextPreset, blackWhiteTabPreset, themedTabPreset,
-            explicitDotTextContrast, explicitThemeRecipe,
+            explicitDotTextContrast, explicitFolderContrast, explicitThemeRecipe,
         ) + legacyEntries).distinctBy { it.value }.map { entry ->
         if (entry.value == ColorOption.Default) {
             ColorPreferenceEntry<ColorOption>(
