@@ -68,7 +68,10 @@ fun PrimeDrawerCategoryAdvancedPreference(tabId: String) {
                 label = "Tout remettre par défaut",
                 subtitle = "Supprime toutes les personnalisations de cette catégorie et rétablit l’héritage.",
                 confirmationText = "Tout remettre par défaut pour cette catégorie ?",
-                onClick = { update(PrimeDrawerVisualOverrides()) },
+                onClick = {
+                    update(PrimeDrawerVisualOverrides())
+                    app.lawnchair.theme.CategoryThemeColorOverrides(context).resetCategory(tabId)
+                },
             )
         }
     }
