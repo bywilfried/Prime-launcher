@@ -1,6 +1,19 @@
 package app.lawnchair.ui.preferences.destinations
 
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -283,9 +296,13 @@ private fun ThemeSection(
                                 if (variant == ThemeVariant.DARK) android.graphics.Color.BLACK else android.graphics.Color.WHITE, variant)
                             else -> ThemeColors.resolve(context, profile, role, variant)
                         }
+                        val isInherited = override == ColorOption.Default
+                        val rolePreferenceAlpha = if (isInherited) 0.58f else 1f
+                        Box {
                         ColorPreference(
                             label = roleLabel(role),
                             selectedColor = override,
+                            modifier = Modifier.graphicsLayer { alpha = rolePreferenceAlpha },
                             previewColor = ColorOption.CustomColor(preview),
                             iconColorPreview = (role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT &&
                                 (override == ColorOption.IconColor || override == ColorOption.Default || override == ColorOption.LegacyBehavior)) ||
@@ -327,6 +344,25 @@ private fun ThemeSection(
                                 )
                             },
                         )
+                        if (!isInherited) {
+                            IconButton(
+                                onClick = {
+                                    ThemeColorOverrides(context).set(
+                                        profile, variant, role, ColorOption.Default,
+                                    )
+                                },
+                                modifier = Modifier.align(androidx.compose.ui.Alignment.TopEnd)
+                                    .padding(end = 44.dp, top = 4.dp)
+                                    .size(40.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.Undo,
+                                    contentDescription = "Rétablir la valeur par défaut de ${roleLabel(role)}",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                        }
 
                 }
             }
