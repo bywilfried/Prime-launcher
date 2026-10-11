@@ -76,6 +76,7 @@ class PrimeDrawerTabsRepository(context: Context) {
                 selectedTabId = configuration.selectedTabId.takeUnless { it == tabId } ?: ALL_TAB_ID,
             ),
         )
+        app.lawnchair.theme.CategoryThemeColorOverrides(context).resetCategory(tabId)
         if (remainingTabs.none { !it.isSystem } &&
             primePrefs.drawerTabsHideUnclassified.get() &&
             primePrefs.drawerTabsHideAll.get()
@@ -366,6 +367,8 @@ class PrimeDrawerTabsRepository(context: Context) {
             drawerTextColor = selected.drawerTextColor ?: tabsModeTextColor(),
         ).takeUnless { it == PrimeDrawerVisualOverrides() }
     }
+
+    fun isTabsModeEnabled(): Boolean = primePrefs.drawerTabsEnabled.get()
 
     fun getSelectedTabVisualOverrides(): PrimeDrawerVisualOverrides? =
         getTabVisualOverrides(getConfiguration().selectedTabId)
