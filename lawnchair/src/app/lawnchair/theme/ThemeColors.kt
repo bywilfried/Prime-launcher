@@ -362,6 +362,23 @@ object ThemeColors {
         return when (val override = ThemeColorOverrides(context).get(profile, variant, role)) {
             ColorOption.Default -> official
             ColorOption.LegacyBehavior -> legacy(context, role, variant)
+            ColorOption.AutomaticBlackWhite -> when (role) {
+                ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE,
+                ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE -> workspacePaginationDefault(context, variant)
+                ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT,
+                ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> {
+                    val surfaceRole = if (role == ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT)
+                        ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND
+                    else ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND
+                    val surface = resolve(context, profile, surfaceRole, variant)
+                    val opaque = ColorUtils.compositeColors(
+                        surface, if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE,
+                    )
+                    if (ColorUtils.calculateContrast(Color.BLACK, opaque) >=
+                        ColorUtils.calculateContrast(Color.WHITE, opaque)) Color.BLACK else Color.WHITE
+                }
+                else -> legacy(context, role, variant)
+            }
             ColorOption.ThemePalette -> resolveLegacyToken(
                 context, ColorTokens.pageIndicatorDotColor, variant,
             )
