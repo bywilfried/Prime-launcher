@@ -80,6 +80,7 @@ fun PrimeDrawerCategoryAdvancedPreference(tabId: String) {
 @Composable
 fun PrimeDrawerFolderAdvancedPreference(tabId: String, folderId: String) {
     val context = LocalContext.current
+    val navController = LocalNavController.current
     val repository = remember { PrimeDrawerTabsRepository(context) }
     val initial = remember(tabId, folderId) {
         repository.getConfiguration().tabs.firstOrNull { it.id == tabId }
@@ -97,6 +98,13 @@ fun PrimeDrawerFolderAdvancedPreference(tabId: String, folderId: String) {
     }
 
     PreferenceLayout(label = stringResource(id = R.string.folders_label), backArrowVisible = true) {
+        PreferenceGroup(heading = "Style") {
+            ClickablePreference(
+                label = "Personnalisation des couleurs du dossier",
+                subtitle = "Couleurs par thème et variante clair/sombre, héritées de la catégorie",
+                onClick = { navController.navigate(app.lawnchair.ui.preferences.navigation.ThemeCustomization(categoryTabId = tabId, folderKey = app.lawnchair.theme.FolderThemeColorOverrides.category(tabId, folderId), folderSection = "DRAWER")) },
+            )
+        }
         PrimeFolderOptions(tabId, folderId, overrides.value, inherited, ::update)
         PreferenceGroup {
             ClickablePreference(
@@ -112,6 +120,7 @@ fun PrimeDrawerFolderAdvancedPreference(tabId: String, folderId: String) {
 @Composable
 fun PrimeHomeFolderAdvancedPreference(folderId: Int, drawer: Boolean = false) {
     val context = LocalContext.current
+    val navController = LocalNavController.current
     val repository = remember { PrimeDrawerTabsRepository(context) }
     val overrides = remember(folderId) {
         mutableStateOf(
@@ -142,17 +151,23 @@ fun PrimeHomeFolderAdvancedPreference(folderId: Int, drawer: Boolean = false) {
     val defaultFolderColor = app.lawnchair.util.resolveFolderBackgroundColor(context)
 
     PreferenceLayout(label = stringResource(id = R.string.folders_label), backArrowVisible = true) {
+        PreferenceGroup(heading = "Style") {
+            ClickablePreference(
+                label = "Personnalisation des couleurs du dossier",
+                subtitle = "Couleurs par thème et variante clair/sombre, héritées du parent",
+                onClick = { navController.navigate(app.lawnchair.ui.preferences.navigation.ThemeCustomization(
+                    folderKey = if (drawer) app.lawnchair.theme.FolderThemeColorOverrides.drawer(folderId) else app.lawnchair.theme.FolderThemeColorOverrides.home(folderId),
+                    folderSection = if (drawer) "DRAWER" else "HOME",
+                )) },
+            )
+        }
         PreferenceGroup(heading = "Dossier fermé") {
             HomeFolderShapePreference(stringResource(id = R.string.folder_shape_label), value.shape, prefs2.folderShape.getAdapter().state.value, folderId, "folderShape", drawer)
-            HomeFolderColorPreference("Couleur du dossier fermé", value.color, app.lawnchair.util.resolveFolderPreviewColor(context, drawer), folderId, "folderColor", drawer)
             NullableFloatSlider(stringResource(id = R.string.folder_preview_bg_opacity_label), value.previewOpacity, prefs2.folderPreviewBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, true) { update(value.copy(previewOpacity = it)) }
             NullableSwitch("Afficher le nom du dossier fermé", value.showFolderLabel, true) { update(value.copy(showFolderLabel = it)) }
-            HomeFolderColorPreference("Couleur du nom du dossier fermé", value.closedLabelColor, defaultTextColor, folderId, "folderClosedText", drawer)
         }
         PreferenceGroup(heading = "Dossier ouvert") {
-            HomeFolderColorPreference("Couleur du dossier ouvert", value.openColor, defaultFolderColor, folderId, "folderOpenColor", drawer)
             NullableFloatSlider(stringResource(id = R.string.folder_bg_opacity_label), value.backgroundOpacity, prefs2.folderBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, true) { update(value.copy(backgroundOpacity = it)) }
-            HomeFolderColorPreference("Couleur du texte dans le dossier ouvert", value.textColor, defaultTextColor, folderId, "folderText", drawer)
         }
         PreferenceGroup(heading = stringResource(id = R.string.grid)) {
             NullableIntSlider(stringResource(id = R.string.max_folder_columns), value.columns, prefs2.folderColumns.getAdapter().state.value, 2..5) { update(value.copy(columns = it)) }
@@ -351,22 +366,18 @@ private fun PrimeFolderOptions(
 
     PreferenceGroup(heading = "Dossier fermé") {
         NullableShapePreference(stringResource(id = R.string.folder_shape_label), value.shape, resolveInheritedShape(context, inherited.shape, prefs2.folderShape.getAdapter().state.value), tabId, "folderShape", folderId)
-        NullableColorPreference("Couleur du dossier fermé", value.color, inherited.color ?: app.lawnchair.util.resolveFolderPreviewColor(context, true), tabId, "folderColor", folderId)
         NullableFloatSlider(stringResource(id = R.string.folder_preview_bg_opacity_label), value.previewOpacity, inherited.previewOpacity ?: prefs2.folderPreviewBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, showAsPercentage = true) {
             update(value.copy(previewOpacity = it))
         }
         NullableSwitch("Afficher le nom du dossier fermé", value.showFolderLabel, inherited.showFolderLabel ?: true) {
             update(value.copy(showFolderLabel = it))
         }
-        NullableColorPreference("Couleur du nom du dossier fermé", value.closedLabelColor, inherited.closedLabelColor ?: androidx.compose.material3.MaterialTheme.colorScheme.onSurface.toArgb(), tabId, "folderClosedText", folderId)
     }
 
     PreferenceGroup(heading = "Dossier ouvert") {
-        NullableColorPreference("Couleur du dossier ouvert", value.openColor, inherited.openColor ?: app.lawnchair.util.resolveFolderBackgroundColor(context, true), tabId, "folderOpenColor", folderId)
         NullableFloatSlider(stringResource(id = R.string.folder_bg_opacity_label), value.backgroundOpacity, inherited.backgroundOpacity ?: prefs2.folderBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, showAsPercentage = true) {
             update(value.copy(backgroundOpacity = it))
         }
-        NullableColorPreference("Couleur du texte dans le dossier ouvert", value.textColor, inherited.textColor ?: androidx.compose.material3.MaterialTheme.colorScheme.onSurface.toArgb(), tabId, "folderText", folderId)
     }
 
     PreferenceGroup(heading = stringResource(id = R.string.grid)) {
