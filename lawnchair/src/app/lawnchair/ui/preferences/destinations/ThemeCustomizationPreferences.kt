@@ -214,8 +214,16 @@ private fun ThemeSection(
                         role != ThemeColorRole.DRAWER_FOLDER_BORDER
                 }.forEach { role ->
                         val profile = ThemeProfile.current(context)
-                        val override = if (categoryTabId == null) ThemeColorOverrides(context).get(profile, variant, role)
+                        // Observe an immediate local reset so Compose redraws this row without
+                        // requiring the user to leave and reopen the editor.
+                        var resetRevision by remember(profile, variant, role, categoryTabId) {
+                            mutableStateOf(0)
+                        }
+                        val override = run {
+                            resetRevision // Snapshot read invalidates this row on reset.
+                            if (categoryTabId == null) ThemeColorOverrides(context).get(profile, variant, role)
                             else CategoryThemeColorOverrides(context).get(categoryTabId, profile, variant, role)
+                        }
                         val prefs2 = preferenceManager2()
                         val preview = when (role) {
                             // Preview the exact Dock QSB defaults, including the existing
@@ -359,6 +367,7 @@ private fun ThemeSection(
                                     ) else CategoryThemeColorOverrides(context).set(
                                         categoryTabId, profile, variant, role, ColorOption.Default,
                                     )
+                                    resetRevision++
                                 },
                                 modifier = Modifier.align(androidx.compose.ui.Alignment.TopEnd)
                                     .padding(end = 44.dp, top = 4.dp)
