@@ -20,14 +20,14 @@ object NotificationDotThemeColors {
         val variant = context.effectiveThemeVariant()
         val profile = ThemeProfile.current(context)
         val override = ThemeColorOverrides(context).get(profile, variant, role)
-        if (override == ColorOption.IconColor || (role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT && override == ColorOption.Default && legacyOption == ColorOption.Default)) {
+        if (override == ColorOption.IconColor || (role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT && (override == ColorOption.Default || override == ColorOption.LegacyBehavior) && legacyOption == ColorOption.Default)) {
             // The real color is per icon; DeviceProfile uses this only as a fallback.
             return ThemeColors.official(context, profile, role, variant)
         }
-        if (override != ColorOption.Default) {
+        if (override != ColorOption.Default && override != ColorOption.LegacyBehavior) {
             return ThemeColors.resolve(context, profile, role, variant)
         }
-        return when (legacyOption) {
+        return when (if (override == ColorOption.LegacyBehavior) ColorOption.Default else legacyOption) {
             ColorOption.Default -> {
                 if (role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT) {
                     val dotOption = PreferenceManager2.getInstance(context).notificationDotColor.firstCached()
@@ -49,12 +49,12 @@ object NotificationDotThemeColors {
     @JvmStatic
     fun isPerIconColor(context: Context): Boolean =
         ThemeColorOverrides(context).get(ThemeProfile.current(context), context.effectiveThemeVariant(),
-            ThemeColorRole.GLOBAL_NOTIFICATION_DOT).let { it == ColorOption.IconColor || (it == ColorOption.Default && PreferenceManager2.getInstance(context).notificationDotColor.firstCached() == ColorOption.Default) }
+            ThemeColorRole.GLOBAL_NOTIFICATION_DOT).let { it == ColorOption.IconColor || it == ColorOption.LegacyBehavior || (it == ColorOption.Default && PreferenceManager2.getInstance(context).notificationDotColor.firstCached() == ColorOption.Default) }
 
     @JvmStatic
     fun isAutomaticText(context: Context): Boolean =
         ThemeColorOverrides(context).get(ThemeProfile.current(context), context.effectiveThemeVariant(),
-            ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT) == ColorOption.Default &&
+            ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT).let { it == ColorOption.Default || it == ColorOption.LegacyBehavior } &&
             PreferenceManager2.getInstance(context).notificationDotTextColor.firstCached() == ColorOption.Default
 
     @JvmStatic
