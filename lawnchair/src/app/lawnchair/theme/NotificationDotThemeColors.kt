@@ -39,11 +39,11 @@ object NotificationDotThemeColors {
                     ThemeColors.official(context, profile, role, variant)
                 }
             }
-            is ColorOption.CustomColor -> legacyOption.color
+            is ColorOption.CustomColor -> effectiveLegacyOption.color
             else -> if (variant == ThemeVariant.DARK) {
-                legacyOption.colorPreferenceEntry.darkColor(context)
+                effectiveLegacyOption.colorPreferenceEntry.darkColor(context)
             } else {
-                legacyOption.colorPreferenceEntry.lightColor(context)
+                effectiveLegacyOption.colorPreferenceEntry.lightColor(context)
             }
         }
     }
