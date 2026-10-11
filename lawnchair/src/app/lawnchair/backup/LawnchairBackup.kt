@@ -66,7 +66,7 @@ class LawnchairBackup(
                     {
                         val file = entry.value
                         file.parentFile?.mkdirs()
-                        it.copyTo(file.outputStream())
+                        file.outputStream().use { out -> it.copyTo(out) }
                     }
                 },
             )
@@ -78,10 +78,11 @@ class LawnchairBackup(
             }
         }
         context.getDatabasePath(LAUNCHER_DB_FILE_NAME).parentFile?.deleteRecursively()
-        DeviceGridState(info.gridState).writeToPrefs(context, true)
         readZip(handlers)
+        // Restore the grid state after extracting preferences, which may overwrite it.
+        DeviceGridState(info.gridState).writeToPrefs(context, true)
 
-        var dbController = ModelDbController(context)
+        val dbController = ModelDbController(context)
         RestoreDbTask.performRestore(context, dbController)
     }
 
@@ -181,7 +182,7 @@ class LawnchairBackup(
                         getFiles(context, forRestore = false).entries.forEach {
                             if (!it.value.exists()) return@forEach
                             out.putNextEntry(ZipEntry(it.key))
-                            it.value.inputStream().copyTo(out)
+                            it.value.inputStream().use { input -> input.copyTo(out) }
                         }
                     }
                 }
