@@ -511,9 +511,31 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     public void applyFromWorkspaceItem(WorkspaceItemInfo info) {
         applyIconAndLabel(info);
         setItemInfo(info);
+        applyPrimeDockSizing(info);
 
         applyDotState(info, false /* animate */);
         setDownloadStateContentDescription(info, info.getProgressLevel());
+    }
+
+    /** Dock icons and labels use their own size controls, independently of Home. */
+    private void applyPrimeDockSizing(ItemInfoWithIcon info) {
+        if (mDisplay != DISPLAY_WORKSPACE) return;
+        boolean inDock = info.container == LauncherSettings.Favorites.CONTAINER_HOTSEAT
+                || info.container == LauncherSettings.Favorites.CONTAINER_HOTSEAT_PREDICTION;
+        if (!inDock) return;
+        float homeFactor = PreferenceCacheExtensionsKt.firstCached(pref2.getHomeIconSizeFactor());
+        float dockFactor = PreferenceCacheExtensionsKt.firstCached(pref2.getDockIconSizeFactor());
+        int dockSize = Math.max(1, Math.round(mDeviceProfile.iconSizePx
+                * dockFactor / Math.max(0.01f, homeFactor)));
+        setPrimeIconSize(dockSize);
+        float homeLabelFactor = PreferenceCacheExtensionsKt.firstCached(
+                pref2.getHomeIconLabelSizeFactor());
+        float dockLabelFactor = PreferenceCacheExtensionsKt.firstCached(
+                pref2.getDockIconLabelSizeFactor());
+        float baseLabelSize = mDeviceProfile.primeWorkspaceLabelTextSizePx
+                / Math.max(0.01f, homeLabelFactor);
+        setTextSize(TypedValue.COMPLEX_UNIT_PX, baseLabelSize * dockLabelFactor);
+        setTextVisibility(PreferenceCacheExtensionsKt.firstCached(pref2.getEnableLabelInDock()));
     }
 
     @UiThread
