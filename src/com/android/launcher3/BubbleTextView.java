@@ -1402,7 +1402,12 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     }
 
     public boolean shouldTextBeVisible() {
-        // Text should be visible everywhere but the hotseat.
+        // TextView invokes setTextColor() from its superclass constructor, before
+        // BubbleTextView has initialized pref2. Avoid reading preferences until ready.
+        if (pref2 == null) {
+            return true;
+        }
+        // Text should be visible according to the workspace/dock preference.
         Object tag = getParent() instanceof FolderIcon ? ((View) getParent()).getTag() : getTag();
         ItemInfo info = tag instanceof ItemInfo ? (ItemInfo) tag : null;
         if (mDisplay != DISPLAY_WORKSPACE) {
