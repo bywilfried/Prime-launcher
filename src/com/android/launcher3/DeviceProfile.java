@@ -917,7 +917,19 @@ public class DeviceProfile {
 
     /** Updates hotseatCellHeightPx and hotseatBarSizePx */
     private void updateHotseatSizes(int hotseatIconSizePx) {
-        int iconTextHeight = Utilities.calculateTextHeight(iconTextSizePx);
+        float homeIconFactor = PreferenceCacheExtensionsKt.firstCached(
+                preferenceManager2.getHomeIconSizeFactor());
+        float dockIconFactor = PreferenceCacheExtensionsKt.firstCached(
+                preferenceManager2.getDockIconSizeFactor());
+        hotseatIconSizePx = Math.max(1, Math.round(hotseatIconSizePx
+                * dockIconFactor / Math.max(0.01f, homeIconFactor)));
+        float dockLabelFactor = PreferenceCacheExtensionsKt.firstCached(
+                preferenceManager2.getDockIconLabelSizeFactor());
+        int dockTextSize = Math.max(1, Math.round(primeWorkspaceLabelTextSizePx
+                * dockLabelFactor / Math.max(0.01f,
+                PreferenceCacheExtensionsKt.firstCached(
+                        preferenceManager2.getHomeIconLabelSizeFactor()))));
+        int iconTextHeight = Utilities.calculateTextHeight(dockTextSize);
         boolean isLabelInDock = PreferenceCacheExtensionsKt.firstCached(preferenceManager2.getEnableLabelInDock());
         HotseatMode hotseatMode = PreferenceCacheExtensionsKt.firstCached(preferenceManager2.getHotseatMode());
         boolean isQsbEnable = hotseatMode.getLayoutResourceId() != R.layout.empty_view;
