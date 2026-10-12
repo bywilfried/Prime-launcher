@@ -829,6 +829,18 @@ class PreferenceManager2 @Inject constructor(
         defaultValue = false,
     )
 
+    val dockIconSizeFactor = preference(
+        key = floatPreferencesKey(name = "dock_icon_size_factor"),
+        defaultValue = 1.0f,
+        onSet = { reloadHelper.reloadGrid() },
+    )
+
+    val dockIconLabelSizeFactor = preference(
+        key = floatPreferencesKey(name = "dock_icon_label_size_factor"),
+        defaultValue = 1.0f,
+        onSet = { reloadHelper.reloadGrid() },
+    )
+
     val enableLabelInDock = preference(
         key = booleanPreferencesKey(name = "enable_label_dock"),
         defaultValue = false,
