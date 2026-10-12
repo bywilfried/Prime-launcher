@@ -111,9 +111,9 @@ public class ItemLongClickListener {
         column.setBackground(background);
         column.setElevation(Math.round(8 * density));
 
-        String[] labels = {"Marges du widget", "Redimensionner", "Déplacer"};
+        String[] labels = {"Marges du widget", "Redimensionner"};
         int[] icons = {android.R.drawable.ic_menu_edit,
-                android.R.drawable.ic_menu_crop, android.R.drawable.ic_menu_directions};
+                android.R.drawable.ic_menu_crop};
         for (int i = 0; i < labels.length; i++) {
             final int action = i;
             LinearLayout row = new LinearLayout(launcher);
