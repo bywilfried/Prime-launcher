@@ -331,7 +331,7 @@ fun AppDrawerPreferences(
             SliderPreference(
                 label = stringResource(id = R.string.icon_sizes),
                 adapter = modeBackedAdapter(modePreference("drawerIconSize", { it.drawerIconSize }, { profile, value -> profile.copy(drawerIconSize = value) }, { }), nativeDrawerIconSize),
-                step = 0.1f,
+                step = 0.05f,
                 valueRange = 0.5F..1.5F,
                 showAsPercentage = true,
             )
@@ -345,7 +345,7 @@ fun AppDrawerPreferences(
                 SliderPreference(
                     label = stringResource(id = R.string.label_size),
                     adapter = modeBackedAdapter(modePreference("labelSize", { it.labelSize }, { profile, value -> profile.copy(labelSize = value) }, { }), nativeLabelSize),
-                    step = 0.1F,
+                    step = 0.05f,
                     valueRange = 0.5F..1.5F,
                     showAsPercentage = true,
                 )
