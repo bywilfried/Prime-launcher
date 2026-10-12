@@ -17,6 +17,7 @@ import android.animation.LayoutTransition;
 import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
 import android.appwidget.AppWidgetProviderInfo;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
@@ -28,6 +29,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.SeekBar;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -267,6 +271,49 @@ public class AppWidgetResizeFrame extends AbstractFloatingView implements View.O
         return mWidgetView;
     }
 
+    /** Edits external content insets without changing the widget's occupied grid cells. */
+    private void showPrimeWidgetMarginsDialog() {
+        if (mWidgetView == null) return;
+        final int[] values = mWidgetView.getPrimeMarginsDp();
+        final int[] original = values.clone();
+        final String[] sides = {"Gauche", "Haut", "Droite", "Bas"};
+        final float density = getResources().getDisplayMetrics().density;
+        LinearLayout column = new LinearLayout(getContext());
+        column.setOrientation(LinearLayout.VERTICAL);
+        int inset = Math.round(20 * density);
+        column.setPadding(inset, inset / 2, inset, inset / 2);
+        for (int i = 0; i < sides.length; i++) {
+            final int index = i;
+            TextView label = new TextView(getContext());
+            label.setText(sides[i] + " : " + values[i] + " dp");
+            column.addView(label);
+            SeekBar slider = new SeekBar(getContext());
+            slider.setMax(32);
+            slider.setProgress(values[i]);
+            slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    values[index] = progress;
+                    label.setText(sides[index] + " : " + progress + " dp");
+                    mWidgetView.setPrimeMarginsDp(values);
+                }
+                @Override public void onStartTrackingTouch(SeekBar seekBar) { }
+                @Override public void onStopTrackingTouch(SeekBar seekBar) { }
+            });
+            column.addView(slider);
+        }
+        new AlertDialog.Builder(getContext())
+                .setTitle("Marges du widget")
+                .setView(column)
+                .setPositiveButton("Valider", (dialog, which) ->
+                        mWidgetView.setPrimeMarginsDp(values))
+                .setNeutralButton("Réinitialiser", (dialog, which) ->
+                        mWidgetView.setPrimeMarginsDp(new int[4]))
+                .setNegativeButton("Annuler", (dialog, which) ->
+                        mWidgetView.setPrimeMarginsDp(original))
+                .show();
+    }
+
     private void setupForWidget(LauncherAppWidgetHostView widgetView, CellLayout cellLayout,
             DragLayer dragLayer, boolean force, boolean unlimited) {
         mCellLayout = cellLayout;
@@ -330,6 +377,8 @@ public class AppWidgetResizeFrame extends AbstractFloatingView implements View.O
             mDragHandles[INDEX_RIGHT].setVisibility(GONE);
         }
 
+        findViewById(R.id.prime_widget_margins_button)
+                .setOnClickListener(view -> showPrimeWidgetMarginsDialog());
         mReconfigureButton = (ImageButton) findViewById(R.id.widget_reconfigure_button);
         if (info.isReconfigurable()) {
             mReconfigureButton.setVisibility(VISIBLE);
