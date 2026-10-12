@@ -832,14 +832,25 @@ public class AppWidgetResizeFrame extends AbstractFloatingView implements View.O
         return true;
     }
 
+    private boolean isTouchOnPrimeMarginsButton(MotionEvent ev) {
+        View button = findViewById(R.id.prime_widget_margins_button);
+        int xFrame = (int) ev.getX() - getLeft();
+        int yFrame = (int) ev.getY() - getTop();
+        button.getHitRect(sTmpRect);
+        return button.getVisibility() == VISIBLE && sTmpRect.contains(xFrame, yFrame);
+    }
+
     @Override
     public boolean onControllerInterceptTouchEvent(MotionEvent ev) {
+        // Action buttons must receive their click before the resize gesture detector.
+        if (isTouchOnReconfigureButton(ev) || isTouchOnPrimeMarginsButton(ev)) {
+            return false;
+        }
         if (ev.getAction() == MotionEvent.ACTION_DOWN && handleTouchDown(ev)) {
             return true;
         }
-        // Keep the resize frame open but let a click on the reconfigure button fall through to the
-        // button's OnClickListener.
-        if (isTouchOnReconfigureButton(ev)) {
+        // Keep the resize frame open for the action buttons.
+        if (isTouchOnReconfigureButton(ev) || isTouchOnPrimeMarginsButton(ev)) {
             return false;
         }
         close(false);
