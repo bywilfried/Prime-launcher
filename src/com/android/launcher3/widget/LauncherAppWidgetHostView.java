@@ -99,27 +99,48 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
     private int[] mPrimeBasePadding;
     private boolean mPrimeApplyingPadding;
 
-    /** Individual insets as a percentage of widget width/height, in left/top/right/bottom order. */
+    /** Individual widget margins use the same 0–200% scale as global widget margins. */
+    private int getPrimeGlobalMarginPercent() {
+        return Math.max(0, Math.min(200,
+                Math.round(mActivityContext.getDeviceProfile()
+                        .getPrimeGlobalWidgetPaddingFactor() * 100f)));
+    }
+
     public int[] getPrimeMarginsPercent() {
         return mPrimeMarginsPercent.clone();
     }
 
     public void setPrimeMarginsPercent(int[] margins) {
-        if (margins == null || margins.length != 4) return;
+        if (margins == null || margins.length != 4 || getAppWidgetId() <= 0) return;
         SharedPreferences.Editor editor = getContext().getSharedPreferences(
                 PRIME_WIDGET_MARGINS, Context.MODE_PRIVATE).edit();
         for (int i = 0; i < 4; i++) {
-            mPrimeMarginsPercent[i] = Math.max(-40, Math.min(40, margins[i]));
-            editor.putInt(getAppWidgetId() + "_percent_" + i, mPrimeMarginsPercent[i]);
+            mPrimeMarginsPercent[i] = Math.max(0, Math.min(200, margins[i]));
+            editor.putInt(getAppWidgetId() + "_factor_" + i, mPrimeMarginsPercent[i]);
         }
         editor.apply();
         applyPrimeMargins();
         updatePrimeWidgetSizeOptions();
     }
 
-    private int primeMarginPx(int side) {
-        int dimension = (side == 0 || side == 2) ? getWidth() : getHeight();
-        return Math.round(Math.max(0, dimension) * mPrimeMarginsPercent[side] / 100f);
+    /** Reset to global margins and resume following future global changes. */
+    public void resetPrimeMarginsToGlobal() {
+        SharedPreferences.Editor editor = getContext().getSharedPreferences(
+                PRIME_WIDGET_MARGINS, Context.MODE_PRIVATE).edit();
+        int global = getPrimeGlobalMarginPercent();
+        for (int i = 0; i < 4; i++) {
+            editor.remove(getAppWidgetId() + "_factor_" + i);
+            mPrimeMarginsPercent[i] = global;
+        }
+        editor.apply();
+        applyPrimeMargins();
+        updatePrimeWidgetSizeOptions();
+    }
+
+    private int primeMarginDeltaPx(int side) {
+        int base = mActivityContext.getDeviceProfile().getPrimeUnscaledWidgetPadding(side);
+        float global = mActivityContext.getDeviceProfile().getPrimeGlobalWidgetPaddingFactor();
+        return Math.round(base * (mPrimeMarginsPercent[side] / 100f - global));
     }
 
     /**
@@ -147,10 +168,10 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
         if (!mPrimeApplyingPadding) {
             mPrimeBasePadding = new int[] {left, top, right, bottom};
             if (mPrimeMarginsPercent != null) {
-                left = Math.max(0, left + primeMarginPx(0));
-                top = Math.max(0, top + primeMarginPx(1));
-                right = Math.max(0, right + primeMarginPx(2));
-                bottom = Math.max(0, bottom + primeMarginPx(3));
+                left = Math.max(0, left + primeMarginDeltaPx(0));
+                top = Math.max(0, top + primeMarginDeltaPx(1));
+                right = Math.max(0, right + primeMarginDeltaPx(2));
+                bottom = Math.max(0, bottom + primeMarginDeltaPx(3));
             }
         }
         super.setPadding(left, top, right, bottom);
@@ -227,20 +248,13 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
         super.setAppWidget(appWidgetId, info);
         SharedPreferences prefs = getContext().getSharedPreferences(
                 PRIME_WIDGET_MARGINS, Context.MODE_PRIVATE);
+        int global = getPrimeGlobalMarginPercent();
         for (int i = 0; i < 4; i++) {
-            // Negative percentages are valid custom margins (-40% to +40%).
-            // Check whether the key exists instead of using -1 as a sentinel.
-            String percentKey = appWidgetId + "_percent_" + i;
-            if (prefs.contains(percentKey)) {
-                mPrimeMarginsPercent[i] = Math.max(-40,
-                        Math.min(40, prefs.getInt(percentKey, 0)));
-            } else {
-                int oldDp = prefs.getInt(appWidgetId + "_" + i, 0);
-                float density = getResources().getDisplayMetrics().density;
-                int dimension = (i == 0 || i == 2) ? getWidth() : getHeight();
-                mPrimeMarginsPercent[i] = dimension > 0
-                        ? Math.min(40, Math.round(oldDp * density * 100f / dimension)) : 0;
-            }
+            String key = appWidgetId + "_factor_" + i;
+            // Legacy signed percentages are intentionally not reused: they were
+            // offsets of widget dimensions, not global margin multipliers.
+            mPrimeMarginsPercent[i] = prefs.contains(key)
+                    ? Math.max(0, Math.min(200, prefs.getInt(key, global))) : global;
         }
         applyPrimeMargins();
         if (!mTrackingWidgetUpdate && appWidgetId != -1) {
