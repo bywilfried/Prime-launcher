@@ -567,4 +567,7 @@
     <!-- label for arch shape option in customization picker -->
     <string name="arch_shape_title">Arch</string>
     <string name="prime_edit_folder">Edit folder</string>
+
+    <!-- English fallback strings for locale-only resource keys -->
+    <string name="item_added_to_workspace">Item added to home screen</string>
 </resources>
