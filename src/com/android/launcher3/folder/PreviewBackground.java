@@ -223,10 +223,19 @@ public class PreviewBackground extends DelegatedCellDrawing {
             basePreviewOffsetX = (availableSpaceX - previewSize) / 2;
             basePreviewOffsetY = topPadding + (allAppsIconSize - previewSize) / 2;
         } else {
-            previewSize = grid.folderIconSizePx;
+            // A dock folder must follow the independent dock icon size, not Home's.
+            float dockScale = 1f;
+            if (isDockFolder) {
+                float homeFactor = PreferenceCacheExtensionsKt.firstCached(
+                        preferenceManager2.getHomeIconSizeFactor());
+                float dockFactor = PreferenceCacheExtensionsKt.firstCached(
+                        preferenceManager2.getDockIconSizeFactor());
+                dockScale = dockFactor / Math.max(0.01f, homeFactor);
+            }
+            previewSize = Math.max(1, Math.round(grid.folderIconSizePx * dockScale));
 
             basePreviewOffsetX = (availableSpaceX - previewSize) / 2;
-            basePreviewOffsetY = topPadding + grid.folderIconOffsetYPx;
+            basePreviewOffsetY = topPadding + Math.round(grid.folderIconOffsetYPx * dockScale);
         }
 
         // Stroke width is 1dp
