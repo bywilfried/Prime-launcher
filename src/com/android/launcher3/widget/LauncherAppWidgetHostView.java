@@ -182,10 +182,10 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
         mPrimeApplyingPadding = true;
         try {
             super.setPadding(
-                    Math.max(0, mPrimeBasePadding[0] + primeMarginPx(0)),
-                    Math.max(0, mPrimeBasePadding[1] + primeMarginPx(1)),
-                    Math.max(0, mPrimeBasePadding[2] + primeMarginPx(2)),
-                    Math.max(0, mPrimeBasePadding[3] + primeMarginPx(3)));
+                    Math.max(0, mPrimeBasePadding[0] + primeMarginDeltaPx(0)),
+                    Math.max(0, mPrimeBasePadding[1] + primeMarginDeltaPx(1)),
+                    Math.max(0, mPrimeBasePadding[2] + primeMarginDeltaPx(2)),
+                    Math.max(0, mPrimeBasePadding[3] + primeMarginDeltaPx(3)));
         } finally {
             mPrimeApplyingPadding = false;
         }
