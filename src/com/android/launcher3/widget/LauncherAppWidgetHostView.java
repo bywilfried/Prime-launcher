@@ -177,8 +177,22 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
         Bundle options = WidgetSizes.getWidgetSizeOptions(getContext(),
                 getAppWidgetInfo().provider, info.spanX, info.spanY);
         if (options == null) return;
-        float horizontal = (100f - mPrimeMarginsPercent[0] - mPrimeMarginsPercent[2]) / 100f;
-        float vertical = (100f - mPrimeMarginsPercent[1] - mPrimeMarginsPercent[3]) / 100f;
+        // WidgetSizes already includes the global Lawnchair margins. Only adjust for
+        // the *effective* per-widget delta, bounded by the available base padding.
+        float horizontal = 1f;
+        float vertical = 1f;
+        if (mPrimeBasePadding != null && getWidth() > 0 && getHeight() > 0) {
+            int left = Math.max(0, mPrimeBasePadding[0] + primeMarginPx(0));
+            int right = Math.max(0, mPrimeBasePadding[2] + primeMarginPx(2));
+            int top = Math.max(0, mPrimeBasePadding[1] + primeMarginPx(1));
+            int bottom = Math.max(0, mPrimeBasePadding[3] + primeMarginPx(3));
+            horizontal = Math.max(0.1f, 1f - (left + right
+                    - mPrimeBasePadding[0] - mPrimeBasePadding[2])
+                    / (float) getWidth());
+            vertical = Math.max(0.1f, 1f - (top + bottom
+                    - mPrimeBasePadding[1] - mPrimeBasePadding[3])
+                    / (float) getHeight());
+        }
         for (String key : new String[] {
                 AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,
                 AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH}) {
