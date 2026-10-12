@@ -222,23 +222,6 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
         if (folderInfo.container == ItemInfo.NO_ID) {
             lp.topMargin = grid.getAllAppsProfile().getIconSizePx() + grid.getAllAppsProfile().getIconDrawablePaddingPx();
             icon.mBackground = new PreviewBackground(activity.getDragLayer().getContext());
-        } else if (folderInfo.container == LauncherSettings.Favorites.CONTAINER_HOTSEAT
-                || folderInfo.container == LauncherSettings.Favorites.CONTAINER_HOTSEAT_PREDICTION) {
-            app.lawnchair.preferences2.PreferenceManager2 dockPrefs =
-                    app.lawnchair.preferences2.PreferenceManager2.getInstance(icon.getContext());
-            float homeFactor = app.lawnchair.preferences2.PreferenceCacheExtensionsKt.firstCached(
-                    dockPrefs.getHomeIconSizeFactor());
-            float dockFactor = app.lawnchair.preferences2.PreferenceCacheExtensionsKt.firstCached(
-                    dockPrefs.getDockIconSizeFactor());
-            lp.topMargin = Math.max(1, Math.round(grid.iconSizePx
-                    * dockFactor / Math.max(0.01f, homeFactor))) + grid.iconDrawablePaddingPx;
-            float homeLabelFactor = app.lawnchair.preferences2.PreferenceCacheExtensionsKt.firstCached(
-                    dockPrefs.getHomeIconLabelSizeFactor());
-            float dockLabelFactor = app.lawnchair.preferences2.PreferenceCacheExtensionsKt.firstCached(
-                    dockPrefs.getDockIconLabelSizeFactor());
-            icon.mFolderName.setTextSize(TypedValue.COMPLEX_UNIT_PX,
-                    grid.primeWorkspaceLabelTextSizePx * dockLabelFactor
-                            / Math.max(0.01f, homeLabelFactor));
         } else {
             lp.topMargin = grid.iconSizePx + grid.iconDrawablePaddingPx;
         }
@@ -768,15 +751,8 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
     public void drawDot(Canvas canvas) {
         if (!mForceHideDot && ((mDotInfo != null && mDotInfo.hasDot()) || mDotScale > 0)) {
             Rect iconBounds = mDotParams.iconBounds;
-            // FolderIcon draws the icon to be top-aligned (with padding) & horizontally-centered
-            int iconSize = mActivity.getDeviceProfile().iconSizePx;
-            iconBounds.left = (getWidth() - iconSize) / 2;
-            iconBounds.right = iconBounds.left + iconSize;
-            iconBounds.top = getPaddingTop();
-            iconBounds.bottom = iconBounds.top + iconSize;
-
-            float iconScale = (float) mBackground.previewSize / iconSize;
-            Utilities.scaleRectAboutCenter(iconBounds, iconScale);
+            // Use the actual folder preview bounds (Home, Dock or drawer), not Home icon size.
+            mBackground.getBounds(iconBounds);
 
             // If we are animating to the accepting state, animate the dot out.
             mDotParams.scale = Math.max(0, mDotScale - mBackground.getAcceptScaleProgress());
