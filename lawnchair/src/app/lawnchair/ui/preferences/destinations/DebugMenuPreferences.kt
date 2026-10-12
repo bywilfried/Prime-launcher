@@ -85,6 +85,13 @@ fun DebugMenuPreferences(
                     },
                 )
                 ClickablePreference(
+                    label = "Exporter les logs des widgets",
+                    subtitle = "Enregistrer et partager les journaux accessibles à Prime Launcher",
+                    onClick = {
+                        app.lawnchair.bugreport.PrimeWidgetLogExporter.export(context)
+                    },
+                )
+                ClickablePreference(
                     label = "Crash launcher",
                     onClick = { throw RuntimeException("User triggered crash") },
                 )
