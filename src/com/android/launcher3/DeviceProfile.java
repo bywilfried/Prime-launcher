@@ -268,6 +268,8 @@ public class DeviceProfile {
     private ThemeManager mPrimeDotThemeManager;
     private boolean mPrimeShowNotificationCount;
     private Typeface mPrimeDotTypeface;
+    private int mPrimeDotColor;
+    private int mPrimeDotCountColor;
 
     public final DotRenderer mDotRendererWorkSpace;
     public final DotRenderer mDotRendererAllApps;
@@ -764,6 +766,8 @@ public class DeviceProfile {
         mPrimeDotThemeManager = themeManager;
         mPrimeShowNotificationCount = showNotificationCount;
         mPrimeDotTypeface = typeface;
+        mPrimeDotColor = dotColor;
+        mPrimeDotCountColor = countColor;
 
         // This is done last, after iconSizePx is calculated above.
         mDotRendererWorkSpace = createDotRenderer(themeManager, iconSizePx, dotRendererCache, showNotificationCount, typeface, dotColor, countColor);
@@ -831,6 +835,18 @@ public class DeviceProfile {
                 DEFAULT_DOT_SIZE, mPrimeShowNotificationCount, mPrimeDotTypeface,
                 background, textColor);
     }
+
+    /** Creates a badge renderer for the actual displayed icon size. */
+    public DotRenderer createPrimeSizedDotRenderer(int size, int background, int textColor) {
+        if (mPrimeDotThemeManager == null) return mDotRendererWorkSpace;
+        return new DotRenderer(Math.max(1, size),
+                mPrimeDotThemeManager.getIconShape().getPath(DEFAULT_DOT_SIZE),
+                DEFAULT_DOT_SIZE, mPrimeShowNotificationCount, mPrimeDotTypeface,
+                background, textColor);
+    }
+
+    public int getPrimeDotColor() { return mPrimeDotColor; }
+    public int getPrimeDotCountColor() { return mPrimeDotCountColor; }
 
     private static DotRenderer createDotRenderer(
         @NonNull ThemeManager themeManager, int size, @NonNull SparseArray<DotRenderer> cache, boolean showNotificationCount, Typeface typeface, int dotColor, int countColor) {
