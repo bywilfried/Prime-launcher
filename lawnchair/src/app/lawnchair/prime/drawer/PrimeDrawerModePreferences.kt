@@ -103,7 +103,7 @@ class PrimeDrawerModePreferences(context: Context) {
         }.float
 
         return PrimeDrawerModeProfile(
-            drawerOpacity = .5f,
+            drawerOpacity = 1f,
             drawerColumns = grid.numAllAppsColumns,
             drawerColumnsUnfolded = grid.numAllAppsColumns + 2,
             drawerIconSize = floatResource(com.android.launcher3.R.dimen.config_default_drawer_icon_size_factor),
