@@ -49,6 +49,11 @@ fun PrimeDevelopmentOptionsPreference() {
                 onClick = { navController.navigate(PrimeDiagnosticLogs) },
             )
             ClickablePreference(
+                label = "Exporter les logs des widgets",
+                subtitle = "Récupérer et partager les journaux accessibles à Prime Launcher",
+                onClick = { app.lawnchair.bugreport.PrimeWidgetLogExporter.export(context) },
+            )
+            ClickablePreference(
                 label = "Diagnostic swipe",
                 subtitle = "Afficher les traces du swipe entre les catégories du tiroir",
                 onClick = { showSwipeDiagnostic = true },
