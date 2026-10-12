@@ -1405,9 +1405,15 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         // Text should be visible everywhere but the hotseat.
         Object tag = getParent() instanceof FolderIcon ? ((View) getParent()).getTag() : getTag();
         ItemInfo info = tag instanceof ItemInfo ? (ItemInfo) tag : null;
-        return info == null || info.container != LauncherSettings.Favorites.CONTAINER_HOTSEAT
-                && info.container != LauncherSettings.Favorites.CONTAINER_HOTSEAT_PREDICTION
-                || PreferenceCacheExtensionsKt.firstCached(pref2.getEnableLabelInDock());
+        if (mDisplay != DISPLAY_WORKSPACE) {
+            return true;
+        }
+        boolean inDock = info != null
+                && (info.container == LauncherSettings.Favorites.CONTAINER_HOTSEAT
+                || info.container == LauncherSettings.Favorites.CONTAINER_HOTSEAT_PREDICTION);
+        return inDock
+                ? PreferenceCacheExtensionsKt.firstCached(pref2.getEnableLabelInDock())
+                : PreferenceCacheExtensionsKt.firstCached(pref2.getShowIconLabelsOnHomeScreen());
     }
 
     /**
