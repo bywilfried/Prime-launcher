@@ -19,6 +19,11 @@ package com.android.launcher3.widget;
 import static com.android.launcher3.Utilities.ATLEAST_Q;
 
 import android.appwidget.AppWidgetProviderInfo;
+import android.appwidget.AppWidgetManager;
+import android.os.Bundle;
+import android.util.SizeF;
+import com.android.launcher3.model.data.LauncherAppWidgetInfo;
+import com.android.launcher3.widget.util.WidgetSizes;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Rect;
@@ -109,11 +114,50 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
         }
         editor.apply();
         applyPrimeMargins();
+        updatePrimeWidgetSizeOptions();
     }
 
     private int primeMarginPx(int side) {
         int dimension = (side == 0 || side == 2) ? getWidth() : getHeight();
         return Math.round(Math.max(0, dimension) * mPrimeMarginsPercent[side] / 100f);
+    }
+
+    /**
+     * Tell the widget provider about the actual content area. Padding alone only clips
+     * RemoteViews for providers that choose layouts from OPTION_APPWIDGET_SIZES.
+     */
+    private void updatePrimeWidgetSizeOptions() {
+        if (getAppWidgetId() <= 0 || getAppWidgetInfo() == null
+                || !(getTag() instanceof LauncherAppWidgetInfo)) return;
+        LauncherAppWidgetInfo info = (LauncherAppWidgetInfo) getTag();
+        Bundle options = WidgetSizes.getWidgetSizeOptions(getContext(),
+                getAppWidgetInfo().provider, info.spanX, info.spanY);
+        if (options == null) return;
+        float horizontal = (100f - mPrimeMarginsPercent[0] - mPrimeMarginsPercent[2]) / 100f;
+        float vertical = (100f - mPrimeMarginsPercent[1] - mPrimeMarginsPercent[3]) / 100f;
+        for (String key : new String[] {
+                AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,
+                AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH}) {
+            options.putInt(key, Math.max(1, Math.round(options.getInt(key) * horizontal)));
+        }
+        for (String key : new String[] {
+                AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,
+                AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT}) {
+            options.putInt(key, Math.max(1, Math.round(options.getInt(key) * vertical)));
+        }
+        if (Utilities.ATLEAST_S) {
+            java.util.ArrayList<SizeF> sizes =
+                    options.getParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES);
+            if (sizes != null) {
+                java.util.ArrayList<SizeF> adjusted = new java.util.ArrayList<>();
+                for (SizeF size : sizes) {
+                    adjusted.add(new SizeF(Math.max(1f, size.getWidth() * horizontal),
+                            Math.max(1f, size.getHeight() * vertical)));
+                }
+                options.putParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES, adjusted);
+            }
+        }
+        AppWidgetManager.getInstance(getContext()).updateAppWidgetOptions(getAppWidgetId(), options);
     }
 
     @Override
@@ -377,7 +421,10 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        if (w != oldw || h != oldh) applyPrimeMargins();
+        if (w != oldw || h != oldh) {
+            applyPrimeMargins();
+            updatePrimeWidgetSizeOptions();
+        }
     }
 
     @Override
