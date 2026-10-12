@@ -823,8 +823,7 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         final int childLabelColor = app.lawnchair.theme.ThemeColors.resolveIndividualFolderColor(
                 getContext(), childLabelRole, semanticFolderKey, inheritedChildLabelColor);
         mContent.iterateOverItems((item, itemView) -> {
-            if (itemView instanceof BubbleTextView bubble
-                    && (primeOverrides == null || primeOverrides.getTextColor() == null)) {
+            if (itemView instanceof BubbleTextView bubble) {
                 bubble.setTextColor(childLabelColor);
             }
             return false;
