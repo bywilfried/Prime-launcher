@@ -539,8 +539,9 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         float baseLabelSize = mDeviceProfile.primeWorkspaceLabelTextSizePx
                 / Math.max(0.01f, homeLabelFactor);
         setTextSize(TypedValue.COMPLEX_UNIT_PX, baseLabelSize * labelFactor);
-        setTextVisibility(!inDock
-                || PreferenceCacheExtensionsKt.firstCached(pref2.getEnableLabelInDock()));
+        setTextVisibility(inDock
+                ? PreferenceCacheExtensionsKt.firstCached(pref2.getEnableLabelInDock())
+                : PreferenceCacheExtensionsKt.firstCached(pref2.getShowIconLabelsOnHomeScreen()));
     }
 
     /** Keep initial binding and post-drop styling consistent. */
