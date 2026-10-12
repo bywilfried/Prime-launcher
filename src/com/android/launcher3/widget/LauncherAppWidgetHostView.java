@@ -153,7 +153,7 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
         SharedPreferences.Editor editor = getContext().getSharedPreferences(
                 PRIME_WIDGET_MARGINS, Context.MODE_PRIVATE).edit();
         for (int i = 0; i < 4; i++) {
-            mPrimeMarginsPercent[i] = Math.max(0, Math.min(40, margins[i]));
+            mPrimeMarginsPercent[i] = Math.max(-40, Math.min(40, margins[i]));
             editor.putInt(getAppWidgetId() + "_percent_" + i, mPrimeMarginsPercent[i]);
         }
         editor.apply();
@@ -209,10 +209,10 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
         if (!mPrimeApplyingPadding) {
             mPrimeBasePadding = new int[] {left, top, right, bottom};
             if (mPrimeMarginsPercent != null) {
-                left += primeMarginPx(0);
-                top += primeMarginPx(1);
-                right += primeMarginPx(2);
-                bottom += primeMarginPx(3);
+                left = Math.max(0, left + primeMarginPx(0));
+                top = Math.max(0, top + primeMarginPx(1));
+                right = Math.max(0, right + primeMarginPx(2));
+                bottom = Math.max(0, bottom + primeMarginPx(3));
             }
         }
         super.setPadding(left, top, right, bottom);
@@ -223,10 +223,10 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
         mPrimeApplyingPadding = true;
         try {
             super.setPadding(
-                    mPrimeBasePadding[0] + primeMarginPx(0),
-                    mPrimeBasePadding[1] + primeMarginPx(1),
-                    mPrimeBasePadding[2] + primeMarginPx(2),
-                    mPrimeBasePadding[3] + primeMarginPx(3));
+                    Math.max(0, mPrimeBasePadding[0] + primeMarginPx(0)),
+                    Math.max(0, mPrimeBasePadding[1] + primeMarginPx(1)),
+                    Math.max(0, mPrimeBasePadding[2] + primeMarginPx(2)),
+                    Math.max(0, mPrimeBasePadding[3] + primeMarginPx(3)));
         } finally {
             mPrimeApplyingPadding = false;
         }
