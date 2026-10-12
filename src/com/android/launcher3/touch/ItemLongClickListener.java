@@ -97,7 +97,7 @@ public class ItemLongClickListener {
     }
 
     /** Contextual widget actions, with small illustrative icons. */
-    public static void showPrimeWidgetMenu(LauncherAppWidgetHostView widget,
+    public static PopupWindow showPrimeWidgetMenu(LauncherAppWidgetHostView widget,
             Launcher launcher, LauncherAppWidgetInfo info) {
         final PopupWindow popup = new PopupWindow(launcher);
         LinearLayout column = new LinearLayout(launcher);
@@ -153,9 +153,12 @@ public class ItemLongClickListener {
         popup.setHeight(android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
         popup.setBackgroundDrawable(background);
         popup.setOutsideTouchable(true);
-        popup.setFocusable(true);
+        // Keep the original touch stream in DragLayer, as for icon pre-drag popups.
+        popup.setFocusable(false);
+        popup.setTouchable(false);
         popup.setElevation(Math.round(10 * density));
         popup.showAsDropDown(widget, 0, -widget.getHeight());
+        return popup;
     }
 
     public static void beginDrag(View v, Launcher launcher, ItemInfo info,
