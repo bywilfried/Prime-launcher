@@ -36,6 +36,10 @@ import android.util.SparseArray;
 import android.util.SparseBooleanArray;
 import android.util.SparseIntArray;
 import android.view.MotionEvent;
+import android.view.ViewConfiguration;
+import com.android.launcher3.Launcher;
+import com.android.launcher3.dragndrop.DragOptions;
+import com.android.launcher3.touch.ItemLongClickListener;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -81,6 +85,46 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
 
     private final CheckLongPressHelper mLongPressHelper;
     protected final ActivityContext mActivityContext;
+
+    private boolean mPrimeWidgetLongPressArmed;
+    private float mPrimeTouchDownX;
+    private float mPrimeTouchDownY;
+
+    public void armPrimeWidgetLongPress() {
+        mPrimeWidgetLongPressArmed = true;
+    }
+
+    private void handlePrimeWidgetGesture(MotionEvent ev) {
+        if (ev.getActionMasked() == MotionEvent.ACTION_DOWN) {
+            mPrimeWidgetLongPressArmed = false;
+            mPrimeTouchDownX = ev.getX();
+            mPrimeTouchDownY = ev.getY();
+        } else if (mPrimeWidgetLongPressArmed) {
+            if (ev.getActionMasked() == MotionEvent.ACTION_MOVE) {
+                float dx = ev.getX() - mPrimeTouchDownX;
+                float dy = ev.getY() - mPrimeTouchDownY;
+                int slop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
+                if (dx * dx + dy * dy > slop * slop) {
+                    mPrimeWidgetLongPressArmed = false;
+                    if (getTag() instanceof com.android.launcher3.model.data.LauncherAppWidgetInfo) {
+                        Launcher launcher = Launcher.getLauncher(getContext());
+                        ItemLongClickListener.beginDrag(this, launcher,
+                                (com.android.launcher3.model.data.ItemInfo) getTag(),
+                                new DragOptions());
+                    }
+                }
+            } else if (ev.getActionMasked() == MotionEvent.ACTION_UP) {
+                mPrimeWidgetLongPressArmed = false;
+                if (getTag() instanceof com.android.launcher3.model.data.LauncherAppWidgetInfo) {
+                    ItemLongClickListener.showPrimeWidgetMenu(this,
+                            Launcher.getLauncher(getContext()),
+                            (com.android.launcher3.model.data.LauncherAppWidgetInfo) getTag());
+                }
+            } else if (ev.getActionMasked() == MotionEvent.ACTION_CANCEL) {
+                mPrimeWidgetLongPressArmed = false;
+            }
+        }
+    }
 
     private boolean mIsScrollable;
     private boolean mIsAttachedToWindow;
@@ -368,12 +412,14 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
             }
             dragLayer.setTouchCompleteListener(this);
         }
+        handlePrimeWidgetGesture(ev);
         mLongPressHelper.onTouchEvent(ev);
         return mLongPressHelper.hasPerformedLongPress();
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
+        handlePrimeWidgetGesture(ev);
         mLongPressHelper.onTouchEvent(ev);
         // We want to keep receiving though events to be able to cancel long press on ACTION_UP
         return true;
