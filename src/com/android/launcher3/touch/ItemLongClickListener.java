@@ -88,8 +88,7 @@ public class ItemLongClickListener {
         launcher.setWaitingForResult(null);
         if (v instanceof LauncherAppWidgetHostView
                 && v.getTag() instanceof LauncherAppWidgetInfo) {
-            showPrimeWidgetMenu((LauncherAppWidgetHostView) v, launcher,
-                    (LauncherAppWidgetInfo) v.getTag());
+            ((LauncherAppWidgetHostView) v).armPrimeWidgetLongPress();
             return true;
         }
         beginDrag(v, launcher, (ItemInfo) v.getTag(), new DragOptions());
@@ -97,7 +96,7 @@ public class ItemLongClickListener {
     }
 
     /** Contextual widget actions, with small illustrative icons. */
-    private static void showPrimeWidgetMenu(LauncherAppWidgetHostView widget,
+    public static void showPrimeWidgetMenu(LauncherAppWidgetHostView widget,
             Launcher launcher, LauncherAppWidgetInfo info) {
         final PopupWindow popup = new PopupWindow(launcher);
         LinearLayout column = new LinearLayout(launcher);
