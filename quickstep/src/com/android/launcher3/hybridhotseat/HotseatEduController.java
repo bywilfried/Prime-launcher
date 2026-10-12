@@ -90,7 +90,7 @@ public class HotseatEduController {
         int toRow = 0;
         for (int i = 0; i < workspace.getPageCount(); i++) {
             CellLayout target = workspace.getScreenWithId(workspace.getScreenIdForPageIndex(i));
-            if (target.makeSpaceForHotseatMigration(true)) {
+            if (target != null && target.makeSpaceForHotseatMigration(true)) {
                 toRow = mLauncher.getDeviceProfile().inv.numRows - 1;
                 pageId = i;
                 break;
@@ -183,7 +183,10 @@ public class HotseatEduController {
             return v != null && v.getTag() != null && ((ItemInfo) v.getTag()).container
                     != LauncherSettings.Favorites.CONTAINER_HOTSEAT_PREDICTION;
         });
-        boolean canMigrateToFirstPage = cellLayout.makeSpaceForHotseatMigration(false);
+        // The first workspace screen may not exist yet during initial model loading,
+        // or after workspace pages are rearranged. Do not crash onboarding.
+        boolean canMigrateToFirstPage = cellLayout != null
+                && cellLayout.makeSpaceForHotseatMigration(false);
         if (requiresMigration && canMigrateToFirstPage) {
             showDialog();
         } else {
