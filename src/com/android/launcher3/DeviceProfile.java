@@ -1377,10 +1377,7 @@ public class DeviceProfile {
                     + iconDrawablePaddingPx
                     + Utilities.calculateTextHeight(iconTextSizePx);
             maxIconTextLineCount = 1;
-            // Dense experimental grids may have less vertical space than the configured
-            // icon and label need. Never turn the drawable-to-label gap negative:
-            // that would move the label upward into its own icon.
-            int cellPaddingY = Math.max(0, (getCellSize().y - cellHeightPx) / 2);
+            int cellPaddingY = (getCellSize().y - cellHeightPx) / 2;
             if (iconDrawablePaddingPx > cellPaddingY && !isVerticalLayout
                     && !mDeviceProperties.isMultiWindowMode()) {
                 // Ensures that the label is closer to its corresponding icon. This is not an issue
