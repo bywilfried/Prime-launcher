@@ -289,13 +289,13 @@ public class AppWidgetResizeFrame extends AbstractFloatingView implements View.O
             label.setText(sides[i] + " : " + values[i] + " %");
             column.addView(label);
             SeekBar slider = new SeekBar(widget.getContext());
-            slider.setMax(40);
-            slider.setProgress(values[i]);
+            slider.setMax(80);
+            slider.setProgress(values[i] + 40);
             slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
                 @Override
                 public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                    values[index] = progress;
-                    label.setText(sides[index] + " : " + progress + " %");
+                    values[index] = progress - 40;
+                    label.setText(sides[index] + " : " + values[index] + " %");
                     widget.setPrimeMarginsPercent(values);
                 }
                 @Override public void onStartTrackingTouch(SeekBar seekBar) { }
