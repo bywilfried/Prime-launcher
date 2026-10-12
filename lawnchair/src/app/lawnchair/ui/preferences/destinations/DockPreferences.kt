@@ -90,7 +90,7 @@ fun DockPreferences(modifier: Modifier = Modifier) {
                 SliderPreference(
                     label = stringResource(id = R.string.icon_sizes),
                     adapter = prefs2.dockIconSizeFactor.getAdapter(),
-                    step = 0.1f,
+                    step = 0.05f,
                     valueRange = 0.5F..1.5F,
                     showAsPercentage = true,
                 )
@@ -103,7 +103,7 @@ fun DockPreferences(modifier: Modifier = Modifier) {
                     SliderPreference(
                         label = stringResource(id = R.string.label_size),
                         adapter = prefs2.dockIconLabelSizeFactor.getAdapter(),
-                        step = 0.1f,
+                        step = 0.05f,
                         valueRange = 0.5F..1.5F,
                         showAsPercentage = true,
                     )
