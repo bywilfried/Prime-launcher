@@ -24,7 +24,9 @@ import static com.android.launcher3.LauncherState.NORMAL;
 import static com.android.launcher3.LauncherState.OVERVIEW;
 import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCHER_ALLAPPS_ITEM_LONG_PRESSED;
 
-import android.app.AlertDialog;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
+import android.widget.PopupWindow;
 import android.graphics.Point;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -97,12 +99,17 @@ public class ItemLongClickListener {
     /** Contextual widget actions, with small illustrative icons. */
     private static void showPrimeWidgetMenu(LauncherAppWidgetHostView widget,
             Launcher launcher, LauncherAppWidgetInfo info) {
-        final AlertDialog dialog = new AlertDialog.Builder(launcher).create();
+        final PopupWindow popup = new PopupWindow(launcher);
         LinearLayout column = new LinearLayout(launcher);
         column.setOrientation(LinearLayout.VERTICAL);
         float density = launcher.getResources().getDisplayMetrics().density;
         int padding = Math.round(16 * density);
-        column.setPadding(padding, padding / 2, padding, padding / 2);
+        column.setPadding(padding / 2, padding / 2, padding / 2, padding / 2);
+        GradientDrawable background = new GradientDrawable();
+        background.setColor(Color.rgb(45, 48, 69));
+        background.setCornerRadius(Math.round(26 * density));
+        column.setBackground(background);
+        column.setElevation(Math.round(8 * density));
 
         String[] labels = {"Marges du widget", "Redimensionner", "Déplacer"};
         int[] icons = {android.R.drawable.ic_menu_edit,
@@ -115,16 +122,18 @@ public class ItemLongClickListener {
             row.setMinimumHeight(Math.round(52 * density));
             ImageView image = new ImageView(launcher);
             image.setImageResource(icons[i]);
+            image.setColorFilter(Color.rgb(205, 203, 222));
             LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(
                     Math.round(24 * density), Math.round(24 * density));
             iconParams.rightMargin = padding;
             row.addView(image, iconParams);
             TextView label = new TextView(launcher);
             label.setText(labels[i]);
-            label.setTextSize(16);
+            label.setTextSize(15);
+            label.setTextColor(Color.WHITE);
             row.addView(label);
             row.setOnClickListener(clicked -> {
-                dialog.dismiss();
+                popup.dismiss();
                 if (action == 0) {
                     AppWidgetResizeFrame.showPrimeWidgetMarginsDialog(widget);
                 } else if (action == 1) {
@@ -139,8 +148,14 @@ public class ItemLongClickListener {
             });
             column.addView(row);
         }
-        dialog.setView(column);
-        dialog.show();
+        popup.setContentView(column);
+        popup.setWidth(Math.round(250 * density));
+        popup.setHeight(android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+        popup.setBackgroundDrawable(background);
+        popup.setOutsideTouchable(true);
+        popup.setFocusable(true);
+        popup.setElevation(Math.round(10 * density));
+        popup.showAsDropDown(widget, 0, -widget.getHeight());
     }
 
     public static void beginDrag(View v, Launcher launcher, ItemInfo info,
