@@ -273,21 +273,26 @@ public class AppWidgetResizeFrame extends AbstractFloatingView implements View.O
 
     /** Edits external content insets without changing the widget's occupied grid cells. */
     private void showPrimeWidgetMarginsDialog() {
-        if (mWidgetView == null) return;
-        final int[] values = mWidgetView.getPrimeMarginsDp();
+        showPrimeWidgetMarginsDialog(mWidgetView);
+    }
+
+    /** Opens the per-widget margins editor directly from the long-press menu. */
+    public static void showPrimeWidgetMarginsDialog(LauncherAppWidgetHostView widget) {
+        if (widget == null) return;
+        final int[] values = widget.getPrimeMarginsDp();
         final int[] original = values.clone();
         final String[] sides = {"Gauche", "Haut", "Droite", "Bas"};
-        final float density = getResources().getDisplayMetrics().density;
-        LinearLayout column = new LinearLayout(getContext());
+        final float density = widget.getResources().getDisplayMetrics().density;
+        LinearLayout column = new LinearLayout(widget.getContext());
         column.setOrientation(LinearLayout.VERTICAL);
         int inset = Math.round(20 * density);
         column.setPadding(inset, inset / 2, inset, inset / 2);
         for (int i = 0; i < sides.length; i++) {
             final int index = i;
-            TextView label = new TextView(getContext());
+            TextView label = new TextView(widget.getContext());
             label.setText(sides[i] + " : " + values[i] + " dp");
             column.addView(label);
-            SeekBar slider = new SeekBar(getContext());
+            SeekBar slider = new SeekBar(widget.getContext());
             slider.setMax(32);
             slider.setProgress(values[i]);
             slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -295,7 +300,7 @@ public class AppWidgetResizeFrame extends AbstractFloatingView implements View.O
                 public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                     values[index] = progress;
                     label.setText(sides[index] + " : " + progress + " dp");
-                    mWidgetView.setPrimeMarginsDp(values);
+                    widget.setPrimeMarginsDp(values);
                 }
                 @Override public void onStartTrackingTouch(SeekBar seekBar) { }
                 @Override public void onStopTrackingTouch(SeekBar seekBar) { }
@@ -303,22 +308,22 @@ public class AppWidgetResizeFrame extends AbstractFloatingView implements View.O
             column.addView(slider);
         }
         final boolean[] committed = {false};
-        AlertDialog dialog = new AlertDialog.Builder(getContext())
+        AlertDialog dialog = new AlertDialog.Builder(widget.getContext())
                 .setTitle("Marges du widget")
                 .setView(column)
                 .setPositiveButton("Valider", (d, which) -> {
                     committed[0] = true;
-                    mWidgetView.setPrimeMarginsDp(values);
+                    widget.setPrimeMarginsDp(values);
                 })
                 .setNeutralButton("Réinitialiser", (d, which) -> {
                     committed[0] = true;
-                    mWidgetView.setPrimeMarginsDp(new int[4]);
+                    widget.setPrimeMarginsDp(new int[4]);
                 })
                 .setNegativeButton("Annuler", (d, which) -> { })
                 .create();
         // Back and outside taps cancel the live preview as well.
         dialog.setOnDismissListener(d -> {
-            if (!committed[0]) mWidgetView.setPrimeMarginsDp(original);
+            if (!committed[0]) widget.setPrimeMarginsDp(original);
         });
         dialog.show();
     }
