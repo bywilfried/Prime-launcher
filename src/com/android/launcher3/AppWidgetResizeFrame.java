@@ -289,12 +289,12 @@ public class AppWidgetResizeFrame extends AbstractFloatingView implements View.O
             label.setText(sides[i] + " : " + values[i] + " %");
             column.addView(label);
             SeekBar slider = new SeekBar(widget.getContext());
-            slider.setMax(80);
-            slider.setProgress(values[i] + 40);
+            slider.setMax(200);
+            slider.setProgress(values[i]);
             slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
                 @Override
                 public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                    values[index] = progress - 40;
+                    values[index] = progress;
                     label.setText(sides[index] + " : " + values[index] + " %");
                     widget.setPrimeMarginsPercent(values);
                 }
@@ -313,7 +313,7 @@ public class AppWidgetResizeFrame extends AbstractFloatingView implements View.O
                 })
                 .setNeutralButton("Réinitialiser", (d, which) -> {
                     committed[0] = true;
-                    widget.setPrimeMarginsPercent(new int[4]);
+                    widget.resetPrimeMarginsToGlobal();
                 })
                 .setNegativeButton("Annuler", (d, which) -> { })
                 .create();
