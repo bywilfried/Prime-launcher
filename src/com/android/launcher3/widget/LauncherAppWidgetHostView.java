@@ -96,8 +96,6 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
     private int mFocusRectOutsets = 0;
     private static final String PRIME_WIDGET_MARGINS = "prime_widget_margins";
     private final int[] mPrimeMarginsPercent = new int[4];
-    private int[] mPrimeBasePadding;
-    private boolean mPrimeApplyingPadding;
 
     /** Individual widget margins use the same 0–200% scale as global widget margins. */
     private int getPrimeGlobalMarginPercent() {
@@ -137,10 +135,20 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
         updatePrimeWidgetSizeOptions();
     }
 
-    private int primeMarginDeltaPx(int side) {
-        int base = mActivityContext.getDeviceProfile().getPrimeUnscaledWidgetPadding(side);
-        float global = mActivityContext.getDeviceProfile().getPrimeGlobalWidgetPaddingFactor();
-        return Math.round(base * (mPrimeMarginsPercent[side] / 100f - global));
+    /** Insets applied to the widget's grid cell, matching DeviceProfile.widgetPadding. */
+    public Rect getPrimeCellInsets() {
+        Rect insets = new Rect();
+        for (int i = 0; i < 4; i++) {
+            int base = mActivityContext.getDeviceProfile().getPrimeUnscaledWidgetPadding(i);
+            int px = Math.round(base * mPrimeMarginsPercent[i] / 100f);
+            switch (i) {
+                case 0: insets.left = px; break;
+                case 1: insets.top = px; break;
+                case 2: insets.right = px; break;
+                case 3: insets.bottom = px; break;
+            }
+        }
+        return insets;
     }
 
     /**
@@ -163,33 +171,9 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
         AppWidgetManager.getInstance(getContext()).updateAppWidgetOptions(getAppWidgetId(), options);
     }
 
-    @Override
-    public void setPadding(int left, int top, int right, int bottom) {
-        if (!mPrimeApplyingPadding) {
-            mPrimeBasePadding = new int[] {left, top, right, bottom};
-            if (mPrimeMarginsPercent != null) {
-                left = Math.max(0, left + primeMarginDeltaPx(0));
-                top = Math.max(0, top + primeMarginDeltaPx(1));
-                right = Math.max(0, right + primeMarginDeltaPx(2));
-                bottom = Math.max(0, bottom + primeMarginDeltaPx(3));
-            }
-        }
-        super.setPadding(left, top, right, bottom);
-    }
-
     private void applyPrimeMargins() {
-        if (mPrimeBasePadding == null) return;
-        mPrimeApplyingPadding = true;
-        try {
-            super.setPadding(
-                    Math.max(0, mPrimeBasePadding[0] + primeMarginDeltaPx(0)),
-                    Math.max(0, mPrimeBasePadding[1] + primeMarginDeltaPx(1)),
-                    Math.max(0, mPrimeBasePadding[2] + primeMarginDeltaPx(2)),
-                    Math.max(0, mPrimeBasePadding[3] + primeMarginDeltaPx(3)));
-        } finally {
-            mPrimeApplyingPadding = false;
-        }
-        requestLayout();
+        // Margins belong to the cell layout, not to RemoteViews content padding.
+        if (getParent() != null) getParent().requestLayout();
     }
 
     public LauncherAppWidgetHostView(Context context) {
