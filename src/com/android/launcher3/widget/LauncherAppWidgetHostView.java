@@ -90,41 +90,41 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
 
     private int mFocusRectOutsets = 0;
     private static final String PRIME_WIDGET_MARGINS = "prime_widget_margins";
-    private final int[] mPrimeMarginsDp = new int[4];
+    private final int[] mPrimeMarginsPercent = new int[4];
     private int[] mPrimeBasePadding;
     private boolean mPrimeApplyingPadding;
 
-    /** Individual widget insets in dp: left, top, right, bottom. */
-    public int[] getPrimeMarginsDp() {
-        return mPrimeMarginsDp.clone();
+    /** Individual insets as a percentage of widget width/height, in left/top/right/bottom order. */
+    public int[] getPrimeMarginsPercent() {
+        return mPrimeMarginsPercent.clone();
     }
 
-    public void setPrimeMarginsDp(int[] margins) {
+    public void setPrimeMarginsPercent(int[] margins) {
         if (margins == null || margins.length != 4) return;
         SharedPreferences.Editor editor = getContext().getSharedPreferences(
                 PRIME_WIDGET_MARGINS, Context.MODE_PRIVATE).edit();
         for (int i = 0; i < 4; i++) {
-            mPrimeMarginsDp[i] = Math.max(0, Math.min(32, margins[i]));
-            editor.putInt(getAppWidgetId() + "_" + i, mPrimeMarginsDp[i]);
+            mPrimeMarginsPercent[i] = Math.max(0, Math.min(40, margins[i]));
+            editor.putInt(getAppWidgetId() + "_percent_" + i, mPrimeMarginsPercent[i]);
         }
         editor.apply();
         applyPrimeMargins();
     }
 
-    /**
-     * Preserve the platform/Lawnchair base padding when the widget host updates it.
-     * Prime's per-widget insets are applied exactly once on top of that base.
-     */
+    private int primeMarginPx(int side) {
+        int dimension = (side == 0 || side == 2) ? getWidth() : getHeight();
+        return Math.round(Math.max(0, dimension) * mPrimeMarginsPercent[side] / 100f);
+    }
+
     @Override
     public void setPadding(int left, int top, int right, int bottom) {
         if (!mPrimeApplyingPadding) {
             mPrimeBasePadding = new int[] {left, top, right, bottom};
-            if (mPrimeMarginsDp != null) {
-                float density = getResources().getDisplayMetrics().density;
-                left += Math.round(mPrimeMarginsDp[0] * density);
-                top += Math.round(mPrimeMarginsDp[1] * density);
-                right += Math.round(mPrimeMarginsDp[2] * density);
-                bottom += Math.round(mPrimeMarginsDp[3] * density);
+            if (mPrimeMarginsPercent != null) {
+                left += primeMarginPx(0);
+                top += primeMarginPx(1);
+                right += primeMarginPx(2);
+                bottom += primeMarginPx(3);
             }
         }
         super.setPadding(left, top, right, bottom);
@@ -134,12 +134,11 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
         if (mPrimeBasePadding == null) return;
         mPrimeApplyingPadding = true;
         try {
-            float density = getResources().getDisplayMetrics().density;
             super.setPadding(
-                    mPrimeBasePadding[0] + Math.round(mPrimeMarginsDp[0] * density),
-                    mPrimeBasePadding[1] + Math.round(mPrimeMarginsDp[1] * density),
-                    mPrimeBasePadding[2] + Math.round(mPrimeMarginsDp[2] * density),
-                    mPrimeBasePadding[3] + Math.round(mPrimeMarginsDp[3] * density));
+                    mPrimeBasePadding[0] + primeMarginPx(0),
+                    mPrimeBasePadding[1] + primeMarginPx(1),
+                    mPrimeBasePadding[2] + primeMarginPx(2),
+                    mPrimeBasePadding[3] + primeMarginPx(3));
         } finally {
             mPrimeApplyingPadding = false;
         }
@@ -203,7 +202,14 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
         SharedPreferences prefs = getContext().getSharedPreferences(
                 PRIME_WIDGET_MARGINS, Context.MODE_PRIVATE);
         for (int i = 0; i < 4; i++) {
-            mPrimeMarginsDp[i] = prefs.getInt(appWidgetId + "_" + i, 0);
+            mPrimeMarginsPercent[i] = prefs.getInt(appWidgetId + "_percent_" + i, -1);
+            if (mPrimeMarginsPercent[i] < 0) {
+                int oldDp = prefs.getInt(appWidgetId + "_" + i, 0);
+                float density = getResources().getDisplayMetrics().density;
+                int dimension = (i == 0 || i == 2) ? getWidth() : getHeight();
+                mPrimeMarginsPercent[i] = dimension > 0
+                        ? Math.min(40, Math.round(oldDp * density * 100f / dimension)) : 0;
+            }
         }
         applyPrimeMargins();
         if (!mTrackingWidgetUpdate && appWidgetId != -1) {
@@ -366,6 +372,12 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
             // we still may be receiving a touch up which we want to intercept
             mLongPressHelper.cancelLongPress();
         }
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        if (w != oldw || h != oldh) applyPrimeMargins();
     }
 
     @Override
