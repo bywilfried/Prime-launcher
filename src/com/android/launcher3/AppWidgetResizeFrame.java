@@ -302,16 +302,25 @@ public class AppWidgetResizeFrame extends AbstractFloatingView implements View.O
             });
             column.addView(slider);
         }
-        new AlertDialog.Builder(getContext())
+        final boolean[] committed = {false};
+        AlertDialog dialog = new AlertDialog.Builder(getContext())
                 .setTitle("Marges du widget")
                 .setView(column)
-                .setPositiveButton("Valider", (dialog, which) ->
-                        mWidgetView.setPrimeMarginsDp(values))
-                .setNeutralButton("Réinitialiser", (dialog, which) ->
-                        mWidgetView.setPrimeMarginsDp(new int[4]))
-                .setNegativeButton("Annuler", (dialog, which) ->
-                        mWidgetView.setPrimeMarginsDp(original))
-                .show();
+                .setPositiveButton("Valider", (d, which) -> {
+                    committed[0] = true;
+                    mWidgetView.setPrimeMarginsDp(values);
+                })
+                .setNeutralButton("Réinitialiser", (d, which) -> {
+                    committed[0] = true;
+                    mWidgetView.setPrimeMarginsDp(new int[4]);
+                })
+                .setNegativeButton("Annuler", (d, which) -> { })
+                .create();
+        // Back and outside taps cancel the live preview as well.
+        dialog.setOnDismissListener(d -> {
+            if (!committed[0]) mWidgetView.setPrimeMarginsDp(original);
+        });
+        dialog.show();
     }
 
     private void setupForWidget(LauncherAppWidgetHostView widgetView, CellLayout cellLayout,
