@@ -1679,6 +1679,13 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
 
         DeviceProfile grid = mActivityContext.getDeviceProfile();
         PrimePreparedDrawerPage preparedPage = prepareSelectedPrimeDrawerPage();
+        // Apply the selected category's grid to the canonical live adapter as well as
+        // the prepared swipe pages. Without this, direct selection keeps the global grid.
+        if (!isSearching()) {
+            AdapterHolder mainHolder = mAH[AdapterHolder.MAIN];
+            mainHolder.mAdapter.setAppsPerRow(preparedPage.appsPerRow);
+            mainHolder.mAppsList.setNumAppsPerRowAllApps(preparedPage.appsPerRow);
+        }
         if (!grid.isVerticalBarLayout() || FeatureFlags.enableResponsiveWorkspace()) {
             setPadding(preparedPage.sideMarginPx, preparedPage.topPaddingPx,
                     preparedPage.sideMarginPx, 0);
