@@ -111,9 +111,9 @@ public class ItemLongClickListener {
         column.setBackground(background);
         column.setElevation(Math.round(8 * density));
 
-        String[] labels = {"Marges du widget", "Redimensionner"};
-        int[] icons = {android.R.drawable.ic_menu_edit,
-                android.R.drawable.ic_menu_crop};
+        String[] labels = {"Redimensionner", "Marges du widget"};
+        int[] icons = {android.R.drawable.ic_menu_crop,
+                android.R.drawable.ic_menu_edit};
         for (int i = 0; i < labels.length; i++) {
             final int action = i;
             LinearLayout row = new LinearLayout(launcher);
@@ -134,9 +134,9 @@ public class ItemLongClickListener {
             row.addView(label);
             row.setOnClickListener(clicked -> {
                 popup.dismiss();
-                if (action == 0) {
+                if (action == 1) {
                     AppWidgetResizeFrame.showPrimeWidgetMarginsDialog(widget);
-                } else if (action == 1) {
+                } else if (action == 0) {
                     if (widget.getParent() != null
                             && widget.getParent().getParent() instanceof com.android.launcher3.CellLayout) {
                         AppWidgetResizeFrame.showForWidget(widget,
