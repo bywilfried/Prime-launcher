@@ -228,8 +228,13 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
         SharedPreferences prefs = getContext().getSharedPreferences(
                 PRIME_WIDGET_MARGINS, Context.MODE_PRIVATE);
         for (int i = 0; i < 4; i++) {
-            mPrimeMarginsPercent[i] = prefs.getInt(appWidgetId + "_percent_" + i, -1);
-            if (mPrimeMarginsPercent[i] < 0) {
+            // Negative percentages are valid custom margins (-40% to +40%).
+            // Check whether the key exists instead of using -1 as a sentinel.
+            String percentKey = appWidgetId + "_percent_" + i;
+            if (prefs.contains(percentKey)) {
+                mPrimeMarginsPercent[i] = Math.max(-40,
+                        Math.min(40, prefs.getInt(percentKey, 0)));
+            } else {
                 int oldDp = prefs.getInt(appWidgetId + "_" + i, 0);
                 float density = getResources().getDisplayMetrics().density;
                 int dimension = (i == 0 || i == 2) ? getWidth() : getHeight();
