@@ -133,44 +133,12 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
         Bundle options = WidgetSizes.getWidgetSizeOptions(getContext(),
                 getAppWidgetInfo().provider, info.spanX, info.spanY);
         if (options == null) return;
-        // WidgetSizes already includes the global Lawnchair margins. Only adjust for
-        // the *effective* per-widget delta, bounded by the available base padding.
-        float horizontal = 1f;
-        float vertical = 1f;
-        if (mPrimeBasePadding != null && getWidth() > 0 && getHeight() > 0) {
-            int left = Math.max(0, mPrimeBasePadding[0] + primeMarginPx(0));
-            int right = Math.max(0, mPrimeBasePadding[2] + primeMarginPx(2));
-            int top = Math.max(0, mPrimeBasePadding[1] + primeMarginPx(1));
-            int bottom = Math.max(0, mPrimeBasePadding[3] + primeMarginPx(3));
-            horizontal = Math.max(0.1f, 1f - (left + right
-                    - mPrimeBasePadding[0] - mPrimeBasePadding[2])
-                    / (float) getWidth());
-            vertical = Math.max(0.1f, 1f - (top + bottom
-                    - mPrimeBasePadding[1] - mPrimeBasePadding[3])
-                    / (float) getHeight());
-        }
-        for (String key : new String[] {
-                AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,
-                AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH}) {
-            options.putInt(key, Math.max(1, Math.round(options.getInt(key) * horizontal)));
-        }
-        for (String key : new String[] {
-                AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,
-                AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT}) {
-            options.putInt(key, Math.max(1, Math.round(options.getInt(key) * vertical)));
-        }
-        if (Utilities.ATLEAST_S) {
-            java.util.ArrayList<SizeF> sizes =
-                    options.getParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES);
-            if (sizes != null) {
-                java.util.ArrayList<SizeF> adjusted = new java.util.ArrayList<>();
-                for (SizeF size : sizes) {
-                    adjusted.add(new SizeF(Math.max(1f, size.getWidth() * horizontal),
-                            Math.max(1f, size.getHeight() * vertical)));
-                }
-                options.putParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES, adjusted);
-            }
-        }
+        // WidgetSizes already reports the provider's usable dimensions, including
+        // the framework and global widget padding. Do not scale them again using
+        // Prime's per-widget padding: doing both clips RemoteViews (notably weather
+        // widgets), even when the advanced controls are at their neutral values.
+        // Re-sending the unmodified options also restores widgets previously
+        // affected by the double adjustment when their margins are reset.
         AppWidgetManager.getInstance(getContext()).updateAppWidgetOptions(getAppWidgetId(), options);
     }
 
