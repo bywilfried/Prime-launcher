@@ -376,6 +376,9 @@ public class DeviceProfile {
                 .firstCached(preferenceManager2.getDrawerCellHeightFactor());
         // Lawnchair: clamp the user padding factors to their slider ranges so a restored or
         // manually edited preference can't feed out-of-range values into the layout math.
+        // Preserve custom margins across immediate grid rebuilds: the async
+        // preference cache may not yet reflect the last DataStore write.
+        preferenceManager2.refreshCachedPreferencesForGrid();
         workspacePaddingHorizontalFactor = Utilities.boundToRange(PreferenceCacheExtensionsKt
                 .firstCached(preferenceManager2.getWorkspacePaddingHorizontalFactor()), 0f, 2f);
         workspacePaddingVerticalFactor = Utilities.boundToRange(PreferenceCacheExtensionsKt
