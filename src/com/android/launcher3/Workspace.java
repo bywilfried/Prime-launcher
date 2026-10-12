@@ -40,6 +40,10 @@ import static com.android.launcher3.logging.StatsLogManager.LAUNCHER_STATE_HOME;
 import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCHER_SWIPELEFT;
 import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCHER_SWIPERIGHT;
 
+import android.widget.PopupWindow;
+import com.android.launcher3.touch.ItemLongClickListener;
+import com.android.launcher3.widget.LauncherAppWidgetHostView;
+import com.android.launcher3.model.data.LauncherAppWidgetInfo;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.LayoutTransition;
@@ -1952,6 +1956,29 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
             mDragSourceInternal = (ShortcutAndWidgetContainer) child.getParent();
         }
 
+        if (child instanceof LauncherAppWidgetHostView
+                && child.getTag() instanceof LauncherAppWidgetInfo
+                && !dragOptions.isAccessibleDrag) {
+            LauncherAppWidgetHostView widget = (LauncherAppWidgetHostView) child;
+            PopupWindow widgetPopup = ItemLongClickListener.showPrimeWidgetMenu(widget,
+                    mLauncher, (LauncherAppWidgetInfo) child.getTag());
+            final int threshold = getResources().getDimensionPixelSize(
+                    R.dimen.deep_shortcuts_start_drag_threshold);
+            dragOptions.preDragCondition = new DragOptions.PreDragCondition() {
+                @Override
+                public boolean shouldStartDrag(double distanceDragged) {
+                    return distanceDragged > threshold;
+                }
+
+                @Override
+                public void onPreDragStart(DropTarget.DragObject dragObject) { }
+
+                @Override
+                public void onPreDragEnd(DropTarget.DragObject dragObject, boolean dragStarted) {
+                    if (dragStarted) widgetPopup.dismiss();
+                }
+            };
+        }
         if (child instanceof BubbleTextView) {
             BubbleTextView btv = (BubbleTextView) child;
             if (!dragOptions.isAccessibleDrag) {
