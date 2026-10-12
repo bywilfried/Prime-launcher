@@ -92,17 +92,17 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
     private static final String PRIME_WIDGET_MARGINS = "prime_widget_margins";
     private final int[] mPrimeMarginsDp = new int[4];
     private int[] mPrimeBasePadding;
+    private boolean mPrimeApplyingPadding;
 
-    /** Individual widget margins, ordered left, top, right, bottom. */
+    /** Individual widget insets in dp: left, top, right, bottom. */
     public int[] getPrimeMarginsDp() {
         return mPrimeMarginsDp.clone();
     }
 
     public void setPrimeMarginsDp(int[] margins) {
         if (margins == null || margins.length != 4) return;
-        SharedPreferences prefs = getContext().getSharedPreferences(
-                PRIME_WIDGET_MARGINS, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
+        SharedPreferences.Editor editor = getContext().getSharedPreferences(
+                PRIME_WIDGET_MARGINS, Context.MODE_PRIVATE).edit();
         for (int i = 0; i < 4; i++) {
             mPrimeMarginsDp[i] = Math.max(0, Math.min(32, margins[i]));
             editor.putInt(getAppWidgetId() + "_" + i, mPrimeMarginsDp[i]);
@@ -111,20 +111,40 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
         applyPrimeMargins();
     }
 
-    private void applyPrimeMargins() {
-        if (mPrimeBasePadding == null) {
-            mPrimeBasePadding = new int[] {
-                    getPaddingLeft(), getPaddingTop(), getPaddingRight(), getPaddingBottom()
-            };
+    /**
+     * Preserve the platform/Lawnchair base padding when the widget host updates it.
+     * Prime's per-widget insets are applied exactly once on top of that base.
+     */
+    @Override
+    public void setPadding(int left, int top, int right, int bottom) {
+        if (!mPrimeApplyingPadding) {
+            mPrimeBasePadding = new int[] {left, top, right, bottom};
+            if (mPrimeMarginsDp != null) {
+                float density = getResources().getDisplayMetrics().density;
+                left += Math.round(mPrimeMarginsDp[0] * density);
+                top += Math.round(mPrimeMarginsDp[1] * density);
+                right += Math.round(mPrimeMarginsDp[2] * density);
+                bottom += Math.round(mPrimeMarginsDp[3] * density);
+            }
         }
-        float density = getResources().getDisplayMetrics().density;
-        setPadding(mPrimeBasePadding[0] + Math.round(mPrimeMarginsDp[0] * density),
-                mPrimeBasePadding[1] + Math.round(mPrimeMarginsDp[1] * density),
-                mPrimeBasePadding[2] + Math.round(mPrimeMarginsDp[2] * density),
-                mPrimeBasePadding[3] + Math.round(mPrimeMarginsDp[3] * density));
-        requestLayout();
+        super.setPadding(left, top, right, bottom);
     }
 
+    private void applyPrimeMargins() {
+        if (mPrimeBasePadding == null) return;
+        mPrimeApplyingPadding = true;
+        try {
+            float density = getResources().getDisplayMetrics().density;
+            super.setPadding(
+                    mPrimeBasePadding[0] + Math.round(mPrimeMarginsDp[0] * density),
+                    mPrimeBasePadding[1] + Math.round(mPrimeMarginsDp[1] * density),
+                    mPrimeBasePadding[2] + Math.round(mPrimeMarginsDp[2] * density),
+                    mPrimeBasePadding[3] + Math.round(mPrimeMarginsDp[3] * density));
+        } finally {
+            mPrimeApplyingPadding = false;
+        }
+        requestLayout();
+    }
 
     public LauncherAppWidgetHostView(Context context) {
         super(context);
@@ -180,9 +200,6 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
     @Override
     public void setAppWidget(int appWidgetId, AppWidgetProviderInfo info) {
         super.setAppWidget(appWidgetId, info);
-        mPrimeBasePadding = new int[] {
-                getPaddingLeft(), getPaddingTop(), getPaddingRight(), getPaddingBottom()
-        };
         SharedPreferences prefs = getContext().getSharedPreferences(
                 PRIME_WIDGET_MARGINS, Context.MODE_PRIVATE);
         for (int i = 0; i < 4; i++) {
