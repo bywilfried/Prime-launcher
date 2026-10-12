@@ -287,6 +287,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     @ViewDebug.ExportedProperty(category = "launcher")
     private DotInfo mDotInfo;
     private DotRenderer mDotRenderer;
+    private int mPrimeDotRendererSize = -1;
     private int mPrimePerIconDotColor = Color.TRANSPARENT;
     private int mPrimePerIconTextColor = Color.TRANSPARENT;
     private boolean mPrimePerIconAllApps;
@@ -1110,7 +1111,8 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             final int scrollX = getScrollX();
             final int scrollY = getScrollY();
             canvas.translate(scrollX, scrollY);
-            if (app.lawnchair.theme.NotificationDotThemeColors.isPerIconColor(getContext())) {
+            boolean perIconDot = app.lawnchair.theme.NotificationDotThemeColors.isPerIconColor(getContext());
+            if (perIconDot) {
                 int background = mDotParams.appColor;
                 if (Color.alpha(background) == 0) {
                     background = mDotParams.dotColor;
@@ -1122,13 +1124,21 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                                 PreferenceCacheExtensionsKt.firstCached(pref2.getNotificationDotTextColor()));
                 boolean allApps = mDisplay == DISPLAY_ALL_APPS || mDisplay == DISPLAY_PREDICTION_ROW;
                 if (mPrimePerIconDotColor != background || mPrimePerIconTextColor != textColor
-                        || mPrimePerIconAllApps != allApps) {
+                        || mPrimePerIconAllApps != allApps
+                        || mPrimeDotRendererSize != mIconSize) {
                     mDotRenderer = mActivity.getDeviceProfile()
-                            .createPerIconDotRenderer(allApps, background, textColor);
+                            .createPrimeSizedDotRenderer(mIconSize, background, textColor);
+                    mPrimeDotRendererSize = mIconSize;
                     mPrimePerIconDotColor = background;
                     mPrimePerIconTextColor = textColor;
                     mPrimePerIconAllApps = allApps;
                 }
+            }
+            if (!perIconDot && mPrimeDotRendererSize != mIconSize) {
+                DeviceProfile dp = mActivity.getDeviceProfile();
+                mDotRenderer = dp.createPrimeSizedDotRenderer(mIconSize,
+                        dp.getPrimeDotColor(), dp.getPrimeDotCountColor());
+                mPrimeDotRendererSize = mIconSize;
             }
             mDotRenderer.draw(canvas, mDotParams, mDotInfo == null ? -1 : mDotInfo.getNotificationCount());
             canvas.translate(-scrollX, -scrollY);
@@ -1577,6 +1587,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                 mDotRenderer = mActivity.getDeviceProfile().mDotRendererWorkSpace;
             }
             mPrimePerIconDotColor = Color.TRANSPARENT;
+            mPrimeDotRendererSize = -1;
             if (wasDotted || isDotted) {
                 // Animate when a dot is first added or when it is removed.
                 if (animate && (wasDotted ^ isDotted) && isShown()) {
