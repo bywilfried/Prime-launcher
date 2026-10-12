@@ -140,6 +140,7 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
     @ViewDebug.ExportedProperty(category = "launcher", deepExport = true)
     private final FolderDotInfo mDotInfo = new FolderDotInfo();
     private DotRenderer mDotRenderer;
+    private int mPrimeDotRendererSize = -1;
     @ViewDebug.ExportedProperty(category = "launcher", deepExport = true)
     private DotRenderer.DrawParams mDotParams;
     private float mDotScale;
@@ -753,6 +754,13 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
             Rect iconBounds = mDotParams.iconBounds;
             // Use the actual folder preview bounds (Home, Dock or drawer), not Home icon size.
             mBackground.getBounds(iconBounds);
+            int previewSize = Math.max(1, Math.min(iconBounds.width(), iconBounds.height()));
+            if (mPrimeDotRendererSize != previewSize) {
+                DeviceProfile dp = mActivity.getDeviceProfile();
+                mDotRenderer = dp.createPrimeSizedDotRenderer(previewSize,
+                        dp.getPrimeDotColor(), dp.getPrimeDotCountColor());
+                mPrimeDotRendererSize = previewSize;
+            }
 
             // If we are animating to the accepting state, animate the dot out.
             mDotParams.scale = Math.max(0, mDotScale - mBackground.getAcceptScaleProgress());
