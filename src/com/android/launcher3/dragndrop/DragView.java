@@ -182,8 +182,19 @@ public abstract class DragView<T extends Context & ActivityContext> extends Fram
         mScaleAnim.setDuration(VIEW_ZOOM_DURATION);
         mScaleAnim.addUpdateListener(animation -> {
             final float value = (Float) animation.getAnimatedValue();
-            setScaleX(Utilities.mapRange(value, initialScale, mEndScale));
-            setScaleY(Utilities.mapRange(value, initialScale, mEndScale));
+            float animatedScale = Utilities.mapRange(value, initialScale, mEndScale);
+            // Keep oversized widget previews small enough to see the destination grid.
+            // This only changes the floating preview, never the widget's actual spans.
+            if (mItemType == ITEM_TYPE_APPWIDGET && mWidth > 0 && mHeight > 0) {
+                float maxWidth = mDragLayer.getWidth() * 0.80f;
+                float maxHeight = mDragLayer.getHeight() * 0.60f;
+                if (maxWidth > 0 && maxHeight > 0) {
+                    animatedScale = Math.min(animatedScale,
+                            Math.min(maxWidth / mWidth, maxHeight / mHeight));
+                }
+            }
+            setScaleX(animatedScale);
+            setScaleY(animatedScale);
             if (!isAttachedToWindow()) {
                 animation.cancel();
             }
