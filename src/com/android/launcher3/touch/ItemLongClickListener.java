@@ -88,7 +88,8 @@ public class ItemLongClickListener {
         launcher.setWaitingForResult(null);
         if (v instanceof LauncherAppWidgetHostView
                 && v.getTag() instanceof LauncherAppWidgetInfo) {
-            ((LauncherAppWidgetHostView) v).armPrimeWidgetLongPress();
+            // Match workspace icons: start the native drag while the pointer is down.
+            beginDrag(v, launcher, (ItemInfo) v.getTag(), new DragOptions());
             return true;
         }
         beginDrag(v, launcher, (ItemInfo) v.getTag(), new DragOptions());
