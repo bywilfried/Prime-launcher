@@ -1,1 +1,11 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108"><path android:fillColor="#FFFFFFFF" android:pathData="M32,47 L54,29 L77,47 L77,64 C77,75 69,80 58,80 L52,80 L52,69 L59,69 C64,69 66,66 66,62 L66,49 L54,39 L43,48 L43,79 L32,79 Z"/><path android:fillColor="#FFFFFFFF" android:pathData="M50,50 h5 v5 h-5 Z M50,57 h5 v5 h-5 Z M57,50 h5 v5 h-5 Z M57,57 h5 v5 h-5 Z"/></vector>
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <!-- The roof and P form one continuous visual identity, matching the approved mockup. -->
+    <path android:pathData="M25,51 L51,31 Q54,29 57,31 L77,47 Q84,53 84,65 Q84,83 65,84 L49,84 L49,73 Q49,68 54,68 L63,68 Q72,68 72,60 Q72,54 67,50 L54,40 L25,61 Z">
+        <aapt:attr name="android:fillColor"><gradient android:startX="27" android:startY="65" android:endX="78" android:endY="33" android:type="linear" android:startColor="#FF719BFF" android:endColor="#FFFFFFFF"/></aapt:attr>
+    </path>
+    <path android:pathData="M32,62 L43,53 Q46,51 46,55 L46,89 Q46,92 43,92 L36,92 Q32,92 32,88 Z">
+        <aapt:attr name="android:fillColor"><gradient android:startX="33" android:startY="55" android:endX="45" android:endY="91" android:type="linear" android:startColor="#FF85A6FF" android:endColor="#FFFFFFFF"/></aapt:attr>
+    </path>
+    <path android:fillColor="#FF9DC0FF" android:pathData="M52,55 h6 v6 h-6 z M61,55 h6 v6 h-6 z M52,64 h6 v6 h-6 z M61,64 h6 v6 h-6 z"/>
+</vector>
