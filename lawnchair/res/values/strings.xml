@@ -1125,4 +1125,44 @@
     <string name="prime_haptic_reset_all">Reset all haptics to default</string>
     <string name="prime_extended_grid_active_description">Reduce the current home screen grid to 10 × 10 or smaller before disabling this option</string>
 
+
+    <!-- English fallback strings for locale-only resource keys -->
+    <string name="apply_grid">Apply grid</string>
+    <string name="create">Create</string>
+    <string name="create_backup_action">Create backup</string>
+    <string name="customize_button_text">Customize</string>
+    <string name="delete">Delete</string>
+    <string name="dt2s_a11y_hint">Enable the accessibility service to use double tap to sleep.</string>
+    <string name="dt2s_a11y_hint_title">Accessibility permission required</string>
+    <string name="dt2s_recents_warning_open_settings">Open settings</string>
+    <string name="dt2s_warning_open_settings">Open settings</string>
+    <string name="hide_hidden_apps_search">Hide hidden apps from search</string>
+    <string name="home_screen_edit_toggle_from_home_popup">Show edit option in home screen menu</string>
+    <string name="home_screen_lock_toggle_from_home_popup">Show lock option in home screen menu</string>
+    <string name="icon_shape_bottom_left">Bottom left</string>
+    <string name="icon_shape_bottom_right">Bottom right</string>
+    <string name="icon_shape_corner">Corner</string>
+    <string name="icon_shape_corner_cut">Cut</string>
+    <string name="icon_shape_corner_round">Rounded</string>
+    <string name="icon_shape_corner_squircle">Squircle</string>
+    <string name="icon_shape_top_left">Top left</string>
+    <string name="icon_shape_top_right">Top right</string>
+    <string name="icon_style">Icon style</string>
+    <string name="launcher_default_color">Default launcher color</string>
+    <string name="local_colors_extraction_class">Local color extraction</string>
+    <string name="missing_notification_access_description">Allow notification access to show notification dots.</string>
+    <string name="msg_missing_notification_access">Notification access is required.</string>
+    <string name="recents_a11y_hint">Enable the accessibility service to use this feature.</string>
+    <string name="reset_font">Reset font</string>
+    <string name="restore_backup_action">Restore backup</string>
+    <string name="show_dot_pagination_description">Show page indicators as dots</string>
+    <string name="show_dot_pagination_label">Dot page indicators</string>
+    <string name="show_enable_smart_hide">Enable smart hide</string>
+    <string name="show_home_labels">Show home screen labels</string>
+    <string name="show_material_u_popup_description">Use the Material You popup style</string>
+    <string name="show_material_u_popup_label">Material You popup</string>
+    <string name="show_system_settings_entry">Show system settings entry</string>
+    <string name="smartspace_mode_selection">Smartspace mode</string>
+    <string name="transparent_background_icons">Transparent icon backgrounds</string>
+    <string name="warn_files_permission_content">Grant file access to use this feature.</string>
 </resources>
