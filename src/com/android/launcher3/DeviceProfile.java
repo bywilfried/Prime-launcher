@@ -358,6 +358,7 @@ public class DeviceProfile {
     private float workspacePaddingHorizontalFactor;
     private float workspacePaddingVerticalFactor;
     private float widgetPaddingFactor;
+    private final Rect primeUnscaledWidgetPadding = new Rect();
     private float drawerPaddingTopFactor;
     private PreferenceManager2 preferenceManager2 = null;
 
@@ -1463,6 +1464,7 @@ public class DeviceProfile {
         } else {
             widgetPadding.setEmpty();
         }
+        primeUnscaledWidgetPadding.set(widgetPadding);
         // Lawnchair: scale widget padding by user factor (0 = remove, 1 = default).
         widgetPadding.left = Math.round(widgetPadding.left * widgetPaddingFactor);
         widgetPadding.right = Math.round(widgetPadding.right * widgetPaddingFactor);
@@ -1473,6 +1475,21 @@ public class DeviceProfile {
     /**
      * This method calculates the space between the icons to achieve a certain width.
      */
+    /** Unscaled reference used by both global and individual widget margin factors. */
+    public int getPrimeUnscaledWidgetPadding(int side) {
+        switch (side) {
+            case 0: return primeUnscaledWidgetPadding.left;
+            case 1: return primeUnscaledWidgetPadding.top;
+            case 2: return primeUnscaledWidgetPadding.right;
+            case 3: return primeUnscaledWidgetPadding.bottom;
+            default: return 0;
+        }
+    }
+
+    public float getPrimeGlobalWidgetPaddingFactor() {
+        return widgetPaddingFactor;
+    }
+
     private int calculateHotseatBorderSpace(float hotseatWidthPx, int numExtraBorder) {
         int numBorders = (numShownHotseatIcons - 1 + numExtraBorder);
         if (numBorders <= 0) return 0;
