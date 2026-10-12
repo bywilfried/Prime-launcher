@@ -119,6 +119,15 @@ class PreferenceManager2 @Inject constructor(
 
     fun getCachedPreferences(): Preferences = cachedPreferences
 
+    /**
+     * Grid rebuilds can run immediately after a preference write, before the
+     * DataStore collector on the main dispatcher updates cachedPreferences.
+     * Refresh from DataStore's latest committed snapshot before rebuilding.
+     */
+    fun refreshCachedPreferencesForGrid() {
+        cachedPreferences = runBlocking { preferencesDataStore.data.first() }
+    }
+
     private val reloadHelper = ReloadHelper(context)
 
     val darkStatusBar = preference(
