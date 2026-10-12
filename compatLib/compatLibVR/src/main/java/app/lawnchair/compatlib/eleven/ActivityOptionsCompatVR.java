@@ -28,12 +28,35 @@ public class ActivityOptionsCompatVR extends ActivityOptionsCompatVQ {
         // registered, including during widget configuration activity launches.
         // Complete the callback ourselves so Launcher does not retain pending
         // post-launch work waiting for an animation callback that never fires.
-        if (finishedListener != null) {
-            callbackHandler.post(finishedListener);
+        if (android.os.Build.VERSION.SDK_INT == 30) {
+            if (startedListener != null) {
+                callbackHandler.post(startedListener);
+            }
+            if (finishedListener != null) {
+                callbackHandler.post(finishedListener);
+            }
+            return ActivityOptions.makeBasic();
         }
-        if (startedListener != null) {
-            callbackHandler.post(startedListener);
-        }
-        return ActivityOptions.makeBasic();
+        return ActivityOptions.makeCustomAnimation(
+                context,
+                enterResId,
+                exitResId,
+                callbackHandler,
+                new ActivityOptions.OnAnimationStartedListener() {
+                    @Override
+                    public void onAnimationStarted() {
+                        if (startedListener != null) {
+                            startedListener.run();
+                        }
+                    }
+                },
+                new ActivityOptions.OnAnimationFinishedListener() {
+                    @Override
+                    public void onAnimationFinished() {
+                        if (finishedListener != null) {
+                            finishedListener.run();
+                        }
+                    }
+                });
     }
 }
