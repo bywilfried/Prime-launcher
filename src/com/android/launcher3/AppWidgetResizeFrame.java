@@ -272,14 +272,10 @@ public class AppWidgetResizeFrame extends AbstractFloatingView implements View.O
     }
 
     /** Edits external content insets without changing the widget's occupied grid cells. */
-    private void showPrimeWidgetMarginsDialog() {
-        showPrimeWidgetMarginsDialog(mWidgetView);
-    }
-
     /** Opens the per-widget margins editor directly from the long-press menu. */
     public static void showPrimeWidgetMarginsDialog(LauncherAppWidgetHostView widget) {
         if (widget == null) return;
-        final int[] values = widget.getPrimeMarginsDp();
+        final int[] values = widget.getPrimeMarginsPercent();
         final int[] original = values.clone();
         final String[] sides = {"Gauche", "Haut", "Droite", "Bas"};
         final float density = widget.getResources().getDisplayMetrics().density;
@@ -290,17 +286,17 @@ public class AppWidgetResizeFrame extends AbstractFloatingView implements View.O
         for (int i = 0; i < sides.length; i++) {
             final int index = i;
             TextView label = new TextView(widget.getContext());
-            label.setText(sides[i] + " : " + values[i] + " dp");
+            label.setText(sides[i] + " : " + values[i] + " %");
             column.addView(label);
             SeekBar slider = new SeekBar(widget.getContext());
-            slider.setMax(32);
+            slider.setMax(40);
             slider.setProgress(values[i]);
             slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
                 @Override
                 public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                     values[index] = progress;
-                    label.setText(sides[index] + " : " + progress + " dp");
-                    widget.setPrimeMarginsDp(values);
+                    label.setText(sides[index] + " : " + progress + " %");
+                    widget.setPrimeMarginsPercent(values);
                 }
                 @Override public void onStartTrackingTouch(SeekBar seekBar) { }
                 @Override public void onStopTrackingTouch(SeekBar seekBar) { }
@@ -313,17 +309,17 @@ public class AppWidgetResizeFrame extends AbstractFloatingView implements View.O
                 .setView(column)
                 .setPositiveButton("Valider", (d, which) -> {
                     committed[0] = true;
-                    widget.setPrimeMarginsDp(values);
+                    widget.setPrimeMarginsPercent(values);
                 })
                 .setNeutralButton("Réinitialiser", (d, which) -> {
                     committed[0] = true;
-                    widget.setPrimeMarginsDp(new int[4]);
+                    widget.setPrimeMarginsPercent(new int[4]);
                 })
                 .setNegativeButton("Annuler", (d, which) -> { })
                 .create();
         // Back and outside taps cancel the live preview as well.
         dialog.setOnDismissListener(d -> {
-            if (!committed[0]) widget.setPrimeMarginsDp(original);
+            if (!committed[0]) widget.setPrimeMarginsPercent(original);
         });
         dialog.show();
     }
@@ -391,8 +387,6 @@ public class AppWidgetResizeFrame extends AbstractFloatingView implements View.O
             mDragHandles[INDEX_RIGHT].setVisibility(GONE);
         }
 
-        findViewById(R.id.prime_widget_margins_button)
-                .setOnClickListener(view -> showPrimeWidgetMarginsDialog());
         mReconfigureButton = (ImageButton) findViewById(R.id.widget_reconfigure_button);
         if (info.isReconfigurable()) {
             mReconfigureButton.setVisibility(VISIBLE);
@@ -846,25 +840,17 @@ public class AppWidgetResizeFrame extends AbstractFloatingView implements View.O
         return true;
     }
 
-    private boolean isTouchOnPrimeMarginsButton(MotionEvent ev) {
-        View button = findViewById(R.id.prime_widget_margins_button);
-        int xFrame = (int) ev.getX() - getLeft();
-        int yFrame = (int) ev.getY() - getTop();
-        button.getHitRect(sTmpRect);
-        return button.getVisibility() == VISIBLE && sTmpRect.contains(xFrame, yFrame);
-    }
-
     @Override
     public boolean onControllerInterceptTouchEvent(MotionEvent ev) {
         // Action buttons must receive their click before the resize gesture detector.
-        if (isTouchOnReconfigureButton(ev) || isTouchOnPrimeMarginsButton(ev)) {
+        if (isTouchOnReconfigureButton(ev)) {
             return false;
         }
         if (ev.getAction() == MotionEvent.ACTION_DOWN && handleTouchDown(ev)) {
             return true;
         }
         // Keep the resize frame open for the action buttons.
-        if (isTouchOnReconfigureButton(ev) || isTouchOnPrimeMarginsButton(ev)) {
+        if (isTouchOnReconfigureButton(ev)) {
             return false;
         }
         close(false);
