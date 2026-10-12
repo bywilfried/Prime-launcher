@@ -155,7 +155,7 @@ public class ItemLongClickListener {
         popup.setOutsideTouchable(true);
         // Keep the original touch stream in DragLayer, as for icon pre-drag popups.
         popup.setFocusable(false);
-        popup.setTouchable(false);
+        popup.setTouchable(true);
         popup.setElevation(Math.round(10 * density));
         popup.showAsDropDown(widget, 0, -widget.getHeight());
         return popup;
