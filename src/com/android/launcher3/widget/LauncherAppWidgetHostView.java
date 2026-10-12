@@ -20,6 +20,7 @@ import static com.android.launcher3.Utilities.ATLEAST_Q;
 
 import android.appwidget.AppWidgetProviderInfo;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Rect;
 import android.os.Handler;
 import android.os.Parcelable;
@@ -88,6 +89,42 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
     private boolean mTrackingWidgetUpdate = false;
 
     private int mFocusRectOutsets = 0;
+    private static final String PRIME_WIDGET_MARGINS = "prime_widget_margins";
+    private final int[] mPrimeMarginsDp = new int[4];
+    private int[] mPrimeBasePadding;
+
+    /** Individual widget margins, ordered left, top, right, bottom. */
+    public int[] getPrimeMarginsDp() {
+        return mPrimeMarginsDp.clone();
+    }
+
+    public void setPrimeMarginsDp(int[] margins) {
+        if (margins == null || margins.length != 4) return;
+        SharedPreferences prefs = getContext().getSharedPreferences(
+                PRIME_WIDGET_MARGINS, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        for (int i = 0; i < 4; i++) {
+            mPrimeMarginsDp[i] = Math.max(0, Math.min(32, margins[i]));
+            editor.putInt(getAppWidgetId() + "_" + i, mPrimeMarginsDp[i]);
+        }
+        editor.apply();
+        applyPrimeMargins();
+    }
+
+    private void applyPrimeMargins() {
+        if (mPrimeBasePadding == null) {
+            mPrimeBasePadding = new int[] {
+                    getPaddingLeft(), getPaddingTop(), getPaddingRight(), getPaddingBottom()
+            };
+        }
+        float density = getResources().getDisplayMetrics().density;
+        setPadding(mPrimeBasePadding[0] + Math.round(mPrimeMarginsDp[0] * density),
+                mPrimeBasePadding[1] + Math.round(mPrimeMarginsDp[1] * density),
+                mPrimeBasePadding[2] + Math.round(mPrimeMarginsDp[2] * density),
+                mPrimeBasePadding[3] + Math.round(mPrimeMarginsDp[3] * density));
+        requestLayout();
+    }
+
 
     public LauncherAppWidgetHostView(Context context) {
         super(context);
@@ -143,6 +180,15 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
     @Override
     public void setAppWidget(int appWidgetId, AppWidgetProviderInfo info) {
         super.setAppWidget(appWidgetId, info);
+        mPrimeBasePadding = new int[] {
+                getPaddingLeft(), getPaddingTop(), getPaddingRight(), getPaddingBottom()
+        };
+        SharedPreferences prefs = getContext().getSharedPreferences(
+                PRIME_WIDGET_MARGINS, Context.MODE_PRIVATE);
+        for (int i = 0; i < 4; i++) {
+            mPrimeMarginsDp[i] = prefs.getInt(appWidgetId + "_" + i, 0);
+        }
+        applyPrimeMargins();
         if (!mTrackingWidgetUpdate && appWidgetId != -1) {
             mTrackingWidgetUpdate = true;
             Log.i(TAG, "App widget created with id: " + appWidgetId);
