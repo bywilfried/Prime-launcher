@@ -73,16 +73,24 @@
             android:src="@drawable/ic_widget_resize_handle"
             android:tint="?attr/workspaceAccentColor" />
 
+        <!-- Visible action within the resize frame, above the widget content. -->
         <TextView
             android:id="@+id/prime_widget_margins_button"
             android:layout_width="wrap_content"
             android:layout_height="48dp"
-            android:layout_gravity="top|center_horizontal"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginBottom="16dp"
             android:gravity="center"
-            android:paddingHorizontal="12dp"
-            android:text="Marges"
-            android:textColor="?android:attr/textColorPrimary"
-            android:background="?android:attr/selectableItemBackground" />
+            android:minWidth="112dp"
+            android:paddingHorizontal="16dp"
+            android:text="Marges du widget"
+            android:textColor="#FFFFFFFF"
+            android:textStyle="bold"
+            android:background="#EE303044"
+            android:elevation="12dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Personnaliser les marges du widget" />
 
         <ImageButton
             android:id="@+id/widget_reconfigure_button"
