@@ -2,6 +2,8 @@
 
 # Prime Launcher
 
+<img src="docs/prime/prime-logo.svg" alt="Prime Launcher logo" width="144" height="144" />
+
 ### Your home screen. Your style.
 
 **An open-source Android launcher built for personalisation, control, and a home screen that feels like yours.**
@@ -44,7 +46,7 @@ Prime Launcher is actively developed. Debug builds and diagnostic log export hel
 
 ## Visual identity
 
-The application icon is defined by the `prime_icon_background` and `prime_icon_foreground` resources used in the in-app About screen. A verified export of those exact resources will be added here.
+The official Prime Launcher logo is preserved as an editable vector at [`docs/prime/prime-logo.svg`](docs/prime/prime-logo.svg). It features the original roof-and-P motif, including its four square windows, on a dark blue One UI-style background.
 
 ### Screenshots
 
