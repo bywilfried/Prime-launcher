@@ -368,6 +368,11 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         mIsAttachedToWindow = true;
+        // A provider update can arrive while the host view is detached. Flush it when
+        // the workspace reattaches instead of waiting for a launcher process restart.
+        if (mReapplyOnResumeUpdates && !isDeferringUpdates()) {
+            endDeferringUpdates();
+        }
         checkIfAutoAdvance();
     }
 
@@ -447,6 +452,10 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
     @Override
     protected void onWindowVisibilityChanged(int visibility) {
         super.onWindowVisibilityChanged(visibility);
+        // Recover pending RemoteViews when returning to a visible workspace.
+        if (visibility == VISIBLE && mReapplyOnResumeUpdates && !isDeferringUpdates()) {
+            endDeferringUpdates();
+        }
         maybeRegisterAutoAdvance();
     }
 
