@@ -129,20 +129,19 @@ final def buildCommit = providers.exec {
     commandLine('git', 'rev-parse', '--short=7', 'HEAD')
 }.standardOutput.asText.get().trim()
 
-// Prime versions are independent from the upstream Lawnchair 16 numbering.
+// Prime's public minor version is changed deliberately (e.g. 0.9).
+// The final component identifies the CI build, for both debug and release.
 final def primeMajor = 0
 final def primeMinor = 8
-final def primePatch = 0
-final def primeBaseVersion = "${primeMajor}.${primeMinor}.${primePatch}"
-// CI runs have increasing run numbers; local builds can use -PprimeBuildNumber=N.
 final def ciRunNumber = (System.getenv("GITHUB_RUN_NUMBER") ?: "").trim()
 final def primeBuildNumber = (providers.gradleProperty("primeBuildNumber").orNull
         ?: (ciRunNumber ? ciRunNumber : "0")).toInteger()
-if (primeBuildNumber < 0 || primeBuildNumber > 99999) {
-    throw new GradleException("primeBuildNumber must be between 0 and 99999")
+if (primeBuildNumber < 0 || primeBuildNumber > 999999) {
+    throw new GradleException("primeBuildNumber must be between 0 and 999999")
 }
-final def primeDebugVersion = "${primeBaseVersion}-dev.${primeBuildNumber}"
-final def primeVersionCode = 800000 + primePatch * 100000
+final def primeBaseVersion = "${primeMajor}.${primeMinor}.${primeBuildNumber}"
+final def primeDebugVersion = "${primeBaseVersion}-debug"
+final def primeVersionCode = 8000000 + primeBuildNumber
 final def majorVersion = "${primeMajor}"
 
 final def quickstepMinSdk = "35"
@@ -223,7 +222,7 @@ android {
         }
 
         debug {
-            versionNameSuffix "-dev.${primeBuildNumber}"
+            versionNameSuffix "-debug"
             buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${primeDebugVersion}\""
             applicationIdSuffix ".debug"
             resValue("string", "derived_app_name", "Prime Launcher (Debug)")
