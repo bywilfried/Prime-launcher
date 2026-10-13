@@ -95,7 +95,7 @@ fun PreferencesDashboard(
     val aboutDescrption = if (prefs.hideVersionInfo.get()) {
         prefs.pseudonymVersion.get()
     } else {
-        "${context.getString(R.string.derived_app_name)} ${BuildConfig.MAJOR_VERSION}"
+        "${context.getString(R.string.derived_app_name)} ${BuildConfig.VERSION_DISPLAY_NAME}"
     }
 
     PreferenceLayout(
