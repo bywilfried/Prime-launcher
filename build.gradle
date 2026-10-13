@@ -153,7 +153,7 @@ android {
     defaultConfig {
         versionCode primeVersionCode
         versionName primeBaseVersion
-        buildConfigField "String", "VERSION_DISPLAY_NAME", "\"\${primeBaseVersion}\""
+        buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${primeBaseVersion}\""
         buildConfigField "String", "MAJOR_VERSION", "\"${majorVersion}\""
         buildConfigField "String", "COMMIT_HASH", "\"${buildCommit}\""
         buildConfigField "boolean", "ENABLE_AUTO_INSTALLS_LAYOUT", "false"
@@ -225,7 +225,7 @@ android {
         debug {
             versionCode primeVersionCode + primeBuildNumber
             versionName primeDebugVersion
-            buildConfigField "String", "VERSION_DISPLAY_NAME", "\"\${primeDebugVersion}\""
+            buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${primeDebugVersion}\""
             applicationIdSuffix ".debug"
             resValue("string", "derived_app_name", "Prime Launcher (Debug)")
 
