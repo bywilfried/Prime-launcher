@@ -8,7 +8,7 @@
 
 **An open-source Android launcher built for personalisation, control, and a home screen that feels like yours.**
 
-[Explore the source](https://github.com/bywilfried/Prime-launcher/tree/Prime-identity) · [Releases](https://github.com/bywilfried/Prime-launcher/releases) · [Report an issue](https://github.com/bywilfried/Prime-launcher/issues)
+[Explore the source](https://github.com/bywilfried/Prime-launcher/tree/main) · [Releases](https://github.com/bywilfried/Prime-launcher/releases) · [Report an issue](https://github.com/bywilfried/Prime-launcher/issues)
 
 </div>
 
@@ -54,7 +54,7 @@ Screenshots of the home screen, category drawer, and customisation settings will
 
 ## Get Prime Launcher
 
-Browse [GitHub Releases](https://github.com/bywilfried/Prime-launcher/releases) for published builds. The [Prime-identity branch](https://github.com/bywilfried/Prime-launcher/tree/Prime-identity) contains ongoing identity and feature development.
+Browse [GitHub Releases](https://github.com/bywilfried/Prime-launcher/releases) for published builds. The [main branch](https://github.com/bywilfried/Prime-launcher/tree/main) contains the current Prime Launcher source code.
 
 **Current release series: 0.8.x.** Development builds may contain experimental changes.
 
