@@ -4,7 +4,7 @@
 
 <img src="docs/prime/prime-logo.svg" alt="Prime Launcher logo" width="144" height="144" />
 
-### Your home screen. Your style.
+### Your Device. Your home screen. Your style.
 
 **An open-source Android launcher built for personalisation, control, and a home screen that feels like yours.**
 
