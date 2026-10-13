@@ -66,7 +66,13 @@ Browse [GitHub Releases](https://github.com/bywilfried/Prime-launcher/releases) 
 
 To verify that an APK is signed with the expected certificate, compare its **SHA-256 signing certificate fingerprint** with the fingerprint published by the project.
 
-> **Official SHA-256 fingerprint:** Pending verification of a signed release APK. Do not treat an unverified fingerprint as official.
+**SHA-256 signing certificate fingerprint (provided release APK):**
+
+```text
+14:B0:D1:4C:A4:D8:85:DB:55:35:6D:E0:BD:D9:E1:72:91:58:CB:4C:48:B8:F3:7C:BA:2B:FA:D5:D0:E6:A8:0B
+```
+
+This fingerprint was extracted from the signing certificate embedded in a supplied Prime Launcher release APK. Compare it with your downloaded APK before installation. The certificate fingerprint alone does not verify the APK's full contents.
 
 You can inspect an APK locally using Android SDK Build Tools:
 
