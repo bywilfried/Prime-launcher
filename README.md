@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/prime/prime-logo.svg" alt="Prime Launcher official icon" width="144" height="144">
+
 # Prime Launcher
 
 ### Your home screen. Your style.
@@ -44,7 +46,11 @@ Prime Launcher is actively developed. Debug builds and diagnostic log export hel
 
 ## Visual identity
 
-Prime Launcher has its own application icon, also shown on the in-app About screen. The official icon artwork will be added here directly from the app resources rather than recreated or approximated.
+<div align="center">
+  <img src="docs/prime/prime-logo.svg" alt="Official Prime Launcher visual identity" width="200" height="200">
+</div>
+
+The official Prime Launcher identity combines a blue gradient, rounded-square silhouette, and a house-inspired **P** monogram. This is the original vector artwork supplied with the project identity assets.
 
 ### Screenshots
 
