@@ -52,12 +52,12 @@ fun About(
                     modifier = Modifier.size(72.dp).clip(RoundedCornerShape(18.dp)),
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.prime_icon_background),
+                        painter = painterResource(id = R.drawable.prime_brand_background),
                         contentDescription = null,
                         modifier = Modifier.size(72.dp),
                     )
                     Image(
-                        painter = painterResource(id = R.drawable.prime_icon_foreground),
+                        painter = painterResource(id = R.drawable.prime_brand_mark),
                         contentDescription = null,
                         modifier = Modifier.size(72.dp),
                     )
