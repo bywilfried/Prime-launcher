@@ -151,7 +151,7 @@ final def quickstepMaxSdk = "36"
 android {
     namespace "com.android.launcher3"
     defaultConfig {
-        versionCode primeVersionCode
+        versionCode primeVersionCode + primeBuildNumber
         versionName primeBaseVersion
         buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${primeBaseVersion}\""
         buildConfigField "String", "MAJOR_VERSION", "\"${majorVersion}\""
@@ -223,8 +223,7 @@ android {
         }
 
         debug {
-            versionCode primeVersionCode + primeBuildNumber
-            versionName primeDebugVersion
+            versionNameSuffix "-dev.${primeBuildNumber}"
             buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${primeDebugVersion}\""
             applicationIdSuffix ".debug"
             resValue("string", "derived_app_name", "Prime Launcher (Debug)")
