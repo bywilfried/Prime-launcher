@@ -259,7 +259,11 @@ object ThemeColors {
             hsl[1] = (hsl[1] * 0.42f).coerceAtMost(0.38f)
         }
         // Contrast depends on the actual surface, not merely on the theme variant.
-        val lighten = ColorUtils.calculateLuminance(opaqueBackground) < 0.179
+        // Choose the direction that can actually reach the 7:1 target.
+        // The black/white crossover for 7:1 is around 0.179 only for
+        // deciding 4.5:1 text; here compare the achievable contrast directly.
+        val lighten = ColorUtils.calculateContrast(Color.WHITE, opaqueBackground) >=
+            ColorUtils.calculateContrast(Color.BLACK, opaqueBackground)
         var low = if (lighten) hsl[2] else 0f
         var high = if (lighten) 1f else hsl[2]
         repeat(20) {
@@ -437,6 +441,19 @@ object ThemeColors {
                         ColorUtils.calculateContrast(Color.WHITE, opaque)) Color.BLACK else Color.WHITE
                 }
                 else -> legacy(context, role, variant)
+            }
+            ColorOption.AdaptiveThemeText -> {
+                val backgroundRole = when (role) {
+                    ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND
+                    ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND
+                    ThemeColorRole.DRAWER_TEXT, ThemeColorRole.DRAWER_ICON_TEXT,
+                    ThemeColorRole.DRAWER_FOLDER_ICON_TEXT -> ThemeColorRole.DRAWER_BACKGROUND
+                    ThemeColorRole.DRAWER_SEARCH_TEXT, ThemeColorRole.DRAWER_SEARCH_HINT,
+                    ThemeColorRole.DRAWER_SEARCH_ICON -> ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE
+                    else -> null
+                }
+                if (backgroundRole == null) official
+                else adaptiveTextAgainstSurface(resolveTheme(context, profile, backgroundRole, variant), variant)
             }
             ColorOption.ThemePalette -> resolveLegacyToken(
                 context, ColorTokens.pageIndicatorDotColor, variant,
