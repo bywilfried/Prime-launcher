@@ -21,7 +21,7 @@ def isolated_svg(path, remove_id):
     # prefixes and causes live path effects to move the four windows.
     original = source.read_text(encoding="utf-8")
     if remove_id == "rect32":
-        pattern = r'<rect\b(?=[^>]*\bid="rect32")[^>]*/>'
+        pattern = r'<rect\b[^>]*\bid="rect32"[^>]*/>'
         modified, count = re.subn(pattern, "", original, count=1)
     elif remove_id == "g32":
         begin = re.search(r'<g\b[^>]*\bid="g32"[^>]*>', original)
