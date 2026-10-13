@@ -231,8 +231,8 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
                         app.lawnchair.theme.NotificationDotThemeColors.resolve(context, role, dotColor)
                             .takeIf { it != 0 } ?: ThemeColors.official(context, profile, role, variant),
                     ),
-                    description = if (override == ColorOption.Default) "Valeur du thème" else "Personnalisée",
-                    iconColorPreview = override == ColorOption.IconColor,
+                    description = if (override == ColorOption.Default) "Valeur du thème" else override.colorPreferenceEntry.label(),
+                    iconColorPreview = override == ColorOption.IconColor || (override == ColorOption.Default && dotColor == ColorOption.IconColor),
                     onClick = { navController.navigate(ThemeColorSelection(role.id, variant.name)) },
                 )
             }
@@ -254,8 +254,9 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
                         app.lawnchair.theme.NotificationDotThemeColors.resolve(context, role, dotTextColor)
                             .takeIf { it != 0 } ?: ThemeColors.official(context, profile, role, variant),
                     ),
-                    description = if (override == ColorOption.Default) "Valeur du thème" else "Personnalisée",
-                    automaticContrastPreview = override == ColorOption.Default && dotTextColor == ColorOption.Default,
+                    description = if (override == ColorOption.Default) "Valeur du thème" else override.colorPreferenceEntry.label(),
+                    automaticContrastPreview = override == ColorOption.AutomaticBlackWhite || (override == ColorOption.Default && dotTextColor == ColorOption.Default),
+                    dynamicContrastPreview = override == ColorOption.AdaptiveThemeText,
                     onClick = { navController.navigate(ThemeColorSelection(role.id, variant.name)) },
                 )
             }
