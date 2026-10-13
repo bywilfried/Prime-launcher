@@ -554,6 +554,29 @@ object ThemeColors {
         }
     }
 
+    private fun categoryContrastSurface(role: ThemeColorRole): ThemeColorRole? = when (role) {
+        ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND
+        ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND
+        ThemeColorRole.DRAWER_TEXT, ThemeColorRole.DRAWER_ICON_TEXT,
+        ThemeColorRole.DRAWER_FOLDER_ICON_TEXT -> ThemeColorRole.DRAWER_BACKGROUND
+        ThemeColorRole.DRAWER_SEARCH_TEXT, ThemeColorRole.DRAWER_SEARCH_HINT,
+        ThemeColorRole.DRAWER_SEARCH_ICON -> ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE
+        ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT, ThemeColorRole.DRAWER_FOLDER_OPEN_HINT ->
+            ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND
+        ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> ThemeColorRole.DRAWER_BACKGROUND
+        ThemeColorRole.DRAWER_POPUP_TEXT, ThemeColorRole.DRAWER_POPUP_ICON ->
+            ThemeColorRole.DRAWER_POPUP_BACKGROUND
+        else -> null
+    }
+
+    private fun categoryBlackWhite(background: Int, variant: ThemeVariant): Int {
+        val opaque = ColorUtils.compositeColors(
+            background, if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE,
+        )
+        return if (ColorUtils.calculateContrast(Color.BLACK, opaque) >=
+            ColorUtils.calculateContrast(Color.WHITE, opaque)) Color.BLACK else Color.WHITE
+    }
+
     fun resolveForCategory(
         context: Context,
         profile: ThemeProfile,
@@ -568,47 +591,25 @@ object ThemeColors {
         val option = CategoryThemeColorOverrides(context).get(tabId, profile, variant, role)
         return when (option) {
             ColorOption.Default -> {
-                // Inherited automatic contrast still uses this category's surface.
                 val inherited = ThemeColorOverrides(context).get(profile, variant, role)
-                val backgroundRole = when (role) {
-                    ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND
-                    ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND
-                    else -> null
-                }
-                if (inherited == ColorOption.AdaptiveThemeText && backgroundRole != null) {
-                    adaptiveTextAgainstSurface(
-                        resolveForCategory(context, profile, backgroundRole, variant, tabId), variant,
-                    )
+                val surfaceRole = categoryContrastSurface(role)
+                if ((inherited == ColorOption.AutomaticBlackWhite ||
+                        inherited == ColorOption.AdaptiveThemeText) && surfaceRole != null) {
+                    val surface = resolveForCategory(context, profile, surfaceRole, variant, tabId)
+                    if (inherited == ColorOption.AdaptiveThemeText)
+                        adaptiveTextAgainstSurface(surface, variant)
+                    else categoryBlackWhite(surface, variant)
                 } else resolveTheme(context, profile, role, variant)
             }
             ColorOption.LegacyBehavior -> official(context, profile, role, variant)
             ColorOption.AutomaticBlackWhite, ColorOption.AdaptiveThemeText -> {
-                val backgroundRole = when (role) {
-                    ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND
-                    ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND
-                    ThemeColorRole.DRAWER_TEXT, ThemeColorRole.DRAWER_ICON_TEXT,
-                    ThemeColorRole.DRAWER_FOLDER_ICON_TEXT -> ThemeColorRole.DRAWER_BACKGROUND
-                    ThemeColorRole.DRAWER_SEARCH_TEXT, ThemeColorRole.DRAWER_SEARCH_HINT,
-                    ThemeColorRole.DRAWER_SEARCH_ICON -> ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE
-                    ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT,
-                    ThemeColorRole.DRAWER_FOLDER_OPEN_HINT -> ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND
-                    ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND
-                    ThemeColorRole.DRAWER_POPUP_TEXT, ThemeColorRole.DRAWER_POPUP_ICON ->
-                        ThemeColorRole.DRAWER_POPUP_BACKGROUND
-                    else -> null
-                }
+                val backgroundRole = categoryContrastSurface(role)
                 if (backgroundRole == null) resolveTheme(context, profile, role, variant)
                 else {
                     val background = resolveForCategory(context, profile, backgroundRole, variant, tabId)
                     if (option == ColorOption.AdaptiveThemeText)
                         adaptiveTextAgainstSurface(background, variant)
-                    else {
-                        val opaque = ColorUtils.compositeColors(
-                            background, if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE,
-                        )
-                        if (ColorUtils.calculateContrast(Color.BLACK, opaque) >=
-                            ColorUtils.calculateContrast(Color.WHITE, opaque)) Color.BLACK else Color.WHITE
-                    }
+                    else categoryBlackWhite(background, variant)
                 }
             }
             ColorOption.ThemePalette ->
