@@ -250,6 +250,8 @@ object ThemeColors {
             return resolve(context, profile, role, variant)
         }
         val backdrop = if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE
+        // A transparent surface has no usable hue of its own. Compose it with
+        // the available backing color, but never propagate its alpha to text.
         val opaqueBackground = ColorUtils.compositeColors(backgroundColor, backdrop)
         val hsl = FloatArray(3)
         ColorUtils.colorToHSL(opaqueBackground, hsl)
@@ -349,7 +351,7 @@ object ThemeColors {
                     ColorUtils.calculateContrast(Color.WHITE, opaque)) Color.BLACK else Color.WHITE
             }
             ColorOption.AdaptiveThemeText ->
-                adaptiveTextAgainstSurface(backgroundColor, variant)
+                ColorUtils.setAlphaComponent(adaptiveTextAgainstSurface(backgroundColor, variant), 255)
             else -> if (categoryId != null && categoryOption != ColorOption.Default)
                 resolveForCategory(context, profile, role, variant, categoryId)
             else resolveTheme(context, profile, role, variant)
@@ -381,7 +383,7 @@ object ThemeColors {
             }
         }
         hsl[2] = if (lighten) high else low
-        return ColorUtils.HSLToColor(hsl)
+        return ColorUtils.setAlphaComponent(ColorUtils.HSLToColor(hsl), 255)
     }
 
     /** Preview and runtime deliberately share the same semantic resolution path. */
