@@ -1,18 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
-<title id="title">Prime Launcher</title>
-<desc id="desc">Rounded blue app icon with a light blue house-shaped P monogram</desc>
-<defs>
-  <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#1652c4"/>
-    <stop offset=".56" stop-color="#1036a3"/>
-    <stop offset="1" stop-color="#071b65"/>
-  </linearGradient>
-  <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#bdd4ff"/>
-    <stop offset="1" stop-color="#87aaff"/>
-  </linearGradient>
-</defs>
-<rect width="256" height="256" rx="57" fill="url(#blue)"/>
-<path d="M70 120 L129 72 Q134 68 139 73 L185 111 Q195 120 195 137 Q195 165 167 178 L119 178 L119 146 L160 146 Q170 146 170 135 Q170 131 165 127 L134 101 L89 137 L89 189 Q89 197 81 197 L70 197 Q62 197 62 189 L62 135 Q62 126 70 120Z" fill="url(#mark)"/>
-<path d="M134 121 h11 v11 h-11z M149 121 h11 v11 h-11z M134 136 h11 v11 h-11z M149 136 h11 v11 h-11z" fill="#193c99" opacity=".8"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="108" height="108" viewBox="0 0 108 108"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#3869FF"/><stop offset="1" stop-color="#102A84"/></linearGradient><linearGradient id="mark" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#BED7FF"/></linearGradient></defs><rect width="108" height="108" rx="23" fill="url(#bg)"/><path d="M 28,54 L 49,34 Q 53,30 57,34 L 78,52 Q 81,55 78,58 Q 75,61 72,58 L 54,42 L 34,61 Q 31,64 28,61 Q 25,58 28,54 Z" fill="url(#mark)"/><path d="M 35,59 L 43,51 L 43,79 Q 43,82 40,82 L 38,82 Q 35,82 35,79 Z M 47,48 L 56,48 C 69,48 77,56 77,66 C 77,77 69,83 58,83 L 51,83 L 51,73 L 58,73 C 64,73 67,70 67,65 C 67,60 63,58 56,58 L 47,58 Z" fill="url(#mark)"/><path d="M 50,60 h 6 v 6 h -6 Z M 59,60 h 6 v 6 h -6 Z M 50,69 h 6 v 6 h -6 Z M 59,69 h 6 v 6 h -6 Z" fill="#1C398F"/></svg>
