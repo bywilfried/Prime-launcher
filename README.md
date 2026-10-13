@@ -6,8 +6,6 @@
 
 Un launcher libre, personnalisable et centré sur la maîtrise de son interface.
 
-![Prime Launcher — identité visuelle](lawnchair/res/drawable/prime_icon_foreground.xml)
-
 **Version stable actuelle : 0.8.0** · **Branche de développement : `Prime-identity`**
 
 </div>
