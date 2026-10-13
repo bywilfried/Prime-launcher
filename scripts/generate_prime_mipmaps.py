@@ -2,15 +2,12 @@
 """Export Prime icons with Inkscape, preserving the approved SVG geometry."""
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import copy
+import re
 import subprocess
-import xml.etree.ElementTree as ET
 
 root = Path(__file__).resolve().parents[1]
 source = root / "docs/prime/prime-logo.svg"
 sizes = {"mdpi": 48, "hdpi": 72, "xhdpi": 96, "xxhdpi": 144, "xxxhdpi": 192}
-ns = "{http://www.w3.org/2000/svg}"
-
 def export(svg, destination, size):
     subprocess.run([
         "inkscape", str(svg), "--export-type=png",
@@ -20,18 +17,32 @@ def export(svg, destination, size):
     ], check=True)
 
 def isolated_svg(path, remove_id):
-    tree = ET.parse(source)
-    layer = tree.getroot().find(f".//{ns}g[@id='layer1']")
-    if layer is None:
-        raise RuntimeError("Original logo layer not found")
-    removed = False
-    for child in list(layer):
-        if child.get("id") == remove_id:
-            layer.remove(child)
-            removed = True
-    if not removed:
-        raise RuntimeError(f"Missing SVG element: {remove_id}")
-    tree.write(path, encoding="utf-8", xml_declaration=True)
+    # Do not parse/reserialize the Inkscape SVG: that rewrites namespace
+    # prefixes and causes live path effects to move the four windows.
+    original = source.read_text(encoding="utf-8")
+    if remove_id == "rect32":
+        pattern = r'<rect\\b(?=[^>]*\\bid="rect32")[^>]*/>'
+        modified, count = re.subn(pattern, "", original, count=1)
+    elif remove_id == "g32":
+        begin = re.search(r'<g\\b[^>]*\\bid="g32"[^>]*>', original)
+        if begin is None:
+            raise RuntimeError("Mark group not found")
+        depth = 1
+        end_pos = None
+        for tag in re.finditer(r'</?g\\b[^>]*>', original[begin.end():]):
+            depth += -1 if tag.group().startswith("</") else 1
+            if depth == 0:
+                end_pos = begin.end() + tag.end()
+                break
+        if end_pos is None:
+            raise RuntimeError("Mark group is not balanced")
+        modified = original[:begin.start()] + original[end_pos:]
+        count = 1
+    else:
+        raise ValueError(remove_id)
+    if count != 1:
+        raise RuntimeError(f"Could not isolate {remove_id}")
+    path.write_text(modified, encoding="utf-8")
 
 with TemporaryDirectory() as temp:
     temp = Path(temp)
