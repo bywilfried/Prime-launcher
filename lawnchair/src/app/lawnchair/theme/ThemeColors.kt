@@ -565,7 +565,20 @@ object ThemeColors {
         }
         val option = CategoryThemeColorOverrides(context).get(tabId, profile, variant, role)
         return when (option) {
-            ColorOption.Default -> resolveTheme(context, profile, role, variant)
+            ColorOption.Default -> {
+                // Inherited automatic contrast still uses this category's surface.
+                val inherited = ThemeColorOverrides(context).get(profile, variant, role)
+                val backgroundRole = when (role) {
+                    ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND
+                    ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND
+                    else -> null
+                }
+                if (inherited == ColorOption.AdaptiveThemeText && backgroundRole != null) {
+                    adaptiveTextAgainstSurface(
+                        resolveForCategory(context, profile, backgroundRole, variant, tabId), variant,
+                    )
+                } else resolveTheme(context, profile, role, variant)
+            }
             ColorOption.LegacyBehavior -> official(context, profile, role, variant)
             ColorOption.AutomaticBlackWhite, ColorOption.AdaptiveThemeText -> {
                 val backgroundRole = when (role) {
