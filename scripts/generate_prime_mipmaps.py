@@ -21,15 +21,15 @@ def isolated_svg(path, remove_id):
     # prefixes and causes live path effects to move the four windows.
     original = source.read_text(encoding="utf-8")
     if remove_id == "rect32":
-        pattern = r'<rect\\b(?=[^>]*\\bid="rect32")[^>]*/>'
+        pattern = r'<rect\b(?=[^>]*\bid="rect32")[^>]*/>'
         modified, count = re.subn(pattern, "", original, count=1)
     elif remove_id == "g32":
-        begin = re.search(r'<g\\b[^>]*\\bid="g32"[^>]*>', original)
+        begin = re.search(r'<g\b[^>]*\bid="g32"[^>]*>', original)
         if begin is None:
             raise RuntimeError("Mark group not found")
         depth = 1
         end_pos = None
-        for tag in re.finditer(r'</?g\\b[^>]*>', original[begin.end():]):
+        for tag in re.finditer(r'</?g\b[^>]*>', original[begin.end():]):
             depth += -1 if tag.group().startswith("</") else 1
             if depth == 0:
                 end_pos = begin.end() + tag.end()
