@@ -15,6 +15,7 @@ class MonetColorSchemeCompat(
     private val scheme = MonetColorScheme(
         seedColor,
         style,
+        allowAchromaticSeed = true,
     )
 
     override val neutral1: ColorSwatch = mapColors(scheme.neutral1.allShades)

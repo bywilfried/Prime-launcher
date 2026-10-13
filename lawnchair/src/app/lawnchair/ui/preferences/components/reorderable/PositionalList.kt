@@ -230,9 +230,14 @@ class PositionalListState<T, K : Any>(
         } else if (uiThreshold in (toUiIndex + 1)..fromUiIndex) {
             newCount++
         }
-        notifyChange(newList, newCount.coerceIn(0, newList.size))
+        items = newList
+        activeCount = newCount.coerceIn(0, newList.size)
         haptic.performHapticFeedback(ReorderHapticFeedbackType.MOVE)
         return true
+    }
+
+    internal fun commitReorder() {
+        onOrderChange(items, activeCount)
     }
 
     private val itemIndices by derivedStateOf {
@@ -388,6 +393,11 @@ fun <T, K : Any> PositionalList(
     ) -> Unit,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
+    reorderEnabled: Boolean = true,
+    middleSectionHeading: String? = null,
+    middleItems: List<T> = emptyList(),
+    middleItemKey: (T) -> Any = { it.hashCode() },
+    middleItemContent: @Composable (item: T) -> Unit = {},
 ) {
     val lazyListState = rememberLazyListState()
     val reorderableState = rememberReorderableLazyListState(lazyListState) { from, to ->
@@ -421,6 +431,28 @@ fun <T, K : Any> PositionalList(
         ) { index, item ->
             val isActive = index < state.activeCount
 
+            if (index == state.activeCount && middleItems.isNotEmpty()) {
+                middleSectionHeading?.let { heading ->
+                    PreferenceGroupHeading(heading = heading)
+                }
+                middleItems.forEachIndexed { middleIndex, middleItem ->
+                    androidx.compose.material3.Surface(
+                        color = preferenceGroupColor(),
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .clip(
+                                PositionalListDefaults.containerShape(
+                                    isFirst = middleIndex == 0,
+                                    isLast = middleIndex == middleItems.lastIndex,
+                                    isSelfDragging = false,
+                                ),
+                            ),
+                    ) {
+                        middleItemContent(middleItem)
+                    }
+                }
+            }
+
             ExpandAndShrink(visible = index == state.activeCount) {
                 PreferenceGroupHeading(
                     stringResource(R.string.reorderable_disabled_items),
@@ -430,12 +462,17 @@ fun <T, K : Any> PositionalList(
             ReorderableItem(
                 state = reorderableState,
                 key = item.id,
-                modifier = Modifier.semanticReorderActions(
-                    index,
-                    state,
-                    stringResource(R.string.reorderable_move_up),
-                    stringResource(R.string.reorderable_move_down),
-                ),
+                enabled = reorderEnabled,
+                modifier = if (reorderEnabled) {
+                    Modifier.semanticReorderActions(
+                        index,
+                        state,
+                        stringResource(R.string.reorderable_move_up),
+                        stringResource(R.string.reorderable_move_down),
+                    )
+                } else {
+                    Modifier
+                },
             ) {
                 ReorderableItemContainer(
                     item = item,
@@ -446,8 +483,39 @@ fun <T, K : Any> PositionalList(
                     isFirst = index == if (isActive) 0 else state.activeCount,
                     isLast = index == (if (isActive) state.activeCount else state.items.size) - 1,
                     isAnyDragging = reorderableState.isAnyItemDragging,
+                    onReorderFinished = state::commitReorder,
                     content = itemContent,
+                    reorderEnabled = reorderEnabled,
                 )
+            }
+        }
+
+        // If there is no regular disabled item, the middle section still belongs between
+        // active items and the trailing "other items" hint.
+        if (state.activeCount == state.items.size && middleItems.isNotEmpty()) {
+            middleSectionHeading?.let { heading ->
+                item(key = "middle_header_" + heading) {
+                    PreferenceGroupHeading(heading = heading)
+                }
+            }
+            itemsIndexed(
+                items = middleItems,
+                key = { _, item -> "middle_" + middleItemKey(item).toString() },
+            ) { middleIndex, middleItem ->
+                Surface(
+                    color = preferenceGroupColor(),
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .clip(
+                            PositionalListDefaults.containerShape(
+                                isFirst = middleIndex == 0,
+                                isLast = middleIndex == middleItems.lastIndex,
+                                isSelfDragging = false,
+                            ),
+                        ),
+                ) {
+                    middleItemContent(middleItem)
+                }
             }
         }
 
@@ -497,6 +565,8 @@ private fun <T, K : Any> ReorderableCollectionItemScope.ReorderableItemContainer
     isFirst: Boolean = true,
     isLast: Boolean = true,
     isAnyDragging: Boolean = false,
+    reorderEnabled: Boolean = true,
+    onReorderFinished: () -> Unit = {},
     content: @Composable ReorderableCollectionItemScope.(
         item: T,
         dragHandle: @Composable () -> Unit,
@@ -520,11 +590,16 @@ private fun <T, K : Any> ReorderableCollectionItemScope.ReorderableItemContainer
             content(
                 item.data,
                 {
-                    ReorderableDragHandle(
-                        scope = this@ReorderableItemContainer,
-                        onDragStart = { isSelfDragging = true },
-                        onDragStop = { isSelfDragging = false },
-                    )
+                    if (reorderEnabled) {
+                        ReorderableDragHandle(
+                            scope = this@ReorderableItemContainer,
+                            onDragStart = { isSelfDragging = true },
+                            onDragStop = {
+                                isSelfDragging = false
+                                onReorderFinished()
+                            },
+                        )
+                    }
                 },
                 {
                     IconButton(
@@ -547,8 +622,10 @@ fun <T, K : Any> PositionalListOverflowMenu(
     state: PositionalListState<T, K>,
     modifier: Modifier = Modifier,
     extraItems: @Composable OverflowMenuScope.(hideMenu: () -> Unit) -> Unit = {},
+    showStandardActions: Boolean = true,
 ) {
     OverflowMenu(modifier) {
+        if (showStandardActions) {
         DropdownMenuItem(
             text = { Text(stringResource(R.string.inverse_selection)) },
             onClick = {
@@ -576,11 +653,13 @@ fun <T, K : Any> PositionalListOverflowMenu(
             },
         )
 
+        }
+
         extraItems(::hideMenu)
 
-        PreferenceDivider(modifier = Modifier.padding(vertical = 8.dp))
+        if (showStandardActions) PreferenceDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-        DropdownMenuItem(
+        if (showStandardActions) DropdownMenuItem(
             text = { Text(stringResource(R.string.action_reset)) },
             onClick = {
                 state.reset()

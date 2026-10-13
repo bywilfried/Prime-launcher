@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,8 +39,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.lawnchair.data.folder.FolderEntry
 import app.lawnchair.data.folder.model.FolderViewModel
+import app.lawnchair.preferences.PreferenceAdapter
 import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences.preferenceManager
+import app.lawnchair.prime.drawer.PrimeDrawerMode
+import app.lawnchair.prime.drawer.PrimeDrawerModePreferences
+import com.android.launcher3.InvariantDeviceProfile
 import app.lawnchair.ui.ModalBottomSheetContent
 import app.lawnchair.ui.preferences.LocalNavController
 import app.lawnchair.ui.preferences.components.controls.ClickablePreference
@@ -134,8 +140,28 @@ fun AppDrawerFoldersPreference(
             PreferenceGroup(
                 heading = stringResource(R.string.settings),
             ) {
+                val context = LocalContext.current
+                val nativeFolderApps = prefs.folderApps.getAdapter()
+                val gridOption = InvariantDeviceProfile.INSTANCE.get(context).closestProfile
+                val modePreferences = PrimeDrawerModePreferences(context)
+                val modeFolderApps = modePreferences.preference(
+                    gridOption = gridOption,
+                    mode = PrimeDrawerMode.DEFAULT,
+                    key = "hideFolderApps",
+                    read = { it.hideFolderApps },
+                    write = { profile, value -> profile.copy(hideFolderApps = value) },
+                    invalidate = {},
+                ).getAdapter()
                 SwitchPreference(
-                    adapter = prefs.folderApps.getAdapter(),
+                    adapter = remember(modeFolderApps, nativeFolderApps) {
+                        object : PreferenceAdapter<Boolean> {
+                            override val state = modeFolderApps.state
+                            override fun onChange(newValue: Boolean) {
+                                modeFolderApps.onChange(newValue)
+                                nativeFolderApps.onChange(newValue)
+                            }
+                        }
+                    },
                     label = stringResource(id = R.string.apps_in_folder_label),
                     description = stringResource(id = R.string.apps_in_folder_description),
                 )
@@ -225,9 +251,12 @@ fun FolderEditSheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     hideAppPicker: Boolean = false,
+    onAdvanced: (() -> Unit)? = null,
+    onDelete: (() -> Unit)? = null,
 ) {
     val resources = LocalResources.current
-    var textFieldValue by remember { mutableStateOf(TextFieldValue(initialTitle)) }
+    var renameOpen by remember { mutableStateOf(false) }
+    var deleteOpen by remember { mutableStateOf(false) }
 
     ModalBottomSheetContent(
         buttons = {
@@ -237,31 +266,16 @@ fun FolderEditSheet(
             ) {
                 Text(stringResource(android.R.string.cancel))
             }
-            Spacer(Modifier.width(8.dp))
-            Button(
-                onClick = {
-                    onRename(folderId, textFieldValue.text)
-                    onDismiss()
-                },
-                shapes = ButtonDefaults.shapes(),
-            ) {
-                Text(stringResource(android.R.string.ok))
-            }
         },
         modifier = modifier,
     ) {
         Column {
-            OutlinedTextField(
-                value = textFieldValue,
-                onValueChange = {
-                    textFieldValue = it
-                },
-                label = { Text(text = stringResource(id = R.string.label)) },
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .fillMaxWidth(),
-                singleLine = true,
-                isError = textFieldValue.text.isEmpty(),
+            ClickablePreference(
+                label = stringResource(id = R.string.label),
+                subtitle = initialTitle,
+                modifier = Modifier.padding(horizontal = 8.dp),
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                onClick = { renameOpen = true },
             )
             if (!hideAppPicker) {
                 ClickablePreference(
@@ -271,14 +285,81 @@ fun FolderEditSheet(
                         itemCount,
                         itemCount,
                     ),
-                    modifier = Modifier
-                        .padding(horizontal = 8.dp),
+                    modifier = Modifier.padding(horizontal = 8.dp),
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 ) {
                     onNavigate(folderId)
                 }
+                if (onAdvanced != null) {
+                    ClickablePreference(
+                        label = stringResource(R.string.prime_tab_advanced),
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        onClick = onAdvanced,
+                    )
+                }
+                if (onDelete != null) {
+                    ClickablePreference(
+                        label = "Supprimer",
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        onClick = { deleteOpen = true },
+                    )
+                }
             }
         }
+    }
+
+    if (renameOpen) {
+        var newTitle by remember(initialTitle) { mutableStateOf(initialTitle) }
+        AlertDialog(
+            onDismissRequest = { renameOpen = false },
+            title = { Text(stringResource(id = R.string.label)) },
+            text = {
+                OutlinedTextField(
+                    value = newTitle,
+                    onValueChange = { newTitle = it },
+                    singleLine = true,
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val title = newTitle.trim()
+                        if (title.isNotEmpty()) {
+                            onRename(folderId, title)
+                            renameOpen = false
+                            onDismiss()
+                        }
+                    },
+                ) { Text(stringResource(android.R.string.ok)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { renameOpen = false }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            },
+        )
+    }
+
+    if (deleteOpen && onDelete != null) {
+        AlertDialog(
+            onDismissRequest = { deleteOpen = false },
+            title = { Text("Supprimer") },
+            text = { Text("Supprimer ce dossier ?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    deleteOpen = false
+                    onDelete()
+                    onDismiss()
+                }) { Text("Supprimer") }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteOpen = false }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            },
+        )
     }
 }
 

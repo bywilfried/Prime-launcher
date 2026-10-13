@@ -24,7 +24,17 @@ import static com.android.launcher3.LauncherState.NORMAL;
 import static com.android.launcher3.LauncherState.OVERVIEW;
 import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCHER_ALLAPPS_ITEM_LONG_PRESSED;
 
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
+import android.widget.PopupWindow;
 import android.graphics.Point;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.view.Gravity;
+
+import com.android.launcher3.AppWidgetResizeFrame;
+import com.android.launcher3.model.data.LauncherAppWidgetInfo;
 import android.graphics.Rect;
 import android.view.View;
 import android.view.View.OnLongClickListener;
@@ -76,8 +86,79 @@ public class ItemLongClickListener {
         if (!(v.getTag() instanceof ItemInfo)) return false;
 
         launcher.setWaitingForResult(null);
+        if (v instanceof LauncherAppWidgetHostView
+                && v.getTag() instanceof LauncherAppWidgetInfo) {
+            // Match workspace icons: start the native drag while the pointer is down.
+            beginDrag(v, launcher, (ItemInfo) v.getTag(), new DragOptions());
+            return true;
+        }
         beginDrag(v, launcher, (ItemInfo) v.getTag(), new DragOptions());
         return true;
+    }
+
+    /** Contextual widget actions, with small illustrative icons. */
+    public static PopupWindow showPrimeWidgetMenu(LauncherAppWidgetHostView widget,
+            Launcher launcher, LauncherAppWidgetInfo info) {
+        final PopupWindow popup = new PopupWindow(launcher);
+        LinearLayout column = new LinearLayout(launcher);
+        column.setOrientation(LinearLayout.VERTICAL);
+        float density = launcher.getResources().getDisplayMetrics().density;
+        int padding = Math.round(16 * density);
+        column.setPadding(padding / 2, padding / 2, padding / 2, padding / 2);
+        GradientDrawable background = new GradientDrawable();
+        background.setColor(Color.rgb(45, 48, 69));
+        background.setCornerRadius(Math.round(26 * density));
+        column.setBackground(background);
+        column.setElevation(Math.round(8 * density));
+
+        String[] labels = {"Redimensionner", "Marges du widget"};
+        int[] icons = {android.R.drawable.ic_menu_crop,
+                android.R.drawable.ic_menu_edit};
+        for (int i = 0; i < labels.length; i++) {
+            final int action = i;
+            LinearLayout row = new LinearLayout(launcher);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setPadding(padding / 2, padding / 2, padding / 2, padding / 2);
+            row.setMinimumHeight(Math.round(52 * density));
+            ImageView image = new ImageView(launcher);
+            image.setImageResource(icons[i]);
+            image.setColorFilter(Color.rgb(205, 203, 222));
+            LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(
+                    Math.round(24 * density), Math.round(24 * density));
+            iconParams.rightMargin = padding;
+            row.addView(image, iconParams);
+            TextView label = new TextView(launcher);
+            label.setText(labels[i]);
+            label.setTextSize(15);
+            label.setTextColor(Color.WHITE);
+            row.addView(label);
+            row.setOnClickListener(clicked -> {
+                popup.dismiss();
+                if (action == 1) {
+                    AppWidgetResizeFrame.showPrimeWidgetMarginsDialog(widget);
+                } else if (action == 0) {
+                    if (widget.getParent() != null
+                            && widget.getParent().getParent() instanceof com.android.launcher3.CellLayout) {
+                        AppWidgetResizeFrame.showForWidget(widget,
+                                (com.android.launcher3.CellLayout) widget.getParent().getParent());
+                    }
+                } else {
+                    beginDrag(widget, launcher, info, new DragOptions());
+                }
+            });
+            column.addView(row);
+        }
+        popup.setContentView(column);
+        popup.setWidth(Math.round(250 * density));
+        popup.setHeight(android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+        popup.setBackgroundDrawable(background);
+        popup.setOutsideTouchable(true);
+        // Keep the original touch stream in DragLayer, as for icon pre-drag popups.
+        popup.setFocusable(false);
+        popup.setTouchable(true);
+        popup.setElevation(Math.round(10 * density));
+        popup.showAsDropDown(widget, 0, -widget.getHeight());
+        return popup;
     }
 
     public static void beginDrag(View v, Launcher launcher, ItemInfo info,

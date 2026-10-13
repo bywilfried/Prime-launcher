@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -121,7 +122,8 @@ fun SwitchPreferencePreviewCard(
     ) {
         Box(
             modifier = Modifier
-                .size(160.dp, 120.dp)
+                .fillMaxWidth()
+                .aspectRatio(4f / 3f)
                 .clip(MaterialTheme.shapes.large)
                 .background(backgroundColor)
                 .clickable { if (enabled) onClick() }

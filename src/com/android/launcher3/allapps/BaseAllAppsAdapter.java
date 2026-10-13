@@ -27,6 +27,7 @@ import static com.android.launcher3.allapps.UserProfileManager.STATE_ENABLED;
 
 import android.content.Context;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -47,6 +48,14 @@ import com.android.launcher3.folder.FolderIcon;
 import com.android.launcher3.model.data.AppInfo;
 import com.android.launcher3.model.data.FolderInfo;
 import com.android.launcher3.views.ActivityContext;
+
+import app.lawnchair.preferences.PreferenceManager;
+import app.lawnchair.allapps.LawnchairAlphabeticalAppsList;
+import app.lawnchair.prime.drawer.PrimeDrawerTabsRepository;
+import app.lawnchair.prime.drawer.PrimeDrawerFolderVisualOverrides;
+import app.lawnchair.prime.drawer.PrimeFolderLongPressHelper;
+import app.lawnchair.prime.drawer.PrimeDrawerVisualOverrides;
+import app.lawnchair.icons.shape.IconShape;
 
 /**
  * Adapter for all the apps.
@@ -85,6 +94,12 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
             VIEW_TYPE_PRIVATE_SPACE_SYS_APPS_DIVIDER;
 
     protected final SearchAdapterProvider<?> mAdapterProvider;
+    @Nullable private PrimeDrawerVisualOverrides mPrimePreparedVisualOverrides;
+
+    /** Pins Prime cell rendering to the same immutable destination snapshot as the swipe preview. */
+    public void setPrimePreparedVisualOverrides(@Nullable PrimeDrawerVisualOverrides overrides) {
+        mPrimePreparedVisualOverrides = overrides;
+    }
 
     /**
      * ViewHolder for each icon.
@@ -160,6 +175,10 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
          * as well. Returning true will prevent redrawing of thee item.
          */
         public boolean isContentSame(AdapterItem other) {
+            if (viewType == VIEW_TYPE_FOLDER && folderInfo != null && other.folderInfo != null) {
+                return java.util.Objects.equals(folderInfo.title, other.folderInfo.title)
+                        && folderInfo.getContents().equals(other.folderInfo.getContents());
+            }
             return itemInfo == null && other.itemInfo == null;
         }
 
@@ -292,7 +311,12 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
                                 || (privateProfileManager != null
                                         && privateProfileManager.isPrivateSpaceItem(adapterItem)));
                 icon.setSkipUserBadge(skipUserBadge);
+                // Set the effective Prime shape before binding so the normal icon is drawn
+                // directly with the correct view-local mask on its first frame.
+                applyPrimeTabIconShape(icon);
                 icon.applyFromApplicationInfo(adapterItem.itemInfo);
+                applyPrimeTabIconOverrides(icon);
+                applyPrimeTabCellHeight(icon);
                 icon.setOnFocusChangeListener(mIconFocusListener);
                 if (privateProfileManager != null) {
                     // Set the alpha of the private space icon to 0 upon expanding the header so the
@@ -367,13 +391,112 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
                 // LC-Note: Implement long-press support for folder type for purposes like showing popup
                 FolderIcon folderIcon = FolderIcon.inflateFolderAndIcon(
                         R.layout.all_apps_folder_icon, mActivityContext, container, folderInfo);
+                if (folderInfo.id >= 0
+                        && PrimeFolderLongPressHelper.shouldHandle(folderIcon)) {
+                    PrimeFolderLongPressHelper.registerDefaultDrawerFolderIcon(folderIcon);
+                }
+                PrimeDrawerFolderVisualOverrides folderOverrides =
+                        PrimeFolderLongPressHelper.getVisualOverrides(mActivityContext, folderInfo);
+                if (folderOverrides != null && folderOverrides.getClosedLabelColor() != null) {
+                    folderIcon.getFolderName().setTextColor(folderOverrides.getClosedLabelColor());
+                } else {
+                    PrimeDrawerVisualOverrides folderTabOverrides =
+                            getPrimeTabVisualOverrides();
+                    if (folderTabOverrides != null && folderTabOverrides.getDrawerTextColor() != null) {
+                        folderIcon.getFolderName().setTextColor(folderTabOverrides.getDrawerTextColor());
+                    }
+                }
                 folderIcon.setOnLongClickListener(mOnIconLongClickListener);
                 container.addView(folderIcon);
+                applyPrimeTabCellHeight(container);
                 break;
             default:
                 if (mAdapterProvider.isViewSupported(holder.getItemViewType())) {
                     mAdapterProvider.onBindView(holder, position);
                 }
+        }
+    }
+
+    private PrimeDrawerVisualOverrides getPrimeTabVisualOverrides() {
+        if (mPrimePreparedVisualOverrides != null) {
+            return mPrimePreparedVisualOverrides;
+        }
+        PrimeDrawerTabsRepository repository = new PrimeDrawerTabsRepository(mActivityContext);
+        if (mApps instanceof LawnchairAlphabeticalAppsList) {
+            String tabId = ((LawnchairAlphabeticalAppsList<?>) mApps).getPrimeEffectiveTabId();
+            return repository.getTabVisualOverrides(tabId);
+        }
+        return repository.getSelectedTabVisualOverrides();
+    }
+
+    private void applyPrimeTabCellHeight(View view) {
+        int defaultHeight = mActivityContext.getDeviceProfile().getAllAppsProfile().getCellHeightPx();
+        PrimeDrawerVisualOverrides overrides =
+                getPrimeTabVisualOverrides();
+        float factor = overrides != null && overrides.getDrawerRowHeight() != null
+                ? overrides.getDrawerRowHeight() : 1f;
+        ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
+        if (layoutParams != null) {
+            layoutParams.height = Math.round(defaultHeight * factor);
+            view.setLayoutParams(layoutParams);
+        }
+    }
+
+    /** Reapplies Prime category overrides to an already-bound All Apps icon. */
+    public void reapplyPrimeTabIconOverrides(BubbleTextView icon) {
+        applyPrimeTabIconOverrides(icon);
+        icon.requestLayout();
+        icon.invalidate();
+    }
+
+    private void applyPrimeTabIconShape(BubbleTextView icon) {
+        IconShape shape = null;
+        if (PreferenceManager.getInstance(mActivityContext).getDrawerTabsEnabled().get()) {
+            PrimeDrawerVisualOverrides overrides =
+                    getPrimeTabVisualOverrides();
+            if (overrides != null && overrides.getDrawerIconShape() != null) {
+                shape = IconShape.Companion.fromString(
+                        overrides.getDrawerIconShape(), icon.getContext());
+            }
+        }
+        icon.setPrimeIconShapeForNextBind(shape);
+    }
+
+    private void applyPrimeTabIconOverrides(BubbleTextView icon) {
+        if (!PreferenceManager.getInstance(mActivityContext).getDrawerTabsEnabled().get()) return;
+        PrimeDrawerVisualOverrides overrides =
+                getPrimeTabVisualOverrides();
+        if (overrides == null) return;
+
+        if (overrides.getShowLabels() != null) {
+            icon.setTextVisibility(overrides.getShowLabels());
+        }
+        if (overrides.getDrawerTextColor() != null) {
+            icon.setTextColor(overrides.getDrawerTextColor());
+        }
+        if (overrides.getLabelSize() != null) {
+            float defaultSize = mActivityContext.getDeviceProfile().getAllAppsProfile().getIconTextSizePx();
+            icon.setTextSize(TypedValue.COMPLEX_UNIT_PX, defaultSize * overrides.getLabelSize());
+        }
+        if (overrides.getDrawerIconSize() != null) {
+            int defaultSize = mActivityContext.getDeviceProfile().getAllAppsProfile().getIconSizePx();
+            icon.setPrimeIconSize(Math.round(defaultSize * overrides.getDrawerIconSize()));
+        }
+        if (overrides.getTwoLineLabels() != null) {
+            icon.setSingleLine(!overrides.getTwoLineLabels());
+            icon.setMaxLines(overrides.getTwoLineLabels() ? 2 : 1);
+        }
+        if (overrides.getDrawerIconShape() != null) {
+            IconShape shape = IconShape.Companion.fromString(
+                    overrides.getDrawerIconShape(), icon.getContext());
+            if (mApps instanceof LawnchairAlphabeticalAppsList
+                    && ((LawnchairAlphabeticalAppsList<?>) mApps).isPrimePreview()) {
+                // Keep swipe previews stable: use a Prime variant only when it is already cached,
+                // never schedule an asynchronous drawable replacement while the page is moving.
+                icon.setPrimeIconShapeFromCacheOnly(shape);
+            } else {
+                icon.setPrimeIconShape(shape);
+            }
         }
     }
 

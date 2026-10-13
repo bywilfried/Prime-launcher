@@ -57,6 +57,10 @@ import com.android.launcher3.views.ActivityContext;
 import com.android.launcher3.views.BaseDragLayer;
 
 import app.lawnchair.theme.color.tokens.ColorTokens;
+import app.lawnchair.theme.ThemeColorRole;
+import app.lawnchair.theme.ThemeColors;
+import app.lawnchair.theme.ThemeProfile;
+import app.lawnchair.theme.ThemeAppearanceModeKt;
 import app.lawnchair.theme.drawable.DrawableTokens;
 
 /**
@@ -132,6 +136,9 @@ public abstract class ArrowPopup<T extends Context & ActivityContext>
     private final String mIterateChildrenTag;
 
     public final int[] mColors;
+    private ThemeColorRole mPrimePopupBackgroundRole = ThemeColorRole.HOME_POPUP_BACKGROUND;
+    private ThemeColorRole mPrimePopupTextRole = ThemeColorRole.HOME_POPUP_TEXT;
+    private ThemeColorRole mPrimePopupIconRole = ThemeColorRole.HOME_POPUP_ICON;
 
     public ArrowPopup(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
@@ -180,6 +187,25 @@ public abstract class ArrowPopup<T extends Context & ActivityContext>
             mColors = new int[]{ColorTokens.PopupArrow.resolveColor(context)};
         }
     }
+
+    public void setPrimePopupRoles(ThemeColorRole background, ThemeColorRole text, ThemeColorRole icon) {
+        mPrimePopupBackgroundRole = background;
+        mPrimePopupTextRole = text;
+        mPrimePopupIconRole = icon;
+        int color = resolvePrimePopupColor(background);
+        java.util.Arrays.fill(mColors, color);
+        mArrowColor = color;
+        mRoundedTop.setColor(color);
+        mRoundedBottom.setColor(color);
+    }
+
+    protected int resolvePrimePopupColor(ThemeColorRole role) {
+        return ThemeColors.INSTANCE.resolve(getContext(), ThemeProfile.Companion.current(getContext()), role,
+                ThemeAppearanceModeKt.effectiveThemeVariant(getContext()));
+    }
+
+    public int getPrimePopupTextColor() { return resolvePrimePopupColor(mPrimePopupTextRole); }
+    public int getPrimePopupIconColor() { return resolvePrimePopupColor(mPrimePopupIconRole); }
 
     public ArrowPopup(Context context, AttributeSet attrs) {
         this(context, attrs, 0);

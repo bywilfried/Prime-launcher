@@ -51,11 +51,19 @@ import androidx.core.os.UserManagerCompat
 import app.lawnchair.preferences.PreferenceManager
 import app.lawnchair.preferences2.PreferenceManager2
 import app.lawnchair.preferences2.firstCached
+import app.lawnchair.prime.drawer.PrimeDrawerMode
+import app.lawnchair.prime.drawer.PrimeDrawerModePreferences
+import app.lawnchair.theme.effectiveThemeVariant
+import app.lawnchair.theme.ThemeColorRole
+import app.lawnchair.theme.ThemeColors
+import app.lawnchair.theme.ThemeProfile
 import app.lawnchair.theme.color.ColorOption
+import app.lawnchair.theme.color.resolveColor
 import app.lawnchair.theme.color.tokens.ColorTokens
 import com.android.launcher3.BaseActivity
 import com.android.launcher3.BuildConfig
 import com.android.launcher3.R
+import com.android.launcher3.InvariantDeviceProfile
 import com.android.launcher3.Utilities
 import com.android.launcher3.util.Executors.MAIN_EXECUTOR
 import com.android.launcher3.util.Themes
@@ -150,9 +158,27 @@ fun supportsRoundedCornersOnWindows(context: Context): Boolean {
 
 fun overrideAllAppsTextColor(textView: TextView) {
     val context = textView.context
-    val luminance = getAllAppsBaseColor(context, ColorTokens.AllAppsScrimColor.resolveColor(context)).luminance
-    val opacity = PreferenceManager.getInstance(context).drawerOpacity.get()
-    if (luminance > 0.5f || opacity <= 0.3f) {
+    val prefs = PreferenceManager.getInstance(context)
+    val mode = PrimeDrawerMode.current(prefs)
+    if (mode != PrimeDrawerMode.TABS) {
+        val grid = InvariantDeviceProfile.INSTANCE.get(context).closestProfile
+        val primeTextColor = PrimeDrawerModePreferences(context)
+            .get(grid, mode)
+            .defaultDrawerTextColor
+        if (primeTextColor != null) {
+            textView.setTextColor(primeTextColor)
+            return
+        }
+    }
+
+    val backgroundColor =
+        getAllAppsBaseColor(context, ColorTokens.AllAppsScrimColor.resolveColor(context))
+    val opacity = prefs.drawerOpacity.get()
+
+    // The drawer surface can become light independently of the Android day/night mode
+    // (for example with the Monochromatic color style). Always choose the label color
+    // from the effective drawer surface instead of keeping the theme's initial text color.
+    if (backgroundColor.luminance > 0.5f || opacity <= 0.3f) {
         textView.setTextColor(Themes.getAttrColor(context, R.attr.allAppsAlternateTextColor))
     }
 }
@@ -186,24 +212,23 @@ fun getFolderBackgroundAlpha(context: Context): Int {
     return (prefs2.folderBackgroundOpacity.firstCached() * 255).toInt()
 }
 
-/**
- * Custom folder color from preferences, or `0` when the theme default should be used.
+/** Closed-folder preview circle color (includes preview opacity).
  *
- * Note: pure black (`#FF000000`) is a valid custom color and is not treated as default.
+ * The legacy global folderColor preference is intentionally ignored here. Folder colors are now
+ * owned by semantic theme roles; explicit per-folder/category overrides are applied separately.
  */
-fun getCustomFolderColor(context: Context): Int {
-    val prefs2 = PreferenceManager2.getInstance(context)
-    return prefs2.folderColor.firstCached().colorPreferenceEntry.lightColor(context)
-}
-
-/** Closed-folder preview circle color (includes preview opacity). */
-fun resolveFolderPreviewColor(context: Context): Int {
-    val custom = getCustomFolderColor(context)
-    val base = if (custom != 0) {
-        custom
+fun resolveFolderPreviewColor(context: Context, isInAppDrawer: Boolean = false): Int {
+    val role = if (isInAppDrawer) {
+        ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND
     } else {
-        ColorTokens.FolderPreviewColor.resolveColor(context)
+        ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND
     }
+    val base = ThemeColors.resolve(
+        context,
+        ThemeProfile.current(context),
+        role,
+        context.effectiveThemeVariant(),
+    )
     return ColorUtils.setAlphaComponent(base, getFolderPreviewAlpha(context))
 }
 
@@ -211,21 +236,41 @@ fun resolveFolderPreviewColor(context: Context): Int {
  * Open-folder background fill color.
  * Opacity is applied separately via [getFolderBackgroundAlpha] on the drawable.
  */
-fun resolveFolderBackgroundColor(context: Context): Int {
-    val custom = getCustomFolderColor(context)
-    return if (custom != 0) {
-        custom
+fun resolveFolderBackgroundColor(context: Context, isInAppDrawer: Boolean = false): Int {
+    // Do not consult the legacy global folderColor preference here. Semantic theme colors are the
+    // default; explicit per-folder/category overrides remain authoritative in Folder.
+    val role = if (isInAppDrawer) {
+        ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND
     } else {
-        ColorTokens.FolderBackgroundColor.resolveColor(context)
+        ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND
     }
+    return ThemeColors.resolve(context, ThemeProfile.current(context), role, context.effectiveThemeVariant())
 }
 
 /** Apply Lawnchair custom allapps colour to the provided colour */
 private fun getAllAppsBaseColor(context: Context, defaultColor: Int): Int {
-    val prefs2 = PreferenceManager2.getInstance(context)
-    val colorOptions: ColorOption = prefs2.appDrawerBackgroundColor.firstCached()
-    val color = colorOptions.colorPreferenceEntry.lightColor.invoke(context)
-    val baseColor = if (color != 0) color else defaultColor
+    // The drawer's master background belongs to the selected theme, not to a drawer mode.
+    // Local category/tab overrides are applied later by ActivityAllAppsContainerView.
+    val profile = ThemeProfile.current(context)
+    val variant = context.effectiveThemeVariant()
+    val stored = app.lawnchair.theme.ThemeColorOverrides(context).get(
+        profile,
+        variant,
+        ThemeColorRole.DRAWER_BACKGROUND,
+    )
+    // Legacy's historical "default" was the drawer-provided defaultColor. Do not resolve the
+    // token a second time from an application/activity context: that loses the exact themed
+    // context the All Apps view used historically (and can turn the dark fallback into black).
+    val baseColor = if (stored == ColorOption.Default) {
+        defaultColor
+    } else {
+        ThemeColors.resolve(
+            context,
+            profile,
+            ThemeColorRole.DRAWER_BACKGROUND,
+            variant,
+        )
+    }
     return ColorUtils.setAlphaComponent(baseColor, 255)
 }
 

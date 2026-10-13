@@ -38,6 +38,8 @@ import static com.android.launcher3.icons.cache.CacheLookupFlag.DEFAULT_LOOKUP_F
 import static com.android.launcher3.model.data.ItemInfoWithIcon.FLAG_INCREMENTAL_DOWNLOAD_ACTIVE;
 import static com.android.launcher3.model.data.ItemInfoWithIcon.FLAG_INSTALL_SESSION_ACTIVE;
 import static com.android.launcher3.model.data.ItemInfoWithIcon.FLAG_SHOW_DOWNLOAD_PROGRESS_MASK;
+import static com.android.launcher3.util.Executors.MAIN_EXECUTOR;
+import static com.android.launcher3.util.Executors.MODEL_EXECUTOR;
 import static com.android.launcher3.util.MultiTranslateDelegate.INDEX_TASKBAR_APP_RUNNING_STATE_ANIM;
 
 import android.animation.Animator;
@@ -49,10 +51,13 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.DrawableWrapper;
 import android.icu.text.MessageFormat;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -63,6 +68,7 @@ import android.text.TextUtils.TruncateAt;
 import android.text.style.ImageSpan;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.util.Pair;
 import android.util.Property;
 import android.util.TypedValue;
 import android.view.KeyEvent;
@@ -85,10 +91,12 @@ import com.android.launcher3.dragndrop.DragOptions.PreDragCondition;
 import com.android.launcher3.dragndrop.DraggableView;
 import com.android.launcher3.folder.FolderIcon;
 import com.android.launcher3.graphics.PreloadIconDrawable;
+import com.android.launcher3.icons.BitmapInfo;
 import com.android.launcher3.icons.DotRenderer;
 import com.android.launcher3.icons.FastBitmapDrawable;
 import com.android.launcher3.icons.IconCache.ItemInfoUpdateReceiver;
 import com.android.launcher3.icons.PlaceHolderIconDrawable;
+import com.android.launcher3.icons.LauncherIcons;
 import com.android.launcher3.icons.cache.CacheLookupFlag;
 import com.android.launcher3.model.data.AppInfo;
 import com.android.launcher3.model.data.ItemInfo;
@@ -117,6 +125,7 @@ import app.lawnchair.preferences.PreferenceManager;
 import app.lawnchair.preferences2.PreferenceManager2;
 import app.lawnchair.util.LawnchairUtilsKt;
 import app.lawnchair.animation.PhysicsAnimator;
+import app.lawnchair.icons.shape.IconShape;
 
 /**
  * TextView that draws a bubble behind the text. We cannot use a LineBackgroundSpan
@@ -148,6 +157,66 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     private static final int BOLD_TEXT_ADJUSTMENT = FONT_WEIGHT_BOLD - FONT_WEIGHT_NORMAL;
 
     private static final int[] STATE_PRESSED = new int[]{android.R.attr.state_pressed};
+
+    // Prime render variants are separate from IconCache so Home/global icons are never replaced.
+    // The key is stable across RecyclerView/AppInfo recreation; the source bitmap identity
+    // invalidates an entry when Lawnchair refreshes the underlying app icon.
+    private static final class PrimeIconRenderCache {
+        private static final HashMap<String, PrimeIconCacheEntry> CACHE = new HashMap<>();
+
+        private static final class PrimeIconCacheEntry {
+            final Object sourceBitmap;
+            final BitmapInfo primeBitmap;
+
+            PrimeIconCacheEntry(Object sourceBitmap, BitmapInfo primeBitmap) {
+                this.sourceBitmap = sourceBitmap;
+                this.primeBitmap = primeBitmap;
+            }
+        }
+
+        @Nullable
+        static String key(ItemInfoWithIcon info, IconShape shape, int iconSize, boolean useTheme) {
+            Object stableId = info.getStableId();
+            if (stableId == null || shape == null) return null;
+            return stableId + "|" + shape + "|" + iconSize + "|" + useTheme;
+        }
+
+        @Nullable
+        static BitmapInfo get(ItemInfoWithIcon info, IconShape shape, int iconSize,
+                boolean useTheme) {
+            String key = key(info, shape, iconSize, useTheme);
+            PrimeIconCacheEntry cached;
+            synchronized (CACHE) {
+                cached = key == null ? null : CACHE.get(key);
+            }
+            return cached != null && cached.sourceBitmap == info.bitmap.icon
+                    ? cached.primeBitmap : null;
+        }
+
+        @Nullable
+        static BitmapInfo renderAndCache(Launcher launcher, ItemInfoWithIcon info,
+                IconShape shape, int iconSize, boolean useTheme) {
+            BitmapInfo cached = get(info, shape, iconSize, useTheme);
+            if (cached != null) return cached;
+
+            Pair<AdaptiveIconDrawable, Drawable> fullDrawable = Utilities.getFullDrawable(
+                    launcher, info, iconSize, iconSize, useTheme);
+            if (fullDrawable == null || fullDrawable.first == null) return null;
+
+            final BitmapInfo primeBitmap;
+            try (LauncherIcons launcherIcons = LauncherIcons.obtain(launcher)) {
+                primeBitmap = launcherIcons.createPrimeIconBitmap(
+                        fullDrawable.first, info.user, shape);
+            }
+            String key = key(info, shape, iconSize, useTheme);
+            if (key != null) {
+                synchronized (CACHE) {
+                    CACHE.put(key, new PrimeIconCacheEntry(info.bitmap.icon, primeBitmap));
+                }
+            }
+            return primeBitmap;
+        }
+    }
 
     private float mScaleForReorderBounce = 1f;
 
@@ -185,6 +254,11 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     private final MultiTranslateDelegate mTranslateDelegate = new MultiTranslateDelegate(this);
     protected final ActivityContext mActivity;
     private FastBitmapDrawable mIcon;
+    private IconShape mPrimeIconShape;
+    private int mPrimeIconShapeRequestGeneration;
+    // Prime swipe diagnostic: records the last code path that replaced this view's icon.
+    private String mPrimeLastIconSetReason = "init";
+    private long mPrimeLastIconSetUptime;
     private DeviceProfile mDeviceProfile;
     private boolean mCenterVertically;
 
@@ -194,7 +268,8 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
 
     private boolean mLayoutHorizontal;
     private final boolean mIsRtl;
-    private final int mIconSize;
+    private int mIconSize;
+    private final int mDefaultIconSize;
 
     @ViewDebug.ExportedProperty(category = "launcher")
     private boolean mHideBadge = false;
@@ -212,6 +287,10 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     @ViewDebug.ExportedProperty(category = "launcher")
     private DotInfo mDotInfo;
     private DotRenderer mDotRenderer;
+    private int mPrimeDotRendererSize = -1;
+    private int mPrimePerIconDotColor = Color.TRANSPARENT;
+    private int mPrimePerIconTextColor = Color.TRANSPARENT;
+    private boolean mPrimePerIconAllApps;
     @ViewDebug.ExportedProperty(category = "launcher", deepExport = true)
     protected DotRenderer.DrawParams mDotParams;
     private Animator mDotScaleAnim;
@@ -316,6 +395,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
 
         mIconSize = a.getDimensionPixelSize(R.styleable.BubbleTextView_iconSizeOverride,
                 defaultIconSize);
+        mDefaultIconSize = mIconSize;
         a.recycle();
 
         mRunningAppIndicatorHeight =
@@ -356,9 +436,12 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         mDotInfo = null;
         mDotParams.dotColor = Color.TRANSPARENT;
         mDotParams.appColor = Color.TRANSPARENT;
+        mPrimePerIconDotColor = Color.TRANSPARENT;
+        mPrimePerIconTextColor = Color.TRANSPARENT;
         cancelDotScaleAnim();
         mDotParams.scale = 0f;
         mForceHideDot = false;
+        mPrimeIconShapeRequestGeneration++;
         setBackground(null);
 
         mLineIndicatorColor = Color.TRANSPARENT;
@@ -379,6 +462,15 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         setReorderBounceScale(1f);
         setTranslationY(0);
         setMaxLines(1);
+        setSingleLine(true);
+        if (mDisplay == DISPLAY_ALL_APPS || mDisplay == DISPLAY_PREDICTION_ROW
+                || mDisplay == DISPLAY_SEARCH_RESULT_APP_ROW || mDisplay == DISPLAY_DRAWER_FOLDER) {
+            mIconSize = mDefaultIconSize;
+            setTextVisibility(true);
+            setTextSize(TypedValue.COMPLEX_UNIT_PX,
+                    mDeviceProfile.getAllAppsProfile().getIconTextSizePx());
+            LawnchairUtilsKt.overrideAllAppsTextColor(this);
+        }
         setVisibility(VISIBLE);
 
         // Lawnchair: Icon swipe gesture feature
@@ -420,9 +512,41 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     public void applyFromWorkspaceItem(WorkspaceItemInfo info) {
         applyIconAndLabel(info);
         setItemInfo(info);
+        applyPrimeDockSizing(info);
 
         applyDotState(info, false /* animate */);
         setDownloadStateContentDescription(info, info.getProgressLevel());
+    }
+
+    /** Applies the icon and label profile for the destination after a drag/drop. */
+    public void applyPrimeWorkspaceSizing(int container) {
+        if (mDisplay != DISPLAY_WORKSPACE) return;
+        boolean inDock = container == LauncherSettings.Favorites.CONTAINER_HOTSEAT
+                || container == LauncherSettings.Favorites.CONTAINER_HOTSEAT_PREDICTION;
+        float homeFactor = PreferenceCacheExtensionsKt.firstCached(pref2.getHomeIconSizeFactor());
+        float iconFactor = inDock
+                ? PreferenceCacheExtensionsKt.firstCached(pref2.getDockIconSizeFactor())
+                : homeFactor;
+        int iconSize = Math.max(1, Math.round(mDeviceProfile.iconSizePx
+                * iconFactor / Math.max(0.01f, homeFactor)));
+        setPrimeIconSize(iconSize);
+
+        float homeLabelFactor = PreferenceCacheExtensionsKt.firstCached(
+                pref2.getHomeIconLabelSizeFactor());
+        float labelFactor = inDock
+                ? PreferenceCacheExtensionsKt.firstCached(pref2.getDockIconLabelSizeFactor())
+                : homeLabelFactor;
+        float baseLabelSize = mDeviceProfile.primeWorkspaceLabelTextSizePx
+                / Math.max(0.01f, homeLabelFactor);
+        setTextSize(TypedValue.COMPLEX_UNIT_PX, baseLabelSize * labelFactor);
+        setTextVisibility(inDock
+                ? PreferenceCacheExtensionsKt.firstCached(pref2.getEnableLabelInDock())
+                : PreferenceCacheExtensionsKt.firstCached(pref2.getShowIconLabelsOnHomeScreen()));
+    }
+
+    /** Keep initial binding and post-drop styling consistent. */
+    private void applyPrimeDockSizing(ItemInfoWithIcon info) {
+        applyPrimeWorkspaceSizing(info.container);
     }
 
     @UiThread
@@ -514,10 +638,40 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     public void applyIconAndLabel(ItemInfoWithIcon info) {
         FastBitmapDrawable oldIcon = mIcon;
         if (!canReuseIcon(info)) {
-            setNonPendingIcon(info);
+            if (!applyCachedPrimeIcon(info)) {
+                setNonPendingIcon(info);
+            }
         }
         applyLabel(info);
         maybeApplyProgressLevel(info, oldIcon);
+    }
+
+    private boolean applyCachedPrimeIcon(ItemInfoWithIcon info) {
+        if (mPrimeIconShape == null
+                || (mDisplay != DISPLAY_ALL_APPS && mDisplay != DISPLAY_FOLDER
+                        && mDisplay != DISPLAY_DRAWER_FOLDER)) {
+            return false;
+        }
+        boolean useTheme = shouldUseTheme();
+        BitmapInfo cached = PrimeIconRenderCache.get(
+                info, mPrimeIconShape, mIconSize, useTheme);
+        if (cached == null) return false;
+        ActivityContext activityContext = ActivityContext.lookupContextNoThrow(getContext());
+        if (!(activityContext instanceof Launcher launcher)) return false;
+
+        boolean isPrivateSpaceIcon = Objects.equals(
+                info.getTargetPackage(), PRIVATE_SPACE_PACKAGE);
+        int flags = isPrivateSpaceIcon
+                ? info.bitmap.creationFlags : useTheme ? FLAG_THEMED : 0;
+        if (mHideBadge || mDisplay == DISPLAY_SEARCH_RESULT_SMALL) flags |= FLAG_NO_BADGE;
+        if (mSkipUserBadge) flags |= FLAG_SKIP_USER_BADGE;
+        FastBitmapDrawable drawable = cached.newIcon(launcher, flags);
+        if (isPrivateSpaceIcon) drawable.setAnimationEnabled(false);
+        mDotParams.appColor = drawable.getIconColor();
+        mPrimeLastIconSetReason = "prime-cache";
+        setIcon(drawable);
+        PrimeDebugLog.d("PrimeIconShape", "stable cache hit");
+        return true;
     }
 
     /**
@@ -573,6 +727,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         if (isPrivateSpaceIcon) {
             iconDrawable.setAnimationEnabled(false);
         }
+        mPrimeLastIconSetReason = "normal";
         setIcon(iconDrawable);
     }
 
@@ -639,11 +794,39 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                 setText(label);
             }
         }
+        applyPrimeSemanticLabelColor(info);
         if (info.contentDescription != null) {
             setContentDescription(info.isDisabled()
                     ? getContext().getString(R.string.disabled_app_label, info.contentDescription)
                     : info.contentDescription);
         }
+    }
+
+    /** Theme labels use separate roles for Home, Dock and Drawer. Folder children are
+     * handled by Folder when its actual open surface is known. */
+    private void applyPrimeSemanticLabelColor(ItemInfo info) {
+        if (mDisplay == DISPLAY_FOLDER || mDisplay == DISPLAY_DRAWER_FOLDER || info == null) return;
+        app.lawnchair.theme.ThemeColorRole role;
+        if (mDisplay == DISPLAY_ALL_APPS || mDisplay == DISPLAY_PREDICTION_ROW
+                || mDisplay == DISPLAY_SEARCH_RESULT_APP_ROW) {
+            role = app.lawnchair.theme.ThemeColorRole.DRAWER_ICON_TEXT;
+        } else if (mDisplay == DISPLAY_WORKSPACE) {
+            role = info.container == LauncherSettings.Favorites.CONTAINER_HOTSEAT
+                    || info.container == LauncherSettings.Favorites.CONTAINER_HOTSEAT_PREDICTION
+                    ? app.lawnchair.theme.ThemeColorRole.DOCK_ICON_TEXT
+                    : app.lawnchair.theme.ThemeColorRole.HOME_ICON_TEXT;
+        } else {
+            return;
+        }
+        // WallpaperColors.getPrimaryColor() describes the overall wallpaper palette, not
+        // the pixels behind this label. It can select black text on a dark workspace.
+        // For wallpaper-backed labels, use the active variant as a stable contrast fallback
+        // until per-label wallpaper sampling is available. Keep drawer surface resolution.
+        int surface = role == app.lawnchair.theme.ThemeColorRole.DRAWER_ICON_TEXT
+                ? app.lawnchair.theme.ThemeColors.resolveIconLabelSurface(getContext(), role)
+                : app.lawnchair.theme.ThemeColors.resolveWorkspaceLabelSurface(getContext(), role);
+        setTextColor(app.lawnchair.theme.ThemeColors.resolveIconLabelColor(
+                getContext(), role, surface));
     }
 
     @Override
@@ -938,6 +1121,35 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             final int scrollX = getScrollX();
             final int scrollY = getScrollY();
             canvas.translate(scrollX, scrollY);
+            boolean perIconDot = app.lawnchair.theme.NotificationDotThemeColors.isPerIconColor(getContext());
+            if (perIconDot) {
+                int background = mDotParams.appColor;
+                if (Color.alpha(background) == 0) {
+                    background = mDotParams.dotColor;
+                }
+                int textColor = app.lawnchair.theme.NotificationDotThemeColors.isAutomaticText(getContext())
+                        ? app.lawnchair.theme.NotificationDotThemeColors.contrastForBackground(background)
+                        : app.lawnchair.theme.NotificationDotThemeColors.resolve(
+                                getContext(), app.lawnchair.theme.ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT,
+                                PreferenceCacheExtensionsKt.firstCached(pref2.getNotificationDotTextColor()));
+                boolean allApps = mDisplay == DISPLAY_ALL_APPS || mDisplay == DISPLAY_PREDICTION_ROW;
+                if (mPrimePerIconDotColor != background || mPrimePerIconTextColor != textColor
+                        || mPrimePerIconAllApps != allApps
+                        || mPrimeDotRendererSize != mIconSize) {
+                    mDotRenderer = mActivity.getDeviceProfile()
+                            .createPrimeSizedDotRenderer(mIconSize, background, textColor);
+                    mPrimeDotRendererSize = mIconSize;
+                    mPrimePerIconDotColor = background;
+                    mPrimePerIconTextColor = textColor;
+                    mPrimePerIconAllApps = allApps;
+                }
+            }
+            if (!perIconDot && mPrimeDotRendererSize != mIconSize) {
+                DeviceProfile dp = mActivity.getDeviceProfile();
+                mDotRenderer = dp.createPrimeSizedDotRenderer(mIconSize,
+                        dp.getPrimeDotColor(), dp.getPrimeDotCountColor());
+                mPrimeDotRendererSize = mIconSize;
+            }
             mDotRenderer.draw(canvas, mDotParams, mDotInfo == null ? -1 : mDotInfo.getNotificationCount());
             canvas.translate(-scrollX, -scrollY);
         }
@@ -1190,12 +1402,23 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     }
 
     public boolean shouldTextBeVisible() {
-        // Text should be visible everywhere but the hotseat.
+        // TextView invokes setTextColor() from its superclass constructor, before
+        // BubbleTextView has initialized pref2. Avoid reading preferences until ready.
+        if (pref2 == null) {
+            return true;
+        }
+        // Text should be visible according to the workspace/dock preference.
         Object tag = getParent() instanceof FolderIcon ? ((View) getParent()).getTag() : getTag();
         ItemInfo info = tag instanceof ItemInfo ? (ItemInfo) tag : null;
-        return info == null || info.container != LauncherSettings.Favorites.CONTAINER_HOTSEAT
-                && info.container != LauncherSettings.Favorites.CONTAINER_HOTSEAT_PREDICTION
-                || PreferenceCacheExtensionsKt.firstCached(pref2.getEnableLabelInDock());
+        if (mDisplay != DISPLAY_WORKSPACE) {
+            return true;
+        }
+        boolean inDock = info != null
+                && (info.container == LauncherSettings.Favorites.CONTAINER_HOTSEAT
+                || info.container == LauncherSettings.Favorites.CONTAINER_HOTSEAT_PREDICTION);
+        return inDock
+                ? PreferenceCacheExtensionsKt.firstCached(pref2.getEnableLabelInDock())
+                : PreferenceCacheExtensionsKt.firstCached(pref2.getShowIconLabelsOnHomeScreen());
     }
 
     /**
@@ -1384,6 +1607,8 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             } else {
                 mDotRenderer = mActivity.getDeviceProfile().mDotRendererWorkSpace;
             }
+            mPrimePerIconDotColor = Color.TRANSPARENT;
+            mPrimeDotRendererSize = -1;
             if (wasDotted || isDotted) {
                 // Animate when a dot is first added or when it is removed.
                 if (animate && (wasDotted ^ isDotted) && isShown()) {
@@ -1444,6 +1669,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
      * Sets the icon for this view based on the layout direction.
      */
     protected void setIcon(FastBitmapDrawable icon) {
+        mPrimeLastIconSetUptime = android.os.SystemClock.uptimeMillis();
         if (mIsIconVisible) {
             applyCompoundDrawables(icon);
         }
@@ -1515,6 +1741,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     @Override
     public void reapplyItemInfo(ItemInfoWithIcon info) {
         if (getTag() == info) {
+            mPrimeLastIconSetReason = "highres-reapply";
             mIconLoadRequest = null;
             mDisableRelayout = true;
             mHighResUpdateInProgress = true;
@@ -1532,6 +1759,15 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
 
             mDisableRelayout = false;
             mHighResUpdateInProgress = false;
+
+            // A high-res cache callback rebuilds the normal drawable after the adapter has already
+            // applied its Prime tab override. Rebuild the Prime drawable as well so the category
+            // shape cannot disappear when the asynchronous high-res icon arrives.
+            if (mPrimeIconShape != null
+                    && (mDisplay == DISPLAY_ALL_APPS || mDisplay == DISPLAY_FOLDER
+                            || mDisplay == DISPLAY_DRAWER_FOLDER)) {
+                setPrimeIconShape(mPrimeIconShape);
+            }
         }
     }
 
@@ -1595,6 +1831,103 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         getIconBounds(mIconSize, bounds);
     }
 
+
+
+    /** Prime: fills the exact drawer render cache without creating or binding a View. */
+    public static void warmPrimeIconCache(Launcher launcher, ItemInfoWithIcon info,
+            @Nullable IconShape shape, int iconSize, boolean useTheme) {
+        if (shape == null || iconSize <= 0) return;
+        PrimeIconRenderCache.renderAndCache(launcher, info, shape, iconSize, useTheme);
+    }
+
+    /** Prime: primes the effective shape before an item bind without clipping its bitmap. */
+    public void setPrimeIconShapeForNextBind(@Nullable IconShape shape) {
+        mPrimeIconShape = shape;
+    }
+
+    /**
+     * Prime swipe diagnostic: apply a shaped variant only when it is already stable in cache.
+     * Never schedule a drawable replacement while a preview page is visible.
+     */
+    public void setPrimeIconShapeFromCacheOnly(@Nullable IconShape shape) {
+        mPrimeIconShape = shape;
+        ++mPrimeIconShapeRequestGeneration;
+        if (shape == null || !(getTag() instanceof ItemInfoWithIcon info)) return;
+        applyCachedPrimeIcon(info);
+    }
+
+    /** Prime: rebuilds a variant only when no stable cached variant exists. */
+    public void setPrimeIconShape(@Nullable IconShape shape) {
+        mPrimeIconShape = shape;
+        final int generation = ++mPrimeIconShapeRequestGeneration;
+        final String shapeKey = shape == null ? "null" : shape.toString();
+
+        if (shape == null || (mDisplay != DISPLAY_ALL_APPS && mDisplay != DISPLAY_FOLDER
+                && mDisplay != DISPLAY_DRAWER_FOLDER)
+                || !(getTag() instanceof ItemInfoWithIcon info)) {
+            return;
+        }
+        ActivityContext activityContext = ActivityContext.lookupContextNoThrow(getContext());
+        if (!(activityContext instanceof Launcher launcher)) return;
+
+        final int iconSize = mIconSize;
+        final boolean useTheme = shouldUseTheme();
+        final boolean isPrivateSpaceIcon = Objects.equals(
+                info.getTargetPackage(), PRIVATE_SPACE_PACKAGE);
+        int creationFlags = isPrivateSpaceIcon
+                ? info.bitmap.creationFlags : useTheme ? FLAG_THEMED : 0;
+        if (mHideBadge || mDisplay == DISPLAY_SEARCH_RESULT_SMALL) creationFlags |= FLAG_NO_BADGE;
+        if (mSkipUserBadge) creationFlags |= FLAG_SKIP_USER_BADGE;
+        final int flags = creationFlags;
+
+        BitmapInfo cached = PrimeIconRenderCache.get(info, shape, iconSize, useTheme);
+        if (cached != null) {
+            FastBitmapDrawable drawable = cached.newIcon(launcher, flags);
+            if (isPrivateSpaceIcon) drawable.setAnimationEnabled(false);
+            mDotParams.appColor = drawable.getIconColor();
+            mPrimeLastIconSetReason = "prime-shape-cache";
+            setIcon(drawable);
+            invalidate();
+            return;
+        }
+
+        MODEL_EXECUTOR.execute(() -> {
+            final BitmapInfo primeBitmap = PrimeIconRenderCache.renderAndCache(
+                    launcher, info, shape, iconSize, useTheme);
+            if (primeBitmap == null) return;
+            final FastBitmapDrawable primeDrawable = primeBitmap.newIcon(launcher, flags);
+            if (isPrivateSpaceIcon) primeDrawable.setAnimationEnabled(false);
+            MAIN_EXECUTOR.execute(() -> {
+                if (generation != mPrimeIconShapeRequestGeneration
+                        || mPrimeIconShape != shape || getTag() != info) return;
+                mDotParams.appColor = primeDrawable.getIconColor();
+                mPrimeLastIconSetReason = "prime-shape-async";
+                setIcon(primeDrawable);
+                invalidate();
+            });
+        });
+    }
+
+    /** Prime swipe diagnostic: last path that replaced the compound icon drawable. */
+    public String getPrimeLastIconSetReason() {
+        return mPrimeLastIconSetReason;
+    }
+
+    public long getPrimeLastIconSetUptime() {
+        return mPrimeLastIconSetUptime;
+    }
+
+    /** Prime: updates the rendered icon bounds for per-category drawer overrides. */
+    public void setPrimeIconSize(int iconSize) {
+        if (iconSize <= 0 || mIconSize == iconSize) return;
+        mIconSize = iconSize;
+        if (getTag() instanceof ItemInfoWithIcon) {
+            applyIconAndLabel((ItemInfoWithIcon) getTag());
+        }
+        requestLayout();
+        invalidate();
+    }
+
     @Override
     public SafeCloseable prepareDrawDragView() {
         resetIconScale();
@@ -1620,6 +1953,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             setCompoundDrawables(null, newIcon, null, null);
         }
     }
+
 
     private String getAppLabelPluralString(String appName, int notificationCount) {
         MessageFormat icuCountFormat = new MessageFormat(

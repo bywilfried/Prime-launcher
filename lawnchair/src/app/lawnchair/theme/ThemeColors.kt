@@ -1,0 +1,774 @@
+package app.lawnchair.theme
+
+import android.content.Context
+import android.graphics.Color
+import androidx.core.graphics.ColorUtils
+import app.lawnchair.theme.color.ColorOption
+import app.lawnchair.theme.color.tokens.AllAppsTabColors
+import app.lawnchair.theme.color.tokens.ColorTokens
+import app.lawnchair.ui.theme.getSystemAccent
+
+/**
+ * Official theme values and the first common semantic resolver.
+ *
+ * Legacy official values are resolved from the same dynamic palette used by the launcher.
+ * Fixed values are only used when the historical role itself was fixed.
+ */
+object ThemeColors {
+    // The drawer can choose between several historical base colors depending on the live blur
+    // state. Keep the last base actually selected by All Apps so settings can preview that exact
+    // official value instead of guessing from a Context that has no launcher blur state.
+    private val legacyDrawerOfficialByVariant = mutableMapOf<ThemeVariant, Int>()
+    private val liveDrawerBackgroundByVariant = mutableMapOf<ThemeVariant, Int>()
+
+    @JvmStatic
+    fun resolveHomePageIndicator(context: Context, active: Boolean): Int = resolve(
+        context,
+        ThemeProfile.current(context),
+        if (active) ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE else ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE,
+        context.effectiveThemeVariant(),
+    )
+
+    @JvmStatic
+    fun hasHomePageIndicatorOverride(context: Context, active: Boolean): Boolean =
+        ThemeColorOverrides(context).get(
+            ThemeProfile.current(context),
+            context.effectiveThemeVariant(),
+            if (active) ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE else ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE,
+        ) != ColorOption.Default
+
+    // Launcher.setupViews() uses the wallpaper-aware workspace text contrast,
+    // not the generic page-indicator token, for the original pagination paint.
+    @JvmStatic
+    fun workspacePaginationDefault(context: Context, variant: ThemeVariant): Int =
+        if (com.android.launcher3.util.Themes.getAttrBoolean(
+                context, com.android.launcher3.R.attr.isWorkspaceDarkText,
+            )) Color.BLACK else Color.WHITE
+
+    @JvmStatic
+    fun recordLiveDrawerBackground(variant: ThemeVariant, color: Int) {
+        liveDrawerBackgroundByVariant[variant] = color
+    }
+
+    @JvmStatic
+    fun recordLegacyDrawerOfficial(variant: ThemeVariant, color: Int) {
+        legacyDrawerOfficialByVariant[variant] = color
+    }
+
+    /**
+     * Describes the inherited theme behaviour, not an editable override.
+     * Keep this independent of the choice's position in the preset list.
+     * A future theme profile can provide a different description here.
+     */
+    /**
+     * Official role policies are keyed by profile, never by the user's saved choice.
+     * A new theme can replace its policies here without migrating existing Default overrides.
+     * Legacy keeps its historical semantic renderers and dynamic palette intact.
+     */
+    enum class OfficialBehavior(val description: String) {
+        LEGACY_PALETTE("couleur dynamique du thème"),
+        ICON_CONTRAST("noir/blanc automatique"),
+        PAGINATION_CONTRAST("contraste automatique noir/blanc"),
+        FOLDER_SURFACE_CONTRAST("automatique selon le fond du dossier"),
+        PER_ICON_DOT("selon la couleur de l’icône"),
+        THEME_COLOR("couleur du thème"),
+    }
+
+    fun officialBehavior(profile: ThemeProfile, role: ThemeColorRole): OfficialBehavior =
+        when (profile.id) {
+            ThemeProfile.LEGACY.id -> legacyOfficialBehavior(role)
+            // Until a profile registers its own policy, preserve the Legacy behavior.
+            else -> legacyOfficialBehavior(role)
+        }
+
+    private fun legacyOfficialBehavior(role: ThemeColorRole): OfficialBehavior = when (role) {
+        ThemeColorRole.HOME_ICON_TEXT,
+        ThemeColorRole.HOME_FOLDER_ICON_TEXT,
+        ThemeColorRole.HOME_FOLDER_CLOSED_TEXT,
+        ThemeColorRole.DOCK_ICON_TEXT,
+        ThemeColorRole.DOCK_FOLDER_ICON_TEXT,
+        ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT,
+        ThemeColorRole.DRAWER_ICON_TEXT,
+        ThemeColorRole.DRAWER_FOLDER_ICON_TEXT,
+        ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> OfficialBehavior.ICON_CONTRAST
+        ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE,
+        ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE,
+        ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT -> OfficialBehavior.PAGINATION_CONTRAST
+        ThemeColorRole.HOME_FOLDER_OPEN_TEXT,
+        ThemeColorRole.DOCK_FOLDER_OPEN_TEXT,
+        ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT,
+        ThemeColorRole.HOME_FOLDER_OPEN_HINT,
+        ThemeColorRole.DOCK_FOLDER_OPEN_HINT,
+        ThemeColorRole.DRAWER_FOLDER_OPEN_HINT -> OfficialBehavior.FOLDER_SURFACE_CONTRAST
+        ThemeColorRole.GLOBAL_NOTIFICATION_DOT -> OfficialBehavior.PER_ICON_DOT
+        else -> OfficialBehavior.THEME_COLOR
+    }
+
+    fun officialDefaultDescription(profile: ThemeProfile, role: ThemeColorRole): String =
+        officialBehavior(profile, role).description
+
+    fun official(
+        context: Context,
+        profile: ThemeProfile,
+        role: ThemeColorRole,
+        variant: ThemeVariant,
+    ): Int {
+        val officialVariant = profile.variants.officialFallbackFor(variant)
+        return when (profile.id) {
+            ThemeProfile.LEGACY.id -> legacy(context, role, officialVariant)
+            else -> legacy(context, role, officialVariant)
+        }
+    }
+
+    /**
+     * Editable dynamic recipe equivalent to the official Legacy semantic value.
+     * This is used only to seed the dynamic editor; runtime still resolves the real tokens above.
+     */
+    fun officialDynamicRecipe(role: ThemeColorRole, variant: ThemeVariant): ColorOption.DynamicColor? {
+        fun recipe(swatch: String, shade: Int, lStar: Int? = null) =
+            ColorOption.DynamicColor(swatch, shade, lStar)
+        val dark = variant == ThemeVariant.DARK
+        return when (role) {
+            ThemeColorRole.GLOBAL_ACCENT -> if (dark) recipe("Accent1", 100, 72) else recipe("Accent1", 600, 42)
+            ThemeColorRole.GLOBAL_SETTINGS_BACKGROUND -> if (dark) recipe("Neutral1", 500, 6) else recipe("Neutral1", 500, 98)
+            ThemeColorRole.GLOBAL_SETTINGS_CARD_BACKGROUND -> if (dark) recipe("Neutral1", 500, 22) else recipe("Neutral1", 500, 90)
+            // Match ColorTokens.DotColor in light and dark variants.
+            ThemeColorRole.GLOBAL_NOTIFICATION_DOT -> if (dark) recipe("Accent1", 200) else recipe("Accent2", 600)
+            ThemeColorRole.HOME_POPUP_BACKGROUND -> if (dark) recipe("Accent2", 800, 20) else recipe("Accent2", 200, 98)
+            ThemeColorRole.DRAWER_POPUP_BACKGROUND -> if (dark) recipe("Accent2", 800, 28) else recipe("Accent2", 200, 92)
+            ThemeColorRole.HOME_POPUP_TEXT,
+            ThemeColorRole.DRAWER_POPUP_TEXT,
+            ThemeColorRole.HOME_POPUP_ICON,
+            ThemeColorRole.DRAWER_POPUP_ICON,
+            ThemeColorRole.DRAWER_SEARCH_TEXT,
+            ThemeColorRole.DRAWER_SEARCH_HINT,
+            ThemeColorRole.DRAWER_SEARCH_ICON,
+            ThemeColorRole.TABS_CATEGORY_TEXT,
+            ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT,
+            ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> if (dark) recipe("Neutral1", 50) else recipe("Neutral1", 900)
+            ThemeColorRole.DRAWER_BACKGROUND,
+            ThemeColorRole.HOME_HOTSEAT_BACKGROUND -> if (dark) recipe("Neutral2", 600, 6) else recipe("Neutral2", 600, 87)
+            ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE,
+            ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE,
+            ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND ->
+                if (dark) recipe("Accent2", 600, 34) else recipe("Accent2", 200, 72)
+            ThemeColorRole.DRAWER_SEARCH_BORDER -> if (dark) recipe("Accent1", 100) else recipe("Accent1", 600)
+            ThemeColorRole.DRAWER_PROFILE_TAB_SELECTED_BACKGROUND ->
+                if (dark) recipe("Accent2", 800, 14) else recipe("Accent2", 300, 58)
+            ThemeColorRole.DRAWER_PROFILE_TAB_UNSELECTED_BACKGROUND ->
+                if (dark) recipe("Neutral1", 500, 22) else recipe("Neutral1", 500, 90)
+            ThemeColorRole.DRAWER_PROFILE_TAB_TEXT ->
+                if (dark) recipe("Neutral1", 50) else recipe("Neutral1", 900)
+        ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND ->
+                if (dark) recipe("Accent2", 800, 14) else recipe("Accent2", 300, 58)
+            // Blur highlight includes alpha, which the dynamic recipe editor cannot represent yet.
+            ThemeColorRole.DRAWER_SEARCH_SELECTED_RESULT_BACKGROUND ->
+                if (dark) recipe("Neutral1", 700) else recipe("Neutral1", 0)
+            ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND,
+            ThemeColorRole.DOCK_FOLDER_CLOSED_BACKGROUND,
+            ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND,
+            ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND,
+            ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND,
+            ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND ->
+                if (dark) recipe("Accent2", 800, 28) else recipe("Accent2", 200, 92)
+            else -> null
+        }
+    }
+
+    /** Dock background: Prime override wins; otherwise preserve the existing Dock preference. */
+    @JvmStatic
+    fun resolveDockBackground(context: Context, legacyOption: ColorOption): Int {
+        return resolveDockBackgroundForVariant(context, legacyOption, context.effectiveThemeVariant())
+    }
+
+    fun resolveDockBackgroundForVariant(context: Context, legacyOption: ColorOption, variant: ThemeVariant): Int {
+        val role = ThemeColorRole.HOME_HOTSEAT_BACKGROUND
+        val profile = ThemeProfile.current(context)
+        val override = ThemeColorOverrides(context).get(profile, variant, role)
+        if (override == ColorOption.LegacyBehavior) return legacy(context, role, variant)
+        if (override != ColorOption.Default) {
+            return resolve(context, profile, role, variant)
+        }
+        return when (legacyOption) {
+            ColorOption.Default -> official(context, profile, role, variant)
+            is ColorOption.CustomColor -> legacyOption.color
+            else -> if (variant == ThemeVariant.DARK) legacyOption.colorPreferenceEntry.darkColor(context)
+                else legacyOption.colorPreferenceEntry.lightColor(context)
+        }
+    }
+
+    /**
+     * The Dock's uncustomized background follows the actual drawer renderer.
+     * Keep the Dock's legacy preference and Prime overrides higher priority.
+     * The caller supplies the live drawer color; this resolver never changes the drawer.
+     */
+    @JvmStatic
+    fun resolveDockBackgroundFromDrawer(
+        context: Context,
+        legacyOption: ColorOption,
+        drawerColor: Int?,
+    ): Int {
+        val profile = ThemeProfile.current(context)
+        val variant = context.effectiveThemeVariant()
+        val dockOverride = ThemeColorOverrides(context).get(
+            profile, variant, ThemeColorRole.HOME_HOTSEAT_BACKGROUND,
+        )
+        return if (legacyOption == ColorOption.Default &&
+            dockOverride == ColorOption.Default && drawerColor != null
+        ) drawerColor else resolveDockBackgroundForVariant(context, legacyOption, variant)
+    }
+
+    /**
+     * Harmonized open-folder title. The folder supplies its effective background, including
+     * per-folder overrides. A user-selected text color always takes precedence.
+     */
+    @JvmStatic
+    fun resolveFolderPaginationColor(context: Context, role: ThemeColorRole): Int =
+        resolve(context, ThemeProfile.current(context), role, context.effectiveThemeVariant())
+
+    @JvmStatic
+    fun resolveOpenFolderTitleColor(
+        context: Context,
+        role: ThemeColorRole,
+        backgroundColor: Int,
+    ): Int = resolveOpenFolderTitleColorForVariant(
+        context, role, backgroundColor, context.effectiveThemeVariant()
+    )
+
+    @JvmStatic
+    fun resolveOpenFolderTitleColorForVariant(
+        context: Context,
+        role: ThemeColorRole,
+        backgroundColor: Int,
+        variant: ThemeVariant,
+    ): Int {
+        val profile = ThemeProfile.current(context)
+        if (ThemeColorOverrides(context).get(profile, variant, role).let {
+                it != ColorOption.Default && it != ColorOption.LegacyBehavior &&
+                    it != ColorOption.AdaptiveThemeText
+            }) {
+            return resolve(context, profile, role, variant)
+        }
+        val backdrop = if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE
+        // A transparent surface has no usable hue of its own. Compose it with
+        // the available backing color, but never propagate its alpha to text.
+        val opaqueBackground = ColorUtils.compositeColors(backgroundColor, backdrop)
+        val hsl = FloatArray(3)
+        ColorUtils.colorToHSL(opaqueBackground, hsl)
+        // Light-theme text should feel like a muted ink rather than a vivid primary hue.
+        // Keep dark-theme rendering unchanged, and retain the same 7:1 contrast target.
+        if (variant == ThemeVariant.LIGHT) {
+            hsl[1] = (hsl[1] * 0.42f).coerceAtMost(0.38f)
+        }
+        // Contrast depends on the actual surface, not merely on the theme variant.
+        // Choose the direction that can actually reach the 7:1 target.
+        // The black/white crossover for 7:1 is around 0.179 only for
+        // deciding 4.5:1 text; here compare the achievable contrast directly.
+        val lighten = ColorUtils.calculateContrast(Color.WHITE, opaqueBackground) >=
+            ColorUtils.calculateContrast(Color.BLACK, opaqueBackground)
+        var low = if (lighten) hsl[2] else 0f
+        var high = if (lighten) 1f else hsl[2]
+        repeat(20) {
+            val mid = (low + high) / 2f
+            hsl[2] = mid
+            val candidate = ColorUtils.HSLToColor(hsl)
+            if (ColorUtils.calculateContrast(candidate, opaqueBackground) >= 7.0) {
+                if (lighten) high = mid else low = mid
+            } else {
+                if (lighten) low = mid else high = mid
+            }
+        }
+        hsl[2] = if (lighten) high else low
+        return ColorUtils.HSLToColor(hsl)
+    }
+
+    /** Conservative wallpaper-backed label surface until pixel-level wallpaper sampling is wired. */
+    @JvmStatic
+    fun resolveWorkspaceLabelSurface(context: Context, role: ThemeColorRole): Int {
+        val variant = context.effectiveThemeVariant()
+        val backdrop = if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE
+        if (role != ThemeColorRole.DOCK_ICON_TEXT) return backdrop
+        val dock = resolveIconLabelSurface(context, role)
+        return ColorUtils.compositeColors(dock, backdrop)
+    }
+
+    /** Folder border defaults to the corresponding folder surface, not an unrelated token. */
+    @JvmStatic
+    fun resolveFolderBorder(context: Context, role: ThemeColorRole, surfaceColor: Int): Int {
+        return resolveFolderBorderForVariant(context, role, surfaceColor, context.effectiveThemeVariant())
+    }
+
+    /** Effective border color for a specific light/dark variant, including its independent override. */
+    @JvmStatic
+    fun resolveFolderBorderForVariant(context: Context, role: ThemeColorRole, surfaceColor: Int, variant: ThemeVariant): Int {
+        val profile = ThemeProfile.current(context)
+        val choice = ThemeColorOverrides(context).get(profile, variant, role)
+        return if (choice == ColorOption.Default || choice == ColorOption.LegacyBehavior) surfaceColor
+        else resolve(context, profile, role, variant)
+    }
+
+    /** Surface behind regular drawer/dock icon labels; use the live theme, not wallpaper accents. */
+    @JvmStatic
+    fun resolveIconLabelSurface(context: Context, role: ThemeColorRole): Int {
+        val variant = context.effectiveThemeVariant()
+        val profile = ThemeProfile.current(context)
+        return when (role) {
+            ThemeColorRole.DRAWER_ICON_TEXT -> resolve(context, profile, ThemeColorRole.DRAWER_BACKGROUND, variant)
+            ThemeColorRole.DOCK_ICON_TEXT -> resolve(context, profile, ThemeColorRole.HOME_HOTSEAT_BACKGROUND, variant)
+            else -> Color.TRANSPARENT
+        }
+    }
+
+    /** Resolve an icon label or closed-folder label against the surface behind it. */
+    @JvmStatic
+    fun resolveIconLabelColor(context: Context, role: ThemeColorRole, backgroundColor: Int): Int =
+        resolveIconLabelColorForVariant(context, role, backgroundColor, context.effectiveThemeVariant())
+
+    @JvmStatic
+    fun resolveIconLabelColorForVariant(
+        context: Context,
+        role: ThemeColorRole,
+        backgroundColor: Int,
+        variant: ThemeVariant,
+    ): Int {
+        val profile = ThemeProfile.current(context)
+        // The active category takes precedence even when the parent theme is untouched.
+        // Only a genuinely inherited/default choice should use the historical automatic
+        // icon-label contrast fallback.
+        val repository = app.lawnchair.prime.drawer.PrimeDrawerTabsRepository(context)
+        val categoryId = if (role.section == ThemeColorRole.Section.DRAWER &&
+            repository.isTabsModeEnabled()) repository.getConfiguration().selectedTabId else null
+        val categoryOption = categoryId?.let {
+            CategoryThemeColorOverrides(context).get(it, profile, variant, role)
+        } ?: ColorOption.Default
+        val option = if (categoryOption != ColorOption.Default) categoryOption
+            else ThemeColorOverrides(context).get(profile, variant, role)
+        return when (option) {
+            ColorOption.Default, ColorOption.LegacyBehavior, ColorOption.AutomaticBlackWhite -> {
+                val backdrop = if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE
+                val opaque = ColorUtils.compositeColors(backgroundColor, backdrop)
+                if (ColorUtils.calculateContrast(Color.BLACK, opaque) >=
+                    ColorUtils.calculateContrast(Color.WHITE, opaque)) Color.BLACK else Color.WHITE
+            }
+            ColorOption.AdaptiveThemeText ->
+                ColorUtils.setAlphaComponent(adaptiveTextAgainstSurface(backgroundColor, variant), 255)
+            else -> if (categoryId != null && categoryOption != ColorOption.Default)
+                resolveForCategory(context, profile, role, variant, categoryId)
+            else resolveTheme(context, profile, role, variant)
+        }
+    }
+
+    private fun adaptiveTextAgainstSurface(backgroundColor: Int, variant: ThemeVariant): Int {
+        val backdrop = if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE
+        val opaqueBackground = ColorUtils.compositeColors(backgroundColor, backdrop)
+        val hsl = FloatArray(3)
+        ColorUtils.colorToHSL(opaqueBackground, hsl)
+        // Light-theme text should feel like a muted ink rather than a vivid primary hue.
+        // Keep dark-theme rendering unchanged, and retain the same 7:1 contrast target.
+        if (variant == ThemeVariant.LIGHT) {
+            hsl[1] = (hsl[1] * 0.42f).coerceAtMost(0.38f)
+        }
+        // Contrast depends on the actual surface, not merely on the theme variant.
+        val lighten = ColorUtils.calculateLuminance(opaqueBackground) < 0.179
+        var low = if (lighten) hsl[2] else 0f
+        var high = if (lighten) 1f else hsl[2]
+        repeat(20) {
+            val mid = (low + high) / 2f
+            hsl[2] = mid
+            val candidate = ColorUtils.HSLToColor(hsl)
+            if (ColorUtils.calculateContrast(candidate, opaqueBackground) >= 7.0) {
+                if (lighten) high = mid else low = mid
+            } else {
+                if (lighten) low = mid else high = mid
+            }
+        }
+        hsl[2] = if (lighten) high else low
+        return ColorUtils.setAlphaComponent(ColorUtils.HSLToColor(hsl), 255)
+    }
+
+    /** Preview and runtime deliberately share the same semantic resolution path. */
+    fun preview(
+        context: Context,
+        profile: ThemeProfile,
+        role: ThemeColorRole,
+        variant: ThemeVariant,
+    ): Int = resolve(context, profile, role, variant)
+
+    fun resolve(
+        context: Context,
+        profile: ThemeProfile,
+        role: ThemeColorRole,
+        variant: ThemeVariant,
+    ): Int {
+        // Only Tabs mode has a selected Prime category. Other drawer modes keep the
+        // existing global theme behavior.
+        if (role.section == ThemeColorRole.Section.DRAWER ||
+            role.section == ThemeColorRole.Section.TABS) {
+            val repository = app.lawnchair.prime.drawer.PrimeDrawerTabsRepository(context)
+            if (repository.isTabsModeEnabled()) {
+                val tabId = repository.getConfiguration().selectedTabId
+                val option = CategoryThemeColorOverrides(context).get(tabId, profile, variant, role)
+                if (option != ColorOption.Default) {
+                    return resolveForCategory(context, profile, role, variant, tabId)
+                }
+            }
+        }
+        return resolveTheme(context, profile, role, variant)
+    }
+
+    /** Parent theme color, without any category-specific override. */
+    fun resolveTheme(
+        context: Context,
+        profile: ThemeProfile,
+        role: ThemeColorRole,
+        variant: ThemeVariant,
+    ): Int {
+        val official = official(context, profile, role, variant)
+        return when (val override = ThemeColorOverrides(context).get(profile, variant, role)) {
+            ColorOption.Default -> official
+            ColorOption.LegacyBehavior -> legacy(context, role, variant)
+            ColorOption.AutomaticBlackWhite -> when (role) {
+                ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE,
+                ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE -> workspacePaginationDefault(context, variant)
+                ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT,
+                ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> {
+                    val surfaceRole = if (role == ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT)
+                        ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND
+                    else ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND
+                    val surface = resolveTheme(context, profile, surfaceRole, variant)
+                    val opaque = ColorUtils.compositeColors(
+                        surface, if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE,
+                    )
+                    if (ColorUtils.calculateContrast(Color.BLACK, opaque) >=
+                        ColorUtils.calculateContrast(Color.WHITE, opaque)) Color.BLACK else Color.WHITE
+                }
+                else -> legacy(context, role, variant)
+            }
+            ColorOption.AdaptiveThemeText -> {
+                val backgroundRole = when (role) {
+                    ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND
+                    ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND
+                    ThemeColorRole.DRAWER_TEXT, ThemeColorRole.DRAWER_ICON_TEXT,
+                    ThemeColorRole.DRAWER_FOLDER_ICON_TEXT -> ThemeColorRole.DRAWER_BACKGROUND
+                    ThemeColorRole.DRAWER_SEARCH_TEXT, ThemeColorRole.DRAWER_SEARCH_HINT,
+                    ThemeColorRole.DRAWER_SEARCH_ICON -> ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE
+                    else -> null
+                }
+                if (backgroundRole == null) official
+                else adaptiveTextAgainstSurface(resolveTheme(context, profile, backgroundRole, variant), variant)
+            }
+            ColorOption.ThemePalette -> resolveLegacyToken(
+                context, ColorTokens.pageIndicatorDotColor, variant,
+            )
+            is ColorOption.CustomColor -> override.color
+            else -> if (variant == ThemeVariant.DARK) {
+                override.colorPreferenceEntry.darkColor(context)
+            } else {
+                override.colorPreferenceEntry.lightColor(context)
+            }
+        }
+    }
+
+
+    /**
+     * Category-aware semantic resolution. A missing category choice delegates to the
+     * current parent theme, not to the official Legacy palette.
+     *
+     * Callers must provide the category whose content they are rendering; never infer
+     * it from a settings screen or a stale global selection.
+     */
+    /**
+     * Folder-specific colors always win over the parent surface. The parent can
+     * itself be a customized drawer category; Default is never a fixed snapshot.
+     */
+    /** Java-facing folder role resolution: preserve the existing inherited behavior unless
+     * this exact folder has a semantic override for the requested role. */
+    @JvmStatic
+    fun resolveIndividualFolderColor(
+        context: Context,
+        role: ThemeColorRole,
+        folderKey: String,
+        inheritedColor: Int,
+    ): Int {
+        val profile = ThemeProfile.current(context)
+        val variant = context.effectiveThemeVariant()
+        val choice = FolderThemeColorOverrides(context).get(folderKey, profile, variant, role)
+        return if (choice == ColorOption.Default) inheritedColor
+        else resolveForFolder(context, profile, role, variant, folderKey)
+    }
+
+    fun resolveForFolder(
+        context: Context,
+        profile: ThemeProfile,
+        role: ThemeColorRole,
+        variant: ThemeVariant,
+        folderKey: String,
+        parentTabId: String? = null,
+    ): Int {
+        fun inherited(): Int = if (parentTabId != null)
+            resolveForCategory(context, profile, role, variant, parentTabId)
+        else resolveTheme(context, profile, role, variant)
+
+        val option = FolderThemeColorOverrides(context).get(folderKey, profile, variant, role)
+        return when (option) {
+            ColorOption.Default -> inherited()
+            ColorOption.LegacyBehavior -> official(context, profile, role, variant)
+            ColorOption.AutomaticBlackWhite, ColorOption.AdaptiveThemeText -> {
+                val surfaceRole = when (role) {
+                    // Closed-folder labels sit *outside* the folder icon/background.
+                    // Their contrast surface is the surrounding launcher area.
+                    ThemeColorRole.HOME_FOLDER_CLOSED_TEXT -> null // Wallpaper needs its own surface sampling.
+                    ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT -> ThemeColorRole.HOME_HOTSEAT_BACKGROUND
+                    ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> ThemeColorRole.DRAWER_BACKGROUND
+                    ThemeColorRole.HOME_FOLDER_OPEN_TEXT, ThemeColorRole.HOME_FOLDER_OPEN_HINT,
+                    ThemeColorRole.HOME_FOLDER_ICON_TEXT -> ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND
+                    ThemeColorRole.DOCK_FOLDER_OPEN_TEXT, ThemeColorRole.DOCK_FOLDER_OPEN_HINT,
+                    ThemeColorRole.DOCK_FOLDER_ICON_TEXT -> ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND
+                    ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT, ThemeColorRole.DRAWER_FOLDER_OPEN_HINT,
+                    ThemeColorRole.DRAWER_FOLDER_ICON_TEXT -> ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND
+                    else -> null
+                }
+                if (surfaceRole == null) inherited()
+                else {
+                    val surface = if (surfaceRole == ThemeColorRole.DRAWER_BACKGROUND && parentTabId != null)
+                        resolveForCategory(context, profile, surfaceRole, variant, parentTabId)
+                    else if (surfaceRole == ThemeColorRole.HOME_HOTSEAT_BACKGROUND)
+                        resolveTheme(context, profile, surfaceRole, variant)
+                    else resolveForFolder(context, profile, surfaceRole, variant, folderKey, parentTabId)
+                    if (option == ColorOption.AdaptiveThemeText)
+                        adaptiveTextAgainstSurface(surface, variant)
+                    else {
+                        val opaque = ColorUtils.compositeColors(
+                            surface, if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE,
+                        )
+                        if (ColorUtils.calculateContrast(Color.BLACK, opaque) >=
+                            ColorUtils.calculateContrast(Color.WHITE, opaque)) Color.BLACK else Color.WHITE
+                    }
+                }
+            }
+            ColorOption.ThemePalette -> resolveLegacyToken(context, ColorTokens.pageIndicatorDotColor, variant)
+            is ColorOption.CustomColor -> option.color
+            else -> if (variant == ThemeVariant.DARK)
+                option.colorPreferenceEntry.darkColor(context)
+            else option.colorPreferenceEntry.lightColor(context)
+        }
+    }
+
+    private fun categoryContrastSurface(role: ThemeColorRole): ThemeColorRole? = when (role) {
+        ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND
+        ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND
+        ThemeColorRole.DRAWER_TEXT, ThemeColorRole.DRAWER_ICON_TEXT,
+        ThemeColorRole.DRAWER_FOLDER_ICON_TEXT -> ThemeColorRole.DRAWER_BACKGROUND
+        ThemeColorRole.DRAWER_SEARCH_TEXT, ThemeColorRole.DRAWER_SEARCH_HINT,
+        ThemeColorRole.DRAWER_SEARCH_ICON -> ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE
+        ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT, ThemeColorRole.DRAWER_FOLDER_OPEN_HINT ->
+            ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND
+        ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> ThemeColorRole.DRAWER_BACKGROUND
+        ThemeColorRole.DRAWER_POPUP_TEXT, ThemeColorRole.DRAWER_POPUP_ICON ->
+            ThemeColorRole.DRAWER_POPUP_BACKGROUND
+        else -> null
+    }
+
+    private fun categoryBlackWhite(background: Int, variant: ThemeVariant): Int {
+        val opaque = ColorUtils.compositeColors(
+            background, if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE,
+        )
+        return if (ColorUtils.calculateContrast(Color.BLACK, opaque) >=
+            ColorUtils.calculateContrast(Color.WHITE, opaque)) Color.BLACK else Color.WHITE
+    }
+
+    fun resolveForCategory(
+        context: Context,
+        profile: ThemeProfile,
+        role: ThemeColorRole,
+        variant: ThemeVariant,
+        tabId: String,
+    ): Int {
+        if (role.section != ThemeColorRole.Section.DRAWER &&
+            role.section != ThemeColorRole.Section.TABS) {
+            return resolveTheme(context, profile, role, variant)
+        }
+        val option = CategoryThemeColorOverrides(context).get(tabId, profile, variant, role)
+        return when (option) {
+            ColorOption.Default -> {
+                val inherited = ThemeColorOverrides(context).get(profile, variant, role)
+                val surfaceRole = categoryContrastSurface(role)
+                if ((inherited == ColorOption.AutomaticBlackWhite ||
+                        inherited == ColorOption.AdaptiveThemeText) && surfaceRole != null) {
+                    val surface = resolveForCategory(context, profile, surfaceRole, variant, tabId)
+                    if (inherited == ColorOption.AdaptiveThemeText)
+                        adaptiveTextAgainstSurface(surface, variant)
+                    else categoryBlackWhite(surface, variant)
+                } else resolveTheme(context, profile, role, variant)
+            }
+            ColorOption.LegacyBehavior -> official(context, profile, role, variant)
+            ColorOption.AutomaticBlackWhite, ColorOption.AdaptiveThemeText -> {
+                val backgroundRole = categoryContrastSurface(role)
+                if (backgroundRole == null) resolveTheme(context, profile, role, variant)
+                else {
+                    val background = resolveForCategory(context, profile, backgroundRole, variant, tabId)
+                    if (option == ColorOption.AdaptiveThemeText)
+                        adaptiveTextAgainstSurface(background, variant)
+                    else categoryBlackWhite(background, variant)
+                }
+            }
+            ColorOption.ThemePalette ->
+                resolveLegacyToken(context, ColorTokens.pageIndicatorDotColor, variant)
+            is ColorOption.CustomColor -> option.color
+            else -> if (variant == ThemeVariant.DARK)
+                option.colorPreferenceEntry.darkColor(context)
+            else option.colorPreferenceEntry.lightColor(context)
+        }
+    }
+
+
+    /**
+     * Resolves a Lawnchair token for an explicit Prime variant, bypassing a stale View theme.
+     */
+    @JvmStatic
+    fun resolveLegacyToken(
+        context: Context,
+        token: app.lawnchair.theme.color.tokens.ColorToken,
+        variant: ThemeVariant,
+    ): Int = token.resolveColor(
+        context,
+        ThemeProvider.INSTANCE.get(context).colorScheme,
+        if (variant == ThemeVariant.DARK) UiColorMode.Dark else UiColorMode.Light,
+    )
+
+    private fun legacy(context: Context, role: ThemeColorRole, variant: ThemeVariant): Int = when (role) {
+        // This role historically follows the selected accent source and color style through
+        // the dynamic palette. Resolve the same token used by the launcher.
+        ThemeColorRole.GLOBAL_ACCENT ->
+            resolveLegacyToken(context, ColorTokens.PrimeInteractiveColor, variant)
+        ThemeColorRole.GLOBAL_SETTINGS_BACKGROUND ->
+            resolveLegacyToken(context, ColorTokens.Surface, variant)
+        ThemeColorRole.GLOBAL_SETTINGS_CARD_BACKGROUND ->
+            resolveLegacyToken(context, ColorTokens.SurfaceContainerHighest, variant)
+        ThemeColorRole.GLOBAL_NOTIFICATION_DOT ->
+            resolveLegacyToken(context, ColorTokens.DotColor, variant)
+        ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE,
+        ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE ->
+            workspacePaginationDefault(context, variant)
+        ThemeColorRole.HOME_FOLDER_PAGINATION,
+        ThemeColorRole.DOCK_FOLDER_PAGINATION,
+        ThemeColorRole.DRAWER_FOLDER_PAGINATION ->
+            resolveLegacyToken(context, ColorTokens.pageIndicatorDotColor, variant)
+        ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND,
+        ThemeColorRole.DOCK_FOLDER_CLOSED_BACKGROUND,
+        ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND,
+        ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND,
+        ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND,
+        ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND,
+        ThemeColorRole.DRAWER_POPUP_BACKGROUND ->
+            resolveDrawerPopupBackground(context, variant)
+        ThemeColorRole.HOME_POPUP_BACKGROUND ->
+            resolveLegacyToken(context, ColorTokens.PopupShadeFirst, variant)
+        ThemeColorRole.HOME_POPUP_TEXT,
+        ThemeColorRole.DRAWER_POPUP_TEXT,
+        ThemeColorRole.HOME_POPUP_ICON,
+        ThemeColorRole.DRAWER_POPUP_ICON ->
+            resolveLegacyToken(context, ColorTokens.TextColorPrimary, variant)
+        // Mirror the historical drawer runtime branch so the default swatch matches the drawer.
+        ThemeColorRole.DRAWER_BACKGROUND -> legacyDrawerBackground(context, variant)
+        ThemeColorRole.HOME_HOTSEAT_BACKGROUND ->
+            liveDrawerBackgroundByVariant[variant] ?: legacyDrawerBackground(context, variant)
+        // Category tabs keep their historical contrast hierarchy, but derive their hue from the
+        // current Lawnchair dynamic palette. Changing accent source/style therefore keeps the
+        // drawer and its tabs visually coherent without storing fixed greys.
+        // Search background and inactive category tabs intentionally share the same Legacy
+        // dynamic recipe, not the same semantic value. They therefore evolve together with the
+        // accent source/style while remaining independently overridable.
+        ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE,
+        ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE,
+        ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND ->
+            resolveLegacyToken(context, ColorTokens.AllAppsTabBackground, variant)
+        ThemeColorRole.DRAWER_SEARCH_TEXT ->
+            resolveLegacyToken(context, ColorTokens.TextColorPrimary, variant)
+        ThemeColorRole.DRAWER_SEARCH_HINT ->
+            resolveLegacyToken(context, ColorTokens.TextColorSecondary, variant)
+        // This role tints the drawer search cursor, selection handles and highlight,
+        // not the multicolour search-provider artwork in the Dock.
+        ThemeColorRole.DRAWER_SEARCH_ICON ->
+            resolveLegacyToken(context, ColorTokens.ColorAccent, variant)
+        ThemeColorRole.DRAWER_SEARCH_BORDER ->
+            resolveLegacyToken(context, ColorTokens.ColorAccent, variant)
+        ThemeColorRole.DRAWER_SEARCH_SELECTED_RESULT_BACKGROUND ->
+            resolveLegacyToken(
+                context,
+                if (com.android.systemui.shared.system.BlurUtils.supportsBlursOnWindows()) {
+                    ColorTokens.FocusHighlightBlur
+                } else {
+                    ColorTokens.FocusHighlight
+                },
+                variant,
+            )
+        ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND ->
+            resolveLegacyToken(context, ColorTokens.AllAppsTabBackgroundSelected, variant)
+        ThemeColorRole.TABS_CATEGORY_TEXT,
+        ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT,
+        ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT ->
+            resolveLegacyToken(context, ColorTokens.TextColorPrimary, variant)
+        // Never use the system accent as a placeholder for a theme default:
+        // it makes unrelated backgrounds, text and borders all appear turquoise.
+        ThemeColorRole.DRAWER_PROFILE_TAB_SELECTED_BACKGROUND ->
+            AllAppsTabColors.selectedBackground(
+                context, ThemeProvider.INSTANCE.get(context).colorScheme,
+                if (variant == ThemeVariant.DARK) UiColorMode.Dark else UiColorMode.Light,
+            )
+        ThemeColorRole.DRAWER_PROFILE_TAB_UNSELECTED_BACKGROUND ->
+            resolveLegacyToken(context, ColorTokens.Surface, variant)
+        ThemeColorRole.DRAWER_PROFILE_TAB_TEXT ->
+            AllAppsTabColors.selectedText(
+                context, ThemeProvider.INSTANCE.get(context).colorScheme,
+                if (variant == ThemeVariant.DARK) UiColorMode.Dark else UiColorMode.Light,
+            )
+        ThemeColorRole.DRAWER_TEXT,
+        ThemeColorRole.HOME_SEARCH_TEXT,
+        ThemeColorRole.HOME_SEARCH_HINT,
+        ThemeColorRole.HOME_SEARCH_ICON,
+        ThemeColorRole.HOME_FOLDER_OPEN_HINT,
+        ThemeColorRole.DOCK_FOLDER_OPEN_HINT,
+        ThemeColorRole.DRAWER_FOLDER_OPEN_HINT,
+        ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT ->
+            resolveLegacyToken(context, ColorTokens.TextColorPrimary, variant)
+        ThemeColorRole.HOME_SEARCH_BACKGROUND ->
+            resolveLegacyToken(context, ColorTokens.AllAppsTabBackground, variant)
+        ThemeColorRole.HOME_SEARCH_BORDER ->
+            resolveLegacyToken(context, ColorTokens.ColorAccent, variant)
+        ThemeColorRole.HOME_ICON_TEXT,
+        ThemeColorRole.HOME_FOLDER_ICON_TEXT,
+        ThemeColorRole.HOME_FOLDER_CLOSED_TEXT,
+        ThemeColorRole.DOCK_ICON_TEXT,
+        ThemeColorRole.DOCK_FOLDER_ICON_TEXT,
+        ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT,
+        ThemeColorRole.DRAWER_ICON_TEXT,
+        ThemeColorRole.DRAWER_FOLDER_ICON_TEXT,
+        ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT,
+        ThemeColorRole.HOME_FOLDER_OPEN_TEXT,
+        ThemeColorRole.DOCK_FOLDER_OPEN_TEXT,
+        ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT ->
+            resolveLegacyToken(context, ColorTokens.TextColorPrimary, variant)
+        ThemeColorRole.HOME_FOLDER_BORDER,
+        ThemeColorRole.DOCK_FOLDER_BORDER,
+        ThemeColorRole.DRAWER_FOLDER_BORDER,
+        ThemeColorRole.HOME_FOLDER_CLOSED_BORDER,
+        ThemeColorRole.HOME_FOLDER_OPEN_BORDER,
+        ThemeColorRole.DOCK_FOLDER_CLOSED_BORDER,
+        ThemeColorRole.DOCK_FOLDER_OPEN_BORDER,
+        ThemeColorRole.DRAWER_FOLDER_CLOSED_BORDER,
+        ThemeColorRole.DRAWER_FOLDER_OPEN_BORDER ->
+            resolveDrawerPopupBackground(context, variant)
+        else -> resolveLegacyToken(context, ColorTokens.TextColorPrimary, variant)
+    }
+
+    private fun resolveDrawerPopupBackground(context: Context, variant: ThemeVariant): Int =
+        resolveLegacyToken(context, ColorTokens.DrawerPopupBackground, variant)
+
+    private fun legacyDrawerBackground(context: Context, variant: ThemeVariant): Int =
+        legacyDrawerOfficialByVariant[variant] ?: resolveLegacyToken(
+            context,
+            ColorTokens.SurfaceDimColor,
+            variant,
+        )
+}

@@ -20,6 +20,7 @@ import android.animation.AnimatorSet
 import android.app.ActivityOptions
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import android.os.Bundle
@@ -41,11 +42,14 @@ import app.lawnchair.gestures.config.GestureHandlerConfig
 import app.lawnchair.gestures.ui.LawnchairShortcutActivity
 import app.lawnchair.nexuslauncher.OverlayCallbackImpl
 import app.lawnchair.preferences.PreferenceManager
+import app.lawnchair.prime.drawer.PrimeDrawerTabsView
+import app.lawnchair.prime.drawer.PrimeAppCategoriesShortcut
 import app.lawnchair.preferences2.PreferenceManager2
 import app.lawnchair.preferences2.firstCached
 import app.lawnchair.root.RootHelperManager
 import app.lawnchair.root.RootNotAvailableException
 import app.lawnchair.theme.ThemeProvider
+import app.lawnchair.theme.ThemeColorInvalidation
 import app.lawnchair.ui.popup.LauncherOptionsPopup
 import app.lawnchair.ui.popup.LawnchairShortcut
 import app.lawnchair.util.getThemedIconPacksInstalled
@@ -125,6 +129,15 @@ class LawnchairLauncher : QuickstepLauncher() {
         }
         override fun onStateTransitionComplete(finalState: LauncherState) {}
     }
+    private val primeDrawerTabsStateListener = object : StateManager.StateListener<LauncherState> {
+        override fun onStateTransitionStart(toState: LauncherState) {
+            if (toState is AllAppsState && prefs.drawerTabsEnabled.get()) {
+                findViewById<PrimeDrawerTabsView?>(R.id.prime_drawer_tabs)?.onDrawerOpening()
+            }
+        }
+
+        override fun onStateTransitionComplete(finalState: LauncherState) {}
+    }
     private val statusBarClockListener = object : StateManager.StateListener<LauncherState> {
         override fun onStateTransitionStart(toState: LauncherState) {
             when (toState) {
@@ -154,12 +167,14 @@ class LawnchairLauncher : QuickstepLauncher() {
 
     private lateinit var colorScheme: ColorScheme
     private var hasBackGesture = false
+    private var lastPrimeNightMode = Configuration.UI_MODE_NIGHT_UNDEFINED
 
     val gestureController by unsafeLazy { GestureController(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         layoutInflater.factory2 = LawnchairLayoutFactory(this)
         super.onCreate(savedInstanceState)
+        lastPrimeNightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
 
         prefs.launcherTheme.subscribeChanges(this, ::updateTheme)
         prefs.feedProvider.subscribeChanges(this, defaultOverlay::reconnect)
@@ -167,6 +182,7 @@ class LawnchairLauncher : QuickstepLauncher() {
             defaultOverlay.setEnableFeed(enable)
         }.launchIn(scope = lifecycleScope)
         launcher.stateManager.addStateListener(clearSearchStateListener)
+        launcher.stateManager.addStateListener(primeDrawerTabsStateListener)
 
         if (prefs.autoLaunchRoot.get()) {
             lifecycleScope.launch {
@@ -252,6 +268,24 @@ class LawnchairLauncher : QuickstepLauncher() {
         AppDatabase.INSTANCE.get(this).checkpointSync()
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        val newNightMode = newConfig.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        if (lastPrimeNightMode != newNightMode) {
+            lastPrimeNightMode = newNightMode
+            // Popup and legacy View colors are resolved when their themed views/drawables are
+            // created. Recreate the launcher on a light/dark variant switch so those resources
+            // cannot keep the previous configuration's colors.
+            ThemeColorInvalidation.invalidate()
+            // DeviceProfile owns the DotRenderer colors. A launcher recreation alone
+            // can retain the old profile, leaving notification dots on the previous
+            // light/dark variant. Refresh IDP before recreating the activity.
+            com.android.launcher3.InvariantDeviceProfile.INSTANCE.get(this)
+                .onConfigChanged(applicationContext)
+            recreate()
+        }
+    }
+
     override fun onNewIntent(intent: Intent?) {
         if (intent != null && intent.action == LawnchairShortcutActivity.START_ACTION) {
             val handlerString = intent.getStringExtra(LawnchairShortcutActivity.EXTRA_HANDLER)
@@ -282,12 +316,13 @@ class LawnchairLauncher : QuickstepLauncher() {
     override fun getSupportedShortcuts(container: Int): Stream<SystemShortcut.Factory<*>> = Stream.concat(
         super.getSupportedShortcuts(container),
         Stream.concat(
-            Stream.of(LawnchairShortcut.UNINSTALL, LawnchairShortcut.CUSTOMIZE, LawnchairShortcut.OPEN_IN_STORE),
+            Stream.of(LawnchairShortcut.UNINSTALL, LawnchairShortcut.CUSTOMIZE, LawnchairShortcut.OPEN_IN_STORE, PrimeAppCategoriesShortcut.FACTORY),
             if (LawnchairApp.isRecentsEnabled) Stream.of(LawnchairShortcut.PAUSE_APPS) else Stream.empty(),
         ),
     )
 
     fun updateTheme() {
+        ThemeColorInvalidation.invalidate()
         if (themeProvider.colorScheme != colorScheme) {
             recreate()
         } else {

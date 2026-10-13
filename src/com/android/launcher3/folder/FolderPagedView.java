@@ -67,6 +67,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
+import app.lawnchair.prime.drawer.PrimeDrawerFolderVisualOverrides;
+import app.lawnchair.icons.shape.IconShape;
+import app.lawnchair.prime.drawer.PrimeFolderLongPressHelper;
+
 public class FolderPagedView extends PagedView<PageIndicatorDots> implements ClipPathView {
 
     private static final String TAG = "FolderPagedView";
@@ -88,7 +92,7 @@ public class FolderPagedView extends PagedView<PageIndicatorDots> implements Cli
 
     @Thunk final ArrayMap<View, Runnable> mPendingAnimations = new ArrayMap<>();
 
-    private final FolderGridOrganizer mOrganizer;
+    private FolderGridOrganizer mOrganizer;
     private final ViewCache mViewCache;
 
     private int mAllocatedContentSize;
@@ -136,6 +140,19 @@ public class FolderPagedView extends PagedView<PageIndicatorDots> implements Cli
         mFolder = folder;
         mPageIndicator = folder.findViewById(R.id.folder_page_indicator);
         initParentViews(folder);
+    }
+
+    public void applyPrimeGridOverrides(PrimeDrawerFolderVisualOverrides primeOverrides) {
+        if (primeOverrides == null
+                || (primeOverrides.getColumns() == null && primeOverrides.getRows() == null)) {
+            return;
+        }
+        DeviceProfile profile = mFolder.mActivityContext.getDeviceProfile();
+        int columns = primeOverrides.getColumns() != null
+                ? primeOverrides.getColumns() : profile.numFolderColumns;
+        int rows = primeOverrides.getRows() != null
+                ? primeOverrides.getRows() : profile.numFolderRows;
+        mOrganizer = new FolderGridOrganizer(columns, rows);
     }
 
     /**
@@ -359,6 +376,31 @@ public class FolderPagedView extends PagedView<PageIndicatorDots> implements Cli
             }
         }
 
+        if (icon instanceof BubbleTextView) {
+            PrimeDrawerFolderVisualOverrides primeOverrides =
+                    PrimeFolderLongPressHelper.getVisualOverrides(getContext(), mFolder.getInfo());
+            if (primeOverrides != null) {
+                BubbleTextView bubble = (BubbleTextView) icon;
+                if (primeOverrides.getShowLabels() != null) {
+                    boolean showLabels = primeOverrides.getShowLabels();
+                    // Apply this at creation time as well as from Folder. Some folder children are
+                    // rebound after Folder.applyPrimeVisualOverrides(), which otherwise restores
+                    // the title for only those views.
+                    bubble.setText(showLabels ? item.title : "");
+                    bubble.setTextVisibility(showLabels);
+                }
+                if (primeOverrides.getLabelSize() != null) {
+                    bubble.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX,
+                            mFolder.mActivityContext.getDeviceProfile().folderChildTextSizePx
+                                    * primeOverrides.getLabelSize());
+                }
+                if (primeOverrides.getChildIconShape() != null) {
+                    bubble.setPrimeIconShape(IconShape.Companion.fromString(
+                            primeOverrides.getChildIconShape(), getContext()));
+                }
+            }
+        }
+
         icon.setOnClickListener(mFolder.mActivityContext.getItemOnClickListener());
         icon.setOnLongClickListener(mFolder);
         icon.setOnFocusChangeListener(mFocusIndicatorHelper);
@@ -438,6 +480,10 @@ public class FolderPagedView extends PagedView<PageIndicatorDots> implements Cli
     @SuppressLint("RtlHardcoded")
     public void arrangeChildren(List<View> list) {
         int itemCount = list.size();
+        // Prime can keep folders with zero or one item. Give those folders the same minimum
+        // grid footprint as a two-item folder so the opened folder and its title stay usable.
+        int layoutItemCount = mFolder.shouldKeepSingleItemFolder() && itemCount <= 1
+                ? 2 : itemCount;
         ArrayList<CellLayout> pages = new ArrayList<>();
         for (int i = 0; i < getChildCount(); i++) {
             CellLayout page = (CellLayout) getChildAt(i);
@@ -445,7 +491,7 @@ public class FolderPagedView extends PagedView<PageIndicatorDots> implements Cli
             pages.add(page);
         }
         mOrganizer.setFolderInfo(mFolder.getInfo());
-        setupContentDimensions(itemCount);
+        setupContentDimensions(layoutItemCount);
 
         Iterator<CellLayout> pageItr = pages.iterator();
         CellLayout currentPage = null;
@@ -478,6 +524,16 @@ public class FolderPagedView extends PagedView<PageIndicatorDots> implements Cli
 
             rank++;
             position++;
+        }
+
+        // An empty Prime folder has no item loop above to create its first page. Keep one
+        // empty page so the synthetic two-item grid footprint participates in measurement.
+        if (currentPage == null && layoutItemCount > 0) {
+            if (pageItr.hasNext()) {
+                currentPage = pageItr.next();
+            } else {
+                currentPage = createAndAddNewPage();
+            }
         }
 
         // Remove extra views.

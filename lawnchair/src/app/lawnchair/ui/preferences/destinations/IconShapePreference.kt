@@ -25,7 +25,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
@@ -46,6 +46,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -60,6 +62,7 @@ import app.lawnchair.ui.preferences.LocalNavController
 import app.lawnchair.ui.preferences.components.controls.ClickablePreference
 import app.lawnchair.ui.preferences.components.controls.ListPreferenceEntry
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
+import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
 import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
 import app.lawnchair.ui.preferences.components.layout.TwoTabPreferenceLayout
 import app.lawnchair.ui.preferences.navigation.GeneralCustomIconShapeCreator
@@ -244,6 +247,53 @@ private fun ModifyCustomIconShapePreference(
     )
 }
 
+
+@Composable
+fun PrimeShapeSelection(
+    label: String,
+    selectedShape: IconShape,
+    inherited: Boolean,
+    onSelect: (IconShape?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    val entries = remember { iconShapeEntries(context) }
+    PreferenceLayout(
+        label = label,
+        backArrowVisible = true,
+        modifier = modifier,
+    ) {
+        PreferenceGroup(heading = stringResource(id = R.string.general_label)) {
+            PreferenceTemplate(
+                title = { Text("Utiliser la valeur parente") },
+                startWidget = {
+                    RadioButton(selected = inherited, onClick = null)
+                },
+                onClick = { onSelect(null) },
+            )
+        }
+        PreferenceGroup(heading = stringResource(id = R.string.presets)) {
+            entries.forEach { item ->
+                PreferenceTemplate(
+                    title = { Text(item.label()) },
+                    enabled = item.enabled,
+                    startWidget = {
+                        RadioButton(
+                            selected = !inherited && item.value.toString() == selectedShape.toString(),
+                            onClick = null,
+                            enabled = item.enabled,
+                        )
+                    },
+                    endWidget = { IconShapePreview(iconShape = item.value) },
+                    onClick = if (item.enabled) {
+                        { onSelect(item.value) }
+                    } else null,
+                )
+            }
+        }
+    }
+}
+
 /**
  * Draws a preview of an [IconShape].
  */
@@ -256,36 +306,28 @@ fun IconShapePreview(
 ) {
     val path = iconShape.getMaskPath().asComposePath()
 
-    var translated = remember { false }
-    fun translatePath(canvasWidth: Float, canvasHeight: Float) {
-        if (!translated) {
-            translated = true
-            val pathHeight = path.getBounds().size.height
-            val pathWidth = path.getBounds().size.width
-            path.translate(
-                Offset(
-                    x = (canvasWidth - pathWidth) / 2,
-                    y = (canvasHeight - pathHeight) / 2,
-                ),
-            )
-        }
-    }
-
     Canvas(
-        modifier = modifier.requiredSize(48.dp),
+        modifier = modifier.size(48.dp),
     ) {
-        translatePath(
-            canvasWidth = size.width,
-            canvasHeight = size.height,
+        val pathBounds = path.getBounds()
+        if (pathBounds.width <= 0f || pathBounds.height <= 0f) return@Canvas
+
+        val strokeWidth = 4f
+        val fitScale = minOf(
+            (size.width - strokeWidth) / (pathBounds.width + strokeWidth),
+            (size.height - strokeWidth) / (pathBounds.height + strokeWidth),
         )
-        drawPath(
-            path = path,
-            color = fillColor,
+        if (fitScale <= 0f) return@Canvas
+
+        val offset = Offset(
+            x = (size.width - pathBounds.width * fitScale) / 2f - pathBounds.left * fitScale,
+            y = (size.height - pathBounds.height * fitScale) / 2f - pathBounds.top * fitScale,
         )
-        drawPath(
-            path = path,
-            color = strokeColor,
-            style = Stroke(width = 4f),
-        )
+        translate(left = offset.x, top = offset.y) {
+            scale(scaleX = fitScale, scaleY = fitScale, pivot = Offset.Zero) {
+                drawPath(path = path, color = fillColor)
+                drawPath(path = path, color = strokeColor, style = Stroke(width = strokeWidth))
+            }
+        }
     }
 }

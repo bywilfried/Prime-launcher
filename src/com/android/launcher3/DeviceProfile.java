@@ -181,6 +181,9 @@ public class DeviceProfile {
     public float iconScale;
     public int iconSizePx;
     public int iconTextSizePx;
+    // Workspace label size with the user's size factor, before the global visibility toggle.
+    // Prime folder-label overrides use this when Home labels are globally disabled.
+    public int primeWorkspaceLabelTextSizePx;
     public int iconDrawablePaddingPx;
     private int mIconDrawablePaddingOriginalPx;
     public boolean iconCenterVertically;
@@ -262,6 +265,12 @@ public class DeviceProfile {
     public final Rect widgetPadding = new Rect();
 
     // Notification dots
+    private ThemeManager mPrimeDotThemeManager;
+    private boolean mPrimeShowNotificationCount;
+    private Typeface mPrimeDotTypeface;
+    private int mPrimeDotColor;
+    private int mPrimeDotCountColor;
+
     public final DotRenderer mDotRendererWorkSpace;
     public final DotRenderer mDotRendererAllApps;
 
@@ -349,6 +358,7 @@ public class DeviceProfile {
     private float workspacePaddingHorizontalFactor;
     private float workspacePaddingVerticalFactor;
     private float widgetPaddingFactor;
+    private final Rect primeUnscaledWidgetPadding = new Rect();
     private float drawerPaddingTopFactor;
     private PreferenceManager2 preferenceManager2 = null;
 
@@ -367,6 +377,9 @@ public class DeviceProfile {
                 .firstCached(preferenceManager2.getDrawerCellHeightFactor());
         // Lawnchair: clamp the user padding factors to their slider ranges so a restored or
         // manually edited preference can't feed out-of-range values into the layout math.
+        // Preserve custom margins across immediate grid rebuilds: the async
+        // preference cache may not yet reflect the last DataStore write.
+        preferenceManager2.refreshCachedPreferencesForGrid();
         workspacePaddingHorizontalFactor = Utilities.boundToRange(PreferenceCacheExtensionsKt
                 .firstCached(preferenceManager2.getWorkspacePaddingHorizontalFactor()), 0f, 2f);
         workspacePaddingVerticalFactor = Utilities.boundToRange(PreferenceCacheExtensionsKt
@@ -745,12 +758,20 @@ public class DeviceProfile {
 
         // Load dot color
         ColorOption dotColorOption = PreferenceCacheExtensionsKt.firstCached(preferenceManager2.getNotificationDotColor());
-        int dotColor = dotColorOption.getColorPreferenceEntry().getLightColor().invoke(context);
+        int dotColor = app.lawnchair.theme.NotificationDotThemeColors.resolve(context,
+                app.lawnchair.theme.ThemeColorRole.GLOBAL_NOTIFICATION_DOT, dotColorOption);
 
         // Load counter color
         ColorOption counterColorOption = PreferenceCacheExtensionsKt
                 .firstCached(preferenceManager2.getNotificationDotTextColor());
-        int countColor = counterColorOption.getColorPreferenceEntry().getLightColor().invoke(context);
+        int countColor = app.lawnchair.theme.NotificationDotThemeColors.resolve(context,
+                app.lawnchair.theme.ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT, counterColorOption);
+
+        mPrimeDotThemeManager = themeManager;
+        mPrimeShowNotificationCount = showNotificationCount;
+        mPrimeDotTypeface = typeface;
+        mPrimeDotColor = dotColor;
+        mPrimeDotCountColor = countColor;
 
         // This is done last, after iconSizePx is calculated above.
         mDotRendererWorkSpace = createDotRenderer(themeManager, iconSizePx, dotRendererCache, showNotificationCount, typeface, dotColor, countColor);
@@ -807,12 +828,35 @@ public class DeviceProfile {
     }
 
     // Lawnchair
+    /** A renderer for one icon, not shared between apps with different colors. */
+    public DotRenderer createPerIconDotRenderer(boolean allApps, int background, int textColor) {
+        if (mPrimeDotThemeManager == null) {
+            return allApps ? mDotRendererAllApps : mDotRendererWorkSpace;
+        }
+        return new DotRenderer(
+                allApps ? getAllAppsProfile().getIconSizePx() : iconSizePx,
+                mPrimeDotThemeManager.getIconShape().getPath(DEFAULT_DOT_SIZE),
+                DEFAULT_DOT_SIZE, mPrimeShowNotificationCount, mPrimeDotTypeface,
+                background, textColor);
+    }
+
+    /** Creates a badge renderer for the actual displayed icon size. */
+    public DotRenderer createPrimeSizedDotRenderer(int size, int background, int textColor) {
+        if (mPrimeDotThemeManager == null) return mDotRendererWorkSpace;
+        return new DotRenderer(Math.max(1, size),
+                mPrimeDotThemeManager.getIconShape().getPath(DEFAULT_DOT_SIZE),
+                DEFAULT_DOT_SIZE, mPrimeShowNotificationCount, mPrimeDotTypeface,
+                background, textColor);
+    }
+
+    public int getPrimeDotColor() { return mPrimeDotColor; }
+    public int getPrimeDotCountColor() { return mPrimeDotCountColor; }
+
     private static DotRenderer createDotRenderer(
         @NonNull ThemeManager themeManager, int size, @NonNull SparseArray<DotRenderer> cache, boolean showNotificationCount, Typeface typeface, int dotColor, int countColor) {
-        DotRenderer renderer = cache.get(size);
-
-        if (renderer == null) {
-            renderer = new DotRenderer(
+        // This cache is keyed by icon size, not by the semantic badge colors.
+        // Reusing a renderer here could retain stale colors after an override.
+        return new DotRenderer(
                 size,
                 themeManager.getIconShape().getPath(DEFAULT_DOT_SIZE),
                 DEFAULT_DOT_SIZE,
@@ -820,9 +864,6 @@ public class DeviceProfile {
                 typeface,
                 dotColor,
                 countColor);
-            cache.put(size, renderer);
-        }
-        return renderer;
     }
 
     /**
@@ -896,7 +937,19 @@ public class DeviceProfile {
 
     /** Updates hotseatCellHeightPx and hotseatBarSizePx */
     private void updateHotseatSizes(int hotseatIconSizePx) {
-        int iconTextHeight = Utilities.calculateTextHeight(iconTextSizePx);
+        float homeIconFactor = PreferenceCacheExtensionsKt.firstCached(
+                preferenceManager2.getHomeIconSizeFactor());
+        float dockIconFactor = PreferenceCacheExtensionsKt.firstCached(
+                preferenceManager2.getDockIconSizeFactor());
+        hotseatIconSizePx = Math.max(1, Math.round(hotseatIconSizePx
+                * dockIconFactor / Math.max(0.01f, homeIconFactor)));
+        float dockLabelFactor = PreferenceCacheExtensionsKt.firstCached(
+                preferenceManager2.getDockIconLabelSizeFactor());
+        int dockTextSize = Math.max(1, Math.round(primeWorkspaceLabelTextSizePx
+                * dockLabelFactor / Math.max(0.01f,
+                PreferenceCacheExtensionsKt.firstCached(
+                        preferenceManager2.getHomeIconLabelSizeFactor()))));
+        int iconTextHeight = Utilities.calculateTextHeight(dockTextSize);
         boolean isLabelInDock = PreferenceCacheExtensionsKt.firstCached(preferenceManager2.getEnableLabelInDock());
         HotseatMode hotseatMode = PreferenceCacheExtensionsKt.firstCached(preferenceManager2.getHotseatMode());
         boolean isQsbEnable = hotseatMode.getLayoutResourceId() != R.layout.empty_view;
@@ -1231,6 +1284,13 @@ public class DeviceProfile {
         final boolean isVerticalLayout = isVerticalBarLayout();
         cellLayoutBorderSpacePx = getCellLayoutBorderSpace(inv, scale);
 
+        // Lawnchair: Keep the configured Workspace label size available independently of the
+        // global visibility toggle. Prime can explicitly show a single folder label even when
+        // regular Home labels are disabled.
+        primeWorkspaceLabelTextSizePx = Math.round(iconTextSizePx
+                * PreferenceCacheExtensionsKt.firstCached(
+                        preferenceManager2.getHomeIconLabelSizeFactor()));
+
         // Lawnchair: Get initial text size before calculating layout
         // This scales offset with text sizing, all the way down to zero
         iconTextSizePx *= mTextFactors.getIconTextSizeFactor();
@@ -1404,6 +1464,7 @@ public class DeviceProfile {
         } else {
             widgetPadding.setEmpty();
         }
+        primeUnscaledWidgetPadding.set(widgetPadding);
         // Lawnchair: scale widget padding by user factor (0 = remove, 1 = default).
         widgetPadding.left = Math.round(widgetPadding.left * widgetPaddingFactor);
         widgetPadding.right = Math.round(widgetPadding.right * widgetPaddingFactor);
@@ -1414,6 +1475,21 @@ public class DeviceProfile {
     /**
      * This method calculates the space between the icons to achieve a certain width.
      */
+    /** Unscaled reference used by both global and individual widget margin factors. */
+    public int getPrimeUnscaledWidgetPadding(int side) {
+        switch (side) {
+            case 0: return primeUnscaledWidgetPadding.left;
+            case 1: return primeUnscaledWidgetPadding.top;
+            case 2: return primeUnscaledWidgetPadding.right;
+            case 3: return primeUnscaledWidgetPadding.bottom;
+            default: return 0;
+        }
+    }
+
+    public float getPrimeGlobalWidgetPaddingFactor() {
+        return widgetPaddingFactor;
+    }
+
     private int calculateHotseatBorderSpace(float hotseatWidthPx, int numExtraBorder) {
         int numBorders = (numShownHotseatIcons - 1 + numExtraBorder);
         if (numBorders <= 0) return 0;

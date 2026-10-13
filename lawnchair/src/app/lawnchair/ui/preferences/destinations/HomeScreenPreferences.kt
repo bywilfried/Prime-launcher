@@ -205,7 +205,7 @@ fun HomeScreenPreferences(
             SliderPreference(
                 label = stringResource(id = R.string.icon_sizes),
                 adapter = prefs2.homeIconSizeFactor.getAdapter(),
-                step = 0.1f,
+                step = 0.05f,
                 valueRange = 0.5F..1.5F,
                 showAsPercentage = true,
             )
@@ -217,7 +217,7 @@ fun HomeScreenPreferences(
                 SliderPreference(
                     label = stringResource(id = R.string.label_size),
                     adapter = prefs2.homeIconLabelSizeFactor.getAdapter(),
-                    step = 0.1f,
+                    step = 0.05f,
                     valueRange = 0.5F..1.5F,
                     showAsPercentage = true,
                 )

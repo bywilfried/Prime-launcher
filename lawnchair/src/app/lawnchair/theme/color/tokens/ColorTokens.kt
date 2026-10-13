@@ -79,6 +79,14 @@ object ColorTokens {
 
     @JvmField val ColorAccent = DayNightColorToken(Accent1_600, Accent1_100)
 
+    // Prime interactive-element default: deliberately separated from the palette seed.
+    // It stays dynamic, but is darker than cards in light mode and lighter than cards in dark
+    // mode so switches, sliders, selection outlines and their preview swatch remain visible.
+    @JvmField val PrimeInteractiveColor = DayNightColorToken(
+        Accent1_600.setLStar(42.0),
+        Accent1_100.setLStar(72.0),
+    )
+
     @JvmField val ColorBackground = DayNightColorToken(Neutral1_50, Neutral1_900)
 
     @JvmField val ColorBackgroundFloating = DayNightColorToken(Neutral2_50, Neutral2_900)
@@ -95,9 +103,25 @@ object ColorTokens {
 
     @JvmField val AllAppsScrimColor = StaticColorToken(0x404040).setAlpha(.40f)
 
-    @JvmField val AllAppsTabBackground = DayNightColorToken(Neutral1_100, Neutral1_800.setLStar(22.0))
+    // Prime semantic base surface for the app drawer. Keep blur/opacity as rendering concerns.
+    @JvmField val AllAppsBackground = SurfaceDimColor
 
-    @JvmField val AllAppsTabBackgroundSelected = DayNightColorToken(Accent1_600, Accent1_200)
+    // Prime/Lawnchair tab theme defaults. Keep these as dedicated theme tokens so every
+    // inheriting tab surface has explicit light/dark values and future custom themes can replace
+    // them without changing drawer code.
+    // Category pills intentionally use a chromatic dynamic family. Neutral2 follows the
+    // palette only subtly and made palette changes almost invisible in practice.
+    // Accent2 keeps the selected wallpaper/source hue obvious while L* preserves the
+    // Legacy light/dark surface hierarchy.
+    @JvmField val AllAppsTabBackground = DayNightColorToken(
+        Accent2_200.setLStar(72.0),
+        Accent2_600.setLStar(34.0),
+    )
+
+    @JvmField val AllAppsTabBackgroundSelected = DayNightColorToken(
+        Accent2_300.setLStar(58.0),
+        Accent2_800.setLStar(14.0),
+    )
 
     @JvmField val FocusHighlight = DayNightColorToken(Neutral1_0, Neutral1_700)
 
@@ -135,7 +159,7 @@ object ColorTokens {
 
     @JvmField val SearchboxHighlightBlur = SearchboxHighlight.setAlpha(.54f)
 
-    @JvmField val DotColor = Accent3_200
+    @JvmField val DotColor = DayNightColorToken(Accent2_600, Accent1_200)
 
     @JvmField val FolderBackgroundColor = DayNightColorToken(Neutral1_50.setLStar(94.0), Neutral2_900.setLStar(12.0))
 
@@ -145,13 +169,22 @@ object ColorTokens {
 
     @JvmField val FolderPreviewColor = DayNightColorToken(Accent2_200, Neutral1_900.setLStar(12.0))
 
-    @JvmField val PopupColorPrimary = DayNightColorToken(Accent2_50, Neutral2_800)
+    // Keep popup surfaces visibly tied to the selected dynamic palette in both variants.
+    // L* is applied by PopupShade* below, so these tokens primarily provide the hue/chroma.
+    @JvmField val PopupColorPrimary = DayNightColorToken(Accent2_200, Accent2_800)
 
     @JvmField val PopupColorSecondary = DayNightColorToken(Neutral2_100, Neutral1_900)
 
     @JvmField val PopupColorTertiary = DayNightColorToken(Neutral2_300, Neutral2_700)
 
     @JvmField val PopupShadeFirst = DayNightColorToken(PopupColorPrimary.setLStar(98.0), PopupColorPrimary.setLStar(20.0))
+
+    // Drawer popups need stronger separation from the All Apps surface while preserving
+    // the hue/chroma of the selected dynamic palette. Home keeps the historical recipe.
+    @JvmField val DrawerPopupBackground = DayNightColorToken(
+        PopupColorPrimary.setLStar(92.0),
+        PopupColorPrimary.setLStar(28.0),
+    )
 
     @JvmField val PopupShadeSecond = DayNightColorToken(PopupColorPrimary.setLStar(95.0), PopupColorPrimary.setLStar(15.0))
 

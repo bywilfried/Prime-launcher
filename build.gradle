@@ -129,20 +129,20 @@ final def buildCommit = providers.exec {
     commandLine('git', 'rev-parse', '--short=7', 'HEAD')
 }.standardOutput.asText.get().trim()
 
-final def ciBuild = System.getenv("CI") == "true"
-final def ciRef = System.getenv("GITHUB_REF") ?: ""
-final def ciRunNumber = System.getenv("GITHUB_RUN_NUMBER") ?: ""
-final def isReleaseBuild = ciBuild
-        && (ciRef.endsWith("-alpha")
-        || ciRef.endsWith("-beta")
-        || ciRef.endsWith("-rc")
-        || ciRef.endsWith("-stable"))
-final def devReleaseName = ciBuild ? "Dev.(#${ciRunNumber})" : "Dev.(${buildCommit})"
-
-final def version = "16"
-final def releaseName = "Beta 1"
-final def versionDisplayName = "${version}.${isReleaseBuild ? releaseName : devReleaseName}"
-final def majorVersion = versionDisplayName.split("\\.")[0]
+// Prime's public minor version is changed deliberately (e.g. 0.9).
+// The final component identifies the CI build, for both debug and release.
+final def primeMajor = 0
+final def primeMinor = 8
+final def ciRunNumber = (System.getenv("GITHUB_RUN_NUMBER") ?: "").trim()
+final def primeBuildNumber = (providers.gradleProperty("primeBuildNumber").orNull
+        ?: (ciRunNumber ? ciRunNumber : "0")).toInteger()
+if (primeBuildNumber < 0 || primeBuildNumber > 999999) {
+    throw new GradleException("primeBuildNumber must be between 0 and 999999")
+}
+final def primeBaseVersion = "${primeMajor}.${primeMinor}.${primeBuildNumber}"
+final def primeDebugVersion = "${primeBaseVersion}-debug"
+final def primeVersionCode = 8000000 + primeBuildNumber
+final def majorVersion = "${primeMajor}"
 
 final def quickstepMinSdk = "35"
 final def quickstepMaxSdk = "36"
@@ -150,13 +150,9 @@ final def quickstepMaxSdk = "36"
 android {
     namespace "com.android.launcher3"
     defaultConfig {
-        /*
-         * Lawnchair Launcher 16.0 Beta 1.0
-         * see https://docs.lawnchair.app/developers/standards/development-workflow#versioning-scheme
-         */
-        versionCode 16_00_02_01_00
-        versionName "${versionDisplayName}"
-        buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${versionDisplayName}\""
+        versionCode primeVersionCode + primeBuildNumber
+        versionName primeBaseVersion
+        buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${primeBaseVersion}\""
         buildConfigField "String", "MAJOR_VERSION", "\"${majorVersion}\""
         buildConfigField "String", "COMMIT_HASH", "\"${buildCommit}\""
         buildConfigField "boolean", "ENABLE_AUTO_INSTALLS_LAYOUT", "false"
@@ -226,6 +222,8 @@ android {
         }
 
         debug {
+            versionNameSuffix "-debug"
+            buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${primeDebugVersion}\""
             applicationIdSuffix ".debug"
             resValue("string", "derived_app_name", "Prime Launcher (Debug)")
 

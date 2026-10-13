@@ -18,6 +18,10 @@
 
 package com.android.launcher3;
 
+import static com.android.launcher3.util.Executors.MODEL_EXECUTOR;
+
+import app.lawnchair.prime.drawer.PrimeDrawerTabsRepository;
+
 import static android.content.pm.ActivityInfo.CONFIG_UI_MODE;
 import static android.view.WindowInsetsAnimation.Callback.DISPATCH_MODE_CONTINUE_ON_SUBTREE;
 import static android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED;
@@ -320,6 +324,8 @@ public class Launcher extends StatefulActivity<LauncherState>
     private static final String EXCLUDE_CLOSE_WIDGET_PICKER =
             "launcher.extra.EXCLUDE_CLOSE_WIDGET_PICKER";
 
+    private AbstractFloatingView mPrimeComposeBackTarget;
+
     private StateManager<LauncherState, Launcher> mStateManager;
 
     private static final int ON_ACTIVITY_RESULT_ANIMATION_DELAY = 500;
@@ -576,6 +582,14 @@ public class Launcher extends StatefulActivity<LauncherState>
     @NonNull
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     protected OnBackAnimationCallback getOnBackAnimationCallback() {
+        // Prime Compose sheets are hosted by an AbstractFloatingView but their Compose content
+        // has no OnBackPressedDispatcherOwner. Route Android's predictive/system Back through
+        // Launcher's native callback chain instead.
+        AbstractFloatingView primeTarget = mPrimeComposeBackTarget;
+        if (primeTarget != null && primeTarget.isOpen()) {
+            return primeTarget;
+        }
+
         // #1 auto cancel action mode handler
         if (isInAutoCancelActionMode()) {
             return this::finishAutoCancelActionMode;
@@ -1241,6 +1255,21 @@ public class Launcher extends StatefulActivity<LauncherState>
         }
 
         DragView.removeAllViews(this);
+
+        // Prime Home-folder settings are edited in PreferenceActivity while Launcher is paused.
+        // Reapply them to the existing Folder views when returning instead of waiting for a rebind.
+        PrimeDrawerTabsRepository primeRepository = new PrimeDrawerTabsRepository(this);
+        for (Integer folderId : primeRepository.getHomeFolderOverrideIds()) {
+            mWorkspace.mapOverItems((info, view) -> {
+                if (info instanceof FolderInfo folderInfo && folderInfo.id == folderId
+                        && view instanceof FolderIcon folderIcon) {
+                    folderIcon.getFolder().applyPrimeVisualOverrides();
+                    folderIcon.refreshPrimeVisualOverrides();
+                    return true;
+                }
+                return false;
+            });
+        }
         TraceHelper.INSTANCE.endSection();
     }
 
@@ -2083,6 +2112,16 @@ public class Launcher extends StatefulActivity<LauncherState>
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         TestLogging.recordKeyEvent(TestProtocol.SEQUENCE_MAIN, "Key event", event);
+        if (event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
+            AbstractFloatingView primeTarget = mPrimeComposeBackTarget;
+            if (primeTarget != null && primeTarget.isOpen()) {
+                if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) {
+                    primeTarget.close(true);
+                }
+                // Consume both DOWN and UP so the framework does not also navigate Launcher state.
+                return true;
+            }
+        }
         return (event.getKeyCode() == KeyEvent.KEYCODE_HOME) || super.dispatchKeyEvent(event);
     }
 
@@ -2103,9 +2142,29 @@ public class Launcher extends StatefulActivity<LauncherState>
         return super.dispatchTouchEvent(ev);
     }
 
+    public void registerPrimeComposeBackTarget(AbstractFloatingView target) {
+        mPrimeComposeBackTarget = target;
+    }
+
+    public void clearPrimeComposeBackTarget(AbstractFloatingView target) {
+        if (mPrimeComposeBackTarget == target) {
+            mPrimeComposeBackTarget = null;
+        }
+    }
+
     @Override
     @TargetApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     public void onBackPressed() {
+        AbstractFloatingView primeTarget = mPrimeComposeBackTarget;
+        if (primeTarget != null && primeTarget.isOpen()) {
+            primeTarget.close(true);
+            return;
+        }
+        AbstractFloatingView topView = AbstractFloatingView.getTopOpenView(this);
+        if (topView != null && topView.canHandleBack()) {
+            topView.onBackInvoked();
+            return;
+        }
         getOnBackAnimationCallback().onBackInvoked();
     }
 
@@ -2444,9 +2503,45 @@ public class Launcher extends StatefulActivity<LauncherState>
     public void bindAllApplications(AppInfo[] apps, int flags,
             Map<PackageUserKey, Integer> packageUserKeytoUidMap) {
         mModelCallbacks.bindAllApplications(apps, flags, packageUserKeytoUidMap);
+        warmPrimeDrawerIcons(apps);
         if (Utilities.ATLEAST_S) {
             Trace.endAsyncSection(DISPLAY_ALL_APPS_TRACE_METHOD_NAME, SINGLE_TRACE_COOKIE);
         }
+    }
+
+    private void warmPrimeDrawerIcons(AppInfo[] apps) {
+        if (!app.lawnchair.preferences.PreferenceManager.getInstance(this)
+                .getDrawerTabsEnabled().get() || apps.length == 0) {
+            return;
+        }
+        final PrimeDrawerTabsRepository repository = new PrimeDrawerTabsRepository(this);
+        final app.lawnchair.prime.drawer.PrimeDrawerTabsConfiguration configuration =
+                repository.getConfiguration();
+        final int defaultIconSize =
+                getDeviceProfile().getAllAppsProfile().getIconSizePx();
+        final boolean useTheme = app.lawnchair.preferences.PreferenceManager.getInstance(this)
+                .getDrawerThemedIcons().get();
+
+        MODEL_EXECUTOR.execute(() -> {
+            for (app.lawnchair.prime.drawer.PrimeDrawerTab tab : configuration.getTabs()) {
+                app.lawnchair.prime.drawer.PrimeDrawerVisualOverrides overrides =
+                        repository.getTabVisualOverrides(tab.getId());
+                if (overrides == null || overrides.getDrawerIconShape() == null) continue;
+
+                app.lawnchair.icons.shape.IconShape shape =
+                        app.lawnchair.icons.shape.IconShape.Companion.fromString(
+                                overrides.getDrawerIconShape(), this);
+                int iconSize = overrides.getDrawerIconSize() != null
+                        ? Math.round(defaultIconSize * overrides.getDrawerIconSize())
+                        : defaultIconSize;
+                for (AppInfo app : apps) {
+                    if (repository.isAppInTab(app.toComponentKey(), tab.getId(), configuration)) {
+                        BubbleTextView.warmPrimeIconCache(
+                                this, app, shape, iconSize, useTheme);
+                    }
+                }
+            }
+        });
     }
 
     /**

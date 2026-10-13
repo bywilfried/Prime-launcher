@@ -73,7 +73,7 @@
     <string name="time_months_ago">%dmo</string>
     <string name="time_years_ago">%dy</string>
 
-    <string name="managed_by_lawnchair">Managed by Lawnchair</string>
+    <string name="managed_by_lawnchair">Default color</string>
 
     <!-- When mentioning settings UI -->
     <string name="smartspace_preferences">Preferences</string>
@@ -121,6 +121,7 @@
     <string name="wallpapers">Wallpapers</string>
 
     <string name="caddy_beta">Caddy (beta)</string>
+    <string name="drawer_tabs">Tabs</string>
     <string name="caddy">Caddy</string>
 
     <string name="app_drawer_folder">App drawer folders</string>
@@ -143,7 +144,7 @@
     <string name="sort_active_items_action">Sort active items</string>
 
     <!-- A11y description -->
-    <string name="accessibility_service_description">To perform certain actions when you use a gesture, such as locking your phone, Lawnchair requires accessibility access.\n\nLawnchair doesn\'t watch your actions, though all accessibility services require this privilege. Lawnchair discards any event sent by the system.\n\nTo lock your phone or open the Recents screen, Lawnchair uses the performGlobalAction accessibility service.</string>
+    <string name="accessibility_service_description">To perform certain actions when you use a gesture, such as locking your phone, Prime Launcher requires accessibility access.\n\nPrime Launcher doesn\'t watch your actions, though all accessibility services require this privilege. Prime Launcher discards any event sent by the system.\n\nTo lock your phone or open the Recents screen, Prime Launcher uses the performGlobalAction accessibility service.</string>
 
     <string name="iconPackPackageDefault" translatable="false">""</string>
 
@@ -201,7 +202,7 @@
     <string name="about_label">About</string>
 
     <string name="app_info_drop_target_label">App info</string>
-    <string name="debug_restart_launcher">Restart Lawnchair</string>
+    <string name="debug_restart_launcher">Restart Prime Launcher</string>
     <string name="experimental_features_label">Experimental features</string>
 
     <!-- Experimental features -->
@@ -266,7 +267,7 @@
     <string name="prediction_mode_label">Suggestions provider</string>
     <string name="app_predictions_disable_reason_pre_q_description">This feature requires Android 10 or higher</string>
     <string name="prediction_mode_system">System</string>
-    <string name="prediction_mode_lawnchair" translatable="false">Lawnchair</string>
+    <string name="prediction_mode_lawnchair" translatable="false">Prime Launcher</string>
     <string name="prediction_mode_none">Off</string>
     <string name="prediction_weighted_usage_stats_label">Use device usage data</string>
     <string name="prediction_weighted_usage_stats_description">Use your device\'s usage statistics to make suggestions more accurate</string>
@@ -276,7 +277,7 @@
     <string name="prediction_system_settings">Manage system suggestions</string>
 
     <string name="missing_usage_access_label">Usage access needed</string>
-    <string name="missing_usage_access_desc">To improve app suggestions, turn on usage access for <xliff:g id="name" example="Lawnchair">%1$s</xliff:g></string>
+    <string name="missing_usage_access_desc">To improve app suggestions, turn on usage access for <xliff:g id="name" example="Prime Launcher">%1$s</xliff:g></string>
 
     <!--
 
@@ -284,7 +285,7 @@
 
     -->
 
-    <string name="set_default_launcher_tip">To access shortcuts and additional features, set Lawnchair as your default launcher</string>
+    <string name="set_default_launcher_tip">To access shortcuts and additional features, set Prime Launcher as your default launcher</string>
 
     <string name="notification_dots">Notification dots</string>
     <string name="show_notification_count">Show notification counter</string>
@@ -430,6 +431,7 @@
 
     <!-- Theme -->
     <string name="theme_label">Theme</string>
+    <string name="theme_appearance_label">Appearance</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="theme_system_default">System</string>
@@ -449,6 +451,8 @@
     <!-- Accent color and color picker -->
     <string name="colors">Colors</string>
     <string name="accent_color">Accent color</string>
+    <string name="tabs_color">Tabs color</string>
+    <string name="inactive_tabs_color">Inactive tabs color</string>
 
     <string name="swatches">Swatches</string>
 
@@ -516,13 +520,13 @@
     <string name="torch_action_off">Tap to turn off</string>
 
     <!-- Onboarding strings -->
-    <string name="onboarding_open_settings_title">Set up Lawnchair</string>
+    <string name="onboarding_open_settings_title">Set up Prime Launcher</string>
     <string name="onboarding_open_settings_subtitle">Long-press on the home screen to open settings</string>
 
-    <string name="onboarding_major_upgrade_title">Meet the new Lawnchair</string>
+    <string name="onboarding_major_upgrade_title">Meet the new Prime Launcher</string>
     <string name="onboarding_major_upgrade_subtitle">See what\'s new</string>
 
-    <string name="onboarding_welcome">Welcome to Lawnchair!</string>
+    <string name="onboarding_welcome">Welcome to Prime Launcher!</string>
     <string name="onboarding_swipe_up">Swipe up to open the app drawer</string>
 
     <!-- Smartspacer strings -->
@@ -536,11 +540,11 @@
 
     <!-- Toggle button for enabling Smartspace -->
     <string name="smartspace_widget_toggle_label">Show on home screen</string>
-    <string name="smartspace_widget_toggle_description">At a Glance can be added to the home screen with the Lawnchair widget</string>
+    <string name="smartspace_widget_toggle_description">At a Glance can be added to the home screen with the Prime Launcher widget</string>
 
     <!-- List of available providers -->
     <string name="smartspace_mode_label">At a Glance provider</string>
-    <string name="smartspace_mode_lawnchair" translatable="false">Lawnchair</string>
+    <string name="smartspace_mode_lawnchair" translatable="false">Prime Launcher</string>
     <string name="smartspace_mode_google">Google</string>
     <string name="smartspace_mode_google_search">Google Search</string>
     <string name="smartspace_mode_smartspacer" translatable="false">Smartspacer</string>
@@ -650,7 +654,7 @@
     <string name="pick_app_for_gesture">Pick app</string>
 
     <string name="dt2s_admin_hint_title">Admin permissions required</string>
-    <string name="dt2s_admin_hint">To put the device to sleep, set Lawnchair as a device admin app. Tap \"Open settings\", then tap \"Activate this device admin app.\"</string>
+    <string name="dt2s_admin_hint">To put the device to sleep, set Prime Launcher as a device admin app. Tap \"Open settings\", then tap \"Activate this device admin app.\"</string>
     <string name="dt2s_admin_warning">Gestures to put the device to sleep will be turned off.</string>
 
     <string name="d2ts_recents_a11y_hint_title">Turn on accessibility service</string>
@@ -660,8 +664,8 @@
     <string name="quick_settings_a11y_hint">open the Quick Settings panel</string>
     <string name="recents_screen_a11y_hint">open the Recents screen</string>
 
-    <string name="generic_a11y_hint">To %1$s, turn on the Lawnchair accessibility service. Tap \"Open settings\", choose \"Lawnchair\" and turn on \"Use Lawnchair.\"</string>
-    <string name="generic_a11y_disclaimer">Lawnchair uses Accessibility\'s `performGlobalAction` method to perform this action. This is a sensitive permission that allows monitoring other apps. However, Lawnchair is not configured for that functionality and receives no events.</string>
+    <string name="generic_a11y_hint">To %1$s, turn on the Prime Launcher accessibility service. Tap \"Open settings\", choose \"Prime Launcher\" and turn on \"Use Prime Launcher.\"</string>
+    <string name="generic_a11y_disclaimer">Prime Launcher uses Accessibility\'s `performGlobalAction` method to perform this action. This is a sensitive permission that allows monitoring other apps. However, Prime Launcher is not configured for that functionality and receives no events.</string>
 
     <string name="sleep_mode_label">Sleep mode</string>
     <string name="sleep_mode_auto">Automatic</string>
@@ -674,7 +678,7 @@
     Bug reporting
 
     -->
-    <string name="lawnchair_bug_report">Lawnchair bug report</string>
+    <string name="lawnchair_bug_report">Prime Launcher bug report</string>
     <string name="crash_report_notif_title">%1$s crashed</string>
     <string name="action_upload_crash_report">Upload crash log</string>
 
@@ -781,7 +785,7 @@
     <string name="search_bar_settings">Search bar settings</string>
     <string name="hotseat_mode_label">Search bar widget</string>
     <string name="hotseat_mode_disabled">Disabled</string>
-    <string name="hotseat_mode_lawnchair" translatable="false">Lawnchair</string>
+    <string name="hotseat_mode_lawnchair" translatable="false">Prime Launcher</string>
     <string name="hotseat_mode_google_search">Google search bar</string>
 
     <string name="qsb_hotseat_background_transparency">Background opacity</string>
@@ -818,7 +822,7 @@
     <string name="unfolded_label">Unfolded</string>
     <string name="when_folded_label">When folded</string>
     <string name="when_unfolded_label">When unfolded</string>
-    <string name="unfolded_grid_description">Lawnchair pairs two pages together to fill the larger display</string>
+    <string name="unfolded_grid_description">Prime Launcher pairs two pages together to fill the larger display</string>
     <string name="foldable_columns_error">The folded value must be less than or equal to the unfolded value. It will be automatically adjusted if needed.</string>
     <string name="hotseat_bottom_space_label">Bottom padding</string>
     <string name="page_indicator_height">Page indicator height</string>
@@ -901,7 +905,7 @@
     <string name="max_folder_rows">Maximum folder rows</string>
 
     <!-- Quickstep settings -->
-    <string name="quickswitch_ignored_warning">These settings will be ignored because Lawnchair isn\'t set as the Recents screen provider</string>
+    <string name="quickswitch_ignored_warning">These settings will be ignored because Prime Launcher isn\'t set as the Recents screen provider</string>
 
     <string name="quickstep_incompatible">Incompatible system integration</string>
     <string name="quickstep_incompatible_description">Your device is configured to have system gestures, known as Quickstep, provided by %1$s, but this version of %1$s isn\'t compatible with your Android version. To continue using your device, uninstall %1$s updates or disable %1$s as a system gesture provider.</string>
@@ -1070,4 +1074,95 @@
     <string name="lawnchair_action_failed">Failed to trigger action</string>
 
     <string name="please_wait">Please wait…</string>
+    <string name="prime_tab_all">All</string>\n    <string name="prime_tab_unclassified">Unclassified</string>\n    <string name="prime_tab_create">Create tab</string>
+    <string name="prime_tab_name_hint">Tab name</string>
+    <string name="prime_tab_create_action">Create</string>
+    <string name="prime_tab_name_required">Enter a tab name</string>
+    <string name="prime_tab_rename">Rename</string>\n    <string name="prime_tab_rename_action">Rename</string>
+    <string name="prime_tab_set_default">Set as default</string>
+    <string name="prime_tab_apps">Apps</string>
+    <string name="prime_tab_advanced">Advanced options</string>
+    <string name="prime_tab_options">Options</string>
+    <string name="prime_tab_delete">Delete</string>\n    <string name="prime_tab_delete_confirm_title">Delete tab?</string>\n    <string name="prime_tab_delete_confirm_message">Delete “%1$s”? Apps in this tab will become unclassified unless they belong to another tab.</string>
+    <string name="prime_app_categories">Categories</string>
+    <string name="prime_tabs_settings">Tabs</string>
+    <string name="prime_tabs_color">Category tab color</string>
+    <string name="prime_categories_manage">Manage categories</string>
+    <string name="prime_category_hidden">Hidden</string>
+    <string name="prime_category_settings">Category settings</string>
+    <string name="prime_category_default">Default tab</string>
+    <string name="prime_category_name">Name</string>
+    <string name="prime_category_folders_pending">Folders*</string>
+    <string name="prime_tabs_open_behavior">When opening the app drawer</string>
+    <string name="prime_tabs_open_first">First tab</string>
+    <string name="prime_tabs_open_last">Last viewed tab</string>
+    <string name="prime_tabs_open_default">Default tab</string>
+    <string name="prime_tabs_swipe_enabled">Swipe between tabs</string>\n    <string name="prime_tabs_hide_all">Hide All tab</string>
+    <string name="prime_tabs_hide_unclassified">Hide Unclassified tab</string>
+    <string name="prime_development_options">Development options</string>
+    <string name="prime_development_options_description">Prime development and diagnostic options</string>
+    <string name="prime_show_empty_folders">Show empty folders</string>
+    <string name="prime_show_empty_folders_description">Display empty folders in the app drawer when using the Tabs layout</string>
+
+    <string name="prime_diagnostic_logs">Prime diagnostic logs</string>
+    <string name="prime_diagnostic_logs_description">View icon shape diagnostics captured during this launcher session</string>
+    <string name="prime_diagnostic_logs_clear">Clear logs</string>
+    <string name="prime_haptic_tuning">Haptic tuning</string>
+    <string name="prime_haptic_tuning_description">Adjust haptic feedback for individual launcher interactions</string>
+    <string name="prime_haptic_workspace">Workspace</string>
+    <string name="prime_haptic_drawer">App drawer</string>
+    <string name="prime_haptic_reorder">Reordering</string>
+    <string name="prime_haptic_workspace_long_press">Workspace long press</string>
+    <string name="prime_haptic_drag_start">Drag start</string>
+    <string name="prime_haptic_icon_drag">Icon drag</string>
+    <string name="prime_haptic_drawer_threshold">Drawer swipe threshold</string>
+    <string name="prime_haptic_drawer_tap">Drawer tap / open</string>
+    <string name="prime_haptic_reorder_start">Reorder start</string>
+    <string name="prime_haptic_reorder_move">Reorder movement</string>
+    <string name="prime_haptic_reorder_end">Reorder end</string>
+    <string name="prime_haptic_reorder_cancel">Reorder cancel</string>
+    <string name="prime_haptic_reset">Reset to default</string>
+    <string name="prime_haptic_reset_all">Reset all haptics to default</string>
+    <string name="prime_extended_grid_active_description">Reduce the current home screen grid to 10 × 10 or smaller before disabling this option</string>
+
+
+    <!-- English fallback strings for locale-only resource keys -->
+    <string name="apply_grid">Apply grid</string>
+    <string name="create">Create</string>
+    <string name="create_backup_action">Create backup</string>
+    <string name="customize_button_text">Customize</string>
+    <string name="delete">Delete</string>
+    <string name="dt2s_a11y_hint">Enable the accessibility service to use double tap to sleep.</string>
+    <string name="dt2s_a11y_hint_title">Accessibility permission required</string>
+    <string name="dt2s_recents_warning_open_settings">Open settings</string>
+    <string name="dt2s_warning_open_settings">Open settings</string>
+    <string name="hide_hidden_apps_search">Hide hidden apps from search</string>
+    <string name="home_screen_edit_toggle_from_home_popup">Show edit option in home screen menu</string>
+    <string name="home_screen_lock_toggle_from_home_popup">Show lock option in home screen menu</string>
+    <string name="icon_shape_bottom_left">Bottom left</string>
+    <string name="icon_shape_bottom_right">Bottom right</string>
+    <string name="icon_shape_corner">Corner</string>
+    <string name="icon_shape_corner_cut">Cut</string>
+    <string name="icon_shape_corner_round">Rounded</string>
+    <string name="icon_shape_corner_squircle">Squircle</string>
+    <string name="icon_shape_top_left">Top left</string>
+    <string name="icon_shape_top_right">Top right</string>
+    <string name="icon_style">Icon style</string>
+    <string name="launcher_default_color">Default launcher color</string>
+    <string name="local_colors_extraction_class">Local color extraction</string>
+    <string name="missing_notification_access_description">Allow notification access to show notification dots.</string>
+    <string name="msg_missing_notification_access">Notification access is required.</string>
+    <string name="recents_a11y_hint">Enable the accessibility service to use this feature.</string>
+    <string name="reset_font">Reset font</string>
+    <string name="restore_backup_action">Restore backup</string>
+    <string name="show_dot_pagination_description">Show page indicators as dots</string>
+    <string name="show_dot_pagination_label">Dot page indicators</string>
+    <string name="show_enable_smart_hide">Enable smart hide</string>
+    <string name="show_home_labels">Show home screen labels</string>
+    <string name="show_material_u_popup_description">Use the Material You popup style</string>
+    <string name="show_material_u_popup_label">Material You popup</string>
+    <string name="show_system_settings_entry">Show system settings entry</string>
+    <string name="smartspace_mode_selection">Smartspace mode</string>
+    <string name="transparent_background_icons">Transparent icon backgrounds</string>
+    <string name="warn_files_permission_content">Grant file access to use this feature.</string>
 </resources>

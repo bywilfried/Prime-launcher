@@ -40,6 +40,7 @@ import android.os.Looper;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.Property;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -92,6 +93,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
+import app.lawnchair.preferences.PreferenceManager;
+import app.lawnchair.prime.drawer.PrimeFolderLongPressHelper;
+import app.lawnchair.prime.drawer.PrimeDrawerFolderVisualOverrides;
+import app.lawnchair.icons.shape.IconShape;
+
 /**
  * An icon that can appear on in the workspace representing an {@link Folder}.
  */
@@ -104,6 +110,7 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
     public FolderInfo mInfo;
 
     private CheckLongPressHelper mLongPressHelper;
+    private PrimeFolderLongPressHelper mPrimeLongPressHelper;
 
     static final int DROP_IN_ANIMATION_DURATION = 400;
 
@@ -114,6 +121,7 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
     private static final int ON_OPEN_DELAY = 800;
 
     @Thunk BubbleTextView mFolderName;
+    private boolean mPrimeForceShowLabel;
 
     PreviewBackground mBackground = new PreviewBackground(getContext());
     private boolean mBackgroundIsVisible = true;
@@ -132,6 +140,7 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
     @ViewDebug.ExportedProperty(category = "launcher", deepExport = true)
     private final FolderDotInfo mDotInfo = new FolderDotInfo();
     private DotRenderer mDotRenderer;
+    private int mPrimeDotRendererSize = -1;
     @ViewDebug.ExportedProperty(category = "launcher", deepExport = true)
     private DotRenderer.DrawParams mDotParams;
     private float mDotScale;
@@ -166,7 +175,8 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
     }
 
     private void init() {
-        mLongPressHelper = new CheckLongPressHelper(this);
+        mLongPressHelper = new CheckLongPressHelper(this, view -> mPrimeLongPressHelper.onLongClick(view));
+        mPrimeLongPressHelper = new PrimeFolderLongPressHelper(this);
         mPreviewLayoutRule = new ClippedFolderIconLayoutRule();
         mPreviewItemManager = new PreviewItemManager(this);
         mDotParams = new DotRenderer.DrawParams();
@@ -222,6 +232,9 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
         icon.mInfo = folderInfo;
         icon.mActivity = activity;
         icon.mDotRenderer = grid.mDotRendererWorkSpace;
+        if (folderInfo.container != ItemInfo.NO_ID) {
+            PrimeFolderLongPressHelper.registerHomeFolderIcon(icon);
+        }
 
         icon.setContentDescription(icon.getAccessiblityTitle(folderInfo.title));
         icon.updateDotInfo();
@@ -230,9 +243,120 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
 
         icon.mPreviewVerifier = createFolderGridOrganizer(activity.getDeviceProfile());
         icon.mPreviewVerifier.setFolderInfo(folderInfo);
+        PrimeDrawerFolderVisualOverrides primeOverrides =
+                PrimeFolderLongPressHelper.getVisualOverrides(icon.getContext(), folderInfo);
+        if (primeOverrides != null) {
+            if (primeOverrides.getPreviewOpacity() != null) {
+                icon.mBackground.setPrimeOpacity(primeOverrides.getPreviewOpacity());
+            }
+            if (primeOverrides.getColor() != null) {
+                icon.mBackground.setPrimeColor(primeOverrides.getColor());
+            }
+            if (primeOverrides.getShape() != null) {
+                IconShape primeShape = IconShape.Companion.fromString(
+                        primeOverrides.getShape(), icon.getContext());
+                if (primeShape != null) {
+                    icon.mBackground.setPrimeShape(primeShape);
+                }
+            }
+            if (primeOverrides.getShowFolderLabel() != null) {
+                boolean showFolderLabel = primeOverrides.getShowFolderLabel();
+                icon.mPrimeForceShowLabel = showFolderLabel;
+                icon.setTextVisible(showFolderLabel);
+                icon.mFolderName.setTextVisibility(showFolderLabel);
+            }
+        }
         icon.updatePreviewItems(false);
 
         return icon;
+    }
+
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        // Workspace binding can restore the default folder-label state after inflation.
+        post(this::refreshPrimeVisualOverrides);
+    }
+
+    public void refreshPrimeVisualOverrides() {
+        if (mInfo == null) return;
+        PrimeDrawerFolderVisualOverrides overrides =
+                PrimeFolderLongPressHelper.getVisualOverrides(getContext(), mInfo);
+        mBackground.setPrimeOpacity(
+                overrides != null && overrides.getPreviewOpacity() != null
+                        ? overrides.getPreviewOpacity() : 1f);
+        mBackground.setPrimeColor(
+                overrides != null ? overrides.getColor() : null);
+        IconShape shape = null;
+        if (overrides != null && overrides.getShape() != null) {
+            shape = IconShape.Companion.fromString(overrides.getShape(), getContext());
+        }
+        mBackground.setPrimeShape(shape);
+        app.lawnchair.theme.ThemeColorRole closedLabelRole;
+        if (isInAppDrawer()) {
+            closedLabelRole = app.lawnchair.theme.ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT;
+        } else if (mInfo.container == com.android.launcher3.LauncherSettings.Favorites.CONTAINER_HOTSEAT
+                || mInfo.container == com.android.launcher3.LauncherSettings.Favorites.CONTAINER_HOTSEAT_PREDICTION) {
+            closedLabelRole = app.lawnchair.theme.ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT;
+        } else {
+            closedLabelRole = app.lawnchair.theme.ThemeColorRole.HOME_FOLDER_CLOSED_TEXT;
+        }
+        int labelSurface = android.graphics.Color.TRANSPARENT;
+        if (closedLabelRole == app.lawnchair.theme.ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT) {
+            labelSurface = app.lawnchair.theme.ThemeColors.resolveIconLabelSurface(getContext(),
+                    app.lawnchair.theme.ThemeColorRole.DRAWER_ICON_TEXT);
+        } else if (closedLabelRole == app.lawnchair.theme.ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT) {
+            labelSurface = app.lawnchair.theme.ThemeColors.resolveWorkspaceLabelSurface(getContext(),
+                    app.lawnchair.theme.ThemeColorRole.DOCK_ICON_TEXT);
+        } else {
+            labelSurface = app.lawnchair.theme.ThemeColors.resolveWorkspaceLabelSurface(getContext(),
+                    app.lawnchair.theme.ThemeColorRole.HOME_ICON_TEXT);
+        }
+        int labelColor = overrides != null && overrides.getClosedLabelColor() != null
+                ? overrides.getClosedLabelColor()
+                : app.lawnchair.theme.ThemeColors.resolveIconLabelColor(
+                        getContext(), closedLabelRole, labelSurface);
+        mFolderName.setTextColor(labelColor);
+        mPrimeForceShowLabel = overrides != null
+                && Boolean.TRUE.equals(overrides.getShowFolderLabel());
+        if (overrides != null && overrides.getShowFolderLabel() != null) {
+            boolean showFolderLabel = overrides.getShowFolderLabel();
+            // FolderIcon.setTextVisible controls the actual View visibility used by Workspace.
+            // BubbleTextView.setTextVisibility only changes text alpha and cannot override an
+            // INVISIBLE folder label set by the global Home label preference.
+            setTextVisible(showFolderLabel);
+            mFolderName.setText(mInfo.title);
+            if (showFolderLabel && mFolderName.getTextSize() == 0f) {
+                mFolderName.setTextSize(TypedValue.COMPLEX_UNIT_PX,
+                        mActivity.getDeviceProfile().primeWorkspaceLabelTextSizePx);
+                requestLayout();
+            }
+            mFolderName.setTextVisibility(showFolderLabel);
+        }
+        invalidate();
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+        if (mFolderName == null) return;
+
+        // When Home labels are globally disabled, DeviceProfile can shrink the Workspace cell to
+        // icon-only height. A Prime per-folder override may restore this label afterwards, so move
+        // only the overflowing part back inside this FolderIcon instead of changing the grid.
+        float translationY = 0f;
+        if (mPrimeForceShowLabel && mInfo != null && mInfo.container != ItemInfo.NO_ID) {
+            int textHeight = (int) Math.ceil(
+                    mFolderName.getPaint().getFontMetrics().bottom
+                            - mFolderName.getPaint().getFontMetrics().top);
+            int textBottom = mFolderName.getTop() + textHeight;
+            int overflow = textBottom - getHeight();
+            if (overflow > 0) {
+                translationY = -overflow;
+            }
+        }
+        mFolderName.setTranslationY(translationY);
     }
 
     public void animateBgShadowAndStroke() {
@@ -247,6 +371,16 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
     public void getPreviewBounds(Rect outBounds) {
         mPreviewItemManager.recomputePreviewDrawingParams();
         mBackground.getBounds(outBounds);
+        // Prime can keep empty folders when the development option is enabled. Empty folders have
+        // no reference preview drawable, so their preview background may not have been initialized
+        // yet when a drawer folder is dropped on Workspace. Initialize it from the destination icon
+        // geometry so DragLayer never computes a 0 / 0 drop scale.
+        if (outBounds.isEmpty()
+                && mInfo.getContents().isEmpty()
+                && PreferenceManager.getInstance(getContext()).getPrimeShowEmptyFolders().get()) {
+            mBackground.setup(getContext(), mActivity, this, getMeasuredWidth(), getPaddingTop());
+            mBackground.getBounds(outBounds);
+        }
         // The preview items go outside of the bounds of the background.
         Utilities.scaleRectAboutCenter(outBounds, ICON_OVERLAP_FACTOR);
     }
@@ -618,15 +752,15 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
     public void drawDot(Canvas canvas) {
         if (!mForceHideDot && ((mDotInfo != null && mDotInfo.hasDot()) || mDotScale > 0)) {
             Rect iconBounds = mDotParams.iconBounds;
-            // FolderIcon draws the icon to be top-aligned (with padding) & horizontally-centered
-            int iconSize = mActivity.getDeviceProfile().iconSizePx;
-            iconBounds.left = (getWidth() - iconSize) / 2;
-            iconBounds.right = iconBounds.left + iconSize;
-            iconBounds.top = getPaddingTop();
-            iconBounds.bottom = iconBounds.top + iconSize;
-
-            float iconScale = (float) mBackground.previewSize / iconSize;
-            Utilities.scaleRectAboutCenter(iconBounds, iconScale);
+            // Use the actual folder preview bounds (Home, Dock or drawer), not Home icon size.
+            mBackground.getBounds(iconBounds);
+            int previewSize = Math.max(1, Math.min(iconBounds.width(), iconBounds.height()));
+            if (mPrimeDotRendererSize != previewSize) {
+                DeviceProfile dp = mActivity.getDeviceProfile();
+                mDotRenderer = dp.createPrimeSizedDotRenderer(previewSize,
+                        dp.getPrimeDotColor(), dp.getPrimeDotCountColor());
+                mPrimeDotRendererSize = previewSize;
+            }
 
             // If we are animating to the accepting state, animate the dot out.
             mDotParams.scale = Math.max(0, mDotScale - mBackground.getAcceptScaleProgress());
@@ -647,15 +781,41 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
                     - cellHeightPx) / 2, getPaddingRight(), getPaddingBottom());
         }
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
+        // When Home labels are globally disabled, DeviceProfile sizes the Workspace cell without
+        // label space. A Prime override can still explicitly show this folder label, so keep its
+        // restored text line inside the measured FolderIcon instead of letting it be clipped below.
+        PrimeDrawerFolderVisualOverrides overrides = mInfo == null ? null
+                : PrimeFolderLongPressHelper.getVisualOverrides(getContext(), mInfo);
+        if (overrides != null && Boolean.TRUE.equals(overrides.getShowFolderLabel())
+                && mFolderName.getTextSize() > 0f) {
+            FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) mFolderName.getLayoutParams();
+            Paint.FontMetrics fm = mFolderName.getPaint().getFontMetrics();
+            int textHeight = (int) Math.ceil(fm.bottom - fm.top);
+            int maxTopMargin = Math.max(0, getMeasuredHeight() - textHeight);
+            int desiredTopMargin = Math.min(
+                    mActivity.getDeviceProfile().iconSizePx
+                            + mActivity.getDeviceProfile().iconDrawablePaddingPx,
+                    maxTopMargin);
+            if (lp.topMargin != desiredTopMargin) {
+                lp.topMargin = desiredTopMargin;
+            }
+        }
     }
 
     /** Sets the visibility of the icon's title text */
     public void setTextVisible(boolean visible) {
-        if (visible) {
-            mFolderName.setVisibility(VISIBLE);
-        } else {
-            mFolderName.setVisibility(INVISIBLE);
+        boolean resolvedVisible = visible;
+        if (mInfo != null) {
+            PrimeDrawerFolderVisualOverrides overrides =
+                    PrimeFolderLongPressHelper.getVisualOverrides(getContext(), mInfo);
+            if (overrides != null && overrides.getShowFolderLabel() != null) {
+                // An explicit per-folder setting is authoritative over the Workspace-wide
+                // label preference, including later Workspace rebinding calls.
+                resolvedVisible = overrides.getShowFolderLabel();
+            }
         }
+        mFolderName.setVisibility(resolvedVisible ? VISIBLE : INVISIBLE);
     }
 
     public boolean getTextVisible() {
@@ -712,6 +872,7 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
         // isPressed() on an ACTION_UP
         super.onTouchEvent(event);
         mLongPressHelper.onTouchEvent(event);
+        mPrimeLongPressHelper.onTouchEvent(event);
         // Keep receiving the rest of the events
         return true;
     }

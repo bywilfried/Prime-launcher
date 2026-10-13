@@ -88,6 +88,9 @@ class ThemeProvider @Inject constructor(
         )
     }
 
+    /** Builds the launcher scheme from an explicit semantic theme accent. */
+    fun colorSchemeForSeed(seedColor: Int): ColorScheme = getColorScheme(seedColor, colorStyle.style)
+
     val colorScheme get() = when (val accentColor = this.accentColor) {
         is ColorOption.SystemAccent -> systemColorScheme
 

@@ -35,6 +35,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import app.lawnchair.preferences.observeAsState
@@ -42,6 +43,10 @@ import app.lawnchair.preferences.preferenceManager
 import app.lawnchair.preferences2.asState
 import app.lawnchair.preferences2.preferenceManager2
 import app.lawnchair.theme.ThemeProvider
+import app.lawnchair.theme.ThemeColors
+import app.lawnchair.theme.ThemeColorRole
+import app.lawnchair.theme.ThemeProfile
+import app.lawnchair.theme.ThemeVariant
 import app.lawnchair.theme.toComposeColorScheme
 import app.lawnchair.ui.preferences.components.ThemeChoice
 import app.lawnchair.wallpaper.WallpaperManagerCompat
@@ -96,12 +101,42 @@ fun getColorScheme(darkTheme: Boolean): ColorScheme {
     val preferenceManager2 = preferenceManager2()
     val accentColor by preferenceManager2.accentColor.asState()
     val colorStyle by preferenceManager2.colorStyle.asState()
+    var themeOverrideRevision by remember { mutableStateOf(0) }
 
-    val colorScheme = remember(accentColor, colorStyle.style) {
-        ThemeProvider.INSTANCE.get(context).colorScheme
+    DisposableEffect(context) {
+        val prefs = context.getSharedPreferences("prime_theme_color_overrides", android.content.Context.MODE_PRIVATE)
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            val profilePrefix = "${ThemeProfile.current(context).id.value}."
+            if (key?.startsWith(profilePrefix) == true) themeOverrideRevision++
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
     }
 
-    return colorScheme.toComposeColorScheme(isDark = darkTheme)
+    // GLOBAL_ACCENT is now owned by the selected ThemeProfile. Resolve the requested variant
+    // directly so Light and Dark customizations remain independent.
+    val variant = if (darkTheme) ThemeVariant.DARK else ThemeVariant.LIGHT
+    themeOverrideRevision // Compose dependency: re-resolve after an override changes.
+    val semanticAccent = ThemeColors.resolve(
+        context = context,
+        profile = ThemeProfile.current(context),
+        role = ThemeColorRole.GLOBAL_ACCENT,
+        variant = variant,
+    )
+
+    // Keep Legacy's historical palette generation intact. GLOBAL_ACCENT is a semantic
+    // control color, not a Monet seed: applying it as a seed shifts surfaces and also changes
+    // the requested tone. Override only the interactive Material tokens with the exact ARGB.
+    val baseColorScheme = remember(accentColor, colorStyle.style, darkTheme) {
+        ThemeProvider.INSTANCE.get(context).colorScheme
+    }.toComposeColorScheme(isDark = darkTheme)
+
+    val exactAccent = ComposeColor(semanticAccent)
+    return baseColorScheme.copy(
+        primary = exactAccent,
+        secondary = exactAccent,
+        tertiary = exactAccent,
+    )
 }
 
 private fun getPreviewColorScheme(darkTheme: Boolean) = if (darkTheme) {

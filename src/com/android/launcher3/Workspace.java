@@ -40,6 +40,10 @@ import static com.android.launcher3.logging.StatsLogManager.LAUNCHER_STATE_HOME;
 import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCHER_SWIPELEFT;
 import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCHER_SWIPERIGHT;
 
+import android.widget.PopupWindow;
+import com.android.launcher3.touch.ItemLongClickListener;
+import com.android.launcher3.widget.LauncherAppWidgetHostView;
+import com.android.launcher3.model.data.LauncherAppWidgetInfo;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.LayoutTransition;
@@ -128,6 +132,8 @@ import com.android.launcher3.util.OverlayEdgeEffect;
 import com.android.launcher3.util.RunnableList;
 import com.android.launcher3.util.Thunk;
 import com.android.launcher3.util.WallpaperOffsetInterpolator;
+import app.lawnchair.prime.drawer.PrimeFolderLongPressHelper;
+
 import com.android.launcher3.widget.LauncherAppWidgetHostView;
 import com.android.launcher3.widget.NavigableAppWidgetHostView;
 import com.android.launcher3.widget.PendingAddShortcutInfo;
@@ -1950,6 +1956,29 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
             mDragSourceInternal = (ShortcutAndWidgetContainer) child.getParent();
         }
 
+        if (child instanceof LauncherAppWidgetHostView
+                && child.getTag() instanceof LauncherAppWidgetInfo
+                && !dragOptions.isAccessibleDrag) {
+            LauncherAppWidgetHostView widget = (LauncherAppWidgetHostView) child;
+            PopupWindow widgetPopup = ItemLongClickListener.showPrimeWidgetMenu(widget,
+                    mLauncher, (LauncherAppWidgetInfo) child.getTag());
+            final int threshold = getResources().getDimensionPixelSize(
+                    R.dimen.deep_shortcuts_start_drag_threshold);
+            dragOptions.preDragCondition = new DragOptions.PreDragCondition() {
+                @Override
+                public boolean shouldStartDrag(double distanceDragged) {
+                    return distanceDragged > threshold;
+                }
+
+                @Override
+                public void onPreDragStart(DropTarget.DragObject dragObject) { }
+
+                @Override
+                public void onPreDragEnd(DropTarget.DragObject dragObject, boolean dragStarted) {
+                    if (dragStarted) widgetPopup.dismiss();
+                }
+            };
+        }
         if (child instanceof BubbleTextView) {
             BubbleTextView btv = (BubbleTextView) child;
             if (!dragOptions.isAccessibleDrag) {
@@ -3143,6 +3172,30 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
         } else {
             // This is for other drag/drop cases, like dragging from All Apps
             mLauncher.getStateManager().goToState(NORMAL, SPRING_LOADED_EXIT_DELAY);
+            // Prime drawer folders are projections of repository data, not Launcher model
+            // objects. Never persist/reuse that transient FolderInfo on Workspace: create a
+            // genuine independent Home FolderInfo and independent WorkspaceItemInfo children.
+            FolderInfo primeDrawerSourceFolder = null;
+            if (info instanceof FolderInfo sourceFolder
+                    && sourceFolder.container == ItemInfo.NO_ID) {
+                primeDrawerSourceFolder = sourceFolder;
+                FolderInfo homeFolder = new FolderInfo();
+                homeFolder.title = sourceFolder.title;
+                homeFolder.options = sourceFolder.options;
+                homeFolder.id = ItemInfo.NO_ID;
+                homeFolder.container = ItemInfo.NO_ID;
+                for (ItemInfo sourceChild : sourceFolder.getContents()) {
+                    if (sourceChild instanceof WorkspaceItemInfo workspaceItem) {
+                        WorkspaceItemInfo homeChild = new WorkspaceItemInfo(workspaceItem);
+                        homeChild.id = ItemInfo.NO_ID;
+                        homeChild.container = ItemInfo.NO_ID;
+                        homeFolder.add(homeChild);
+                    }
+                }
+                info = homeFolder;
+                d.dragInfo = homeFolder;
+            }
+
             // TODO(b/414409465) We could just create a new info making a copy with all the new
             //  needed values instead of choosing on each case what to modify.
             View view = mLauncher.getItemInflater().inflateItem(info, cellLayout, container);
@@ -3177,6 +3230,27 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
             // values of the info is properly updated.
             mLauncher.getModelWriter().addOrMoveItemInDatabase(info, container, screenId,
                     mTargetCell[0], mTargetCell[1]);
+            if (primeDrawerSourceFolder != null && info instanceof FolderInfo homeFolder) {
+                PrimeFolderLongPressHelper.copyVisualOverridesToHome(
+                        mLauncher, primeDrawerSourceFolder, homeFolder);
+            }
+
+            // External folders (including Prime drawer folders) arrive as one FolderInfo object.
+            // Persist their children only after the folder has received its new workspace id;
+            // otherwise the icon is saved but its contents disappear and reload as empty folders.
+            if (info instanceof FolderInfo folderInfo) {
+                int rank = 0;
+                for (ItemInfo child : folderInfo.getContents()) {
+                    child.rank = rank;
+                    int folderColumns = Math.max(
+                            1, mLauncher.getDeviceProfile().inv.numFolderColumns[0]);
+                    child.cellX = rank % folderColumns;
+                    child.cellY = rank / folderColumns;
+                    rank++;
+                    mLauncher.getModelWriter().addOrMoveItemInDatabase(
+                            child, folderInfo.id, 0, child.cellX, child.cellY);
+                }
+            }
 
             addInScreen(view, container, screenId, mTargetCell[0], mTargetCell[1],
                     info.spanX, info.spanY);

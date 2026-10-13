@@ -1,20 +1,23 @@
-Lawnchair 15 Beta 3 is here!
+<b>Prime Launcher — Nouveautés de la prochaine release</b>
 
-As many of you know, the Android launcher landscape is changing rapidly over the past few months. To welcome users looking for a new, open-source home, this release now <b>supports importing backups from Nova Launcher</b>!
+Prime Launcher, basé sur Lawnchair 16, apporte une personnalisation plus fine de l'écran d'accueil.
 
-What it imports
-• Home screen and dock grid layout
-• Widgets and folders
-• Selected icon pack
+<b>Dock et icônes</b>
+• Taille des icônes et des libellés réglables indépendamment dans le dock.
+• Affichage des noms configurable.
+• Aperçus des dossiers et pastilles de notification adaptés à la taille des icônes.
 
-How to use it
-1. Open Lawnchair Settings
-2. Tap the three dots (⋮) in the top right corner
-3. Select "Restore Nova backup" and choose your file
+<b>Widgets</b>
+• Marges individuelles sur les quatre côtés, de −40 % à +40 % par rapport aux marges globales.
+• Dimensions utiles communiquées au fournisseur pour favoriser l'adaptation du contenu (selon le widget).
+• Appui long : menu « Redimensionner » puis « Marges du widget ».
+• Appui long suivi d'un glissement : déplacement avec comportement de pré-déplacement inspiré des icônes.
+• Aperçu réduit pour les grands widgets pendant le déplacement (80 % de la largeur et 60 % de la hauteur de l'écran au maximum).
 
-<b>Note:</b> Other Nova features not mentioned (like app drawer categories and icon swipe gestures) are not yet supported and won't be imported. You may need to do a little manual tweaking after the import.
+<b>Également inclus grâce à Lawnchair 16</b>
+• Material 3 Expressive, couleurs dynamiques, packs d'icônes et personnalisation des polices.
+• At a Glance / Smartspacer, recherche globale et QuickSwitch (root requis sur Android 15/16).
 
-While this is a major milestone for Lawnchair 15, our team is still working hard to improve and polish the Lawnchair 16 experience. Stay tuned for updates!
+<i>Les dernières améliorations sont encore à valider dans une build de release. L'adaptation interne des widgets dépend de leur fournisseur.</i>
 
-<a href="https://opencollective.com/lawnchair">Donate on Open Collective</a> &bull;
-<a href="https://github.com/LawnchairLauncher/lawnchair/releases/tag/v15.0.0-beta3">View full changelog on GitHub</a>
+<a href="https://github.com/bywilfried/Prime-launcher">Code source sur GitHub</a>

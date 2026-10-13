@@ -134,11 +134,18 @@ data class PathShapeDelegate(val iconShape: IconShape) : ShapeDelegate {
         endRect: Rect,
         endRadius: Float,
     ): (Float, Path) -> Unit {
-        val polygon = RoundedPolygon(
-            features = SvgPathParser.parseFeatures(iconShape.svgPathString),
-            centerX = 50f,
-            centerY = 50f,
-        )
+        val polygon = runCatching {
+            RoundedPolygon(
+                features = SvgPathParser.parseFeatures(iconShape.svgPathString),
+                centerX = 50f,
+                centerY = 50f,
+            )
+        }.getOrElse {
+            // Some valid Android PathParser SVG strings (for example compact negative
+            // coordinates) are not accepted by androidx.graphics.shapes.SvgPathParser.
+            // Keep folder opening functional by falling back to the shape's rendered path.
+            return getFallbackPathProvider(iconShape, startRect, endRect, endRadius)
+        }
 
         // Use proper Morph animation with RoundedPolygon for smooth folder animations
         val morph = Morph(
@@ -160,6 +167,26 @@ data class PathShapeDelegate(val iconShape: IconShape) : ShapeDelegate {
             ),
         )
         return morph::toPath
+    }
+
+    private fun getFallbackPathProvider(
+        iconShape: IconShape.PathBased,
+        startRect: Rect,
+        endRect: Rect,
+        endRadius: Float,
+    ): (Float, Path) -> Unit = { progress, path ->
+        val left = (1 - progress) * startRect.left + progress * endRect.left
+        val top = (1 - progress) * startRect.top + progress * endRect.top
+        val right = (1 - progress) * startRect.right + progress * endRect.right
+        val bottom = (1 - progress) * startRect.bottom + progress * endRect.bottom
+        val matrix = Matrix().apply {
+            setRectToRect(
+                RectF(0f, 0f, DEFAULT_PATH_SIZE, DEFAULT_PATH_SIZE),
+                RectF(left, top, right, bottom),
+                Matrix.ScaleToFit.FILL,
+            )
+        }
+        iconShape.getMaskPath().transform(matrix, path)
     }
 
     private class ClipAnimBuilder<T>(val target: T, val pathProvider: (Float, Path) -> Unit) :

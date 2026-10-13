@@ -55,6 +55,7 @@ import com.android.launcher3.util.Themes;
 import java.util.function.Consumer;
 
 import app.lawnchair.theme.color.tokens.ColorTokens;
+import app.lawnchair.theme.ThemeColors;
 
 /**
  * {@link PageIndicator} which shows dots per page. The active page is shown with the current
@@ -85,6 +86,28 @@ public class PageIndicatorDots extends View implements Insettable, PageIndicator
     private static final int VISIBLE_ALPHA = 255;
     private static final int INVISIBLE_ALPHA = 0;
     private Paint mPaginationPaint;
+    private boolean mHasExternalPaintColor;
+    private boolean mFolderPagination;
+    private int mExternalPaintColor;
+
+    private void applyPageColor(boolean active) {
+        if (mFolderPagination) {
+            int alpha = mPaginationPaint.getAlpha();
+            mPaginationPaint.setColor(mExternalPaintColor);
+            mPaginationPaint.setAlpha(alpha);
+            return;
+        }
+        // Explicit theme customizations take precedence over legacy paint colors supplied
+        // by the workspace. Without an override, preserve the existing external color.
+        if (mHasExternalPaintColor
+                && !ThemeColors.hasHomePageIndicatorOverride(getContext(), active)) {
+            mPaginationPaint.setColor(mExternalPaintColor);
+            return;
+        }
+        int alpha = mPaginationPaint.getAlpha();
+        mPaginationPaint.setColor(ThemeColors.resolveHomePageIndicator(getContext(), active));
+        mPaginationPaint.setAlpha(alpha);
+    }
 
     // This value approximately overshoots to 1.5 times the original size.
     private static final float ENTER_ANIMATION_OVERSHOOT_TENSION = 4.9f;
@@ -273,9 +296,18 @@ public class PageIndicatorDots extends View implements Insettable, PageIndicator
         }
     }
 
+    /** Folder indicators use their own semantic color, never workspace page overrides. */
+    public void setFolderPaginationColor(int color) {
+        mFolderPagination = true;
+        setPaintColor(color);
+    }
+
     @Override
     public void setPaintColor(int color) {
+        mHasExternalPaintColor = true;
+        mExternalPaintColor = color;
         mPaginationPaint.setColor(color);
+        invalidate();
     }
 
     private void hideAfterDelay() {
@@ -525,10 +557,12 @@ public class PageIndicatorDots extends View implements Insettable, PageIndicator
                         scale(sTempRect, mEntryAnimationRadiusFactors[i]);
                         float scaledRadius = mDotRadius * mEntryAnimationRadiusFactors[i];
                         mPaginationPaint.setAlpha(PAGE_INDICATOR_ALPHA);
+                        applyPageColor(true);
                         canvas.drawRoundRect(sTempRect, scaledRadius, scaledRadius,
                                 mPaginationPaint);
                     } else {
                         mPaginationPaint.setAlpha(DOT_ALPHA);
+                        applyPageColor(false);
                         canvas.drawCircle(x, y, mDotRadius * mEntryAnimationRadiusFactors[i],
                                 mPaginationPaint);
                         x += circleGap;
@@ -543,6 +577,7 @@ public class PageIndicatorDots extends View implements Insettable, PageIndicator
                 }
                 for (int i = 0; i < mEntryAnimationRadiusFactors.length; i++) {
                     mPaginationPaint.setAlpha(i == mActivePage ? PAGE_INDICATOR_ALPHA : DOT_ALPHA);
+                    applyPageColor(i == mActivePage);
                     canvas.drawCircle(x, y, mDotRadius * mEntryAnimationRadiusFactors[i],
                             mPaginationPaint);
                     x += circleGap;
@@ -629,6 +664,10 @@ public class PageIndicatorDots extends View implements Insettable, PageIndicator
                             invalidateOutline();
                         }
                     }
+                    applyPageColor(true);
+                    // This visual-refresh path must select the semantic color for each dot.
+                    // Without this, inactive dots reuse the previous paint color.
+                    applyPageColor(i == Math.round(mCurrentPosition));
                     canvas.drawRoundRect(sTempRect, mDotRadius, mDotRadius, mPaginationPaint);
 
                     sTempRect.left = x;
@@ -638,12 +677,14 @@ public class PageIndicatorDots extends View implements Insettable, PageIndicator
                 // Here we draw the dots
                 mPaginationPaint.setAlpha((int) (alpha * DOT_ALPHA_FRACTION));
                 for (int i = 0; i < mNumPages; i++) {
+                    applyPageColor(false);
                     canvas.drawCircle(x, y, mDotRadius, mPaginationPaint);
                     x += circleGap;
                 }
 
                 // Here we draw the current page indicator
                 mPaginationPaint.setAlpha(alpha);
+                applyPageColor(true);
                 canvas.drawRoundRect(getActiveRect(), mDotRadius, mDotRadius, mPaginationPaint);
             }
         }

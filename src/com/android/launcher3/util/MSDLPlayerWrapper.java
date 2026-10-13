@@ -17,7 +17,12 @@
 package com.android.launcher3.util;
 
 import android.content.Context;
+import static android.os.VibrationEffect.Composition.PRIMITIVE_CLICK;
+import static android.os.VibrationEffect.Composition.PRIMITIVE_TICK;
+
 import android.os.Vibrator;
+
+import app.lawnchair.preferences.PreferenceManager;
 
 import androidx.annotation.Nullable;
 
@@ -47,10 +52,12 @@ public class MSDLPlayerWrapper {
 
     /** Internal player */
     private final MSDLPlayer mMSDLPlayer;
+    private final Context mContext;
 
     @Inject
     public MSDLPlayerWrapper(@ApplicationContext Context context,
             DumpManager dumpManager, DaggerSingletonTracker lifeCycle) {
+        mContext = context;
         Vibrator vibrator = context.getSystemService(Vibrator.class);
         mMSDLPlayer = MSDLPlayer.Companion.createPlayer(vibrator,
                 java.util.concurrent.Executors.newSingleThreadExecutor(),
@@ -65,7 +72,50 @@ public class MSDLPlayerWrapper {
 
     /** Perform MSDL feedback for a token without properties */
     public void playToken(MSDLToken token) {
-        mMSDLPlayer.playToken(token, null);
+        playPrimeScaledToken(token, getPrimeHapticPercent(token));
+    }
+
+    /** Plays the settings reorder movement token with its independent Prime intensity. */
+    public void playPrimeReorderMoveToken(MSDLToken token) {
+        int percent = PreferenceManager.getInstance(mContext).getPrimeHapticReorderMove().get();
+        playPrimeScaledToken(token, percent);
+    }
+
+    private void playPrimeScaledToken(MSDLToken token, int percent) {
+        percent = Math.max(0, Math.min(100, percent));
+        if (percent <= 0) return;
+        if (percent >= 100) {
+            mMSDLPlayer.playToken(token, null);
+            return;
+        }
+        int primitive = token == MSDLToken.DRAG_INDICATOR_DISCRETE
+                || token == MSDLToken.SWIPE_THRESHOLD_INDICATOR
+                ? PRIMITIVE_TICK
+                : PRIMITIVE_CLICK;
+        long fallbackDurationMs = primitive == PRIMITIVE_TICK ? 8L : 12L;
+        boolean scaled = VibratorWrapper.INSTANCE.get(mContext).vibrateScaled(
+                primitive, percent / 100f, fallbackDurationMs);
+        if (!scaled) {
+            mMSDLPlayer.playToken(token, null);
+        }
+    }
+
+    private int getPrimeHapticPercent(MSDLToken token) {
+        PreferenceManager prefs = PreferenceManager.getInstance(mContext);
+        if (token == MSDLToken.DRAG_INDICATOR_DISCRETE) {
+            return prefs.getPrimeHapticIconDrag().get();
+        } else if (token == MSDLToken.SWIPE_THRESHOLD_INDICATOR) {
+            return prefs.getPrimeHapticDrawerThreshold().get();
+        } else if (token == MSDLToken.TAP_HIGH_EMPHASIS) {
+            return prefs.getPrimeHapticDrawerTap().get();
+        } else if (token == MSDLToken.START) {
+            return prefs.getPrimeHapticReorderStart().get();
+        } else if (token == MSDLToken.STOP) {
+            return prefs.getPrimeHapticReorderEnd().get();
+        } else if (token == MSDLToken.CANCEL) {
+            return prefs.getPrimeHapticReorderCancel().get();
+        }
+        return 100;
     }
 
     public List<MSDLEvent> getHistory() {

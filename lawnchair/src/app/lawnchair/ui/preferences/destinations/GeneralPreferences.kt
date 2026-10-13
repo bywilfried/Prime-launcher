@@ -28,6 +28,12 @@ import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences.preferenceManager
 import app.lawnchair.preferences2.asState
 import app.lawnchair.preferences2.preferenceManager2
+import app.lawnchair.theme.ThemeColorRole
+import app.lawnchair.theme.ThemeColorOverrides
+import app.lawnchair.theme.ThemeColors
+import app.lawnchair.theme.ThemeProfile
+import app.lawnchair.theme.effectiveThemeVariant
+import app.lawnchair.ui.preferences.navigation.ThemeColorSelection
 import app.lawnchair.theme.color.ColorOption
 import app.lawnchair.theme.color.ColorStyle
 import app.lawnchair.ui.preferences.LocalIsExpandedScreen
@@ -48,9 +54,9 @@ import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
 import app.lawnchair.ui.preferences.components.notificationDotsEnabled
 import app.lawnchair.ui.preferences.components.notificationServiceEnabled
-import app.lawnchair.ui.preferences.data.liveinfo.liveInformationManager
 import app.lawnchair.ui.preferences.navigation.GeneralIconPack
 import app.lawnchair.ui.preferences.navigation.GeneralIconShape
+import app.lawnchair.ui.preferences.navigation.ThemeCustomization
 import com.android.launcher3.BuildConfig
 import com.android.launcher3.R
 import com.android.launcher3.Utilities
@@ -60,7 +66,7 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val prefs = preferenceManager()
     val prefs2 = preferenceManager2()
-    val liveInfoManager = liveInformationManager()
+    val navController = app.lawnchair.ui.preferences.LocalNavController.current
     val iconPacks by LocalPreferenceInteractor.current.iconPacks.collectAsStateWithLifecycle()
     val themedIconsAdapter = prefs.themedIcons.getAdapter()
     val drawerThemedIconsAdapter = prefs.drawerThemedIcons.getAdapter()
@@ -107,11 +113,6 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
                     description = stringResource(id = R.string.auto_updater_description),
                 )
             }
-            SwitchPreference(
-                adapter = liveInfoManager.enabled.getAdapter(),
-                label = stringResource(id = R.string.live_information_label),
-                description = stringResource(id = R.string.live_information_description),
-            )
         }
         ExpandAndShrink(visible = prefs2.enableFontSelection.asState().value) {
             PreferenceGroup(heading = stringResource(id = R.string.font_label)) {
@@ -192,10 +193,20 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
 
         PreferenceGroup(heading = stringResource(id = R.string.colors)) {
             ThemePreference()
-            ColorPreference(preference = prefs2.accentColor)
+            ColorPreference(
+                label = "Palette de couleurs",
+                selectedColor = accentColorAdapter.state.value,
+                description = "Couleur source utilisée pour générer la palette du thème.",
+                onClick = { navController.navigate(app.lawnchair.ui.preferences.navigation.ColorSelection(prefs2.accentColor.key.name)) },
+            )
             ExpandAndShrink(visible = showColorStyle) {
                 ColorStylePreference(prefs2.colorStyle.getAdapter())
             }
+            NavigationActionPreference(
+                label = "Personnalisation",
+                destination = ThemeCustomization(),
+                subtitle = "Modifier les couleurs du thème sélectionné",
+            )
         }
 
         val notificationEnabled by remember { notificationDotsEnabled(context) }.collectAsStateWithLifecycle(initialValue = false)
@@ -209,7 +220,21 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
             NotificationDotsPreference(enabled = notificationEnabled, serviceEnabled = serviceEnabled)
             val canDisplayNotificationDot = notificationEnabled && serviceEnabled
             ExpandAndShrink(visible = canDisplayNotificationDot) {
-                ColorPreference(preference = prefs2.notificationDotColor)
+                val profile = ThemeProfile.current(context)
+                val variant = context.effectiveThemeVariant()
+                val role = ThemeColorRole.GLOBAL_NOTIFICATION_DOT
+                val override = ThemeColorOverrides(context).get(profile, variant, role)
+                ColorPreference(
+                    label = stringResource(id = R.string.notification_dots_color),
+                    selectedColor = override,
+                    previewColor = ColorOption.CustomColor(
+                        app.lawnchair.theme.NotificationDotThemeColors.resolve(context, role, dotColor)
+                            .takeIf { it != 0 } ?: ThemeColors.official(context, profile, role, variant),
+                    ),
+                    description = if (override == ColorOption.Default) "Valeur du thème" else override.colorPreferenceEntry.label(),
+                    iconColorPreview = override == ColorOption.IconColor || (override == ColorOption.Default && dotColor == ColorOption.IconColor),
+                    onClick = { navController.navigate(ThemeColorSelection(role.id, variant.name)) },
+                )
             }
             ExpandAndShrink(visible = canDisplayNotificationDot) {
                 SwitchPreference(
@@ -218,12 +243,31 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
                 )
             }
             ExpandAndShrink(visible = canDisplayNotificationDot && showNotificationCount) {
-                ColorPreference(preference = prefs2.notificationDotTextColor)
+                val profile = ThemeProfile.current(context)
+                val variant = context.effectiveThemeVariant()
+                val role = ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT
+                val override = ThemeColorOverrides(context).get(profile, variant, role)
+                ColorPreference(
+                    label = stringResource(id = R.string.notification_dots_text_color),
+                    selectedColor = override,
+                    previewColor = ColorOption.CustomColor(
+                        app.lawnchair.theme.NotificationDotThemeColors.resolve(context, role, dotTextColor)
+                            .takeIf { it != 0 } ?: ThemeColors.official(context, profile, role, variant),
+                    ),
+                    description = if (override == ColorOption.Default) "Valeur du thème" else override.colorPreferenceEntry.label(),
+                    automaticContrastPreview = override == ColorOption.AutomaticBlackWhite || (override == ColorOption.Default && dotTextColor == ColorOption.Default),
+                    dynamicContrastPreview = override == ColorOption.AdaptiveThemeText,
+                    onClick = { navController.navigate(ThemeColorSelection(role.id, variant.name)) },
+                )
             }
             ExpandAndShrink(visible = canDisplayNotificationDot && showNotificationCount) {
+                val profile = ThemeProfile.current(context)
+                val variant = context.effectiveThemeVariant()
+                val dotOverride = ThemeColorOverrides(context).get(profile, variant, ThemeColorRole.GLOBAL_NOTIFICATION_DOT)
+                val textOverride = ThemeColorOverrides(context).get(profile, variant, ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT)
                 NotificationDotColorContrastWarnings(
-                    dotColor = dotColor,
-                    dotTextColor = dotTextColor,
+                    dotColor = if (dotOverride == ColorOption.Default) dotColor else dotOverride,
+                    dotTextColor = if (textOverride == ColorOption.Default) dotTextColor else textOverride,
                 )
             }
         }

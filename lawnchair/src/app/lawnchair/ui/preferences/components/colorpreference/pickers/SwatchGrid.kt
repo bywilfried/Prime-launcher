@@ -2,6 +2,7 @@ package app.lawnchair.ui.preferences.components.colorpreference.pickers
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -114,6 +115,7 @@ fun <T> ColorSwatch(
             .aspectRatio(ratio = 1F)
             .clip(CircleShape)
             .background(Color(color))
+            .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
             .clickable(onClick = onClick),
     ) {
         Crossfade(targetState = selected, label = "") {

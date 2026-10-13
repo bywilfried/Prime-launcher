@@ -32,9 +32,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.android.launcher3.BubbleTextView;
 import com.android.launcher3.Flags;
 import com.android.launcher3.Insettable;
 import com.android.launcher3.R;
+import com.android.launcher3.PrimeDebugLog;
 import com.android.launcher3.allapps.ActivityAllAppsContainerView.AdapterHolder;
 import com.android.launcher3.util.PluginManagerWrapper;
 import com.android.launcher3.views.ActivityContext;
@@ -49,6 +51,9 @@ import java.util.Arrays;
 import java.util.Map;
 
 import app.lawnchair.preferences2.PreferenceManager2;
+import app.lawnchair.prime.drawer.PrimeDrawerTabsRepository;
+import app.lawnchair.prime.drawer.PrimeDrawerTabsView;
+import app.lawnchair.prime.drawer.PrimeDrawerVisualOverrides;
 
 public class FloatingHeaderView extends LinearLayout implements
         ValueAnimator.AnimatorUpdateListener, PluginListener<AllAppsRow>, Insettable,
@@ -359,7 +364,31 @@ public class FloatingHeaderView extends LinearLayout implements
             // Add back spacing that is otherwise covered by the tabs.
             clipTop += mTabsAdditionalPaddingTop;
         }
-        mRVClip.top = mTabsHidden || mFloatingRowsCollapsed ? clipTop : 0;
+        int recyclerClipTop = mTabsHidden || mFloatingRowsCollapsed ? clipTop : 0;
+        // Prime category tabs are independent from Lawnchair's Personal/Work tabs. Do not gate
+        // their clipping on mTabsHidden: on devices without a Work profile mTabsHidden is true,
+        // but Prime Tabs still need to protect the suggestions/category header from app rows.
+        if (!mFloatingRowsCollapsed) {
+            for (FloatingHeaderRow row : mAllRows) {
+                if (row instanceof PrimeDrawerTabsView && row.hasVisibleContent()) {
+                    View primeTabsView = (View) row;
+                    // Clip bounds are expressed in RecyclerView-local coordinates, while the
+                    // Prime tabs row is a child of this header. Measure both views in the same
+                    // window coordinate space, then convert the rendered tabs bottom back into
+                    // RecyclerView-local coordinates. getLocationInWindow() also accounts for
+                    // the counter-translation that keeps Prime tabs pinned while scrolling.
+                    int[] primeTabsLocation = new int[2];
+                    int[] recyclerLocation = new int[2];
+                    primeTabsView.getLocationInWindow(primeTabsLocation);
+                    mCurrentRV.getLocationInWindow(recyclerLocation);
+                    int primeTabsBottomInRecycler =
+                            primeTabsLocation[1] + primeTabsView.getHeight() - recyclerLocation[1];
+                    recyclerClipTop = Math.max(recyclerClipTop, primeTabsBottomInRecycler);
+                    break;
+                }
+            }
+        }
+        mRVClip.top = recyclerClipTop;
         mHeaderClip.top = clipTop;
         // clipping on a draw might cause additional redraw
         setClipBounds(mHeaderClip);
@@ -417,6 +446,97 @@ public class FloatingHeaderView extends LinearLayout implements
     /** Returns true if personal/work tabs are currently in use. */
     public boolean usingTabs() {
         return !mTabsHidden;
+    }
+
+    public void onPrimeDrawerTabSelected() {
+        onPrimeDrawerTabSelected(0);
+    }
+
+    public void onPrimeDrawerTabSelected(int direction) {
+        ActivityAllAppsContainerView<?> container =
+                getParent() instanceof ActivityAllAppsContainerView
+                        ? (ActivityAllAppsContainerView<?>) getParent() : null;
+        AllAppsRecyclerView main = container != null
+                ? container.getPrimeVisibleRecyclerView(mMainRV) : mMainRV;
+        refreshPrimeRecyclerView(main, direction);
+        // The promoted page belongs to the currently active profile. Keep the ordinary work
+        // holder refresh only when it is a distinct page.
+        if (mWorkRV != main) {
+            refreshPrimeRecyclerView(mWorkRV, direction);
+        }
+    }
+
+    private void refreshPrimeRecyclerView(@Nullable AllAppsRecyclerView rv, int direction) {
+        if (rv == null || rv.getApps() == null) return;
+
+        rv.animate().cancel();
+        rv.setTranslationX(0f);
+        rv.setAlpha(1f);
+
+        // Resolve and install the destination grid before rebuilding its adapter items.
+        // Prime's swipe preview already follows this order. Keeping the live page on the same
+        // sequence prevents it from being rebuilt once with the previous tab's column geometry
+        // and then shifting when the destination column count is applied at handoff.
+        PrimeDrawerVisualOverrides primeOverrides =
+                new PrimeDrawerTabsRepository(getContext()).getSelectedTabVisualOverrides();
+        ActivityAllAppsContainerView<?> container =
+                (ActivityAllAppsContainerView<?>) getParent();
+        ActivityAllAppsContainerView.PrimePreparedDrawerPage preparedPage =
+                container.prepareSelectedPrimeDrawerPage();
+        if (rv.getAdapter() instanceof BaseAllAppsAdapter) {
+            BaseAllAppsAdapter<?> adapter = (BaseAllAppsAdapter<?>) rv.getAdapter();
+            adapter.setAppsPerRow(preparedPage.appsPerRow);
+            adapter.setPrimePreparedVisualOverrides(preparedPage.visualOverrides);
+        }
+        rv.getApps().setNumAppsPerRowAllApps(preparedPage.appsPerRow);
+        if (rv.getApps() instanceof app.lawnchair.allapps.LawnchairAlphabeticalAppsList) {
+            app.lawnchair.allapps.LawnchairAlphabeticalAppsList<?> primeApps =
+                    (app.lawnchair.allapps.LawnchairAlphabeticalAppsList<?>) rv.getApps();
+            // A page promoted by swipe is still marked as a preview for that destination.
+            // Direct navigation keeps this physical page visible, so return its model to live
+            // selection mode before rebuilding; otherwise primePreviewTabId keeps filtering the
+            // previous swiped category even though the pill/grid/background follow the new tab.
+            primeApps.clearPrimePreviewTabIdForLiveSelection();
+            primeApps.setPrimePreparedContent(preparedPage.content);
+        }
+        rv.getApps().onAppsUpdated();
+        container.applyPrimeDrawerVisualOverrides();
+        // onAppsUpdated() has already rebuilt/diffed the adapter items. Do not immediately
+        // follow it with notifyDataSetChanged(): that forces a second full visible rebind exactly
+        // when a Prime swipe lands, and its cost grows noticeably on larger categories.
+        // Items newly bound by the diff receive the current overrides normally; cells that survive
+        // the diff are updated directly below.
+        if (rv.getAdapter() instanceof BaseAllAppsAdapter) {
+            BaseAllAppsAdapter<?> adapter = (BaseAllAppsAdapter<?>) rv.getAdapter();
+            for (int i = 0; i < rv.getChildCount(); i++) {
+                View child = rv.getChildAt(i);
+                if (child instanceof BubbleTextView) {
+                    adapter.reapplyPrimeTabIconOverrides((BubbleTextView) child);
+                }
+            }
+            // Prepared visuals are only pinned for this atomic handoff. Future ordinary updates
+            // must resolve the then-current selected tab rather than retaining an old snapshot.
+            adapter.setPrimePreparedVisualOverrides(null);
+        }
+        Boolean rememberPosition = primeOverrides != null ? primeOverrides.getRememberPosition() : null;
+        boolean shouldRememberPosition = rememberPosition != null
+                ? rememberPosition
+                : PreferenceCacheExtensionsKt.firstCached(
+                        PreferenceManager2.getInstance(getContext()).getRememberPosition());
+        if (!shouldRememberPosition) {
+            rv.scrollToTop();
+        }
+
+        if (direction == 0 || rv.getWidth() == 0) return;
+
+        float distance = rv.getWidth() * 0.12f;
+        rv.setTranslationX(direction > 0 ? distance : -distance);
+        rv.setAlpha(0.72f);
+        rv.animate()
+                .translationX(0f)
+                .alpha(1f)
+                .setDuration(220)
+                .start();
     }
 
     PersonalWorkSlidingTabStrip getTabLayout() {

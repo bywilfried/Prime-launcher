@@ -5,7 +5,10 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.Gravity
 import androidx.core.graphics.ColorUtils
-import app.lawnchair.theme.color.tokens.ColorTokens
+import app.lawnchair.theme.ThemeColorRole
+import app.lawnchair.theme.ThemeColors
+import app.lawnchair.theme.ThemeProfile
+import app.lawnchair.theme.effectiveThemeVariant
 import app.lawnchair.util.EditTextExtensions.setCursorColor
 import app.lawnchair.util.EditTextExtensions.setTextSelectHandleColor
 import com.android.launcher3.ExtendedEditText
@@ -18,10 +21,26 @@ class FallbackSearchInputView(context: Context, attrs: AttributeSet?) : Extended
         private set
 
     init {
-        val accentColor = ColorTokens.ColorAccent.resolveColor(context)
-        setCursorColor(accentColor)
-        setTextSelectHandleColor(accentColor)
-        highlightColor = ColorUtils.setAlphaComponent(accentColor, 82)
+        applyPrimeSearchTheme()
+        val iconColor = resolvePrimeColor(ThemeColorRole.DRAWER_SEARCH_ICON)
+        setCursorColor(iconColor)
+        setTextSelectHandleColor(iconColor)
+        highlightColor = ColorUtils.setAlphaComponent(iconColor, 82)
+    }
+
+    fun applyPrimeSearchTheme() {
+        setTextColor(resolvePrimeColor(ThemeColorRole.DRAWER_SEARCH_TEXT))
+        setHintTextColor(resolvePrimeColor(ThemeColorRole.DRAWER_SEARCH_HINT))
+        val iconColor = resolvePrimeColor(ThemeColorRole.DRAWER_SEARCH_ICON)
+        setCursorColor(iconColor)
+        setTextSelectHandleColor(iconColor)
+        highlightColor = ColorUtils.setAlphaComponent(iconColor, 82)
+    }
+
+    private fun resolvePrimeColor(role: ThemeColorRole): Int {
+        val profile = ThemeProfile.current(context)
+        val variant = context.effectiveThemeVariant()
+        return ThemeColors.resolve(context, profile, role, variant)
     }
 
     override fun reset() {
@@ -54,6 +73,7 @@ class FallbackSearchInputView(context: Context, attrs: AttributeSet?) : Extended
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
+        applyPrimeSearchTheme()
         if (layoutDirection == LAYOUT_DIRECTION_RTL) {
             @SuppressLint("RtlHardcoded")
             gravity = Gravity.RIGHT or Gravity.CENTER

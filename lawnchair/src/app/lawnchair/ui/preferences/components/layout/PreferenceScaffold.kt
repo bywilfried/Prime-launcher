@@ -21,6 +21,12 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import app.lawnchair.theme.ThemeColorRole
+import app.lawnchair.theme.ThemeColors
+import app.lawnchair.theme.ThemeProfile
+import app.lawnchair.theme.effectiveThemeVariant
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -33,12 +39,21 @@ fun PreferenceScaffold(
     isExpandedScreen: Boolean,
     modifier: Modifier = Modifier,
     backArrowVisible: Boolean = true,
+    onBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
     bottomBar: @Composable () -> Unit = { BottomSpacer() },
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val scrollBehavior = if (isExpandedScreen) TopAppBarDefaults.pinnedScrollBehavior() else TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val context = LocalContext.current
+    val semanticBackground = ThemeColors.resolve(
+        context,
+        ThemeProfile.current(context),
+        ThemeColorRole.GLOBAL_SETTINGS_BACKGROUND,
+        context.effectiveThemeVariant(),
+    )
     Scaffold(
+        containerColor = Color(semanticBackground),
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopBar(
@@ -47,6 +62,7 @@ fun PreferenceScaffold(
                 isExpandedScreen = isExpandedScreen,
                 actions = actions,
                 scrollBehavior = scrollBehavior,
+                onBack = onBack,
             )
         },
         bottomBar = bottomBar,

@@ -166,6 +166,12 @@ public interface WorkspaceLayoutManager {
                     + ") to CellLayout");
         }
 
+        // The dragged view may still carry the source (Home/All Apps) icon profile.
+        // Apply the destination profile only after it has been placed in its cell.
+        if (child instanceof BubbleTextView) {
+            ((BubbleTextView) child).applyPrimeWorkspaceSizing(container);
+        }
+
         child.setHapticFeedbackEnabled(false);
         child.setOnLongClickListener(getWorkspaceChildOnLongClickListener());
         if (child instanceof DropTarget) {

@@ -23,18 +23,20 @@ interface ReorderHapticFeedback {
 @Composable
 fun rememberReorderHapticFeedback(): ReorderHapticFeedback {
     val mMSDLPlayerWrapper = MSDLPlayerWrapper.INSTANCE.get(LocalContext.current)
-
     val reorderHapticFeedback = remember {
         object : ReorderHapticFeedback {
             override fun performHapticFeedback(type: ReorderHapticFeedbackType) {
-                mMSDLPlayerWrapper.playToken(
-                    when (type) {
-                        ReorderHapticFeedbackType.START -> MSDLToken.START
-                        ReorderHapticFeedbackType.MOVE -> MSDLToken.DRAG_INDICATOR_DISCRETE
-                        ReorderHapticFeedbackType.END -> MSDLToken.STOP
-                        ReorderHapticFeedbackType.CANCEL -> MSDLToken.CANCEL
-                    },
-                )
+                val token = when (type) {
+                    ReorderHapticFeedbackType.START -> MSDLToken.START
+                    ReorderHapticFeedbackType.MOVE -> MSDLToken.DRAG_INDICATOR_DISCRETE
+                    ReorderHapticFeedbackType.END -> MSDLToken.STOP
+                    ReorderHapticFeedbackType.CANCEL -> MSDLToken.CANCEL
+                }
+                if (type == ReorderHapticFeedbackType.MOVE) {
+                    mMSDLPlayerWrapper.playPrimeReorderMoveToken(token)
+                } else {
+                    mMSDLPlayerWrapper.playToken(token)
+                }
             }
         }
     }

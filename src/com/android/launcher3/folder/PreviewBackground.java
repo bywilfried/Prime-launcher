@@ -43,6 +43,7 @@ import android.util.Property;
 import android.view.View;
 import android.view.animation.Interpolator;
 
+
 import androidx.annotation.VisibleForTesting;
 
 import com.android.launcher3.CellLayout;
@@ -55,6 +56,8 @@ import com.android.launcher3.graphics.ThemeManager;
 import com.android.launcher3.util.Themes;
 import com.android.launcher3.views.ActivityContext;
 import app.lawnchair.preferences2.PreferenceCacheExtensionsKt;
+import app.lawnchair.icons.shape.IconShape;
+import app.lawnchair.icons.shape.PathShapeDelegate;
 
 import app.lawnchair.preferences2.PreferenceManager2;
 import app.lawnchair.theme.color.ColorOption;
@@ -91,6 +94,9 @@ public class PreviewBackground extends DelegatedCellDrawing {
 
     float mScale = 1f;
     private int mBgColor;
+    private float mPrimeOpacity = 1f;
+    private Integer mPrimeColor;
+    private ShapeDelegate mPrimeShape;
     private int mStrokeColor;
     private int mDotColor;
     private float mStrokeWidth;
@@ -191,9 +197,22 @@ public class PreviewBackground extends DelegatedCellDrawing {
 
         TypedArray ta = context.getTheme().obtainStyledAttributes(R.styleable.FolderIconPreview);
         ColorOption dotColorOption = PreferenceCacheExtensionsKt.firstCached(preferenceManager2.getNotificationDotColor());
-        mDotColor = dotColorOption.getColorPreferenceEntry().getLightColor().invoke(context);
-        mStrokeColor = ColorTokens.FolderIconBorderColor.resolveColor(context);
-        mBgColor = LawnchairUtilsKt.resolveFolderPreviewColor(context);
+        mDotColor = app.lawnchair.theme.NotificationDotThemeColors.resolve(context,
+                app.lawnchair.theme.ThemeColorRole.GLOBAL_NOTIFICATION_DOT, dotColorOption);
+        boolean isDrawerFolder = invalidateDelegate instanceof FolderIcon
+                && ((FolderIcon) invalidateDelegate).isInAppDrawer();
+        mBgColor = LawnchairUtilsKt.resolveFolderPreviewColor(context, isDrawerFolder);
+        boolean isDockFolder = invalidateDelegate instanceof FolderIcon
+                && ((FolderIcon) invalidateDelegate).mInfo != null
+                && (((FolderIcon) invalidateDelegate).mInfo.container
+                        == com.android.launcher3.LauncherSettings.Favorites.CONTAINER_HOTSEAT
+                    || ((FolderIcon) invalidateDelegate).mInfo.container
+                        == com.android.launcher3.LauncherSettings.Favorites.CONTAINER_HOTSEAT_PREDICTION);
+        app.lawnchair.theme.ThemeColorRole borderRole = isDrawerFolder
+                ? app.lawnchair.theme.ThemeColorRole.DRAWER_FOLDER_CLOSED_BORDER
+                : isDockFolder ? app.lawnchair.theme.ThemeColorRole.DOCK_FOLDER_CLOSED_BORDER
+                : app.lawnchair.theme.ThemeColorRole.HOME_FOLDER_CLOSED_BORDER;
+        mStrokeColor = app.lawnchair.theme.ThemeColors.resolveFolderBorder(context, borderRole, mBgColor);
         ta.recycle();
 
         DeviceProfile grid = activity.getDeviceProfile();
@@ -204,10 +223,19 @@ public class PreviewBackground extends DelegatedCellDrawing {
             basePreviewOffsetX = (availableSpaceX - previewSize) / 2;
             basePreviewOffsetY = topPadding + (allAppsIconSize - previewSize) / 2;
         } else {
-            previewSize = grid.folderIconSizePx;
+            // A dock folder must follow the independent dock icon size, not Home's.
+            float dockScale = 1f;
+            if (isDockFolder) {
+                float homeFactor = PreferenceCacheExtensionsKt.firstCached(
+                        preferenceManager2.getHomeIconSizeFactor());
+                float dockFactor = PreferenceCacheExtensionsKt.firstCached(
+                        preferenceManager2.getDockIconSizeFactor());
+                dockScale = dockFactor / Math.max(0.01f, homeFactor);
+            }
+            previewSize = Math.max(1, Math.round(grid.folderIconSizePx * dockScale));
 
             basePreviewOffsetX = (availableSpaceX - previewSize) / 2;
-            basePreviewOffsetY = topPadding + grid.folderIconOffsetYPx;
+            basePreviewOffsetY = topPadding + Math.round(grid.folderIconOffsetYPx * dockScale);
         }
 
         // Stroke width is 1dp
@@ -279,20 +307,43 @@ public class PreviewBackground extends DelegatedCellDrawing {
         return mBgColor;
     }
 
+    /** Returns the exact color currently used to draw the closed folder background. */
+    public int getResolvedColor() {
+        return mPrimeColor != null ? mPrimeColor : mBgColor;
+    }
+
     public int getDotColor() {
         return mDotColor;
     }
 
     public void drawBackground(Canvas canvas) {
         mPaint.setStyle(Paint.Style.FILL);
-        mPaint.setColor(getBgColor());
+        mPaint.setColor(mPrimeColor != null ? mPrimeColor : getBgColor());
+        mPaint.setAlpha(Math.round(255 * mPrimeOpacity));
 
         getShape().drawShape(canvas, getOffsetX(), getOffsetY(), getScaledRadius(), mPaint);
         drawShadow(canvas);
+        mPaint.setAlpha(255);
+    }
+
+    public void setPrimeColor(Integer color) {
+        mPrimeColor = color;
+        invalidate();
+    }
+
+
+    public void setPrimeShape(IconShape shape) {
+        mPrimeShape = shape == null ? null : new PathShapeDelegate(shape);
+        invalidate();
+    }
+
+    public void setPrimeOpacity(float opacity) {
+        mPrimeOpacity = Math.max(0f, Math.min(1f, opacity));
+        invalidate();
     }
 
     private ShapeDelegate getShape() {
-        return ThemeManager.INSTANCE.get(mContext).getFolderShape();
+        return mPrimeShape != null ? mPrimeShape : ThemeManager.INSTANCE.get(mContext).getFolderShape();
     }
 
     public void drawShadow(Canvas canvas) {

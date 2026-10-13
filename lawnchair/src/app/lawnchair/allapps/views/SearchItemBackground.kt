@@ -6,6 +6,10 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import android.view.View
+import app.lawnchair.theme.ThemeColorRole
+import app.lawnchair.theme.ThemeColors
+import app.lawnchair.theme.ThemeProfile
+import app.lawnchair.theme.effectiveThemeVariant
 import app.lawnchair.theme.color.tokens.ColorTokens
 import com.android.launcher3.R
 import com.android.systemui.shared.system.BlurUtils
@@ -25,11 +29,12 @@ class SearchItemBackground(
     private val tmpRect = RectF()
 
     val supportBlur = BlurUtils.supportsBlursOnWindows()
-    val focusHighlight = if (supportBlur) {
-        ColorTokens.FocusHighlightBlur.resolveColor(context)
-    } else {
-        ColorTokens.FocusHighlight.resolveColor(context)
-    }
+    val focusHighlight = ThemeColors.resolve(
+        context,
+        ThemeProfile.current(context),
+        ThemeColorRole.DRAWER_SEARCH_SELECTED_RESULT_BACKGROUND,
+        context.effectiveThemeVariant(),
+    )
     val groupHighlight = if (showBackground) {
         if (supportBlur) {
             ColorTokens.GroupHighlightBlur.resolveColor(context)

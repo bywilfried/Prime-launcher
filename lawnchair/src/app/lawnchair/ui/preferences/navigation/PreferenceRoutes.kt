@@ -93,6 +93,15 @@ data object Smartspace : PreferenceRootRoute, PreferenceDeepLink {
 }
 
 @Serializable
+data object PrimeDevelopmentOptions : PreferenceRootRoute
+
+@Serializable
+data object PrimeHapticTuning : PreferenceRoute
+
+@Serializable
+data object PrimeDiagnosticLogs : PreferenceRoute
+
+@Serializable
 data object About : PreferenceRootRoute, PreferenceDeepLink {
     override val deepLink = "$URI/about"
 }
@@ -135,6 +144,12 @@ data class GeneralCustomIconShapeCreator(val selectedId: ShapeRoute = ShapeRoute
     override val deepLink = "$URI/general-icon-shape-creator"
 }
 
+@Serializable
+data class ThemeCustomization(val openDrawerSection: Boolean = false, val categoryTabId: String? = null, val folderKey: String? = null, val folderSection: String? = null) : PreferenceRoute
+
+@Serializable
+data class ThemeColorSelection(val roleId: String, val variant: String, val categoryTabId: String? = null, val folderKey: String? = null) : PreferenceRoute
+
 // Home Screen section routes
 @Serializable
 data object HomeScreenGrid : PreferenceRoute, PreferenceDeepLink {
@@ -157,6 +172,45 @@ data object DockSearchProvider : PreferenceRoute, PreferenceDeepLink {
 data object AppDrawerHiddenApps : PreferenceRoute, PreferenceDeepLink {
     override val deepLink = "$URI/app-drawer-hidden-apps"
 }
+
+@Serializable
+data object PrimeDrawerCategories : PreferenceRoute
+
+@Serializable
+data class PrimeDrawerCategory(val tabId: String) : PreferenceRoute
+
+@Serializable
+data class PrimeDrawerCategoryFolders(val tabId: String) : PreferenceRoute
+
+@Serializable
+data class PrimeDrawerCategoryApps(val tabId: String) : PreferenceRoute
+
+@Serializable
+data class PrimeDrawerFolderApps(val tabId: String, val folderId: String) : PreferenceRoute
+
+@Serializable
+data class PrimeDrawerCategoryAdvanced(val tabId: String) : PreferenceRoute
+
+@Serializable
+data class PrimeDrawerFolderAdvanced(val tabId: String, val folderId: String) : PreferenceRoute
+
+@Serializable
+data class PrimeHomeFolderAdvanced(val folderId: Int, val drawer: Boolean = false) : PreferenceRoute
+
+@Serializable
+data class PrimeHomeFolderColor(val folderId: Int, val label: String, val colorKey: String = "folderColor", val drawer: Boolean = false) : PreferenceRoute
+
+@Serializable
+data class PrimeHomeFolderShape(val folderId: Int, val shapeKey: String, val label: String, val drawer: Boolean = false) : PreferenceRoute
+
+@Serializable
+data class PrimeDrawerCategoryColor(val tabId: String, val colorKey: String, val label: String, val folderId: String? = null) : PreferenceRoute
+
+@Serializable
+data class PrimeDrawerDefaultColor(val modeKey: String, val colorKey: String, val label: String) : PreferenceRoute
+
+@Serializable
+data class PrimeDrawerShape(val tabId: String, val shapeKey: String, val label: String, val folderId: String? = null) : PreferenceRoute
 
 @Serializable
 data object AppDrawerFolder : PreferenceRoute, PreferenceDeepLink {

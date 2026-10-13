@@ -40,6 +40,27 @@ class ColorPreferenceModelList @Inject constructor(
         )
         registerModel(
             ColorPreferenceModel(
+                prefObject = prefs.tabsColor,
+                labelRes = R.string.tabs_color,
+                dynamicEntries = dynamicColorsWithDefault,
+            ),
+        )
+        registerModel(
+            ColorPreferenceModel(
+                prefObject = prefs.inactiveTabsColor,
+                labelRes = R.string.inactive_tabs_color,
+                dynamicEntries = dynamicColorsWithDefault,
+            ),
+        )
+        registerModel(
+            ColorPreferenceModel(
+                prefObject = prefs.drawerTabsColor,
+                labelRes = R.string.prime_tabs_color,
+                dynamicEntries = dynamicColorsWithDefault,
+            ),
+        )
+        registerModel(
+            ColorPreferenceModel(
                 prefObject = prefs.appDrawerBackgroundColor,
                 labelRes = R.string.app_drawer_bg_color_label,
                 dynamicEntries = dynamicColorsWithDefault,
@@ -49,7 +70,7 @@ class ColorPreferenceModelList @Inject constructor(
             ColorPreferenceModel(
                 prefObject = prefs.workProfileTabBackgroundColor,
                 labelRes = R.string.work_profile_tab_background_label,
-                dynamicEntries = dynamicColors,
+                dynamicEntries = dynamicColorsWithDefault,
             ),
         )
         registerModel(
@@ -66,14 +87,7 @@ class ColorPreferenceModelList @Inject constructor(
                 dynamicEntries = dynamicColorsWithDefault,
             ),
         )
-        registerModel(
-            ColorPreferenceModel(
-                prefObject = prefs.folderColor,
-                labelRes = R.string.folder_preview_bg_color_label,
-                dynamicEntries = dynamicColorsWithDefault,
-            ),
-        )
-    }
+     }
 
     operator fun get(key: String): ColorPreferenceModel = models.getValue(key)
 

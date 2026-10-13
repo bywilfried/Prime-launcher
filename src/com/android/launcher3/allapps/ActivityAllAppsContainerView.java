@@ -35,6 +35,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Outline;
@@ -44,6 +45,8 @@ import android.graphics.Path.Direction;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.drawable.BitmapDrawable;
+import android.view.PixelCopy;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.os.Process;
@@ -55,6 +58,7 @@ import android.view.CrossWindowBlurListeners;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
+import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
@@ -110,6 +114,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -119,6 +125,9 @@ import app.lawnchair.allapps.LawnchairAlphabeticalAppsList;
 import app.lawnchair.font.FontManager;
 import app.lawnchair.preferences.PreferenceManager;
 import app.lawnchair.preferences2.PreferenceManager2;
+import app.lawnchair.prime.drawer.PrimeDrawerTabsRepository;
+import app.lawnchair.prime.drawer.PrimeDrawerTabsView;
+import app.lawnchair.prime.drawer.PrimeDrawerVisualOverrides;
 import app.lawnchair.theme.color.tokens.ColorTokens;
 import app.lawnchair.util.LawnchairUtilsKt;
 import app.lawnchair.ui.StretchRecyclerViewContainer;
@@ -193,6 +202,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     protected SearchUiManager mSearchUiManager;
     protected boolean mUsingTabs;
     protected RecyclerViewFastScroller mTouchHandler;
+    @Nullable private RecyclerView.SimpleOnItemTouchListener mPrimeDrawerSwipeListener;
+    @Nullable private PrimeTabTransitionController mPrimeTabTransitionController;
+    @Nullable private Integer mPrimeSwipeBackgroundColor;
+    @Nullable private android.widget.FrameLayout mPrimeSwipeViewport;
 
     /** {@code true} when rendered view is in search state instead of the scroll state. */
     private boolean mIsSearching;
@@ -358,11 +371,15 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 0 // Bottom left
         };
 
+        // Preserve Legacy's original rendering pipeline. The semantic DRAWER_BACKGROUND
+        // replaces the historical base surface in LawnchairUtils, while blur remains a
+        // rendering concern with the same fallbacks/compositing Prime used before ThemeProfile.
         if (Flags.allAppsBlur()) {
             int layerFg = ColorTokens.shade_panel_fg_color.resolveColor(getContext());
             int layerBg = ColorTokens.shade_panel_bg_color.resolveColor(getContext());
             mBottomSheetBackgroundColorOverBlur = ColorUtils.compositeColors(layerFg, layerBg);
-            mBottomSheetBackgroundColorBlurFallback = ColorTokens.BottomSheetBackgroundColorBlurFallback.resolveColor(getContext());
+            mBottomSheetBackgroundColorBlurFallback =
+                    ColorTokens.BottomSheetBackgroundColorBlurFallback.resolveColor(getContext());
         }
 
         mBottomSheetBackgroundColorLegacy = ColorTokens.SurfaceDimColor.resolveColor(getContext());
@@ -374,6 +391,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         mSearchUiManager.initializeSearch(this);
     }
 
+    private app.lawnchair.theme.ThemeColorInvalidation.Listener mPrimeThemeColorListener;
+
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
@@ -382,6 +401,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             mSearchUiDelegate.onInitializeSearchBar();
         }
         mActivityContext.addOnDeviceProfileChangeListener(this);
+        mPrimeThemeColorListener = this::refreshPrimeThemeColors;
+        app.lawnchair.theme.ThemeColorInvalidation.INSTANCE.addListener(mPrimeThemeColorListener);
         if (Utilities.ATLEAST_S) {
             java.util.function.Consumer<Boolean> listener = enabled -> {
                 if (updateBottomSheetBackgroundColor(enabled)) {
@@ -402,6 +423,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
 
     @Override
     protected void onDetachedFromWindow() {
+        if (mPrimeThemeColorListener != null) {
+            app.lawnchair.theme.ThemeColorInvalidation.INSTANCE.removeListener(mPrimeThemeColorListener);
+            mPrimeThemeColorListener = null;
+        }
         super.onDetachedFromWindow();
         mActivityContext.removeOnDeviceProfileChangeListener(this);
         if (mCrossWindowBlurListener != null) {
@@ -426,10 +451,14 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         return mSearchContainer;
     }
 
-    /** Invoke when the current search session is finished. */
+    /** Clears displayed search results. */
     public void onClearSearchResult() {
         getMainAdapterProvider().clearHighlightedItem();
-        animateToSearchState(false);
+        ExtendedEditText editText = mSearchUiManager.getEditText();
+        // An empty, focused query is still an active search session.
+        boolean keepSearchFocus = editText != null && editText.isFocused()
+                && editText.getText().length() == 0;
+        animateToSearchState(false, DEFAULT_SEARCH_TRANSITION_DURATION_MS, keepSearchFocus);
         rebindAdapters();
     }
 
@@ -467,6 +496,11 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     }
 
     void animateToSearchState(boolean goingToSearch, long durationMs) {
+        animateToSearchState(goingToSearch, durationMs, false);
+    }
+
+    private void animateToSearchState(boolean goingToSearch, long durationMs,
+            boolean keepSearchFocus) {
         if (!mSearchTransitionController.isRunning() && goingToSearch == isSearching()) {
             return;
         }
@@ -498,7 +532,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                         if (mViewPager != null) {
                             mViewPager.setCurrentPage(previousPage);
                         }
-                        onActivePageChanged(previousPage);
+                        onActivePageChanged(previousPage, keepSearchFocus);
                         mSearchExitInProgress = false;
                     }
                 });
@@ -648,11 +682,15 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
 
     @Override
     public void onActivePageChanged(int currentActivePage) {
+        onActivePageChanged(currentActivePage, false);
+    }
+
+    private void onActivePageChanged(int currentActivePage, boolean keepSearchFocus) {
         if (mSearchTransitionController.isRunning()) {
             // Will be called at the end of the animation.
             return;
         }
-        if (currentActivePage != SEARCH) {
+        if (currentActivePage != SEARCH && !keepSearchFocus) {
             mActivityContext.hideKeyboard();
         }
         if (mAH.get(currentActivePage).mRecyclerView != null) {
@@ -661,7 +699,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         }
         // Header keeps track of active recycler view to properly render header protection.
         mHeader.setActiveRV(currentActivePage);
-        reset(true /* animate */, !isSearching() /* exitSearch */);
+        reset(true /* animate */, !isSearching() && !keepSearchFocus /* exitSearch */);
 
         mWorkManager.onActivePageChanged(currentActivePage);
     }
@@ -787,7 +825,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         View oldView = getAppsRecyclerViewContainer();
         int index = indexOfChild(oldView);
         removeView(oldView);
-        int layout = showTabs ? R.layout.all_apps_tabs : R.layout.all_apps_rv_layout;
+        int layout = showTabs ? R.layout.all_apps_tabs : R.layout.prime_all_apps_rv_layout;
         final View rvContainer = getLayoutInflater().inflate(layout, this, false);
         addView(rvContainer, index);
         if (showTabs) {
@@ -835,8 +873,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         mAdditionalHeaderRows.forEach(row -> mHeader.onPluginDisconnected(row));
 
         boolean hideSearchBar = isAppDrawerSearchBarHidden();
-        // Keep personal/work tabs visible when search is off; only hide the empty header shell.
-        mHeader.setVisibility((hideSearchBar && !mUsingTabs) ? View.GONE : View.VISIBLE);
+        // Search visibility must not own the Prime category row. Even without Personal/Work tabs,
+        // keep the header alive whenever Prime Tabs has visible content.
+        boolean keepHeader = shouldKeepAllAppsHeaderVisible();
+        mHeader.setVisibility(keepHeader ? View.VISIBLE : View.GONE);
         boolean tabsHidden = !mUsingTabs;
         mHeader.setup(
                 mAH.get(AdapterHolder.MAIN).mRecyclerView,
@@ -845,7 +885,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 getCurrentPage(),
                 tabsHidden);
 
-        int padding = (hideSearchBar && !mUsingTabs) ? 0 : mHeader.getMaxTranslation();
+        int padding = keepHeader ? mHeader.getMaxTranslation() : 0;
         mAH.forEach(adapterHolder -> {
             adapterHolder.mPadding.top = padding;
             adapterHolder.applyPadding();
@@ -890,7 +930,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     }
 
     protected void updateHeaderScroll(int scrolledOffset) {
-        if (isAppDrawerSearchBarHidden() && !mUsingTabs)
+        if (!shouldKeepAllAppsHeaderVisible())
             return;
         
         // Check if tab container background should be shown
@@ -962,7 +1002,50 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     }
 
     // LC-Note: Hey! We cache this! see updateBottomSheetBackgroundColor() for more details.
+    public int getPrimeDrawerOpaqueBackgroundColor() {
+        return ColorUtils.setAlphaComponent(getBackgroundColor(), 255);
+    }
+
+    /** Re-resolves the semantic drawer background after a theme/appearance change. */
+    public void refreshPrimeThemeColors() {
+        // Java sees only the one-argument resolveColor() methods of concrete token classes.
+        // Keep explicit variant resolution behind ThemeColors, where the ColorToken interface and
+        // Kotlin UiColorMode API are available without leaking those implementation details here.
+        app.lawnchair.theme.ThemeVariant variant =
+                app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(getContext());
+        if (Flags.allAppsBlur()) {
+            int layerFg = app.lawnchair.theme.ThemeColors.resolveLegacyToken(
+                    getContext(), ColorTokens.shade_panel_fg_color, variant);
+            int layerBg = app.lawnchair.theme.ThemeColors.resolveLegacyToken(
+                    getContext(), ColorTokens.shade_panel_bg_color, variant);
+            mBottomSheetBackgroundColorOverBlur = ColorUtils.compositeColors(layerFg, layerBg);
+            mBottomSheetBackgroundColorBlurFallback =
+                    app.lawnchair.theme.ThemeColors.resolveLegacyToken(
+                            getContext(), ColorTokens.BottomSheetBackgroundColorBlurFallback, variant);
+        }
+        mBottomSheetBackgroundColorLegacy =
+                app.lawnchair.theme.ThemeColors.resolveLegacyToken(
+                        getContext(), ColorTokens.SurfaceDimColor, variant);
+        updateBottomSheetBackgroundColor();
+        invalidate();
+    }
+
     int getBottomSheetBackgroundColor() {
+        if (mPrimeSwipeBackgroundColor != null) {
+            return mPrimeSwipeBackgroundColor;
+        }
+        PrimeDrawerVisualOverrides overrides =
+                new PrimeDrawerTabsRepository(getContext()).getSelectedTabVisualOverrides();
+        if (overrides != null
+                && (overrides.getDrawerBackgroundColor() != null
+                        || overrides.getDrawerBackgroundOpacity() != null)) {
+            int color = overrides.getDrawerBackgroundColor() != null
+                    ? overrides.getDrawerBackgroundColor() : mCachedBottomSheetBgColor;
+            float alpha = overrides.getDrawerBackgroundOpacity() != null
+                    ? overrides.getDrawerBackgroundOpacity()
+                    : Color.alpha(mCachedBottomSheetBgColor) / 255f;
+            return ColorUtils.setAlphaComponent(color, Math.round(alpha * 255));
+        }
         return mCachedBottomSheetBgColor;
     }
 
@@ -981,7 +1064,15 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         } else {
             defaultColor = mBottomSheetBackgroundColorOverBlur;
         }
+        // Expose the exact historical base selected by the live drawer (legacy surface,
+        // blur fallback, or blur composite) to the semantic theme preview. This value is recorded
+        // before user opacity and before any semantic/category override is applied.
+        app.lawnchair.theme.ThemeVariant primeVariant =
+                app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(getContext());
+        app.lawnchair.theme.ThemeColors.recordLegacyDrawerOfficial(primeVariant, defaultColor);
+
         int newColor = LawnchairUtilsKt.getAllAppsBackgroundColor(mActivityContext, defaultColor);
+        app.lawnchair.theme.ThemeColors.recordLiveDrawerBackground(primeVariant, newColor);
         if (mCachedBottomSheetBgColor != newColor) {
             mCachedBottomSheetBgColor = newColor;
             return true;
@@ -1054,6 +1145,14 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
 
     private boolean isAppDrawerSearchBarHidden() {
         return PreferenceCacheExtensionsKt.firstCached(pref2.getHideAppDrawerSearchBar());
+    }
+
+    private boolean shouldKeepAllAppsHeaderVisible() {
+        if (!isAppDrawerSearchBarHidden() || mUsingTabs) {
+            return true;
+        }
+        PrimeDrawerTabsView primeTabs = mHeader.findFixedRowByType(PrimeDrawerTabsView.class);
+        return primeTabs != null && primeTabs.hasVisibleContent();
     }
 
     private void layoutBelowSearchContainer(View v, boolean includeTabsMargin) {
@@ -1310,6 +1409,905 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         return getActiveAppsRecyclerView();
     }
 
+    /**
+     * Immutable prepared state for a Prime drawer destination.
+     *
+     * This intentionally starts with the deterministic page geometry. The same object is retained
+     * from preview preparation through the live handoff; later preparation stages can add the
+     * filtered/ordered content without changing that ownership model.
+     */
+    public static final class PrimePreparedDrawerPage {
+        public final String tabId;
+        public final int appsPerRow;
+        public final int sideMarginPx;
+        public final int topPaddingPx;
+        public final int viewportLeftPx;
+        public final int viewportWidthPx;
+        @Nullable public final PrimeDrawerVisualOverrides visualOverrides;
+        @Nullable public final LawnchairAlphabeticalAppsList.PrimePreparedContent content;
+
+        PrimePreparedDrawerPage(String tabId, int appsPerRow, int sideMarginPx,
+                int topPaddingPx, int viewportLeftPx, int viewportWidthPx) {
+            this(tabId, appsPerRow, sideMarginPx, topPaddingPx,
+                    viewportLeftPx, viewportWidthPx, null, null);
+        }
+
+        PrimePreparedDrawerPage(String tabId, int appsPerRow, int sideMarginPx, int topPaddingPx,
+                int viewportLeftPx, int viewportWidthPx,
+                @Nullable PrimeDrawerVisualOverrides visualOverrides,
+                @Nullable LawnchairAlphabeticalAppsList.PrimePreparedContent content) {
+            this.tabId = tabId;
+            this.appsPerRow = appsPerRow;
+            this.sideMarginPx = sideMarginPx;
+            this.topPaddingPx = topPaddingPx;
+            this.viewportLeftPx = viewportLeftPx;
+            this.viewportWidthPx = viewportWidthPx;
+            this.visualOverrides = visualOverrides;
+            this.content = content;
+        }
+
+        PrimePreparedDrawerPage withContent(
+                @Nullable LawnchairAlphabeticalAppsList.PrimePreparedContent content) {
+            return new PrimePreparedDrawerPage(tabId, appsPerRow, sideMarginPx, topPaddingPx,
+                    viewportLeftPx, viewportWidthPx, visualOverrides, content);
+        }
+    }
+
+    @Nullable private PrimePreparedDrawerPage mPrimePreparedSwipePage;
+    @Nullable private AllAppsRecyclerView mPrimePromotedRecyclerView;
+    @Nullable private AllAppsRecyclerView mPrimeCanonicalRecyclerView;
+    @Nullable private AllAppsRecyclerView mPrimeDirectSelectionSparePage;
+    private int mPrimeDirectSelectionGeneration;
+    private static final StringBuilder mPrimeSwipeDebugLog = new StringBuilder();
+
+    /** Adds non-RecyclerView Prime diagnostics to the same in-launcher swipe log. */
+    public void recordPrimeSwipeDebugEvent(@NonNull String event) {
+        appendPrimeSwipeDebug(event, null, null);
+    }
+
+    private void appendPrimeSwipeDebug(String event, @Nullable AllAppsRecyclerView active,
+            @Nullable AllAppsRecyclerView adjacent) {
+        long t = android.os.SystemClock.uptimeMillis();
+        mPrimeSwipeDebugLog.append(t).append(' ').append(event);
+        appendPrimeSwipeViewDebug(" A", active);
+        appendPrimeSwipeViewDebug(" B", adjacent);
+        mPrimeSwipeDebugLog.append('\n');
+        if (mPrimeSwipeDebugLog.length() > 24000) {
+            mPrimeSwipeDebugLog.delete(0, mPrimeSwipeDebugLog.length() - 18000);
+        }
+    }
+
+    private void appendPrimeSwipeViewDebug(String label, @Nullable AllAppsRecyclerView rv) {
+        if (rv == null) {
+            mPrimeSwipeDebugLog.append(label).append("=null");
+            return;
+        }
+        int[] loc = new int[2];
+        rv.getLocationOnScreen(loc);
+        mPrimeSwipeDebugLog.append(label)
+                .append("{id=").append(Integer.toHexString(System.identityHashCode(rv)))
+                .append(" l=").append(rv.getLeft())
+                .append(" w=").append(rv.getWidth())
+                .append(" tx=").append(rv.getTranslationX())
+                .append(" sx=").append(loc[0])
+                .append(" pl=").append(rv.getPaddingLeft())
+                .append(" pr=").append(rv.getPaddingRight());
+        View first = rv.getChildCount() > 0 ? rv.getChildAt(0) : null;
+        if (first != null) {
+            int[] childLoc = new int[2];
+            first.getLocationOnScreen(childLoc);
+            mPrimeSwipeDebugLog.append(" c0l=").append(first.getLeft())
+                    .append(" c0x=").append(first.getX())
+                    .append(" c0sx=").append(childLoc[0]);
+        }
+        View icon = findPrimeDebugIcon(rv);
+        if (icon != null) {
+            int[] iconLoc = new int[2];
+            icon.getLocationOnScreen(iconLoc);
+            mPrimeSwipeDebugLog.append(" icon{id=")
+                    .append(Integer.toHexString(System.identityHashCode(icon)))
+                    .append(" l=").append(icon.getLeft())
+                    .append(" x=").append(icon.getX())
+                    .append(" sx=").append(iconLoc[0])
+                    .append(" sy=").append(iconLoc[1])
+                    .append(" w=").append(icon.getWidth())
+                    .append(" h=").append(icon.getHeight())
+                    .append(" pl=").append(icon.getPaddingLeft())
+                    .append(" pr=").append(icon.getPaddingRight())
+                    .append(" scrollX=").append(icon.getScrollX())
+                    .append(" tx=").append(icon.getTranslationX())
+                    .append(" scale=").append(icon.getScaleX())
+                    .append(" pivot=").append(icon.getPivotX());
+            if (icon instanceof com.android.launcher3.BubbleTextView) {
+                com.android.launcher3.BubbleTextView bubble =
+                        (com.android.launcher3.BubbleTextView) icon;
+                mPrimeSwipeDebugLog.append(" iconSet=")
+                        .append(bubble.getPrimeLastIconSetReason())
+                        .append('@').append(bubble.getPrimeLastIconSetUptime());
+                android.graphics.drawable.Drawable[] drawables =
+                        bubble.getCompoundDrawables();
+                android.graphics.drawable.Drawable drawable =
+                        drawables != null && drawables.length > 1 ? drawables[1] : null;
+                if (drawable != null) {
+                    Rect bounds = drawable.getBounds();
+                    mPrimeSwipeDebugLog.append(" drawable{id=")
+                            .append(Integer.toHexString(System.identityHashCode(drawable)))
+                            .append(" b=").append(bounds.left).append(',')
+                            .append(bounds.top).append(',')
+                            .append(bounds.right).append(',')
+                            .append(bounds.bottom)
+                            .append(" iw=").append(drawable.getIntrinsicWidth())
+                            .append(" ih=").append(drawable.getIntrinsicHeight())
+                            .append('}');
+                }
+            }
+            mPrimeSwipeDebugLog.append('}');
+        }
+        mPrimeSwipeDebugLog.append('}');
+    }
+
+    @Nullable
+    private View findPrimeDebugIcon(View root) {
+        if (root instanceof com.android.launcher3.BubbleTextView) return root;
+        if (!(root instanceof android.view.ViewGroup)) return null;
+        android.view.ViewGroup group = (android.view.ViewGroup) root;
+        for (int i = 0; i < group.getChildCount(); i++) {
+            View found = findPrimeDebugIcon(group.getChildAt(i));
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    public static String getPrimeSwipeDebugLog() {
+        return mPrimeSwipeDebugLog.length() == 0
+                ? "Aucun swipe Prime enregistré." : mPrimeSwipeDebugLog.toString();
+    }
+
+    public static void clearPrimeSwipeDebugLog() {
+        mPrimeSwipeDebugLog.setLength(0);
+    }
+
+    /**
+     * Leaves persistent-page swipe mode before a direct tab selection. Direct selections still
+     * use Lawnchair's canonical holder; swipe commits instead keep the arrived physical page.
+     */
+    public void resetPrimePersistentSwipePage() {
+        if (mPrimePromotedRecyclerView == null || mPrimeCanonicalRecyclerView == null) return;
+        mPrimePromotedRecyclerView.setVisibility(INVISIBLE);
+        mPrimePromotedRecyclerView.setTranslationX(0f);
+        mPrimeCanonicalRecyclerView.setVisibility(VISIBLE);
+        mPrimeCanonicalRecyclerView.setTranslationX(0f);
+
+        // The canonical holder may have served as the off-screen swipe preview after the last
+        // promotion. Restore it to live-selection mode before a direct tab click refreshes it;
+        // otherwise its fixed preview tab keeps filtering apps for the previous destination while
+        // grid/background overrides correctly follow the newly selected tab.
+        if (mPrimeCanonicalRecyclerView.getApps() instanceof LawnchairAlphabeticalAppsList) {
+            ((LawnchairAlphabeticalAppsList<?>) mPrimeCanonicalRecyclerView.getApps())
+                    .clearPrimePreviewTabIdForLiveSelection();
+        }
+
+        // A direct click makes the canonical holder active again. If the last swipe had
+        // promoted the standalone page, that exact page becomes the spare for the next swipe.
+        // The swipe listener consumes this generation change before preparing its next target, so
+        // it can never keep the now-active canonical RecyclerView as both A and B.
+        if (mPrimePromotedRecyclerView != mPrimeCanonicalRecyclerView) {
+            mPrimeDirectSelectionSparePage = mPrimePromotedRecyclerView;
+        } else {
+            mPrimeDirectSelectionSparePage = null;
+        }
+        mPrimeDirectSelectionGeneration++;
+        mPrimePromotedRecyclerView = null;
+        mPrimeCanonicalRecyclerView = null;
+    }
+
+    /**
+     * Returns the physical Prime page that is currently visible. Direct tab navigation must
+     * refresh this page instead of resurrecting the canonical holder after a swipe promotion.
+     */
+    @Nullable
+    public AllAppsRecyclerView getPrimeVisibleRecyclerView(@Nullable AllAppsRecyclerView fallback) {
+        if (mPrimePromotedRecyclerView != null
+                && mPrimePromotedRecyclerView.getVisibility() == VISIBLE) {
+            return mPrimePromotedRecyclerView;
+        }
+        return fallback;
+    }
+
+    /** Resolves one immutable destination snapshot for preview and live handoff. */
+    private PrimePreparedDrawerPage buildPrimePreparedDrawerPage(String tabId) {
+        DeviceProfile grid = mActivityContext.getDeviceProfile();
+        PrimeDrawerVisualOverrides overrides =
+                new PrimeDrawerTabsRepository(getContext()).getTabVisualOverrides(tabId);
+        int appsPerRow = overrides != null && overrides.getDrawerColumns() != null
+                ? overrides.getDrawerColumns() : grid.numShownAllAppsColumns;
+        float marginFactor = overrides != null && overrides.getDrawerHorizontalMargin() != null
+                ? overrides.getDrawerHorizontalMargin() : 1f;
+        float topFactor = overrides != null && overrides.getDrawerTopPadding() != null
+                ? overrides.getDrawerTopPadding() : 1f;
+        int sideMargin = Math.round(grid.allAppsLeftRightMargin * marginFactor);
+        int topPadding = Math.round(grid.allAppsPadding.top * topFactor);
+        if (isSearchBarFloating() && !grid.shouldShowAllAppsOnSheet()) {
+            topPadding += getResources().getDimensionPixelSize(
+                    R.dimen.all_apps_additional_top_padding_floating_search);
+        }
+        AllAppsRecyclerView liveRv = getActiveAppsRecyclerView();
+        // Container side margin and RecyclerView bounds are separate layout layers. setPadding()
+        // changes the container's content area; the RecyclerView itself remains MATCH_PARENT in
+        // apps_list_view_container and keeps AdapterHolder's allAppsPadding. Do not shrink/offset
+        // the preview RecyclerView a second time for the same destination margin.
+        int viewportLeft = liveRv != null ? liveRv.getLeft() : 0;
+        int viewportWidth = liveRv != null ? Math.max(1, liveRv.getWidth()) : 1;
+        return new PrimePreparedDrawerPage(
+                tabId, appsPerRow, sideMargin, topPadding, viewportLeft, viewportWidth,
+                overrides, null);
+    }
+
+    private PrimePreparedDrawerPage preparePrimeSwipePage(String tabId) {
+        if (mPrimePreparedSwipePage == null || !tabId.equals(mPrimePreparedSwipePage.tabId)) {
+            mPrimePreparedSwipePage = buildPrimePreparedDrawerPage(tabId);
+        }
+        return mPrimePreparedSwipePage;
+    }
+
+    /** Applies the destination container geometry before its persistent page starts moving. */
+    private void applyPreparedPrimePageGeometry(PrimePreparedDrawerPage preparedPage) {
+        DeviceProfile grid = mActivityContext.getDeviceProfile();
+        if (!grid.isVerticalBarLayout() || FeatureFlags.enableResponsiveWorkspace()) {
+            setPadding(preparedPage.sideMarginPx, preparedPage.topPaddingPx,
+                    preparedPage.sideMarginPx, 0);
+        }
+    }
+
+    public PrimePreparedDrawerPage prepareSelectedPrimeDrawerPage() {
+        String tabId = new PrimeDrawerTabsRepository(getContext())
+                .getConfiguration().getSelectedTabId();
+        return preparePrimeSwipePage(tabId);
+    }
+
+    /** Installs Prime horizontal tab swipes on the actual app-list area only. */
+    public void applyPrimeDrawerVisualOverrides() {
+        PrimeDrawerVisualOverrides overrides =
+                new PrimeDrawerTabsRepository(getContext()).getSelectedTabVisualOverrides();
+        Boolean scrollbarOverride = overrides != null ? overrides.getShowScrollbar() : null;
+        showFastScroller = scrollbarOverride != null
+                ? scrollbarOverride
+                : PreferenceCacheExtensionsKt.firstCached(pref2.getShowScrollbar());
+        if (!isSearching()) {
+            mFastScroller.setVisibility(showFastScroller ? VISIBLE : INVISIBLE);
+        }
+
+        DeviceProfile grid = mActivityContext.getDeviceProfile();
+        PrimePreparedDrawerPage preparedPage = prepareSelectedPrimeDrawerPage();
+        // Apply the selected category's grid to the canonical live adapter as well as
+        // the prepared swipe pages. Without this, direct selection keeps the global grid.
+        if (!isSearching()) {
+            AdapterHolder mainHolder = mAH.get(AdapterHolder.MAIN);
+            mainHolder.mAdapter.setAppsPerRow(preparedPage.appsPerRow);
+            mainHolder.mAppsList.setNumAppsPerRowAllApps(preparedPage.appsPerRow);
+        }
+        if (!grid.isVerticalBarLayout() || FeatureFlags.enableResponsiveWorkspace()) {
+            setPadding(preparedPage.sideMarginPx, preparedPage.topPaddingPx,
+                    preparedPage.sideMarginPx, 0);
+        }
+    }
+
+    private interface PrimeTabTransitionController {
+        boolean animateTo(String tabId, boolean moveLeft, Runnable onCommit);
+    }
+
+    /**
+     * Animates a direct Prime tab click through the same prepared persistent-page transition used
+     * by horizontal swipe. Non-adjacent tabs are still one A -> B transition.
+     */
+    public boolean animatePrimeTabSelection(
+            @NonNull String tabId, boolean moveLeft, @NonNull Runnable onCommit) {
+        return mPrimeTabTransitionController != null
+                && mPrimeTabTransitionController.animateTo(tabId, moveLeft, onCommit);
+    }
+
+    public void setPrimeDrawerSwipeListener(
+            BooleanSupplier isSwipeEnabled,
+            Function<Boolean, String> getPreviewTabId,
+            Consumer<Float> onTransitionProgress,
+            Consumer<Boolean> onCommit,
+            Consumer<Boolean> onPreviewFinished) {
+        if (mPrimeDrawerSwipeListener != null) {
+            for (int type : new int[]{AdapterHolder.MAIN, AdapterHolder.WORK}) {
+                AllAppsRecyclerView rv = mAH.get(type).mRecyclerView;
+                if (rv != null) rv.removeOnItemTouchListener(mPrimeDrawerSwipeListener);
+            }
+        }
+
+        final int touchSlop = android.view.ViewConfiguration.get(getContext()).getScaledTouchSlop();
+        class PrimeSwipeTouchListener extends RecyclerView.SimpleOnItemTouchListener {
+            private float downX;
+            private float downY;
+            private VelocityTracker velocityTracker;
+            private boolean horizontalSwipe;
+            private boolean validAppAreaGesture;
+            private boolean previewStarted;
+            private boolean swipeLeft;
+            private AllAppsRecyclerView previewPage;
+            private LawnchairAlphabeticalAppsList<T> previewAppsList;
+            private BaseAllAppsAdapter<?> previewAdapter;
+            private String previewTabId;
+            private boolean previewDirectionLeft;
+            private boolean transitionRunning;
+            private boolean previewLayoutReady;
+            private boolean transitionPending;
+            private float pendingStartDx;
+            private AllAppsRecyclerView pendingRv;
+            private int startBackground;
+            private int targetBackground;
+            private int directSelectionGeneration = mPrimeDirectSelectionGeneration;
+            // Keep the drawer background synchronized with the same A -> B progress as the
+            // persistent pages. The previous diagnostic freeze is no longer needed now that the
+            // post-promotion rebind causing the visible shift has been removed.
+            private static final boolean PRIME_SWIPE_DIAG_FREEZE_BACKGROUND = false;
+
+            private int resolvePreviewBackground(String tabId) {
+                PrimeDrawerVisualOverrides overrides =
+                        new PrimeDrawerTabsRepository(getContext()).getTabVisualOverrides(tabId);
+                if (overrides != null
+                        && (overrides.getDrawerBackgroundColor() != null
+                                || overrides.getDrawerBackgroundOpacity() != null)) {
+                    int color = overrides.getDrawerBackgroundColor() != null
+                            ? overrides.getDrawerBackgroundColor() : mCachedBottomSheetBgColor;
+                    float alpha = overrides.getDrawerBackgroundOpacity() != null
+                            ? overrides.getDrawerBackgroundOpacity()
+                            : Color.alpha(mCachedBottomSheetBgColor) / 255f;
+                    return ColorUtils.setAlphaComponent(color, Math.round(alpha * 255));
+                }
+                return mCachedBottomSheetBgColor;
+            }
+
+            private boolean ensurePreviewPage(AllAppsRecyclerView rv, String tabId) {
+                if (directSelectionGeneration != mPrimeDirectSelectionGeneration) {
+                    directSelectionGeneration = mPrimeDirectSelectionGeneration;
+                    AllAppsRecyclerView directSpare = mPrimeDirectSelectionSparePage;
+                    if (directSpare != null && directSpare != rv) {
+                        previewPage = directSpare;
+                        if (directSpare.getApps() instanceof LawnchairAlphabeticalAppsList) {
+                            previewAppsList =
+                                    (LawnchairAlphabeticalAppsList<T>) directSpare.getApps();
+                        }
+                        if (directSpare.getAdapter() instanceof BaseAllAppsAdapter) {
+                            previewAdapter = (BaseAllAppsAdapter<?>) directSpare.getAdapter();
+                        }
+                    }
+                    previewTabId = null;
+                    previewLayoutReady = false;
+                    previewStarted = false;
+                    transitionPending = false;
+                    pendingRv = null;
+                    mPrimeDirectSelectionSparePage = null;
+                }
+                android.view.ViewParent parent = rv.getParent();
+                if (!(parent instanceof android.widget.FrameLayout)) return false;
+                android.widget.FrameLayout viewport = (android.widget.FrameLayout) parent;
+                if (viewport.getId() != R.id.apps_list_view_container) return false;
+                mPrimeSwipeViewport = viewport;
+
+                int type = rv == mAH.get(AdapterHolder.WORK).mRecyclerView
+                        ? AdapterHolder.WORK : AdapterHolder.MAIN;
+
+                // Keep one real adjacent page alive across gestures. Only its filtered tab changes.
+                if (previewPage == null) {
+                    previewAppsList = new LawnchairAlphabeticalAppsList<>(
+                            mActivityContext,
+                            mAllAppsStore,
+                            type == AdapterHolder.WORK ? mWorkManager : null,
+                            type == AdapterHolder.MAIN ? mPrivateProfileManager : null);
+                    AdapterHolder createdHolder = new AdapterHolder(type, previewAppsList);
+                    previewAdapter = createdHolder.mAdapter;
+                    previewPage = new AllAppsRecyclerView(getContext());
+                    previewPage.setApps(previewAppsList);
+                    previewPage.setLayoutManager(createdHolder.mLayoutManager);
+                    previewPage.setAdapter(previewAdapter);
+                    previewPage.setHasFixedSize(true);
+                    previewPage.setItemAnimator(null);
+                    previewPage.setRecycledViewPool(new RecyclerView.RecycledViewPool());
+
+                    // The swipe page must use exactly the same grid geometry as the live page.
+                    // A standalone AdapterHolder does not go through the normal container setup /
+                    // device-profile path, so explicitly mirror the effective column count before
+                    // its first layout. Otherwise the two translated RecyclerViews can expose
+                    // visibly different row/column geometry at their shared edge.
+                    PrimePreparedDrawerPage preparedPage =
+                            preparePrimeSwipePage(tabId);
+                    // B must be laid out inside B's final container geometry before any visible
+                    // horizontal motion. Previously the page content was prepared for B while its
+                    // parent still used A's side/top geometry, so the same persistent page could
+                    // visibly settle when the parent caught up.
+                    applyPreparedPrimePageGeometry(preparedPage);
+                    previewAdapter.setAppsPerRow(preparedPage.appsPerRow);
+                    previewAdapter.setPrimePreparedVisualOverrides(
+                            preparedPage.visualOverrides);
+                    previewAppsList.setNumAppsPerRowAllApps(preparedPage.appsPerRow);
+
+                    previewPage.setPadding(
+                            rv.getPaddingLeft(), rv.getPaddingTop(),
+                            rv.getPaddingRight(), rv.getPaddingBottom());
+                    Rect clip = rv.getClipBounds();
+                    if (clip != null) previewPage.setClipBounds(new Rect(clip));
+                    viewport.addView(previewPage, new android.widget.FrameLayout.LayoutParams(
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT));
+                    // Either physical page can become active after a commit, so both must own
+                    // the same swipe listener. This is what makes the arrived RecyclerView a real
+                    // persistent page rather than a visual overlay over the old live page.
+                    previewPage.addOnItemTouchListener(mPrimeDrawerSwipeListener);
+                }
+
+                if (!tabId.equals(previewTabId)) {
+                    // This preview is persistent, while the live holder can recompute its padding
+                    // after insets/search/private-space changes. Mirror the live viewport on every
+                    // destination preparation so both pages expose exactly the same rows at handoff.
+                    previewPage.setPadding(
+                            rv.getPaddingLeft(), rv.getPaddingTop(),
+                            rv.getPaddingRight(), rv.getPaddingBottom());
+                    previewPage.setClipToPadding(rv.getClipToPadding());
+                    previewPage.setOverScrollMode(rv.getOverScrollMode());
+                    Rect liveClip = rv.getClipBounds();
+                    previewPage.setClipBounds(liveClip != null ? new Rect(liveClip) : null);
+                    previewPage.setTranslationX(0f);
+                    previewPage.setTranslationY(0f);
+
+                    PrimePreparedDrawerPage preparedPage =
+                            preparePrimeSwipePage(tabId);
+                    // Persistent pages alternate roles after every commit, so destination geometry
+                    // must also be installed when reusing the former active page as the new spare.
+                    applyPreparedPrimePageGeometry(preparedPage);
+                    previewAdapter.setAppsPerRow(preparedPage.appsPerRow);
+                    previewAdapter.setPrimePreparedVisualOverrides(
+                            preparedPage.visualOverrides);
+                    previewAppsList.setNumAppsPerRowAllApps(preparedPage.appsPerRow);
+
+                    // Configure the target tab and the normal MAIN/WORK predicate before the one
+                    // and only dataset rebuild. Without this, the preview list has a null filter
+                    // and briefly lays out the wrong category/all-apps population.
+                    Predicate<ItemInfo> previewFilter = type == AdapterHolder.WORK
+                            ? mWorkManager.getItemInfoMatcher() : mPersonalMatcher;
+                    previewLayoutReady = false;
+                    previewAppsList.configurePrimePreview(tabId, previewFilter);
+                    // Capture the exact model ordering materialized by the preview. The selected
+                    // live list receives this immutable ordering at commit, so it does not make a
+                    // second independent custom-order decision for the same destination.
+                    PrimePreparedDrawerPage preparedPageWithContent =
+                            preparePrimeSwipePage(tabId).withContent(
+                                    previewAppsList.getPrimePreparedContent());
+                    mPrimePreparedSwipePage = preparedPageWithContent;
+                    // A reused preview can retain the previous category's scroll position.
+                    // Always present a newly targeted Prime category from its top edge.
+                    previewPage.stopScroll();
+                    previewPage.scrollToTop();
+                    previewTabId = tabId;
+                    waitForPrimePreviewLayoutStable(tabId, -1, -1, 0);
+                } else if (!previewPage.isLayoutRequested()) {
+                    previewLayoutReady = true;
+                }
+
+                int width = Math.max(1, rv.getWidth());
+                // Keep preview and live in one identical local coordinate system. The page's
+                // off-screen side is represented only by translation; its base bounds remain
+                // MATCH_PARENT exactly like the live RecyclerView. Mixing a predicted B layout
+                // rectangle with a direction-dependent translation made the handoff error change
+                // sign between left and right swipes.
+                android.widget.FrameLayout.LayoutParams previewLp =
+                        (android.widget.FrameLayout.LayoutParams) previewPage.getLayoutParams();
+                previewLp.width = android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+                previewLp.height = android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+                previewLp.leftMargin = 0;
+                previewLp.topMargin = 0;
+                previewLp.rightMargin = 0;
+                previewLp.bottomMargin = 0;
+                previewPage.setLayoutParams(previewLp);
+                previewPage.setTranslationY(rv.getTranslationY());
+                previewPage.setTranslationX(swipeLeft ? width : -width);
+                previewPage.setVisibility(VISIBLE);
+                appendPrimeSwipeDebug("PREPARE " + tabId, rv, previewPage);
+                return true;
+            }
+
+            private void waitForPrimePreviewLayoutStable(
+                    String tabId, int previousIconLeft, int previousIconWidth, int stablePasses) {
+                if (previewPage == null || !tabId.equals(previewTabId)) return;
+                previewPage.postOnAnimation(() -> {
+                    if (previewPage == null || !tabId.equals(previewTabId)) return;
+                    View icon = findPrimeDebugIcon(previewPage);
+                    int iconLeft = icon != null ? icon.getLeft() : -1;
+                    int iconWidth = icon != null ? icon.getWidth() : -1;
+                    // PREPARE already gives us a real, measured destination icon. Do not
+                    // wait for RecyclerView's layout-request flag to clear: on fast gestures that
+                    // extra UI turn lets the finger travel hundreds of pixels before START.
+                    boolean layoutUsable = previewPage.isLaidOut()
+                            && previewPage.getWidth() > 0
+                            && previewPage.getHeight() > 0;
+                    appendPrimeSwipeDebug("READY usable=" + layoutUsable, pendingRv, previewPage);
+                    if (layoutUsable) {
+                        // Nova-style tracking must start on the first usable destination layout.
+                        // Waiting for two identical post-layout frames made the page visibly lag
+                        // behind the finger even though B was already materialized and drawable.
+                        previewLayoutReady = true;
+                        startPendingTransitionIfReady();
+                    } else {
+                        waitForPrimePreviewLayoutStable(tabId, iconLeft, iconWidth, 0);
+                    }
+                });
+            }
+
+            private void startPendingTransitionIfReady() {
+                if (!transitionPending || !previewLayoutReady || pendingRv == null
+                        || previewPage == null) {
+                    return;
+                }
+                AllAppsRecyclerView rv = pendingRv;
+                float startDx = pendingStartDx;
+                transitionPending = false;
+                pendingRv = null;
+                previewStarted = true;
+                rv.stopScroll();
+                appendPrimeSwipeDebug("START dx=" + startDx, rv, previewPage);
+                setProgress(rv, startDx);
+            }
+
+            private void clearPreview(AllAppsRecyclerView rv) {
+                // Keep the adjacent page attached and warm for the next gesture. Hiding it is
+                // enough; destroying/recreating the RecyclerView was the remaining source of
+                // visible reconstruction during slow swipes.
+                if (previewPage != null) {
+                    previewPage.setVisibility(INVISIBLE);
+                    previewPage.setTranslationX(0f);
+                }
+                rv.setTranslationX(0f);
+                mPrimeSwipeBackgroundColor = null;
+                previewStarted = false;
+                previewLayoutReady = false;
+                // The physical spare page stays warm, but its destination is no longer considered
+                // prepared. Otherwise a second swipe toward the same tab skips ensurePreviewPage()
+                // and waits forever for a readiness callback that was cleared with this preview.
+                previewTabId = null;
+                transitionPending = false;
+                pendingRv = null;
+                invalidate();
+                if (mScrimView != null) mScrimView.invalidate();
+            }
+
+            private void promoteArrivedPage(AllAppsRecyclerView oldActivePage) {
+                if (previewPage == null) return;
+
+                AllAppsRecyclerView arrivedPage = previewPage;
+                arrivedPage.setTranslationX(0f);
+                arrivedPage.setVisibility(VISIBLE);
+
+                oldActivePage.setTranslationX(0f);
+                oldActivePage.setVisibility(INVISIBLE);
+
+                mPrimePromotedRecyclerView = arrivedPage;
+                mPrimeCanonicalRecyclerView =
+                        oldActivePage == mAH.get(AdapterHolder.MAIN).mRecyclerView
+                                || oldActivePage == mAH.get(AdapterHolder.WORK).mRecyclerView
+                                ? oldActivePage : mPrimeCanonicalRecyclerView;
+
+                // Swap roles instead of swapping pixels: the exact RecyclerView that the user
+                // watched arrive remains on screen. The previous active page becomes the spare
+                // page and will be reconfigured off-screen for the next destination.
+                previewPage = oldActivePage;
+                if (oldActivePage.getApps() instanceof LawnchairAlphabeticalAppsList) {
+                    previewAppsList =
+                            (LawnchairAlphabeticalAppsList<T>) oldActivePage.getApps();
+                } else {
+                    previewAppsList = null;
+                }
+                if (oldActivePage.getAdapter() instanceof BaseAllAppsAdapter) {
+                    previewAdapter = (BaseAllAppsAdapter<?>) oldActivePage.getAdapter();
+                } else {
+                    previewAdapter = null;
+                }
+                previewTabId = null;
+                previewLayoutReady = false;
+                previewStarted = false;
+                transitionPending = false;
+                pendingRv = null;
+                mPrimeSwipeBackgroundColor = null;
+                invalidate();
+                if (mScrimView != null) mScrimView.invalidate();
+                appendPrimeSwipeDebug("PROMOTED", arrivedPage, previewPage);
+                tracePrimePostPromotion(arrivedPage, previewPage, 0);
+            }
+
+            private void tracePrimePostPromotion(AllAppsRecyclerView activePage,
+                    AllAppsRecyclerView sparePage, int frame) {
+                if (frame >= 8 || activePage != mPrimePromotedRecyclerView) return;
+                activePage.postOnAnimation(() -> {
+                    if (activePage != mPrimePromotedRecyclerView) return;
+                    appendPrimeSwipeDebug("POST_PROMOTE frame=" + frame, activePage, sparePage);
+                    tracePrimePostPromotion(activePage, sparePage, frame + 1);
+                });
+            }
+
+            private void setProgress(AllAppsRecyclerView rv, float dx) {
+                if (!previewStarted || previewPage == null) return;
+                int width = Math.max(1, rv.getWidth());
+                float clampedDx = Math.max(-width, Math.min(width, dx));
+                float progress = Math.min(1f, Math.abs(clampedDx) / width);
+
+                onTransitionProgress.accept(progress);
+                rv.setTranslationX(clampedDx);
+                float targetStart = swipeLeft ? width : -width;
+                previewPage.setTranslationX(targetStart + clampedDx);
+                appendPrimeSwipeDebug("FRAME p=" + Math.round(progress * 1000f)
+                        + " dx=" + clampedDx, rv, previewPage);
+                if (!PRIME_SWIPE_DIAG_FREEZE_BACKGROUND) {
+                    mPrimeSwipeBackgroundColor =
+                            ColorUtils.blendARGB(startBackground, targetBackground, progress);
+                    invalidate();
+                    if (mScrimView != null) mScrimView.invalidate();
+                }
+            }
+
+            private void finishPreview(AllAppsRecyclerView rv, boolean commit, float currentDx) {
+                int width = Math.max(1, rv.getWidth());
+                float from = Math.min(1f, Math.abs(currentDx) / width);
+
+                ValueAnimator animator = ValueAnimator.ofFloat(from, commit ? 1f : 0f);
+                animator.setDuration(180L);
+                animator.addUpdateListener(animation -> {
+                    float progress = (float) animation.getAnimatedValue();
+                    float dx = (swipeLeft ? -1f : 1f) * width * progress;
+                    setProgress(rv, dx);
+                });
+                animator.addListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        transitionRunning = false;
+                        if (commit && previewPage != null) {
+                            // The arrived page is already the final visual page. Persist selection,
+                            // then promote this exact RecyclerView; there is no preview->live reveal
+                            // and therefore no handoff frame in which the grid can shift.
+                            previewPage.setTranslationX(0f);
+                            appendPrimeSwipeDebug("ARRIVED", rv, previewPage);
+                            onCommit.accept(swipeLeft);
+                            appendPrimeSwipeDebug("COMMITTED", rv, previewPage);
+                            promoteArrivedPage(rv);
+                            onPreviewFinished.accept(true);
+                        } else {
+                            clearPreview(rv);
+                            // An aborted Nova swipe must fully release the transition lock. Without
+                            // this reset, the next gesture is rejected even though A is visible again.
+                            transitionRunning = false;
+                            onPreviewFinished.accept(false);
+                        }
+                    }
+                });
+                animator.start();
+            }
+
+            @Override
+            public boolean onInterceptTouchEvent(@NonNull RecyclerView recycler, @NonNull MotionEvent e) {
+                AllAppsRecyclerView rv = (AllAppsRecyclerView) recycler;
+                switch (e.getActionMasked()) {
+                    case MotionEvent.ACTION_DOWN:
+                        if (!isSwipeEnabled.getAsBoolean()) {
+                            validAppAreaGesture = false;
+                            horizontalSwipe = false;
+                            previewStarted = false;
+                            return false;
+                        }
+                        // Track the gesture in screen coordinates. The RecyclerView itself is
+                        // translated during Prime swipe, so local MotionEvent X would move with
+                        // the view and feed that translation back into the next dx calculation.
+                        downX = e.getRawX();
+                        downY = e.getRawY();
+                        if (velocityTracker != null) velocityTracker.recycle();
+                        velocityTracker = VelocityTracker.obtain();
+                        velocityTracker.addMovement(e);
+                        horizontalSwipe = false;
+                        previewStarted = false;
+                        transitionRunning = false;
+                        previewLayoutReady = false;
+                        transitionPending = false;
+                        pendingRv = null;
+                        validAppAreaGesture = e.getX() >= 0 && e.getX() <= rv.getWidth()
+                                && e.getY() >= 0 && e.getY() <= rv.getHeight();
+                        // The Prime category strip has its own HorizontalScrollView gesture.
+                        // RecyclerView can geometrically extend underneath the floating header, so
+                        // an event over that row may still reach this listener. Exclude the row in
+                        // screen coordinates before Prime starts preparing/intercepting a page swipe.
+                        PrimeDrawerTabsView primeTabs =
+                                mHeader != null
+                                        ? mHeader.findFixedRowByType(PrimeDrawerTabsView.class)
+                                        : null;
+                        if (validAppAreaGesture && primeTabs != null
+                                && primeTabs.getVisibility() == View.VISIBLE) {
+                            int[] tabsLocation = new int[2];
+                            primeTabs.getLocationOnScreen(tabsLocation);
+                            float rawX = e.getRawX();
+                            float rawY = e.getRawY();
+                            if (rawX >= tabsLocation[0]
+                                    && rawX <= tabsLocation[0] + primeTabs.getWidth()
+                                    && rawY >= tabsLocation[1]
+                                    && rawY <= tabsLocation[1] + primeTabs.getHeight()) {
+                                validAppAreaGesture = false;
+                            }
+                        }
+                        return false;
+                    case MotionEvent.ACTION_MOVE:
+                        if (!validAppAreaGesture) return false;
+                        if (velocityTracker != null) velocityTracker.addMovement(e);
+                        float dx = e.getRawX() - downX;
+                        float dy = e.getRawY() - downY;
+
+                        // Prepare the adjacent page as soon as horizontal intent appears, before
+                        // RecyclerView's touch slop is crossed. By the time Prime intercepts the
+                        // gesture there should be no adapter construction left on the critical
+                        // first swipe frame.
+                        if (!horizontalSwipe
+                                && Math.abs(dx) > 2f
+                                && Math.abs(dx) > Math.abs(dy)) {
+                            boolean directionLeft = dx < 0;
+                            String targetTabId = getPreviewTabId.apply(directionLeft);
+                            if (targetTabId != null
+                                    && (!targetTabId.equals(previewTabId)
+                                            || previewDirectionLeft != directionLeft)) {
+                                if (previewPage != null) clearPreview(rv);
+                                swipeLeft = directionLeft;
+                                previewDirectionLeft = directionLeft;
+                                startBackground = getBottomSheetBackgroundColor();
+                                targetBackground = resolvePreviewBackground(targetTabId);
+                                if (ensurePreviewPage(rv, targetTabId)) {
+                                    previewTabId = targetTabId;
+                                }
+                            }
+                        }
+
+                        if (!horizontalSwipe
+                                && Math.abs(dx) > touchSlop
+                                && Math.abs(dx) > Math.abs(dy) * 1.05f) {
+                            horizontalSwipe = true;
+                            swipeLeft = dx < 0;
+                            String targetTabId = getPreviewTabId.apply(swipeLeft);
+                            if (targetTabId != null
+                                    && targetTabId.equals(previewTabId)
+                                    && previewPage != null) {
+                                if (!PRIME_SWIPE_DIAG_FREEZE_BACKGROUND) {
+                                    mPrimeSwipeBackgroundColor = startBackground;
+                                }
+                                // Lock the destination immediately, but do not spend the
+                                // animation budget while a large preview is still laying out.
+                                // The posted readiness callback starts this automatically as soon
+                                // as the prepared RecyclerView has completed its next UI turn.
+                                transitionPending = true;
+                                pendingRv = rv;
+                                pendingStartDx = dx;
+                                startPendingTransitionIfReady();
+                            }
+                        }
+                        if (horizontalSwipe && transitionPending && !previewStarted) {
+                            // Readiness can complete between MOVE events. Keep the pending offset
+                            // synchronized with the finger so START uses its current position
+                            // instead of the touch-slop crossing position from an older frame.
+                            pendingStartDx = dx;
+                        }
+                        if (horizontalSwipe && previewStarted && !transitionRunning) {
+                            setProgress(rv, dx);
+                        }
+                        return horizontalSwipe;
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        // A page can be prewarmed before Prime actually intercepts the gesture.
+                        // Dispose it when the touch ends as a normal RecyclerView gesture.
+                        if (!horizontalSwipe && previewPage != null) {
+                            clearPreview(rv);
+                        }
+                        validAppAreaGesture = false;
+                        return false;
+                    default:
+                        return false;
+                }
+            }
+
+            @Override
+            public void onTouchEvent(@NonNull RecyclerView recycler, @NonNull MotionEvent e) {
+                AllAppsRecyclerView rv = (AllAppsRecyclerView) recycler;
+                if (!horizontalSwipe || !validAppAreaGesture) return;
+
+                if (velocityTracker != null) velocityTracker.addMovement(e);
+                if (e.getActionMasked() == MotionEvent.ACTION_MOVE) {
+                    if (previewStarted && !transitionRunning) {
+                        setProgress(rv, e.getRawX() - downX);
+                    }
+                    return;
+                }
+                if (e.getActionMasked() == MotionEvent.ACTION_UP
+                        || e.getActionMasked() == MotionEvent.ACTION_CANCEL) {
+                    float dx = e.getRawX() - downX;
+                    float velocityX = 0f;
+                    if (velocityTracker != null) {
+                        velocityTracker.computeCurrentVelocity(1000);
+                        velocityX = velocityTracker.getXVelocity();
+                        velocityTracker.recycle();
+                        velocityTracker = null;
+                    }
+                    boolean sameDirectionVelocity =
+                            swipeLeft ? velocityX < 0f : velocityX > 0f;
+                    boolean commit = e.getActionMasked() == MotionEvent.ACTION_UP
+                            && previewStarted
+                            && (Math.abs(dx) >= rv.getWidth() * 0.33f
+                                    || (sameDirectionVelocity && Math.abs(velocityX) >= 900f));
+                    horizontalSwipe = false;
+                    validAppAreaGesture = false;
+                    transitionPending = false;
+                    pendingRv = null;
+                    if (previewStarted && !transitionRunning) {
+                        transitionRunning = true;
+                        appendPrimeSwipeDebug("RELEASE commit=" + commit
+                                + " vx=" + Math.round(velocityX), rv, previewPage);
+                        finishPreview(rv, commit, dx);
+                    } else if (!previewStarted && previewPage != null) {
+                        clearPreview(rv);
+                        onPreviewFinished.accept(false);
+                    }
+                }
+            }
+            boolean animateDirectTab(String tabId, boolean moveLeft, Runnable directCommit) {
+                if (transitionRunning || transitionPending || tabId == null) return false;
+                AllAppsRecyclerView fallback = mAH.get(AdapterHolder.MAIN).mRecyclerView;
+                AllAppsRecyclerView rv = getPrimeVisibleRecyclerView(fallback);
+                if (rv == null || rv.getWidth() == 0) return false;
+
+                swipeLeft = moveLeft;
+                previewDirectionLeft = moveLeft;
+                startBackground = getBottomSheetBackgroundColor();
+                targetBackground = resolvePreviewBackground(tabId);
+                if (!ensurePreviewPage(rv, tabId) || previewPage == null) return false;
+
+                previewTabId = tabId;
+                previewStarted = true;
+                transitionRunning = true;
+                rv.stopScroll();
+                if (!PRIME_SWIPE_DIAG_FREEZE_BACKGROUND) {
+                    mPrimeSwipeBackgroundColor = startBackground;
+                }
+                setProgress(rv, 0f);
+
+                int width = Math.max(1, rv.getWidth());
+                ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f);
+                animator.setDuration(220L);
+                animator.addUpdateListener(animation -> {
+                    float progress = (float) animation.getAnimatedValue();
+                    setProgress(rv, (moveLeft ? -1f : 1f) * width * progress);
+                });
+                animator.addListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        transitionRunning = false;
+                        if (previewPage == null) return;
+                        previewPage.setTranslationX(0f);
+                        appendPrimeSwipeDebug("DIRECT_ARRIVED " + tabId, rv, previewPage);
+                        directCommit.run();
+                        promoteArrivedPage(rv);
+                        onPreviewFinished.accept(true);
+                    }
+                });
+                animator.start();
+                return true;
+        
+            }
+
+        }
+
+        PrimeSwipeTouchListener primeSwipeTouchListener = new PrimeSwipeTouchListener();
+        mPrimeDrawerSwipeListener = primeSwipeTouchListener;
+        mPrimeTabTransitionController = primeSwipeTouchListener::animateDirectTab;
+
+        for (int type : new int[]{AdapterHolder.MAIN, AdapterHolder.WORK}) {
+            AllAppsRecyclerView rv = mAH.get(type).mRecyclerView;
+            if (rv != null) rv.addOnItemTouchListener(mPrimeDrawerSwipeListener);
+        }
+    }
+
     /** Run some code on all the recycler views. */
     protected void forAllRecyclerViews(Consumer<AllAppsRecyclerView> consumer) {
         for (AdapterHolder holder : mAH) {
@@ -1339,7 +2337,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
      * hidden while searching.
      */
     public ViewGroup getAppsRecyclerViewContainer() {
-        return mViewPager != null ? mViewPager : findViewById(R.id.apps_list_view);
+        return mViewPager != null ? mViewPager : findViewById(R.id.apps_list_view_container);
     }
 
     /** The RV for search results, which is hidden while A-Z apps are visible. */
@@ -1437,9 +2435,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         } else {
             getSearchRecyclerView().setVisibility(GONE);
             getAppsRecyclerViewContainer().setVisibility(VISIBLE);
-            // Keep the empty header shell hidden when search is off and there are no tabs.
-            mHeader.setVisibility(
-                    (isAppDrawerSearchBarHidden() && !mUsingTabs) ? View.GONE : View.VISIBLE);
+            // Prime Tabs is a fixed header row too; hiding search must not hide that row.
+            mHeader.setVisibility(shouldKeepAllAppsHeaderVisible() ? View.VISIBLE : View.GONE);
         }
         if (mHeader.isSetUp()) {
             mHeader.setActiveRV(getCurrentPage());

@@ -19,7 +19,13 @@ package com.android.launcher3.widget;
 import static com.android.launcher3.Utilities.ATLEAST_Q;
 
 import android.appwidget.AppWidgetProviderInfo;
+import android.appwidget.AppWidgetManager;
+import android.os.Bundle;
+import android.util.SizeF;
+import com.android.launcher3.model.data.LauncherAppWidgetInfo;
+import com.android.launcher3.widget.util.WidgetSizes;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Rect;
 import android.os.Handler;
 import android.os.Parcelable;
@@ -88,6 +94,87 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
     private boolean mTrackingWidgetUpdate = false;
 
     private int mFocusRectOutsets = 0;
+    private static final String PRIME_WIDGET_MARGINS = "prime_widget_margins";
+    private final int[] mPrimeMarginsPercent = new int[4];
+
+    /** Individual widget margins use the same 0–200% scale as global widget margins. */
+    private int getPrimeGlobalMarginPercent() {
+        return Math.max(0, Math.min(200,
+                Math.round(mActivityContext.getDeviceProfile()
+                        .getPrimeGlobalWidgetPaddingFactor() * 100f)));
+    }
+
+    public int[] getPrimeMarginsPercent() {
+        return mPrimeMarginsPercent.clone();
+    }
+
+    public void setPrimeMarginsPercent(int[] margins) {
+        if (margins == null || margins.length != 4 || getAppWidgetId() <= 0) return;
+        SharedPreferences.Editor editor = getContext().getSharedPreferences(
+                PRIME_WIDGET_MARGINS, Context.MODE_PRIVATE).edit();
+        for (int i = 0; i < 4; i++) {
+            mPrimeMarginsPercent[i] = Math.max(0, Math.min(200, margins[i]));
+            editor.putInt(getAppWidgetId() + "_factor_" + i, mPrimeMarginsPercent[i]);
+        }
+        editor.apply();
+        applyPrimeMargins();
+        updatePrimeWidgetSizeOptions();
+    }
+
+    /** Reset to global margins and resume following future global changes. */
+    public void resetPrimeMarginsToGlobal() {
+        SharedPreferences.Editor editor = getContext().getSharedPreferences(
+                PRIME_WIDGET_MARGINS, Context.MODE_PRIVATE).edit();
+        int global = getPrimeGlobalMarginPercent();
+        for (int i = 0; i < 4; i++) {
+            editor.remove(getAppWidgetId() + "_factor_" + i);
+            mPrimeMarginsPercent[i] = global;
+        }
+        editor.apply();
+        applyPrimeMargins();
+        updatePrimeWidgetSizeOptions();
+    }
+
+    /** Insets applied to the widget's grid cell, matching DeviceProfile.widgetPadding. */
+    public Rect getPrimeCellInsets() {
+        Rect insets = new Rect();
+        for (int i = 0; i < 4; i++) {
+            int base = mActivityContext.getDeviceProfile().getPrimeUnscaledWidgetPadding(i);
+            int px = Math.round(base * mPrimeMarginsPercent[i] / 100f);
+            switch (i) {
+                case 0: insets.left = px; break;
+                case 1: insets.top = px; break;
+                case 2: insets.right = px; break;
+                case 3: insets.bottom = px; break;
+            }
+        }
+        return insets;
+    }
+
+    /**
+     * Tell the widget provider about the actual content area. Padding alone only clips
+     * RemoteViews for providers that choose layouts from OPTION_APPWIDGET_SIZES.
+     */
+    private void updatePrimeWidgetSizeOptions() {
+        if (getAppWidgetId() <= 0 || getAppWidgetInfo() == null
+                || !(getTag() instanceof LauncherAppWidgetInfo)) return;
+        LauncherAppWidgetInfo info = (LauncherAppWidgetInfo) getTag();
+        Bundle options = WidgetSizes.getWidgetSizeOptions(getContext(),
+                getAppWidgetInfo().provider, info.spanX, info.spanY);
+        if (options == null) return;
+        // WidgetSizes already reports the provider's usable dimensions, including
+        // the framework and global widget padding. Do not scale them again using
+        // Prime's per-widget padding: doing both clips RemoteViews (notably weather
+        // widgets), even when the advanced controls are at their neutral values.
+        // Re-sending the unmodified options also restores widgets previously
+        // affected by the double adjustment when their margins are reset.
+        AppWidgetManager.getInstance(getContext()).updateAppWidgetOptions(getAppWidgetId(), options);
+    }
+
+    private void applyPrimeMargins() {
+        // Margins belong to the cell layout, not to RemoteViews content padding.
+        if (getParent() != null) getParent().requestLayout();
+    }
 
     public LauncherAppWidgetHostView(Context context) {
         super(context);
@@ -143,6 +230,17 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
     @Override
     public void setAppWidget(int appWidgetId, AppWidgetProviderInfo info) {
         super.setAppWidget(appWidgetId, info);
+        SharedPreferences prefs = getContext().getSharedPreferences(
+                PRIME_WIDGET_MARGINS, Context.MODE_PRIVATE);
+        int global = getPrimeGlobalMarginPercent();
+        for (int i = 0; i < 4; i++) {
+            String key = appWidgetId + "_factor_" + i;
+            // Legacy signed percentages are intentionally not reused: they were
+            // offsets of widget dimensions, not global margin multipliers.
+            mPrimeMarginsPercent[i] = prefs.contains(key)
+                    ? Math.max(0, Math.min(200, prefs.getInt(key, global))) : global;
+        }
+        applyPrimeMargins();
         if (!mTrackingWidgetUpdate && appWidgetId != -1) {
             mTrackingWidgetUpdate = true;
             Log.i(TAG, "App widget created with id: " + appWidgetId);
@@ -270,6 +368,11 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         mIsAttachedToWindow = true;
+        // A provider update can arrive while the host view is detached. Flush it when
+        // the workspace reattaches instead of waiting for a launcher process restart.
+        if (mReapplyOnResumeUpdates && !isDeferringUpdates()) {
+            endDeferringUpdates();
+        }
         checkIfAutoAdvance();
     }
 
@@ -302,6 +405,15 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
             // If a long press has been performed, we don't want to clear the record of that since
             // we still may be receiving a touch up which we want to intercept
             mLongPressHelper.cancelLongPress();
+        }
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        if (w != oldw || h != oldh) {
+            applyPrimeMargins();
+            updatePrimeWidgetSizeOptions();
         }
     }
 
@@ -340,6 +452,10 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
     @Override
     protected void onWindowVisibilityChanged(int visibility) {
         super.onWindowVisibilityChanged(visibility);
+        // Recover pending RemoteViews when returning to a visible workspace.
+        if (visibility == VISIBLE && mReapplyOnResumeUpdates && !isDeferringUpdates()) {
+            endDeferringUpdates();
+        }
         maybeRegisterAutoAdvance();
     }
 

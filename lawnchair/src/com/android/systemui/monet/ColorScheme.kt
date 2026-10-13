@@ -375,6 +375,7 @@ internal constructor(
 class ColorScheme(
     @ColorInt val seed: Int,
     val style: Style = Style.TONAL_SPOT,
+    private val allowAchromaticSeed: Boolean = false,
 ) {
     val accent1: TonalPalette
     val accent2: TonalPalette
@@ -409,7 +410,7 @@ class ColorScheme(
         val seedArgb =
             if (seed == Color.TRANSPARENT) {
                 GOOGLE_BLUE
-            } else if (style != Style.CONTENT && proposedSeedCam.chroma < 5) {
+            } else if (!allowAchromaticSeed && style != Style.CONTENT && proposedSeedCam.chroma < 5) {
                 GOOGLE_BLUE
             } else {
                 seed

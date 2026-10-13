@@ -21,6 +21,7 @@ import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.core.DataMigration
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
@@ -117,6 +118,15 @@ class PreferenceManager2 @Inject constructor(
     }
 
     fun getCachedPreferences(): Preferences = cachedPreferences
+
+    /**
+     * Grid rebuilds can run immediately after a preference write, before the
+     * DataStore collector on the main dispatcher updates cachedPreferences.
+     * Refresh from DataStore's latest committed snapshot before rebuilding.
+     */
+    fun refreshCachedPreferencesForGrid() {
+        cachedPreferences = runBlocking { preferencesDataStore.data.first() }
+    }
 
     private val reloadHelper = ReloadHelper(context)
 
@@ -226,6 +236,37 @@ class PreferenceManager2 @Inject constructor(
         onSet = { reloadHelper.recreate() },
     )
 
+    /** Master color inherited by drawer tab families unless they override it. */
+    val tabsColor = preference(
+        key = stringPreferencesKey(name = "tabs_color"),
+        parse = ColorOption::fromString,
+        save = ColorOption::toString,
+        onSet = { reloadHelper.recreate() },
+        defaultValue = ColorOption.Default,
+    )
+
+    val inactiveTabsColor = preference(
+        key = stringPreferencesKey(name = "inactive_tabs_color"),
+        parse = ColorOption::fromString,
+        save = ColorOption::toString,
+        onSet = { reloadHelper.recreate() },
+        defaultValue = ColorOption.Default,
+    )
+
+    fun getInactiveTabsColorBlocking(): ColorOption = inactiveTabsColor.firstCached(this)
+
+    val drawerTabsColor = preference(
+        key = stringPreferencesKey(name = "prime_drawer_tabs_color"),
+        parse = ColorOption::fromString,
+        save = ColorOption::toString,
+        onSet = { reloadHelper.recreate() },
+        defaultValue = ColorOption.Default,
+    )
+
+    fun getDrawerTabsColorBlocking(): ColorOption = drawerTabsColor.firstCached(this)
+
+    fun getTabsColorBlocking(): ColorOption = tabsColor.firstCached(this)
+
     val appDrawerBackgroundColor = preference(
         key = stringPreferencesKey(name = "app_drawer_bg_color"),
         parse = ColorOption::fromString,
@@ -245,7 +286,7 @@ class PreferenceManager2 @Inject constructor(
         parse = ColorOption::fromString,
         save = ColorOption::toString,
         onSet = { reloadHelper.recreate() },
-        defaultValue = ColorOption.SystemAccent,
+        defaultValue = ColorOption.Default,
     )
 
     val workProfileTabContainerBackground = preference(
@@ -268,14 +309,6 @@ class PreferenceManager2 @Inject constructor(
         save = ColorOption::toString,
         onSet = { reloadHelper.reloadGrid() },
         defaultValue = ColorOption.fromString(context.getString(R.string.config_default_notification_dot_text_color)),
-    )
-
-    val folderColor = preference(
-        key = stringPreferencesKey(name = "folder_color"),
-        parse = ColorOption::fromString,
-        save = ColorOption::toString,
-        onSet = { reloadHelper.reloadGrid() },
-        defaultValue = ColorOption.fromString(context.getString(R.string.config_default_folder_color)),
     )
 
     val showNotificationCount = preference(
@@ -805,6 +838,18 @@ class PreferenceManager2 @Inject constructor(
         defaultValue = false,
     )
 
+    val dockIconSizeFactor = preference(
+        key = floatPreferencesKey(name = "dock_icon_size_factor"),
+        defaultValue = 1.0f,
+        onSet = { reloadHelper.reloadGrid() },
+    )
+
+    val dockIconLabelSizeFactor = preference(
+        key = floatPreferencesKey(name = "dock_icon_label_size_factor"),
+        defaultValue = 1.0f,
+        onSet = { reloadHelper.reloadGrid() },
+    )
+
     val enableLabelInDock = preference(
         key = booleanPreferencesKey(name = "enable_label_dock"),
         defaultValue = false,
@@ -974,7 +1019,30 @@ class PreferenceManager2 @Inject constructor(
     companion object {
         private val Context.preferencesDataStore by preferencesDataStore(
             name = "preferences",
-            produceMigrations = { listOf(SharedPreferencesMigration(context = it).produceMigration()) },
+            produceMigrations = {
+                listOf(
+                    SharedPreferencesMigration(context = it).produceMigration(),
+                    object : DataMigration<Preferences> {
+                        private val migrationKey = booleanPreferencesKey("prime_notification_dot_legacy_reset_v1")
+                        private val dotKey = stringPreferencesKey("notification_dot_color")
+                        private val countKey = stringPreferencesKey("notification_dot_text_color")
+
+                        override suspend fun shouldMigrate(currentData: Preferences): Boolean =
+                            currentData[migrationKey] != true
+
+                        override suspend fun migrate(currentData: Preferences): Preferences =
+                            currentData.toMutablePreferences().apply {
+                                // One-time cleanup of old Lawnchair test colors. Prime's
+                                // separate per-theme/per-variant overrides are untouched.
+                                remove(dotKey)
+                                remove(countKey)
+                                this[migrationKey] = true
+                            }
+
+                        override suspend fun cleanUp() = Unit
+                    },
+                )
+            },
         )
 
         @JvmField

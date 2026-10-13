@@ -53,6 +53,10 @@ import app.lawnchair.qsb.providers.PixelSearch
 import app.lawnchair.qsb.rememberAllAppsQsbState
 import app.lawnchair.search.LawnchairRecentSuggestionProvider
 import app.lawnchair.search.algorithms.LawnchairSearchAlgorithm
+import app.lawnchair.theme.ThemeColorRole
+import app.lawnchair.theme.ThemeColors
+import app.lawnchair.theme.ThemeProfile
+import app.lawnchair.theme.effectiveThemeVariant
 import app.lawnchair.theme.color.tokens.ColorTokens
 import app.lawnchair.ui.theme.LawnchairTheme
 import app.lawnchair.util.ProvideLifecycleState
@@ -129,6 +133,7 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
         hint = ViewCompat.requireViewById(this, R.id.hint)
 
         input = ViewCompat.requireViewById(this, R.id.input)
+        input.applyPrimeSearchTheme()
 
         qsbShell = ViewCompat.requireViewById(this, R.id.qsb_shell)
 
@@ -180,14 +185,34 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
                     showLens = lensIntent != null,
                 )
 
-                val backgroundColor = if (supportBlur) {
-                    ColorTokens.SearchboxHighlightBlur.resolveColor(context)
-                } else {
-                    ColorTokens.SearchboxHighlight.resolveColor(context)
-                }
+                val profile = ThemeProfile.current(context)
+                val variant = context.effectiveThemeVariant()
+                val backgroundColor = ThemeColors.resolve(
+                    context,
+                    profile,
+                    if (isFocused || !queryEmpty) {
+                        ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE
+                    } else {
+                        ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE
+                    },
+                    variant,
+                )
+                val borderColor = ThemeColors.resolve(
+                    context,
+                    profile,
+                    ThemeColorRole.DRAWER_SEARCH_BORDER,
+                    variant,
+                )
+
+                val iconOverride = app.lawnchair.theme.ThemeColorOverrides(context)
+                    .get(profile, variant, ThemeColorRole.DRAWER_SEARCH_ICON)
+                val iconTint = if (iconOverride == app.lawnchair.theme.color.ColorOption.Default) null
+                    else ThemeColors.resolve(context, profile, ThemeColorRole.DRAWER_SEARCH_ICON, variant)
+                val borderOverride = app.lawnchair.theme.ThemeColorOverrides(context)
+                    .get(profile, variant, ThemeColorRole.DRAWER_SEARCH_BORDER)
 
                 val backgroundAlpha by animateIntAsState(
-                    if (isFocused || !queryEmpty) 0 else 100,
+                    100,
                 )
 
                 // Ignore other theme attributes to preserve existing behavior
@@ -197,9 +222,12 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
                     backgroundColor = backgroundColor,
                     backgroundAlpha = backgroundAlpha,
                     cornerRadius = 1f,
-                    strokeColor = null,
-                    strokeWidth = 0f,
-                )
+                    strokeColor = borderColor,
+                    // Preserve Legacy's borderless search bar geometry. The semantic border
+                    // color is resolved now and is ready for styles/modes that expose a stroke.
+                    strokeWidth = if (borderOverride == app.lawnchair.theme.color.ColorOption.Default)
+                        0f else context.resources.displayMetrics.density,
+                ).copy(iconTint = iconTint)
 
                 val actions = QsbActions(
                     onQsbClick = {
@@ -404,7 +432,12 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
             focusedLowerCase.matches(Regex("^[\\x00-\\x7F]*$")) &&
             focusedLowerCase.startsWith(inputLowerCase)
         ) {
-            val hintColor = Themes.getAttrColor(context, android.R.attr.textColorTertiary)
+            val hintColor = ThemeColors.resolve(
+                context,
+                ThemeProfile.current(context),
+                ThemeColorRole.DRAWER_SEARCH_HINT,
+                context.effectiveThemeVariant(),
+            )
             val hintText = SpannableStringBuilder(inputString)
                 .append(focusedLowerCase.substring(inputLowerCase.length))
             hintText.setSpan(ForegroundColorSpan(Color.TRANSPARENT), 0, inputLowerCase.length, SPAN_POINT_MARK)

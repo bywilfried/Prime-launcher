@@ -63,16 +63,26 @@ fun ColorPreference(
     selectedColor: ColorOption,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    description: String? = null,
+    previewColor: ColorOption? = null,
+    automaticContrastPreview: Boolean = false,
+    dynamicContrastPreview: Boolean = false,
+    iconColorPreview: Boolean = false,
 ) {
     val mMSDLPlayerWrapper = MSDLPlayerWrapper.INSTANCE.get(LocalContext.current)
     PreferenceTemplate(
         title = { Text(text = label) },
         modifier = modifier,
         description = {
-            Text(text = selectedColor.colorPreferenceEntry.label())
+            Text(text = description ?: selectedColor.colorPreferenceEntry.label())
         },
         endWidget = {
-            ColorDot(selectedColor.colorPreferenceEntry)
+            when {
+                automaticContrastPreview -> ContrastColorDot()
+                dynamicContrastPreview -> DynamicContrastColorDot()
+                iconColorPreview -> IconColorDot()
+                else -> ColorDot((previewColor ?: selectedColor).colorPreferenceEntry)
+            }
         },
         onClick = {
             mMSDLPlayerWrapper.playToken(MSDLToken.TAP_MEDIUM_EMPHASIS)

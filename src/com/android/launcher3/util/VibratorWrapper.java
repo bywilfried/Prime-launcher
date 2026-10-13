@@ -127,6 +127,36 @@ public class VibratorWrapper {
         }
     }
 
+    /**
+     * Vibrates with a genuinely scaled primitive when supported. If primitives are unavailable,
+     * falls back to an amplitude-controlled one-shot. Returns false when this device cannot
+     * provide a meaningful intensity scale.
+     */
+    @SuppressLint("NewApi")
+    public boolean vibrateScaled(int primitiveId, float scale, long fallbackDurationMs) {
+        if (!mHasVibrator || !mIsHapticFeedbackEnabled || scale <= 0f) {
+            return scale <= 0f;
+        }
+        final float clampedScale = Math.max(0f, Math.min(1f, scale));
+        if (Utilities.ATLEAST_R && primitiveId >= 0
+                && mVibrator.areAllPrimitivesSupported(primitiveId)) {
+            UI_HELPER_EXECUTOR.execute(() -> mVibrator.vibrate(
+                    VibrationEffect.startComposition()
+                            .addPrimitive(primitiveId, clampedScale)
+                            .compose(),
+                    VIBRATION_ATTRS));
+            return true;
+        }
+        if (mVibrator.hasAmplitudeControl()) {
+            final int amplitude = Math.max(1, Math.round(255f * clampedScale));
+            final VibrationEffect effect =
+                    createOneShot(Math.max(1L, fallbackDurationMs), amplitude);
+            UI_HELPER_EXECUTOR.execute(() -> mVibrator.vibrate(effect, VIBRATION_ATTRS));
+            return true;
+        }
+        return false;
+    }
+
     /** Indicates that Taskbar has been invoked. */
     public void vibrateForTaskbarUnstash() {
         if (Utilities.ATLEAST_S && mVibrator.areAllPrimitivesSupported(PRIMITIVE_LOW_TICK)) {

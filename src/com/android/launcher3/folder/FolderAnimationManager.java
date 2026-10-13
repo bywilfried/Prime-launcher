@@ -187,9 +187,11 @@ public class FolderAnimationManager implements FolderAnimationCreator {
         final float xDistance = initialX - lp.x;
         final float yDistance = initialY - lp.y;
 
-        // Set up the Folder background (respects Lawnchair folder color pref).
-        int initialColor = LawnchairUtilsKt.resolveFolderPreviewColor(mContext);
-        int finalColor = LawnchairUtilsKt.resolveFolderBackgroundColor(mContext);
+        // Prime owns two independent semantic colors. The closed preview is only the animation
+        // start/end point; the Folder drawable always owns the open semantic color.
+        int initialColor = mPreviewBackground.getResolvedColor();
+        int finalColor = LawnchairUtilsKt.resolveFolderBackgroundColor(
+                mContext, mFolder.isInAppDrawer());
 
         mFolderBackground.mutate();
         mFolderBackground.setColor(mIsOpening ? initialColor : finalColor);
@@ -337,6 +339,13 @@ public class FolderAnimationManager implements FolderAnimationCreator {
                 mContent.setClipToPadding(mContentClipToPadding);
                 mCellLayout.setClipChildren(mCellLayoutClipChildren);
                 mCellLayout.setClipToPadding(mCellLayoutClipPadding);
+
+                // Keep the persistent Folder drawable on its own semantic role after opening.
+                if (mIsOpening) {
+                    int settledColor = LawnchairUtilsKt.resolveFolderBackgroundColor(
+                            mContext, mFolder.isInAppDrawer());
+                    mFolderBackground.setColor(settledColor);
+                }
             }
         });
 
@@ -357,6 +366,7 @@ public class FolderAnimationManager implements FolderAnimationCreator {
                 (int) (previewItemOffsetX / scaleRelativeToDragLayer) + radiusDiff, radiusDiff);
         return a;
     }
+
 
     /**
      * Returns the list of "preview items" on {@param page}.

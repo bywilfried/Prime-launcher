@@ -72,6 +72,13 @@ fun SelectAppsForDrawerFolder(
     allFolderPackages: Set<String>?,
     onUpdate: (title: String, componentKeys: List<String>) -> Unit,
     modifier: Modifier = Modifier,
+    preserveActiveOrder: Boolean = false,
+    extraMenuContent: @Composable ((hideMenu: () -> Unit) -> Unit)? = null,
+    showDuplicateFilter: Boolean = true,
+    showStandardMenuActions: Boolean = true,
+    reorderEnabled: Boolean = true,
+    onBack: (() -> Unit)? = null,
+    handleSystemBack: Boolean = true,
 ) {
     var filterNonUniqueItems by remember { mutableStateOf(true) }
 
@@ -103,12 +110,20 @@ fun SelectAppsForDrawerFolder(
             items = positionalItems,
             activeCount = activeCount,
             onOrderChange = { newList, newCount ->
-                val sorted = PositionalListState.sortInactiveItems(newList, newCount) { it.label }
+                val sorted = if (preserveActiveOrder) {
+                    newList.take(newCount) + PositionalListState.sortInactiveItems(newList.drop(newCount), 0) { it.label }
+                } else {
+                    PositionalListState.sortInactiveItems(newList, newCount) { it.label }
+                }
                 val activeKeys = PositionalListState.getEnabledKeys(sorted, newCount)
                 onUpdate(folderEntry?.title.toString(), activeKeys)
             },
             labelSelector = { it.label },
         )
+    }
+
+    if (onBack != null && handleSystemBack) {
+        androidx.activity.compose.BackHandler(onBack = onBack)
     }
 
     PreferenceScaffold(
@@ -122,21 +137,28 @@ fun SelectAppsForDrawerFolder(
             if (!loading) {
                 PositionalListOverflowMenu(
                     state = state,
-                ) { hideMenu ->
-                    DropdownMenuItem(
-                        onClick = {
-                            filterNonUniqueItems = !filterNonUniqueItems
-                            hideMenu()
-                        },
-                        trailingIcon = {
-                            if (filterNonUniqueItems) Icon(Icons.Rounded.Check, null)
-                        },
-                        text = { Text(stringResource(R.string.folders_filter_duplicates)) },
-                    )
-                }
+                    showStandardActions = showStandardMenuActions,
+                    extraItems = { hideMenu ->
+                        extraMenuContent?.invoke(hideMenu)
+                        if (showDuplicateFilter) {
+                        DropdownMenuItem(
+                            onClick = {
+                                filterNonUniqueItems = !filterNonUniqueItems
+                                hideMenu()
+                            },
+                            trailingIcon = {
+                                if (filterNonUniqueItems) Icon(Icons.Rounded.Check, null)
+                            },
+                            text = { Text(stringResource(R.string.folders_filter_duplicates)) },
+                        )
+                        }
+                    },
+                )
             }
         },
         isExpandedScreen = LocalIsExpandedScreen.current,
+        backArrowVisible = onBack != null || !LocalIsExpandedScreen.current,
+        onBack = onBack,
     ) { contentPadding ->
         Crossfade(targetState = loading, label = "") { isLoading ->
             if (isLoading) {
@@ -154,6 +176,7 @@ fun SelectAppsForDrawerFolder(
                 PositionalAppListPreference(
                     state = state,
                     contentPadding = contentPadding,
+                    reorderEnabled = reorderEnabled,
                 )
             }
         }
@@ -165,6 +188,7 @@ private fun PositionalAppListPreference(
     state: PositionalListState<App, String>,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
+    reorderEnabled: Boolean = true,
 ) {
     PositionalList(
         state = state,
@@ -178,5 +202,6 @@ private fun PositionalAppListPreference(
         },
         contentPadding = contentPadding,
         modifier = modifier,
+        reorderEnabled = reorderEnabled,
     )
 }

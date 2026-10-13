@@ -226,4 +226,5 @@
     <string name="four_sided_cookie_shape_title" msgid="3275212586290522151">"Biscuit à quatre côtés"</string>
     <string name="seven_sided_cookie_shape_title" msgid="4862560582029671668">"Biscuit à sept côtés"</string>
     <string name="arch_shape_title" msgid="2213843822192871318">"Arc"</string>
+    <string name="prime_edit_folder">Modifier le dossier</string>
 </resources>

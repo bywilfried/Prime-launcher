@@ -31,6 +31,12 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
+import app.lawnchair.theme.ThemeColorRole
+import app.lawnchair.theme.ThemeColors
+import app.lawnchair.theme.ThemeProfile
+import app.lawnchair.theme.effectiveThemeVariant
 
 /***
  * A template used to create most preference-related components in the Preference UI.
@@ -53,6 +59,23 @@ fun PreferenceTemplate(
     ),
     interactionSource: MutableInteractionSource? = null,
 ) {
+    val context = LocalContext.current
+    val semanticCardColor = ThemeColors.resolve(
+        context,
+        ThemeProfile.current(context),
+        ThemeColorRole.GLOBAL_SETTINGS_CARD_BACKGROUND,
+        context.effectiveThemeVariant(),
+    )
+    val resolvedColors = if (colors == ListItemDefaults.segmentedColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+        )) {
+        ListItemDefaults.segmentedColors(
+            containerColor = Color(semanticCardColor),
+            disabledContainerColor = Color(semanticCardColor),
+        )
+    } else colors
+
     val titleContent = @Composable {
         ProvideTitleTextStyle {
             title()
@@ -78,7 +101,7 @@ fun PreferenceTemplate(
                 trailingContent = endWidget,
                 supportingContent = descriptionContent,
                 verticalAlignment = verticalAlignment,
-                colors = colors,
+                colors = resolvedColors,
             )
         } else {
             SegmentedListItem(
@@ -91,7 +114,7 @@ fun PreferenceTemplate(
                 trailingContent = endWidget,
                 supportingContent = descriptionContent,
                 verticalAlignment = verticalAlignment,
-                colors = colors,
+                colors = resolvedColors,
                 interactionSource = interactionSource,
             )
         }

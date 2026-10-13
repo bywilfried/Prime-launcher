@@ -17,4 +17,35 @@
 <resources xmlns:tools="http://schemas.android.com/tools" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="generic_smartspace_concatenated_desc">%1$s, %2$s</string>
     <string name="accessibility_smartspace_page">Page %1$d sur %2$d</string>
+    <string name="prime_tab_all">Toutes</string>\n    <string name="prime_tab_unclassified">Non catégorisé</string>\n    <string name="prime_tab_create">Créer un onglet</string>
+    <string name="prime_tab_name_hint">Nom de l’onglet</string>
+    <string name="prime_tab_create_action">Créer</string>
+    <string name="prime_tab_name_required">Saisissez un nom d’onglet</string>
+    <string name="prime_tab_rename">Renommer</string>\n    <string name="prime_tab_rename_action">Renommer</string>
+    <string name="prime_tab_set_default">Définir par défaut</string>
+    <string name="prime_tab_apps">Applications</string>
+    <string name="prime_tab_advanced">Options avancées</string>
+    <string name="prime_tab_options">Options</string>
+    <string name="prime_tab_delete">Supprimer</string>\n    <string name="prime_tab_delete_confirm_title">Supprimer l’onglet ?</string>\n    <string name="prime_tab_delete_confirm_message">Supprimer « %1$s » ? Les applications de cet onglet redeviendront non catégorisées sauf si elles appartiennent à un autre onglet.</string>
+    <string name="prime_app_categories">Catégories</string>
+    <string name="drawer_tabs">Onglets</string>
+    <string name="prime_tabs_settings">Onglets</string>
+    <string name="prime_categories_manage">Gestion des catégories</string>
+    <string name="prime_tabs_color">Couleur des onglets de catégories</string>
+    <string name="prime_category_hidden">Masqué</string>
+    <string name="prime_category_settings">Gestion de la catégorie</string>
+    <string name="prime_category_default">Onglet par défaut</string>
+    <string name="prime_category_name">Nom</string>
+    <string name="prime_category_folders_pending">Dossiers*</string>
+    <string name="prime_tabs_open_behavior">À l’ouverture du tiroir</string>
+    <string name="prime_tabs_open_first">Premier onglet</string>
+    <string name="prime_tabs_open_last">Dernier onglet consulté</string>
+    <string name="prime_tabs_open_default">Onglet par défaut</string>
+    <string name="prime_tabs_swipe_enabled">Changer d’onglet par balayage</string>\n    <string name="prime_tabs_hide_all">Masquer l’onglet Toutes</string>
+    <string name="prime_tabs_hide_unclassified">Masquer l’onglet Non classées</string>
+    <string name="prime_development_options">Options de développement</string>
+    <string name="prime_development_options_description">Options de développement et de diagnostic Prime</string>
+    <string name="prime_show_empty_folders">Afficher les dossiers vides</string>
+    <string name="prime_show_empty_folders_description">Afficher les dossiers vides dans le tiroir lorsque la mise en page Onglets est utilisée</string>
+    <string name="theme_appearance_label">Apparence</string>
 </resources>

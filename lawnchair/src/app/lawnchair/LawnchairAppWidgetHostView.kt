@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.widget.RemoteViews
 import app.lawnchair.smartspace.SmartspaceAppWidgetProvider
+import com.android.launcher3.PrimeDebugLog
 import com.android.launcher3.R
 import com.android.launcher3.util.Themes
 import com.android.launcher3.widget.LauncherAppWidgetHostView
@@ -20,6 +21,10 @@ class LawnchairAppWidgetHostView @JvmOverloads constructor(
     private var customView: ViewGroup? = null
 
     override fun setAppWidget(appWidgetId: Int, info: AppWidgetProviderInfo) {
+        PrimeDebugLog.d(
+            "PrimeWidget",
+            "setAppWidget id=$appWidgetId provider=${info.provider.flattenToShortString()} preview=$previewMode",
+        )
         inflateCustomView(info)
         super.setAppWidget(appWidgetId, info)
     }
@@ -40,16 +45,28 @@ class LawnchairAppWidgetHostView @JvmOverloads constructor(
     }
 
     override fun updateAppWidget(remoteViews: RemoteViews?) {
+        PrimeDebugLog.d(
+            "PrimeWidget",
+            "updateAppWidget id=$appWidgetId provider=${appWidgetInfo?.provider?.flattenToShortString()} remoteViews=${remoteViews != null} custom=${customView != null}",
+        )
         if (customView != null) return
         super.updateAppWidget(remoteViews)
     }
 
     override fun getDefaultView(): View {
+        PrimeDebugLog.d(
+            "PrimeWidget",
+            "getDefaultView id=$appWidgetId provider=${appWidgetInfo?.provider?.flattenToShortString()} custom=${customView != null}",
+        )
         if (customView != null) return getEmptyView()
         return super.getDefaultView()
     }
 
     override fun getErrorView(): View {
+        PrimeDebugLog.d(
+            "PrimeWidget",
+            "getErrorView id=$appWidgetId provider=${appWidgetInfo?.provider?.flattenToShortString()} custom=${customView != null}",
+        )
         if (customView != null) return getEmptyView()
         return super.getErrorView()
     }

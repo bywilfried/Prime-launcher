@@ -60,6 +60,9 @@ class ComposeBottomSheet<T>(context: Context) : AbstractSlideInView<T>(context, 
     }
 
     fun show() {
+        if (mActivityContext is Launcher) {
+            mActivityContext.registerPrimeComposeBackTarget(this)
+        }
         val parent = parent
         if (parent is ViewGroup) {
             parent.removeView(this)
@@ -67,6 +70,12 @@ class ComposeBottomSheet<T>(context: Context) : AbstractSlideInView<T>(context, 
         removeAllViews()
         addView(mContent)
         attachToContainer()
+        // Launcher normally recalculates whether Android's Back gesture may reach it when the
+        // DragLayer hierarchy changes. ComposeBottomSheet is attached programmatically, so make
+        // that recalculation explicit after this floating view is actually in the hierarchy.
+        if (mActivityContext is Launcher) {
+            mActivityContext.onDragLayerHierarchyChanged()
+        }
         animateOpen()
     }
 
@@ -105,12 +114,19 @@ class ComposeBottomSheet<T>(context: Context) : AbstractSlideInView<T>(context, 
     }
 
     override fun onCloseComplete() {
+        if (mActivityContext is Launcher) {
+            mActivityContext.clearPrimeComposeBackTarget(this)
+        }
         super.onCloseComplete()
+        if (mActivityContext is Launcher) {
+            // Restore Launcher's normal Home back-gesture exclusion after the sheet is removed.
+            mActivityContext.onDragLayerHierarchyChanged()
+        }
         setSystemUiFlags(0)
     }
 
     override fun isOfType(type: Int): Boolean {
-        return type and TYPE_COMPOSE_VIEW != 0
+        return type and (TYPE_COMPOSE_VIEW or TYPE_ON_BOARD_POPUP) != 0
     }
 
     override fun getScrimColor(context: Context): Int {

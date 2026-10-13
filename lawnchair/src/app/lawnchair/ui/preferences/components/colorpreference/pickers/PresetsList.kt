@@ -25,6 +25,10 @@ fun PresetsList(
     onPresetClick: (ColorOption) -> Unit,
     isPresetSelected: (ColorOption) -> Boolean,
     modifier: Modifier = Modifier,
+    automaticContrastDefault: Boolean = false,
+    adaptiveFolderDefault: Boolean = false,
+    perIconDefault: Boolean = false,
+    blackWhiteDefault: Boolean = false,
 ) {
     val mMSDLPlayerWrapper = MSDLPlayerWrapper.INSTANCE.get(LocalContext.current)
     PreferenceGroup(
@@ -40,10 +44,23 @@ fun PresetsList(
                             selected = isPresetSelected(entry.value),
                             onClick = null,
                         )
-                        ColorDot(
-                            entry = entry,
-                            modifier = Modifier.padding(start = 16.dp),
-                        )
+                        if (entry.value == ColorOption.IconColor ||
+                            (perIconDefault && entry.value == ColorOption.Default)) {
+                            app.lawnchair.ui.preferences.components.colorpreference.IconColorDot(
+                                modifier = Modifier.padding(start = 16.dp))
+                        } else if (entry.value == ColorOption.AdaptiveThemeText) {
+                            app.lawnchair.ui.preferences.components.colorpreference.DynamicContrastColorDot(
+                                modifier = Modifier.padding(start = 16.dp))
+                        } else if (adaptiveFolderDefault && entry.value == ColorOption.Default) {
+                            app.lawnchair.ui.preferences.components.colorpreference.DynamicContrastColorDot(
+                                modifier = Modifier.padding(start = 16.dp))
+                        } else if (entry.value == ColorOption.AutomaticBlackWhite ||
+                            ((automaticContrastDefault || blackWhiteDefault) && entry.value == ColorOption.Default)) {
+                            app.lawnchair.ui.preferences.components.colorpreference.ContrastColorDot(
+                                modifier = Modifier.padding(start = 16.dp))
+                        } else {
+                            ColorDot(entry = entry, modifier = Modifier.padding(start = 16.dp))
+                        }
                     }
                 },
                 onClick = {

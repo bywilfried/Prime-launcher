@@ -17,6 +17,7 @@ import android.animation.LayoutTransition;
 import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
 import android.appwidget.AppWidgetProviderInfo;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
@@ -28,6 +29,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.SeekBar;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -265,6 +269,59 @@ public class AppWidgetResizeFrame extends AbstractFloatingView implements View.O
      */
     public View getViewForAccessibility() {
         return mWidgetView;
+    }
+
+    /** Edits external content insets without changing the widget's occupied grid cells. */
+    /** Opens the per-widget margins editor directly from the long-press menu. */
+    public static void showPrimeWidgetMarginsDialog(LauncherAppWidgetHostView widget) {
+        if (widget == null) return;
+        final int[] values = widget.getPrimeMarginsPercent();
+        final int[] original = values.clone();
+        final String[] sides = {"Gauche", "Haut", "Droite", "Bas"};
+        final float density = widget.getResources().getDisplayMetrics().density;
+        LinearLayout column = new LinearLayout(widget.getContext());
+        column.setOrientation(LinearLayout.VERTICAL);
+        int inset = Math.round(20 * density);
+        column.setPadding(inset, inset / 2, inset, inset / 2);
+        for (int i = 0; i < sides.length; i++) {
+            final int index = i;
+            TextView label = new TextView(widget.getContext());
+            label.setText(sides[i] + " : " + values[i] + " %");
+            column.addView(label);
+            SeekBar slider = new SeekBar(widget.getContext());
+            slider.setMax(200);
+            slider.setProgress(values[i]);
+            slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    values[index] = progress;
+                    label.setText(sides[index] + " : " + values[index] + " %");
+                    widget.setPrimeMarginsPercent(values);
+                }
+                @Override public void onStartTrackingTouch(SeekBar seekBar) { }
+                @Override public void onStopTrackingTouch(SeekBar seekBar) { }
+            });
+            column.addView(slider);
+        }
+        final boolean[] committed = {false};
+        AlertDialog dialog = new AlertDialog.Builder(widget.getContext())
+                .setTitle("Marges du widget")
+                .setView(column)
+                .setPositiveButton("Valider", (d, which) -> {
+                    committed[0] = true;
+                    widget.setPrimeMarginsPercent(values);
+                })
+                .setNeutralButton("Réinitialiser", (d, which) -> {
+                    committed[0] = true;
+                    widget.resetPrimeMarginsToGlobal();
+                })
+                .setNegativeButton("Annuler", (d, which) -> { })
+                .create();
+        // Back and outside taps cancel the live preview as well.
+        dialog.setOnDismissListener(d -> {
+            if (!committed[0]) widget.setPrimeMarginsPercent(original);
+        });
+        dialog.show();
     }
 
     private void setupForWidget(LauncherAppWidgetHostView widgetView, CellLayout cellLayout,
@@ -785,11 +842,14 @@ public class AppWidgetResizeFrame extends AbstractFloatingView implements View.O
 
     @Override
     public boolean onControllerInterceptTouchEvent(MotionEvent ev) {
+        // Action buttons must receive their click before the resize gesture detector.
+        if (isTouchOnReconfigureButton(ev)) {
+            return false;
+        }
         if (ev.getAction() == MotionEvent.ACTION_DOWN && handleTouchDown(ev)) {
             return true;
         }
-        // Keep the resize frame open but let a click on the reconfigure button fall through to the
-        // button's OnClickListener.
+        // Keep the resize frame open for the action buttons.
         if (isTouchOnReconfigureButton(ev)) {
             return false;
         }

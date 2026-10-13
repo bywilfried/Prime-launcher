@@ -31,9 +31,15 @@ val themeEntries = sequenceOf(
 
 @Composable
 fun ThemePreference() {
+    // Theme identity and appearance are deliberately separate. Legacy is currently the only
+    // ThemeProfile; LIGHT/DARK/SYSTEM below only choose which variant of it is displayed.
+    NavigationActionPreference(
+        label = stringResource(id = R.string.theme_label),
+        subtitle = "Legacy",
+    )
     ListPreference(
         adapter = preferenceManager().launcherTheme.getAdapter(),
         entries = themeEntries,
-        label = stringResource(id = R.string.theme_label),
+        label = stringResource(id = R.string.theme_appearance_label),
     )
 }

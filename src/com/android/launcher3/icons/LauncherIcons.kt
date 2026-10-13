@@ -16,9 +16,15 @@
 package com.android.launcher3.icons
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Matrix
+import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Rect
+import android.graphics.RectF
 import android.graphics.drawable.AdaptiveIconDrawable
+import android.graphics.drawable.Drawable
 import android.os.UserHandle
 import com.android.launcher3.Flags
 import com.android.launcher3.InvariantDeviceProfile
@@ -33,6 +39,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import java.util.concurrent.ConcurrentLinkedQueue
 import javax.inject.Inject
+import app.lawnchair.icons.shape.IconShape
 
 /**
  * Wrapper class to provide access to [BaseIconFactory] and also to provide pool of this class that
@@ -47,6 +54,8 @@ internal constructor(
     private var userCache: UserCache,
     @Assisted private val pool: ConcurrentLinkedQueue<LauncherIcons>,
 ) : BaseIconFactory(context, idp.fillResIconDpi, idp.iconBitmapSize), AutoCloseable {
+
+    private var primeIconShape: IconShape? = null
 
     init {
         mThemeController = themeManager.themeController
@@ -63,8 +72,72 @@ internal constructor(
     }
 
     override fun getShapePath(drawable: AdaptiveIconDrawable, iconBounds: Rect): Path {
+        primeIconShape?.let { shape ->
+            return Path(shape.getMaskPath()).apply {
+                val matrix = android.graphics.Matrix()
+                matrix.setRectToRect(
+                    RectF(0f, 0f, 100f, 100f),
+                    RectF(iconBounds),
+                    android.graphics.Matrix.ScaleToFit.FILL,
+                )
+                transform(matrix)
+            }
+        }
         if (!Flags.enableLauncherIconShapes()) return super.getShapePath(drawable, iconBounds)
         return themeManager.iconShape.getPath(iconBounds)
+    }
+
+    /** Runs icon creation with a view-local Prime mask without changing the global theme shape. */
+    fun <T> withPrimeIconShape(shape: IconShape, block: LauncherIcons.() -> T): T {
+        primeIconShape = shape
+        return try {
+            block()
+        } finally {
+            primeIconShape = null
+        }
+    }
+
+    /** Rasterizes an adaptive icon with the Prime mask replacing the system/Lawnchair mask. */
+    fun createPrimeIconBitmap(drawable: Drawable, user: UserHandle, shape: IconShape): BitmapInfo =
+        withPrimeIconShape(shape) {
+            val source = if (drawable is AdaptiveIconDrawable) {
+                // Never rasterize with the child Drawable instances owned by IconCache. Icon
+                // creation changes bounds/state while drawing; sharing those instances makes the
+                // next live shape change start from a source already touched by the previous one.
+                val isolated = (drawable.constantState?.newDrawable()?.mutate()
+                    as? AdaptiveIconDrawable) ?: drawable
+                PrimeAdaptiveIconDrawable(isolated, shape)
+            } else {
+                drawable.constantState?.newDrawable()?.mutate() ?: drawable
+            }
+            createBadgedIconBitmap(
+                source,
+                BaseIconFactory.IconOptions().setUser(getUserInfo(user)),
+            )
+        }
+
+    private class PrimeAdaptiveIconDrawable(
+        source: AdaptiveIconDrawable,
+        private val shape: IconShape,
+    ) : AdaptiveIconDrawable(source.background, source.foreground) {
+        override fun draw(canvas: Canvas) {
+            val currentBounds = bounds
+            if (currentBounds.isEmpty) return
+            val mask = Path(shape.getMaskPath()).apply {
+                transform(Matrix().apply {
+                    setRectToRect(
+                        RectF(0f, 0f, 100f, 100f),
+                        RectF(currentBounds),
+                        Matrix.ScaleToFit.FILL,
+                    )
+                })
+            }
+            val save = canvas.save()
+            canvas.clipPath(mask)
+            background.draw(canvas)
+            foreground.draw(canvas)
+            canvas.restoreToCount(save)
+        }
     }
 
     override fun close() {

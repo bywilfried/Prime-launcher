@@ -103,6 +103,7 @@ data class QsbStyle(
     @param:ColorInt val strokeColor: Int,
     val strokeWidthPx: Float,
     val cornerRadiusPx: Float,
+    @param:ColorInt val iconTint: Int? = null,
 )
 
 /**
@@ -389,6 +390,7 @@ fun LawnQsbUi(
                     method = state.startIcon.method,
                 ),
                 contentDescription = state.startIcon.contentDescription,
+                colorFilter = style.iconTint?.let { androidx.compose.ui.graphics.ColorFilter.tint(ComposeColor(it)) },
                 modifier = Modifier.size(24.dp),
             )
         }
@@ -410,6 +412,7 @@ fun LawnQsbUi(
                     QsbIcon(
                         icon = icon,
                         shape = shape,
+                        tintColor = style.iconTint,
                         onClick = { actions.onEndIconClick(icon.id) },
                         modifier = Modifier.addIf(isLast) {
                             offset(x = (-6).dp)
@@ -433,6 +436,7 @@ fun LawnQsbUi(
 fun QsbIcon(
     icon: QsbIconState,
     shape: Shape,
+    tintColor: Int? = null,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -455,7 +459,7 @@ fun QsbIcon(
                 method = icon.method,
             ),
             contentDescription = icon.contentDescription,
-            tint = ComposeColor.Unspecified,
+            tint = tintColor?.let { ComposeColor(it) } ?: ComposeColor.Unspecified,
             modifier = Modifier.fillMaxSize(),
         )
     }
