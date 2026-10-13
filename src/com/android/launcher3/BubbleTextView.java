@@ -1326,15 +1326,21 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                 } else {
                     setText(modifiedString);
                 }
-                // if text contains NEW_LINE, set max lines to 2
-                if (TextUtils.indexOf(modifiedString, NEW_LINE) != -1) {
-                    setSingleLine(false);
-                    setMaxLines(2);
-                } else {
-                    setSingleLine(true);
-                    setMaxLines(1);
-                }
             }
+            // A recycled icon can retain single-line mode even when its label text is unchanged.
+            // Apply the line count independently of setText(), using the current cell bounds.
+            boolean hasSecondLine = TextUtils.indexOf(modifiedString, NEW_LINE) != -1;
+            if (hasSecondLine) {
+                setSingleLine(false);
+                setMaxLines(2);
+            } else {
+                setSingleLine(true);
+                setMaxLines(1);
+            }
+        } else if (mDisplay == DISPLAY_ALL_APPS || mDisplay == DISPLAY_PREDICTION_ROW) {
+            // Changing the per-mode preference must also restore the one-line layout.
+            setSingleLine(true);
+            setMaxLines(1);
         }
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
     }
