@@ -1,59 +1,87 @@
 <div align="center">
 
+<img src="docs/prime/prime-logo.svg" alt="Prime Launcher logo" width="128" height="128">
+
 # Prime Launcher
 
-**Un écran d’accueil Android qui vous ressemble.**
+### Your home screen. Your style.
 
-Un launcher libre, personnalisable et centré sur la maîtrise de son interface.
+**An open-source Android launcher built for personalisation, control, and a home screen that feels like yours.**
 
-**Version stable actuelle : 0.8.0** · **Branche de développement : `Prime-identity`**
+[Explore the source](https://github.com/bywilfried/Prime-launcher/tree/Prime-identity) · [Releases](https://github.com/bywilfried/Prime-launcher/releases) · [Report an issue](https://github.com/bywilfried/Prime-launcher/issues)
 
 </div>
 
-## Le projet
+## Meet Prime Launcher
 
-**Prime Launcher** est un lanceur d’applications Android open source, issu de **Launcher3 (AOSP)** et basé sur la branche de développement de **Lawnchair 16**. Il développe sa propre identité visuelle et ses propres fonctionnalités de personnalisation.
+Prime Launcher is a customisable Android home screen experience, built on **Launcher3 (AOSP)** and the development branch of **Lawnchair 16**.
 
-L’objectif : permettre de construire un accueil, un dock et un tiroir d’applications cohérents avec ses habitudes et ses préférences, sans imposer une apparence unique.
+Prime takes that foundation in its own direction: a distinctive visual identity, detailed appearance controls, category-based app organisation, and more freedom to fine-tune everyday interactions. From the colour of a category tab to the spacing around a widget, the aim is to make your launcher feel deliberately yours.
 
-## Identité visuelle
+## Features
 
-- **Nom :** Prime Launcher
-- **Symbole :** monogramme « P » intégré à une forme de maison, représentant l’accueil Android
-- **Univers graphique :** bleu profond, dégradés bleus et lignes douces
-- **Icône de l’application :** fond bleu, symbole clair, coins arrondis
+### 🎨 Make every colour yours
 
-L’icône officielle est définie par les ressources Android `prime_icon_background` et `prime_icon_foreground`, également utilisées sur la page « À propos ».
+Choose the colours of your home screen, dock, app drawer, folders, and interface elements. Prime supports theme-level customisation as well as **individual app drawer category colours**.
 
-## Fonctionnalités
+Automatic text colour options help maintain readability:
+- **Automatic black/white** chooses whichever of black or white contrasts best with the background.
+- **Adaptive contrast** derives a readable text colour from the background's hue, targeting a 7:1 contrast ratio where achievable.
 
-- **Thèmes et couleurs :** personnalisation des couleurs de l’interface, y compris par catégorie du tiroir
-- **Contraste adaptatif :** modes noir/blanc automatique et contraste coloré tenant compte des surfaces
-- **Tiroir d’applications :** organisation par catégories et personnalisation de leurs onglets
-- **Icônes et dossiers :** choix d’apparence, couleurs et libellés
-- **Widgets :** réglage des marges globales et individuelles
-- **Accueil et dock :** paramètres d’affichage et de dimensionnement
+### 🗂️ An app drawer that fits your routine
 
-Certaines fonctionnalités sont encore en cours de stabilisation sur la branche de développement.
+Organise apps into **categories** and move between them using customisable tabs. Give categories their own colours and distinguish active and inactive tab states.
 
-## Versions et téléchargements
+### 🧩 Fine-tune widgets
 
-La **version release actuelle est 0.8.0**. Les versions suivantes de cette série pourront être publiées sous la forme `0.8.1`, `0.8.2`, etc. Le passage à `0.9.0` sera décidé séparément.
+Adjust widget margins globally or per widget, with separate controls for each side. Make room for dense layouts or give your favourite widgets extra breathing space.
 
-Les builds de développement portent un identifiant `0.8.0-dev.N`, où `N` augmente avec les exécutions de GitHub Actions. Ils peuvent contenir des modifications expérimentales.
+### 📱 Personalise your layout
 
-Consultez les [releases du dépôt](https://github.com/bywilfried/Prime-launcher/releases) pour les APK effectivement publiés. La branche [Prime-identity](https://github.com/bywilfried/Prime-launcher/tree/Prime-identity) accueille les évolutions de l’identité Prime.
+Refine the appearance of icons, labels, folders, the home screen, dock, and drawer. Prime offers granular sizing and colour options rather than a single fixed look.
 
-## Développement
+### 🛠️ Built with iteration in mind
 
-Le projet repose sur **Launcher3 (AOSP)** et le travail open source de **Lawnchair**. Merci aux développeurs et contributeurs de ces projets.
+Prime Launcher is actively developed. Debug builds and diagnostic log export help investigate issues as the project evolves.
 
-Les modifications spécifiques à Prime Launcher sont développées dans ce dépôt. Pour signaler un problème ou proposer une amélioration, utilisez les [issues GitHub](https://github.com/bywilfried/Prime-launcher/issues).
+## Visual identity
 
-## Licence et crédits
+<div align="center">
+  <img src="docs/prime/prime-logo.svg" alt="Prime Launcher app icon — blue gradient with a house-shaped P monogram" width="180">
+</div>
 
-Prime Launcher est un fork open source. Les licences et mentions des composants tiers sont conservées dans le dépôt et accessibles depuis **Paramètres → À propos → Licences tierces**.
+The Prime identity combines a **deep-blue palette**, soft rounded corners, and a **house-inspired “P” monogram**. The mark represents the place you return to every time you unlock your phone: your home screen.
 
----
+### Screenshots
 
-<sub>Prime Launcher est un projet indépendant. Il n’est pas une publication officielle de Lawnchair ou de Google.</sub>
+Screenshots of the home screen, category drawer, and customisation settings will be added here as the presentation assets are prepared.
+
+## Get Prime Launcher
+
+Browse [GitHub Releases](https://github.com/bywilfried/Prime-launcher/releases) for published builds. The [Prime-identity branch](https://github.com/bywilfried/Prime-launcher/tree/Prime-identity) contains ongoing identity and feature development.
+
+**Current release series: 0.8.x.** Development builds may contain experimental changes.
+
+## Verify an APK
+
+To verify that an APK is signed with the expected certificate, compare its **SHA-256 signing certificate fingerprint** with the fingerprint published by the project.
+
+> **Official SHA-256 fingerprint:** Pending verification of a signed release APK. Do not treat an unverified fingerprint as official.
+
+You can inspect an APK locally using Android SDK Build Tools:
+
+```bash
+apksigner verify --print-certs Prime-Launcher-release.apk
+```
+
+## Open-source foundations and credits
+
+Prime Launcher is an independent fork built on the work of [Launcher3 (AOSP)](https://source.android.com/) and [Lawnchair](https://github.com/LawnchairLauncher/lawnchair). Thanks to the maintainers and contributors of those projects.
+
+Third-party licences and acknowledgements remain available in the source tree and in **Settings → About → Third-party licences**.
+
+Prime Launcher is not an official Lawnchair or Google product.
+
+## Contributing and feedback
+
+Found a bug or have an idea? [Open an issue](https://github.com/bywilfried/Prime-launcher/issues) to share feedback or discuss an improvement.
