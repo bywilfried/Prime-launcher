@@ -8,6 +8,7 @@ import android.os.Looper
 import android.os.Process
 import android.widget.Toast
 import androidx.core.content.FileProvider
+import com.android.launcher3.PrimeWidgetTrace
 import java.io.File
 import java.util.concurrent.TimeUnit
 
@@ -35,6 +36,7 @@ object PrimeWidgetLogExporter {
                 if (process.exitValue() != 0) {
                     throw IllegalStateException("logcat a échoué (code ${process.exitValue()})")
                 }
+                file.appendText(PrimeWidgetTrace.exportText(appContext))
                 file.appendText(
                     "\n--- Prime Launcher widget diagnostics ---\n" +
                         "Captured: ${java.util.Date()}\n" +
