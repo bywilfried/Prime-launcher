@@ -22,7 +22,6 @@ import app.lawnchair.ui.preferences.components.controls.SwitchPreference
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
 import app.lawnchair.ui.preferences.navigation.PrimeDiagnosticLogs
-import app.lawnchair.ui.preferences.navigation.PrimeHapticTuning
 import app.lawnchair.util.restartLauncher
 import com.android.launcher3.R
 import com.android.launcher3.allapps.ActivityAllAppsContainerView
@@ -57,11 +56,6 @@ fun PrimeDevelopmentOptionsPreference() {
                 label = "Diagnostic swipe",
                 subtitle = "Afficher les traces du swipe entre les catégories du tiroir",
                 onClick = { showSwipeDiagnostic = true },
-            )
-            ClickablePreference(
-                label = stringResource(R.string.prime_haptic_tuning),
-                subtitle = stringResource(R.string.prime_haptic_tuning_description),
-                onClick = { navController.navigate(PrimeHapticTuning) },
             )
         }
     }
