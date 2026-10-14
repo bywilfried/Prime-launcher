@@ -6,6 +6,9 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Xml
+import com.android.launcher3.LauncherPrefs
+import org.xmlpull.v1.XmlPullParser
 import androidx.core.graphics.drawable.toBitmap
 import app.lawnchair.LawnchairProto.BackupInfo
 import app.lawnchair.util.hasFlag
@@ -61,8 +64,11 @@ class LawnchairBackup(
         val handlers = mutableMapOf<String, suspend (InputStream) -> Unit>()
         val contents = selectedContents and info.contents
         if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
+            handlers[PREFS_FILE_NAME] = { restoreLauncherPreferences(it) }
             handlers.putAll(
-                getFiles(context, forRestore = true).mapValues { entry ->
+                getFiles(context, forRestore = true)
+                    .filterKeys { it != PREFS_FILE_NAME }
+                    .mapValues { entry ->
                     {
                         val file = entry.value
                         file.parentFile?.mkdirs()
@@ -84,6 +90,55 @@ class LawnchairBackup(
 
         val dbController = ModelDbController(context)
         RestoreDbTask.performRestore(context, dbController)
+    }
+
+    /**
+     * Restore through the live SharedPreferences instance rather than replacing its XML on disk.
+     * LauncherPrefs and Prime drawer repositories cache this instance; a raw file replacement
+     * leaves the old values in memory and they can be written back during launcher restart.
+     */
+    private fun restoreLauncherPreferences(input: InputStream) {
+        val parser = Xml.newPullParser()
+        parser.setInput(input, "UTF-8")
+        val values = linkedMapOf<String, Any>()
+        var event = parser.eventType
+        while (event != XmlPullParser.END_DOCUMENT) {
+            if (event == XmlPullParser.START_TAG) {
+                val name = parser.getAttributeValue(null, "name")
+                val value = parser.getAttributeValue(null, "value")
+                if (name != null) {
+                    when (parser.name) {
+                        "string" -> values[name] = parser.nextText()
+                        "boolean" -> if (value != null) values[name] = value.toBoolean()
+                        "int" -> if (value != null) values[name] = value.toInt()
+                        "long" -> if (value != null) values[name] = value.toLong()
+                        "float" -> if (value != null) values[name] = value.toFloat()
+                        "set" -> {
+                            val strings = linkedSetOf<String>()
+                            while (parser.next() != XmlPullParser.END_TAG || parser.name != "set") {
+                                if (parser.eventType == XmlPullParser.START_TAG && parser.name == "string") {
+                                    strings.add(parser.nextText())
+                                }
+                            }
+                            values[name] = strings
+                        }
+                    }
+                }
+            }
+            event = parser.next()
+        }
+        val editor = LauncherPrefs.getPrefs(context).edit().clear()
+        values.forEach { (key, value) ->
+            when (value) {
+                is String -> editor.putString(key, value)
+                is Boolean -> editor.putBoolean(key, value)
+                is Int -> editor.putInt(key, value)
+                is Long -> editor.putLong(key, value)
+                is Float -> editor.putFloat(key, value)
+                is Set<*> -> editor.putStringSet(key, value.filterIsInstance<String>().toSet())
+            }
+        }
+        check(editor.commit()) { "Failed to restore launcher preferences" }
     }
 
     private suspend fun readZip(handlers: Map<String, suspend (InputStream) -> Unit>) {
