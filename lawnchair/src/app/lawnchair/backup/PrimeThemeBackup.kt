@@ -32,7 +32,7 @@ internal object PrimeThemeBackup {
     }
 
     fun restore(context: Context, input: InputStream) {
-        val data = JSONObject(input.bufferedReader(Charsets.UTF_8).use { it.readText() })
+        val data = JSONObject(input.readBytes().toString(Charsets.UTF_8))
         require(data.getInt("version") == 1) { "Unsupported Prime theme backup version" }
         val preferences = data.getJSONObject("preferences")
         // Parse and validate every store before modifying any saved settings.
