@@ -181,6 +181,13 @@ fun ColumnScope.RestoreBackupOptions(
         FlagSwitchPreference(
             flags = contents,
             setFlags = viewModel::setBackupContents,
+            mask = LawnchairBackup.INCLUDE_THEME_CUSTOMIZATIONS,
+            label = "Thème et personnalisations avancées",
+            enabled = backupContents.hasFlag(LawnchairBackup.INCLUDE_THEME_CUSTOMIZATIONS),
+        )
+        FlagSwitchPreference(
+            flags = contents,
+            setFlags = viewModel::setBackupContents,
             mask = LawnchairBackup.INCLUDE_LAYOUT_AND_SETTINGS,
             label = stringResource(id = R.string.backup_content_layout_and_settings),
             enabled = backupContents.hasFlag(LawnchairBackup.INCLUDE_LAYOUT_AND_SETTINGS),
