@@ -77,6 +77,9 @@ class LawnchairBackup(
                 },
             )
         }
+        if (contents.hasFlag(INCLUDE_THEME_CUSTOMIZATIONS)) {
+            handlers[THEME_FILE_NAME] = { PrimeThemeBackup.restore(context, it) }
+        }
         if (contents.hasFlag(INCLUDE_WALLPAPER)) {
             handlers[WALLPAPER_FILE_NAME] = {
                 val wallpaperManager = WallpaperManager.getInstance(context)
@@ -186,6 +189,8 @@ class LawnchairBackup(
 
         const val INCLUDE_LAYOUT_AND_SETTINGS = 1 shl 0
         const val INCLUDE_WALLPAPER = 1 shl 1
+        const val INCLUDE_THEME_CUSTOMIZATIONS = 1 shl 2
+        private const val THEME_FILE_NAME = "prime_theme_preferences.json"
 
         const val MIME_TYPE = "application/zip"
         val EXTRA_MIME_TYPES = arrayOf(MIME_TYPE, "application/x-zip", "application/octet-stream")
@@ -193,6 +198,7 @@ class LawnchairBackup(
         val contentOptions = listOf(
             INCLUDE_LAYOUT_AND_SETTINGS to R.string.backup_content_layout_and_settings,
             INCLUDE_WALLPAPER to R.string.backup_content_wallpaper,
+            INCLUDE_THEME_CUSTOMIZATIONS to R.string.backup_content_theme_customizations,
         )
 
         fun generateBackupFileName(): String {
@@ -247,6 +253,11 @@ class LawnchairBackup(
                             screenshotBitmap.compress(Bitmap.CompressFormat.PNG, 85, out)
                         }
 
+                        if (contents.hasFlag(INCLUDE_THEME_CUSTOMIZATIONS)) {
+                            out.putNextEntry(ZipEntry(THEME_FILE_NAME))
+                            PrimeThemeBackup.write(context, out)
+                            out.closeEntry()
+                        }
                         getFiles(context, forRestore = false).entries.forEach {
                             if (!it.value.exists()) return@forEach
                             out.putNextEntry(ZipEntry(it.key))
