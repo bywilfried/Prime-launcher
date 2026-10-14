@@ -31,6 +31,7 @@ internal fun playScaledSliderHaptic(
     token: MSDLToken,
     scale: Float,
 ) {
+    if (scale <= 0f) return
     val properties = InteractionProperties.DynamicVibrationScale(
         scale = scale,
         vibrationAttributes = VibrationAttributes.Builder()
