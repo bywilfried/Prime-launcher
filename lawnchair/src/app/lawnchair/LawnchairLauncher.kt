@@ -95,7 +95,6 @@ import com.kieronquinn.app.smartspacer.sdk.client.SmartspacerClient
 import com.patrykmichalik.opto.core.onEach
 import dev.kdrag0n.monet.theme.ColorScheme
 import java.util.stream.Stream
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -395,9 +394,10 @@ class LawnchairLauncher : QuickstepLauncher() {
     }
 
     override fun showDefaultOptions(x: Float, y: Float) {
-        val showWallpaperCarousel = kotlinx.coroutines.runBlocking {
-            preferenceManager2.launcherPopupOrder.first()
-        }.toLauncherOptions()
+        // Refresh the DataStore snapshot before consulting the popup option.
+        preferenceManager2.refreshCachedPreferencesForGrid()
+        val showWallpaperCarousel = preferenceManager2.launcherPopupOrder.firstCached()
+            .toLauncherOptions()
             .any { it.identifier == "carousel" && it.isEnabled }
 
         if (showWallpaperCarousel) {
