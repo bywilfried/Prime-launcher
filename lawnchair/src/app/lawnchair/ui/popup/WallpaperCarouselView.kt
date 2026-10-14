@@ -16,12 +16,10 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.LifecycleOwner
 import app.lawnchair.data.wallpaper.Wallpaper
 import app.lawnchair.data.wallpaper.model.WallpaperViewModel
 import app.lawnchair.launcher
 import app.lawnchair.util.decodeSampledBitmapFromFile
-import app.lawnchair.util.observeOnce
 import app.lawnchair.views.component.IconFrame
 import com.android.launcher3.R
 import com.android.launcher3.util.Themes
@@ -31,6 +29,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.withContext
 
 class WallpaperCarouselView @JvmOverloads constructor(
@@ -57,10 +56,17 @@ class WallpaperCarouselView @JvmOverloads constructor(
     }
 
     private fun observeWallpapers() {
-        viewModel.wallpapers.observeOnce(context as LifecycleOwner) { wallpapers ->
-            visibility = if (wallpapers.isEmpty()) GONE else VISIBLE
-            loadingView.visibility = if (wallpapers.isEmpty()) GONE else VISIBLE
-            if (wallpapers.isNotEmpty()) displayWallpapers(wallpapers)
+        // StateFlow starts with an empty list while wallpapers are loaded from disk.
+        // observeOnce consumed that initial value and never rendered the loaded images.
+        viewScope.launch {
+            viewModel.wallpapers.collectLatest { wallpapers ->
+                if (wallpapers.isEmpty()) {
+                    loadingView.visibility = VISIBLE
+                } else {
+                    visibility = VISIBLE
+                    displayWallpapers(wallpapers)
+                }
+            }
         }
     }
 
@@ -204,7 +210,7 @@ class WallpaperCarouselView @JvmOverloads constructor(
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        viewModel.wallpapers.value?.let { displayWallpapers(it) }
+        viewModel.wallpapers.value.takeIf { it.isNotEmpty() }?.let { displayWallpapers(it) }
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
