@@ -8,7 +8,7 @@ Prime Launcher, basé sur Lawnchair 16, apporte une personnalisation plus fine d
 • Aperçus des dossiers et pastilles de notification adaptés à la taille des icônes.
 
 <b>Widgets</b>
-• Marges individuelles sur les quatre côtés, de −40 % à +40 % par rapport aux marges globales.
+• Marges individuelles sur les quatre côtés.
 • Dimensions utiles communiquées au fournisseur pour favoriser l'adaptation du contenu (selon le widget).
 • Appui long : menu « Redimensionner » puis « Marges du widget ».
 • Appui long suivi d'un glissement : déplacement avec comportement de pré-déplacement inspiré des icônes.
