@@ -1502,7 +1502,9 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
                         }
                         finalPage = returnToOriginalPage ? mCurrentPage : mCurrentPage + getPanelCount();
                         runOnPageScrollsInitialized(() -> snapToPageWithVelocity(finalPage, velocity));
-					} else if (mCurrentPage == getChildCount() - 1 && infiniteScroll) {
+					} else if (mCurrentPage == getChildCount() - 1 && infiniteScroll
+                            && ((isSignificantMove && isDeltaLeft && !isFling)
+                                    || (isFling && isVelocityLeft))) {
                         finalPage = returnToOriginalPage ? mCurrentPage : 0;
                         if (!returnToOriginalPage) {
                             runOnPageScrollsInitialized(
@@ -1514,7 +1516,9 @@ public abstract class PagedView<T extends View & PageIndicator> extends ViewGrou
                             runOnPageScrollsInitialized(
                                     () -> snapToPageWithVelocity(finalPage, velocity));
                         }
-                    } else if (mCurrentPage == 0 && infiniteScroll && !enableFeed) {
+                    } else if (mCurrentPage == 0 && infiniteScroll && !enableFeed
+                            && ((isSignificantMove && !isDeltaLeft && !isFling)
+                                    || (isFling && !isVelocityLeft))) {
                         finalPage = returnToOriginalPage ? mCurrentPage : getChildCount() - 1;
                         if (!returnToOriginalPage) {
                             runOnPageScrollsInitialized(
