@@ -162,7 +162,7 @@
     <string name="workspace_label">Espace de travail</string>
     <string name="smartspace_label">Smartspace</string>
     <string name="internal_label">Interne</string>
-    <string name="internal_description">Le groupe Interne peut être moins stable que les autres groupes de test</string>
+    <string name="internal_description">Attention : les fonctionnalités de cette section sont expérimentales et peuvent entraîner des problèmes de stabilité.</string>
     <string name="font_picker_label">Personnalisation de la police</string>
     <string name="font_picker_description">Certains textes restent inchangés</string>
     <string name="smartspace_calendar_label">Personnalisation du calendrier dans Aperçu</string>
