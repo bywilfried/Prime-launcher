@@ -129,14 +129,22 @@ class LawnchairLauncher : QuickstepLauncher() {
         }
         override fun onStateTransitionComplete(finalState: LauncherState) {}
     }
+    // A cancelled close gesture transitions back to ALL_APPS without ever reaching home.
+    // Only apply the configured opening tab after the drawer has actually closed.
+    private var primeDrawerFullyClosed = true
     private val primeDrawerTabsStateListener = object : StateManager.StateListener<LauncherState> {
         override fun onStateTransitionStart(toState: LauncherState) {
-            if (toState is AllAppsState && prefs.drawerTabsEnabled.get()) {
+            if (toState is AllAppsState && primeDrawerFullyClosed && prefs.drawerTabsEnabled.get()) {
                 findViewById<PrimeDrawerTabsView?>(R.id.prime_drawer_tabs)?.onDrawerOpening()
             }
         }
 
-        override fun onStateTransitionComplete(finalState: LauncherState) {}
+        override fun onStateTransitionComplete(finalState: LauncherState) {
+            when (finalState) {
+                is AllAppsState -> primeDrawerFullyClosed = false
+                LauncherState.NORMAL -> primeDrawerFullyClosed = true
+            }
+        }
     }
     private val statusBarClockListener = object : StateManager.StateListener<LauncherState> {
         override fun onStateTransitionStart(toState: LauncherState) {
