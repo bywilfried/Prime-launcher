@@ -1638,7 +1638,10 @@ public class Launcher extends StatefulActivity<LauncherState>
                 != Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
 
         // Check this condition before handling isActionMain, as this will get reset.
-        boolean shouldMoveToDefaultScreen = alreadyOnHome && isInState(NORMAL)
+        boolean returnToMainHomePage = app.lawnchair.preferences.PreferenceManager
+                .getInstance(this).getReturnToMainHomePage().get();
+        boolean shouldMoveToDefaultScreen = (alreadyOnHome || returnToMainHomePage)
+                && isInState(NORMAL)
                 && AbstractFloatingView.getTopOpenView(this) == null;
         boolean isActionMain = Intent.ACTION_MAIN.equals(intent.getAction());
         boolean internalStateHandled = ACTIVITY_TRACKER.handleNewIntent(this);
