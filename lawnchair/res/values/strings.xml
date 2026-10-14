@@ -1165,4 +1165,6 @@
     <string name="smartspace_mode_selection">Smartspace mode</string>
     <string name="transparent_background_icons">Transparent icon backgrounds</string>
     <string name="warn_files_permission_content">Grant file access to use this feature.</string>
+    <string name="return_to_main_home_page_label">Always return to main home page</string>
+    <string name="return_to_main_home_page_description">Return to your main home page when pressing Home, including after using another app</string>
 </resources>
