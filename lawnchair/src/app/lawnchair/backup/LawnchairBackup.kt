@@ -6,6 +6,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.database.sqlite.SQLiteDatabase
+import android.database.DatabaseUtils
 import android.util.Xml
 import com.android.launcher3.LauncherPrefs
 import org.xmlpull.v1.XmlPullParser
@@ -21,7 +23,6 @@ import com.android.launcher3.LauncherAppState
 import com.android.launcher3.LauncherFiles
 import com.android.launcher3.R
 import com.android.launcher3.model.DeviceGridState
-import com.android.launcher3.model.ModelDbController
 import com.android.launcher3.provider.RestoreDbTask
 import com.google.protobuf.Timestamp
 import java.io.File
@@ -94,17 +95,42 @@ class LawnchairBackup(
             handlers[LAUNCHER_DB_FILE_NAME] = { input ->
                 val target = context.getDatabasePath(dbName)
                 target.parentFile?.mkdirs()
-                context.deleteDatabase(dbName)
-                target.outputStream().use { output -> input.copyTo(output) }
+                // Stage and validate the archive database before replacing the active one.
+                // Never validate it through a ModelDbController whose SQLite connection
+                // may still reference the old workspace database.
+                val staged = File(target.parentFile, "$dbName.prime-restore")
+                try {
+                    staged.outputStream().use { output -> input.copyTo(output) }
+                    val db = SQLiteDatabase.openDatabase(
+                        staged.absolutePath,
+                        null,
+                        SQLiteDatabase.OPEN_READONLY,
+                    )
+                    db.use {
+                        val count = DatabaseUtils.longForQuery(
+                            it,
+                            "SELECT COUNT(*) FROM favorites",
+                            null,
+                        )
+                        require(count > 0L) { "Backup workspace database contains no items" }
+                    }
+                    check(context.deleteDatabase(dbName) || !target.exists()) {
+                        "Unable to replace the active workspace database"
+                    }
+                    staged.inputStream().use { source ->
+                        target.outputStream().use { output -> source.copyTo(output) }
+                    }
+                } finally {
+                    staged.delete()
+                }
             }
         }
         readZip(handlers)
         if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
             DeviceGridState(info.gridState).writeToPrefs(context, true)
-            val dbController = ModelDbController(context)
-            check(RestoreDbTask.performRestore(context, dbController)) {
-                "Failed to validate restored workspace database"
-            }
+            // Perform profile remapping and widget validation on the next launcher
+            // startup, after its existing SQLite connections have been closed.
+            RestoreDbTask.setPending(context)
         }
     }
 
