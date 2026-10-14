@@ -48,4 +48,6 @@
     <string name="prime_show_empty_folders">Afficher les dossiers vides</string>
     <string name="prime_show_empty_folders_description">Afficher les dossiers vides dans le tiroir lorsque la mise en page Onglets est utilisée</string>
     <string name="theme_appearance_label">Apparence</string>
+    <string name="return_to_main_home_page_label">Toujours revenir à la page principale</string>
+    <string name="return_to_main_home_page_description">Revenir à la page principale avec le bouton Accueil, même après une application</string>
 </resources>
