@@ -120,6 +120,10 @@ class PreferenceManager @Inject constructor(
     val primeHapticReorderMove = IntPref("pref_prime_haptic_reorder_move", 100)
     val primeHapticReorderEnd = IntPref("pref_prime_haptic_reorder_end", 100)
     val primeHapticReorderCancel = IntPref("pref_prime_haptic_reorder_cancel", 100)
+    val primeHapticOtherEvents = IntPref("pref_prime_haptic_other_events", 100)
+    val primeHapticSlider = IntPref("pref_prime_haptic_slider", 100)
+    val primeHapticTaskbar = IntPref("pref_prime_haptic_taskbar", 100)
+    val primeHapticContextualSearch = IntPref("pref_prime_haptic_contextual_search", 100)
     val folderRows = IdpIntPref("pref_folderRows", { numFolderRows[INDEX_DEFAULT] }, reloadGrid)
 
     val drawerOpacity = FloatPref("pref_drawerOpacity", 1f, recreate)
