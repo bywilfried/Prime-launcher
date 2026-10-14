@@ -28,7 +28,9 @@ import app.lawnchair.util.FileAccessState
 import app.lawnchair.util.isGestureNavContractCompatible
 import com.android.launcher3.R
 import com.android.launcher3.Utilities
-import com.google.android.msdl.data.model.FeedbackLevel
+import app.lawnchair.ui.preferences.LocalNavController
+import app.lawnchair.ui.preferences.navigation.PrimeHapticTuning
+import app.lawnchair.ui.preferences.components.controls.ClickablePreference
 
 @Composable
 fun ExperimentalFeaturesPreferences(
@@ -138,7 +140,7 @@ fun ExperimentalFeaturesPreferences(
 
         val alwaysReloadIconsAdapter = prefs2.alwaysReloadIcons.getAdapter()
         val enableGncAdapter = prefs.enableGnc.getAdapter()
-        val vibrationFeedbackLevelAdapter = prefs.vibrationFeedbackLevel.getAdapter()
+        val navController = LocalNavController.current
 
         PreferenceGroup(
             modifier = Modifier,
@@ -163,23 +165,10 @@ fun ExperimentalFeaturesPreferences(
             ExpandAndShrink(visible = enableGncAdapter.state.value && !isGestureNavContractCompatible) {
                 WarningPreference(stringResource(R.string.gesturenavcontract_warning_incompatibility))
             }
-            ListPreference(
-                adapter = vibrationFeedbackLevelAdapter,
-                entries = listOf(
-                    ListPreferenceEntry(FeedbackLevel.NO_FEEDBACK.ordinal) {
-                        stringResource(R.string.vibration_feedback_no_feedback_choice)
-                    },
-                    ListPreferenceEntry(FeedbackLevel.MINIMAL.ordinal) {
-                        stringResource(R.string.vibration_feedback_minimal_choice)
-                    },
-                    ListPreferenceEntry(FeedbackLevel.DEFAULT.ordinal) {
-                        stringResource(R.string.vibration_feedback_default_choice)
-                    },
-                    ListPreferenceEntry(FeedbackLevel.EXPRESSIVE.ordinal) {
-                        stringResource(R.string.vibration_feedback_expressive_choice)
-                    },
-                ),
-                label = stringResource(R.string.vibration_feedback_level_label),
+            ClickablePreference(
+                label = stringResource(R.string.prime_haptic_tuning),
+                subtitle = stringResource(R.string.prime_haptic_tuning_description),
+                onClick = { navController.navigate(PrimeHapticTuning) },
             )
         }
     }
