@@ -41,7 +41,12 @@ class WallpaperViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private suspend fun refreshWallpapers() {
-        val topWallpapers = wallpaperManagerCompat.service.dao.getTopWallpapers()
+        var topWallpapers = wallpaperManagerCompat.service.dao.getTopWallpapers()
+        if (topWallpapers.isEmpty()) {
+            // A restored launcher can have a wallpaper but no local carousel history.
+            wallpaperManagerCompat.service.saveWallpaper(wallpaperManagerCompat.wallpaperManager)
+            topWallpapers = wallpaperManagerCompat.service.dao.getTopWallpapers()
+        }
         wallpapers.value = topWallpapers
     }
 
