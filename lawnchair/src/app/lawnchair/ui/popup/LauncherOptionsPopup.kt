@@ -18,7 +18,7 @@ object LauncherOptionsPopup {
     val DEFAULT_ORDER = listOf(
         LauncherOptionPopupItem("carousel", true),
         LauncherOptionPopupItem("lock", false),
-        LauncherOptionPopupItem("edit_mode", false),
+        LauncherOptionPopupItem("edit_mode", true),
         LauncherOptionPopupItem("wallpaper", true),
         LauncherOptionPopupItem("widgets", true),
         LauncherOptionPopupItem("all_apps", true),
