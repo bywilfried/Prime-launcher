@@ -1,5 +1,10 @@
 package app.lawnchair.ui.preferences.destinations
 
+import android.util.Log
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import app.lawnchair.theme.ThemeShareFile
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -64,6 +69,34 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
     var confirmVariantReset by rememberSaveable { mutableStateOf(false) }
     val profile = ThemeProfile.current(context)
     val overrides = remember(context) { ThemeColorOverrides(context) }
+    val exportTheme = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/octet-stream"),
+    ) { uri ->
+        if (uri != null) runCatching {
+            context.contentResolver.openOutputStream(uri)?.use { ThemeShareFile.export(context, it) }
+                ?: error("Unable to open destination")
+        }.onSuccess {
+            Toast.makeText(context, "Thème exporté", Toast.LENGTH_SHORT).show()
+        }.onFailure {
+            Log.e("ThemeCustomization", "Theme export failed", it)
+            Toast.makeText(context, "Échec de l'export du thème", Toast.LENGTH_SHORT).show()
+        }
+    }
+    val importTheme = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri != null) runCatching {
+            context.contentResolver.openInputStream(uri)?.use { ThemeShareFile.import(context, it) }
+                ?: error("Unable to open theme file")
+        }.onSuccess {
+            bulkResetRevision++
+            Toast.makeText(context, "Thème importé", Toast.LENGTH_SHORT).show()
+        }.onFailure {
+            Log.e("ThemeCustomization", "Theme import failed", it)
+            Toast.makeText(context, "Fichier de thème invalide", Toast.LENGTH_SHORT).show()
+        }
+    }
+
 
     PreferenceLayout(
         backArrowVisible = !LocalIsExpandedScreen.current,
@@ -143,13 +176,15 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             )
             PreferenceTemplate(
                 title = { Text("Exporter le thème") },
-                description = { Text("Sera activé après stabilisation des identifiants et du format d’export.") },
-                enabled = false,
+                description = { Text("Partager le thème général, sa palette et ses couleurs.") },
+                enabled = categoryTabId == null && folderKey == null,
+                onClick = { exportTheme.launch("Prime-theme.primetheme") },
             )
             PreferenceTemplate(
                 title = { Text("Importer un thème") },
-                description = { Text("Sera activé avec le format d’import/export versionné.") },
-                enabled = false,
+                description = { Text("Importer un fichier .primetheme sans modifier l’accueil.") },
+                enabled = categoryTabId == null && folderKey == null,
+                onClick = { importTheme.launch(arrayOf("*/*")) },
             )
         }
     }
