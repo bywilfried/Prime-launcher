@@ -444,7 +444,6 @@ public class InvariantDeviceProfile {
         this.closestProfile = displayOption.grid;
         
         enableTwoLinesInAllApps = Flags.enableTwolineToggle()
-                && Utilities.isEnglishLanguage(context)
                 && mPrefs.get(ENABLE_TWOLINE_ALLAPPS_TOGGLE);
         mLocale = context.getResources().getConfiguration().locale.toString();
 
