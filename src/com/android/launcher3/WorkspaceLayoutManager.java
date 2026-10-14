@@ -96,7 +96,7 @@ public interface WorkspaceLayoutManager {
         ItemInfo traceInfo = child != null && child.getTag() instanceof ItemInfo
                 ? (ItemInfo) child.getTag() : null;
         if (traceInfo instanceof LauncherAppWidgetInfo widget) {
-            Log.d("PrimeWidgetTrace", "ADD_ENTER appWidgetId=" + widget.appWidgetId
+            PrimeWidgetTrace.d(child.getContext(), "ADD_ENTER appWidgetId=" + widget.appWidgetId
                     + " screen=" + screenId + " cell=" + x + "," + y
                     + " span=" + spanX + "x" + spanY
                     + " screenExists=" + (getScreenWithId(screenId) != null));
@@ -104,7 +104,7 @@ public interface WorkspaceLayoutManager {
         if (container == LauncherSettings.Favorites.CONTAINER_DESKTOP) {
             if (getScreenWithId(screenId) == null) {
                 if (traceInfo instanceof LauncherAppWidgetInfo widget) {
-                    Log.e("PrimeWidgetTrace", "ADD_MISSING_SCREEN appWidgetId="
+                    PrimeWidgetTrace.e(child.getContext(), "ADD_MISSING_SCREEN appWidgetId="
                             + widget.appWidgetId + " screen=" + screenId);
                 }
                 Log.e(TAG, "Skipping child, screenId " + screenId + " not found");
@@ -173,7 +173,7 @@ public interface WorkspaceLayoutManager {
         boolean markCellsAsOccupied = !(child instanceof Folder);
         boolean addedToCell = layout.addViewToCellLayout(child, -1, childId, lp, markCellsAsOccupied);
         if (info instanceof LauncherAppWidgetInfo widget) {
-            Log.d("PrimeWidgetTrace", "ADD_RESULT appWidgetId=" + widget.appWidgetId
+            PrimeWidgetTrace.d(child.getContext(), "ADD_RESULT appWidgetId=" + widget.appWidgetId
                     + " screen=" + screenId + " success=" + addedToCell
                     + " parent=" + (child.getParent() == null ? "null"
                             : child.getParent().getClass().getName()));
