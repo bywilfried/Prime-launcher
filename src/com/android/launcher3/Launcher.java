@@ -2292,6 +2292,12 @@ public class Launcher extends StatefulActivity<LauncherState>
         int index = 0;
         for (Pair<ItemInfo, View> e : shortcuts) {
             final ItemInfo item = e.first;
+            if (item instanceof LauncherAppWidgetInfo widget) {
+                Log.d("PrimeWidgetTrace", "BIND_ENTER appWidgetId=" + widget.appWidgetId
+                        + " screen=" + item.screenId + " cell=" + item.cellX + "," + item.cellY
+                        + " span=" + item.spanX + "x" + item.spanY
+                        + " view=" + (e.second == null ? "null" : e.second.getClass().getName()));
+            }
 
             // Remove colliding items.
             CellPos presenterPos = getCellPosMapper().mapModelToPresenter(item);
@@ -2306,6 +2312,10 @@ public class Launcher extends StatefulActivity<LauncherState>
                         throw (new RuntimeException(desc));
                     } else {
                         // b/417021465 - Avoid mutating the model in the UI layer.
+                        if (item instanceof LauncherAppWidgetInfo widget) {
+                            Log.e("PrimeWidgetTrace", "BIND_COLLISION appWidgetId="
+                                    + widget.appWidgetId + " " + desc);
+                        }
                         Log.e(TAG, desc, new Exception());
                         continue;
                     }
@@ -2314,12 +2324,30 @@ public class Launcher extends StatefulActivity<LauncherState>
 
             View view = e.second;
             if (view == null) {
+                if (item instanceof LauncherAppWidgetInfo widget) {
+                    Log.e("PrimeWidgetTrace", "BIND_NULL_VIEW appWidgetId=" + widget.appWidgetId);
+                }
                 continue;
             }
             if (enableWorkspaceInflation() && view instanceof LauncherAppWidgetHostView lv) {
+                if (item instanceof LauncherAppWidgetInfo widget) {
+                    Log.d("PrimeWidgetTrace", "BIND_ATTACH_BEGIN appWidgetId=" + widget.appWidgetId);
+                }
                 view = getAppWidgetHolder().attachViewToHostAndGetAttachedView(lv);
             }
+            if (item instanceof LauncherAppWidgetInfo widget) {
+                Log.d("PrimeWidgetTrace", "BIND_ADD_BEGIN appWidgetId=" + widget.appWidgetId
+                        + " presenterScreen=" + presenterPos.screenId
+                        + " view=" + (view == null ? "null" : view.getClass().getName()));
+            }
+            if (view == null) {
+                Log.e("PrimeWidgetTrace", "BIND_ATTACH_NULL_VIEW item=" + item);
+                continue;
+            }
             workspace.addInScreenFromBind(view, item);
+            if (item instanceof LauncherAppWidgetInfo widget) {
+                Log.d("PrimeWidgetTrace", "BIND_ADD_RETURN appWidgetId=" + widget.appWidgetId);
+            }
             if (boundAnim != null) {
                 // Animate all the applications up now
                 view.setAlpha(0f);
