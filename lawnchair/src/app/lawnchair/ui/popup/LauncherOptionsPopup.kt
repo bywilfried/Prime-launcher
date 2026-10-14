@@ -16,7 +16,7 @@ import com.patrykmichalik.opto.core.setBlocking
 
 object LauncherOptionsPopup {
     val DEFAULT_ORDER = listOf(
-        LauncherOptionPopupItem("carousel", true),
+        LauncherOptionPopupItem("carousel", false),
         LauncherOptionPopupItem("lock", false),
         LauncherOptionPopupItem("edit_mode", false),
         LauncherOptionPopupItem("wallpaper", true),
