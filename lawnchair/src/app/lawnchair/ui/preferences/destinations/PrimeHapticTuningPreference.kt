@@ -34,6 +34,12 @@ fun PrimeHapticTuningPreference() {
             HapticSlider(stringResource(R.string.prime_haptic_reorder_end), prefs.primeHapticReorderEnd)
             HapticSlider(stringResource(R.string.prime_haptic_reorder_cancel), prefs.primeHapticReorderCancel)
         }
+        PreferenceGroup(heading = "Autres vibrations") {
+            HapticSlider("Autres interactions de Prime", prefs.primeHapticOtherEvents)
+            HapticSlider("Curseurs des paramètres", prefs.primeHapticSlider)
+            HapticSlider("Réapparition de la barre des tâches", prefs.primeHapticTaskbar)
+            HapticSlider("Recherche contextuelle et indication du geste", prefs.primeHapticContextualSearch)
+        }
         PreferenceGroup {
             ClickablePreference(
                 label = stringResource(R.string.prime_haptic_reset_all),
@@ -47,6 +53,10 @@ fun PrimeHapticTuningPreference() {
                     prefs.primeHapticReorderMove.set(100)
                     prefs.primeHapticReorderEnd.set(100)
                     prefs.primeHapticReorderCancel.set(100)
+                    prefs.primeHapticOtherEvents.set(100)
+                    prefs.primeHapticSlider.set(100)
+                    prefs.primeHapticTaskbar.set(100)
+                    prefs.primeHapticContextualSearch.set(100)
                 },
             )
         }
