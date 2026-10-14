@@ -1,7 +1,6 @@
 package app.lawnchair.ui.preferences.destinations
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
 import com.google.android.msdl.data.model.FeedbackLevel
 import app.lawnchair.ui.preferences.components.controls.ListPreference
@@ -29,7 +28,7 @@ fun PrimeHapticTuningPreference() {
         prefs.primeHapticContextualSearch,
     )
     val levelAdapter = prefs.vibrationFeedbackLevel.getAdapter()
-    val selectedLevel by levelAdapter
+    val selectedLevel = levelAdapter.state.value
     val presetValue = when (selectedLevel) {
         FeedbackLevel.NO_FEEDBACK.ordinal -> 0
         FeedbackLevel.MINIMAL.ordinal -> 50
@@ -45,28 +44,30 @@ fun PrimeHapticTuningPreference() {
     ) {
         PreferenceGroup(heading = stringResource(R.string.vibration_feedback_level_label)) {
             ListPreference(
-                adapter = levelAdapter,
+                value = if (isCustom) -1 else selectedLevel,
+                onValueChange = { level ->
+                    if (level >= 0) {
+                        levelAdapter.onChange(level)
+                        val value = when (level) {
+                            FeedbackLevel.NO_FEEDBACK.ordinal -> 0
+                            FeedbackLevel.MINIMAL.ordinal -> 50
+                            FeedbackLevel.DEFAULT.ordinal -> 100
+                            FeedbackLevel.EXPRESSIVE.ordinal -> 150
+                            else -> 100
+                        }
+                        sliders.forEach { it.set(value) }
+                    }
+                },
                 entries = listOf(
                     ListPreferenceEntry(FeedbackLevel.NO_FEEDBACK.ordinal) { stringResource(R.string.vibration_feedback_no_feedback_choice) },
                     ListPreferenceEntry(FeedbackLevel.MINIMAL.ordinal) { stringResource(R.string.vibration_feedback_minimal_choice) },
                     ListPreferenceEntry(FeedbackLevel.DEFAULT.ordinal) { stringResource(R.string.vibration_feedback_default_choice) },
                     ListPreferenceEntry(FeedbackLevel.EXPRESSIVE.ordinal) { stringResource(R.string.vibration_feedback_expressive_choice) },
+                    ListPreferenceEntry(-1) { stringResource(R.string.prime_haptic_custom) },
                 ),
                 label = if (isCustom) stringResource(R.string.prime_haptic_custom) else stringResource(R.string.vibration_feedback_level_label),
             )
-            ClickablePreference(
-                label = stringResource(R.string.prime_haptic_apply_preset),
-                onClick = {
-                    val value = when (prefs.vibrationFeedbackLevel.get()) {
-                        FeedbackLevel.NO_FEEDBACK.ordinal -> 0
-                        FeedbackLevel.MINIMAL.ordinal -> 50
-                        FeedbackLevel.DEFAULT.ordinal -> 100
-                        FeedbackLevel.EXPRESSIVE.ordinal -> 150
-                        else -> 100
-                    }
-                    sliders.forEach { it.set(value) }
-                },
-            )
+
         }
         PreferenceGroup(heading = stringResource(R.string.prime_haptic_workspace)) {
             HapticSlider(stringResource(R.string.prime_haptic_workspace_long_press), prefs.primeHapticWorkspaceLongPress)
