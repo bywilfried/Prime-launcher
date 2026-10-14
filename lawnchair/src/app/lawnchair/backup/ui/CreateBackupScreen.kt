@@ -155,6 +155,12 @@ fun CreateBackupScreen(
             FlagSwitchPreference(
                 flags = contents,
                 setFlags = viewModel::setBackupContents,
+                mask = LawnchairBackup.INCLUDE_THEME_CUSTOMIZATIONS,
+                label = "Thème et personnalisations avancées",
+            )
+            FlagSwitchPreference(
+                flags = contents,
+                setFlags = viewModel::setBackupContents,
                 mask = LawnchairBackup.INCLUDE_LAYOUT_AND_SETTINGS,
                 label = stringResource(id = R.string.backup_content_layout_and_settings),
             )
