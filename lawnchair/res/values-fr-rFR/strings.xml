@@ -184,7 +184,7 @@
     <string name="gesturenavcontract_warning_incompatibility">Votre appareil n\'est pas entièrement pris en charge. Cela pourrait engendrer des problèmes visuels dans certaines animations.</string>
     <string name="vibration_feedback_level_label">Niveau du retour haptique</string>
     <string name="vibration_feedback_no_feedback_choice">Aucune</string>
-    <string name="vibration_feedback_minimal_choice">Minimal</string>
+    <string name="vibration_feedback_minimal_choice">Minimale</string>
     <string name="vibration_feedback_default_choice">Par défaut</string>
     <string name="vibration_feedback_expressive_choice">Expressif</string>
     <string name="recents_lock_unlock">Verrouillage d\'applications</string>
@@ -824,4 +824,26 @@
     <string name="lawnchair_actions">Actions</string>
     <string name="lawnchair_action_failed">Échec du déclenchement de l\'action</string>
     <string name="please_wait">Veuillez patienter…</string>
+    <string name="prime_haptic_custom">Personnalisé</string>
+    <string name="prime_haptic_other_group">Autres vibrations</string>
+    <string name="prime_haptic_other_events">Autres interactions de Prime</string>
+    <string name="prime_haptic_slider_label">Curseurs des paramètres</string>
+    <string name="prime_haptic_taskbar_label">Réapparition de la barre des tâches</string>
+    <string name="prime_haptic_contextual_label">Recherche contextuelle et indication du geste</string>
+    <string name="prime_haptic_tuning">Retour haptique</string>
+    <string name="prime_haptic_tuning_description">Préréglages et intensité de chaque vibration</string>
+    <string name="prime_haptic_workspace">Écran d’accueil</string>
+    <string name="prime_haptic_drawer">Tiroir d’applications</string>
+    <string name="prime_haptic_reorder">Réorganisation</string>
+    <string name="prime_haptic_workspace_long_press">Appui long sur l’écran d’accueil</string>
+    <string name="prime_haptic_drag_start">Début du déplacement</string>
+    <string name="prime_haptic_icon_drag">Déplacement d’icône</string>
+    <string name="prime_haptic_drawer_threshold">Seuil de glissement du tiroir</string>
+    <string name="prime_haptic_drawer_tap">Ouverture du tiroir</string>
+    <string name="prime_haptic_reorder_start">Début de réorganisation</string>
+    <string name="prime_haptic_reorder_move">Déplacement pendant la réorganisation</string>
+    <string name="prime_haptic_reorder_end">Fin de réorganisation</string>
+    <string name="prime_haptic_reorder_cancel">Annulation de réorganisation</string>
+    <string name="prime_haptic_reset">Rétablir à 100 %</string>
+    <string name="prime_haptic_reset_all">Rétablir toutes les vibrations à 100 %</string>
 </resources>
