@@ -1167,4 +1167,10 @@
     <string name="warn_files_permission_content">Grant file access to use this feature.</string>
     <string name="return_to_main_home_page_label">Always return to main home page</string>
     <string name="return_to_main_home_page_description">Return to your main home page when pressing Home, including after using another app</string>
+    <string name="prime_haptic_custom">Custom</string>
+    <string name="prime_haptic_other_group">Other vibrations</string>
+    <string name="prime_haptic_other_events">Other Prime interactions</string>
+    <string name="prime_haptic_slider_label">Settings sliders</string>
+    <string name="prime_haptic_taskbar_label">Taskbar unstash</string>
+    <string name="prime_haptic_contextual_label">Contextual search and gesture hint</string>
 </resources>
