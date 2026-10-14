@@ -83,13 +83,26 @@ class LawnchairBackup(
                 wallpaperManager.setBitmap(BitmapFactory.decodeStream(it))
             }
         }
-        context.getDatabasePath(LAUNCHER_DB_FILE_NAME).parentFile?.deleteRecursively()
+        if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
+            // The archive uses launcher.db, while the workspace uses a grid-specific
+            // database name. Restoring to restored.db never populates the active workspace.
+            val dbName = DeviceGridState(info.gridState).dbFile
+            require(dbName.isNotBlank()) { "Backup has no workspace database name" }
+            handlers[LAUNCHER_DB_FILE_NAME] = { input ->
+                val target = context.getDatabasePath(dbName)
+                target.parentFile?.mkdirs()
+                context.deleteDatabase(dbName)
+                target.outputStream().use { output -> input.copyTo(output) }
+            }
+        }
         readZip(handlers)
-        // Restore the grid state after extracting preferences, which may overwrite it.
-        DeviceGridState(info.gridState).writeToPrefs(context, true)
-
-        val dbController = ModelDbController(context)
-        RestoreDbTask.performRestore(context, dbController)
+        if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
+            DeviceGridState(info.gridState).writeToPrefs(context, true)
+            val dbController = ModelDbController(context)
+            check(RestoreDbTask.performRestore(context, dbController)) {
+                "Failed to validate restored workspace database"
+            }
+        }
     }
 
     /**
