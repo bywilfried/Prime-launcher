@@ -1,7 +1,11 @@
 package app.lawnchair.ui.preferences.destinations
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
+import com.google.android.msdl.data.model.FeedbackLevel
+import app.lawnchair.ui.preferences.components.controls.ListPreference
+import app.lawnchair.ui.preferences.components.controls.ListPreferenceEntry
 import app.lawnchair.preferences.BasePreferenceManager
 import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences.preferenceManager
@@ -15,10 +19,55 @@ import com.android.launcher3.R
 fun PrimeHapticTuningPreference() {
     val prefs = preferenceManager()
 
+    val sliders = listOf(
+        prefs.primeHapticWorkspaceLongPress, prefs.primeHapticDragStart,
+        prefs.primeHapticIconDrag, prefs.primeHapticDrawerThreshold,
+        prefs.primeHapticDrawerTap, prefs.primeHapticReorderStart,
+        prefs.primeHapticReorderMove, prefs.primeHapticReorderEnd,
+        prefs.primeHapticReorderCancel, prefs.primeHapticOtherEvents,
+        prefs.primeHapticSlider, prefs.primeHapticTaskbar,
+        prefs.primeHapticContextualSearch,
+    )
+    val levelAdapter = prefs.vibrationFeedbackLevel.getAdapter()
+    val selectedLevel by levelAdapter
+    val presetValue = when (selectedLevel) {
+        FeedbackLevel.NO_FEEDBACK.ordinal -> 0
+        FeedbackLevel.MINIMAL.ordinal -> 50
+        FeedbackLevel.DEFAULT.ordinal -> 100
+        FeedbackLevel.EXPRESSIVE.ordinal -> 150
+        else -> null
+    }
+    val isCustom = presetValue == null || sliders.any { it.get() != presetValue }
+
     PreferenceLayout(
         label = stringResource(R.string.prime_haptic_tuning),
         backArrowVisible = true,
     ) {
+        PreferenceGroup(heading = stringResource(R.string.vibration_feedback_level_label)) {
+            ListPreference(
+                adapter = levelAdapter,
+                entries = listOf(
+                    ListPreferenceEntry(FeedbackLevel.NO_FEEDBACK.ordinal) { stringResource(R.string.vibration_feedback_no_feedback_choice) },
+                    ListPreferenceEntry(FeedbackLevel.MINIMAL.ordinal) { stringResource(R.string.vibration_feedback_minimal_choice) },
+                    ListPreferenceEntry(FeedbackLevel.DEFAULT.ordinal) { stringResource(R.string.vibration_feedback_default_choice) },
+                    ListPreferenceEntry(FeedbackLevel.EXPRESSIVE.ordinal) { stringResource(R.string.vibration_feedback_expressive_choice) },
+                ),
+                label = if (isCustom) stringResource(R.string.prime_haptic_custom) else stringResource(R.string.vibration_feedback_level_label),
+            )
+            ClickablePreference(
+                label = stringResource(R.string.prime_haptic_apply_preset),
+                onClick = {
+                    val value = when (prefs.vibrationFeedbackLevel.get()) {
+                        FeedbackLevel.NO_FEEDBACK.ordinal -> 0
+                        FeedbackLevel.MINIMAL.ordinal -> 50
+                        FeedbackLevel.DEFAULT.ordinal -> 100
+                        FeedbackLevel.EXPRESSIVE.ordinal -> 150
+                        else -> 100
+                    }
+                    sliders.forEach { it.set(value) }
+                },
+            )
+        }
         PreferenceGroup(heading = stringResource(R.string.prime_haptic_workspace)) {
             HapticSlider(stringResource(R.string.prime_haptic_workspace_long_press), prefs.primeHapticWorkspaceLongPress)
             HapticSlider(stringResource(R.string.prime_haptic_drag_start), prefs.primeHapticDragStart)
@@ -34,11 +83,11 @@ fun PrimeHapticTuningPreference() {
             HapticSlider(stringResource(R.string.prime_haptic_reorder_end), prefs.primeHapticReorderEnd)
             HapticSlider(stringResource(R.string.prime_haptic_reorder_cancel), prefs.primeHapticReorderCancel)
         }
-        PreferenceGroup(heading = "Autres vibrations") {
-            HapticSlider("Autres interactions de Prime", prefs.primeHapticOtherEvents)
-            HapticSlider("Curseurs des paramètres", prefs.primeHapticSlider)
-            HapticSlider("Réapparition de la barre des tâches", prefs.primeHapticTaskbar)
-            HapticSlider("Recherche contextuelle et indication du geste", prefs.primeHapticContextualSearch)
+        PreferenceGroup(heading = stringResource(R.string.prime_haptic_other_group)) {
+            HapticSlider(stringResource(R.string.prime_haptic_other_events), prefs.primeHapticOtherEvents)
+            HapticSlider(stringResource(R.string.prime_haptic_slider_label), prefs.primeHapticSlider)
+            HapticSlider(stringResource(R.string.prime_haptic_taskbar_label), prefs.primeHapticTaskbar)
+            HapticSlider(stringResource(R.string.prime_haptic_contextual_label), prefs.primeHapticContextualSearch)
         }
         PreferenceGroup {
             ClickablePreference(
@@ -68,7 +117,7 @@ private fun HapticSlider(label: String, pref: BasePreferenceManager.IntPref) {
     SliderPreference(
         label = label,
         adapter = pref.getAdapter(),
-        valueRange = 0..100,
+        valueRange = 0..150,
         step = 1,
         showUnit = "%",
     )
