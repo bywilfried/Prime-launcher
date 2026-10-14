@@ -132,6 +132,7 @@ class PreferenceManager @Inject constructor(
     val autoLaunchRoot = BoolPref("pref_autoLaunchRoot", false)
     val wallpaperScrolling = BoolPref("pref_wallpaperScrolling", true)
     val infiniteScrolling = BoolPref("pref_infiniteScrolling", false)
+    val returnToMainHomePage = BoolPref("pref_returnToMainHomePage", false)
     val enableDebugMenu = BoolPref("pref_enableDebugMenu", false)
     val vibrationFeedbackLevel: IntPref = IntPref(
         "pref_vibrationFeedbackLevel",
