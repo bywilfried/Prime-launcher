@@ -67,6 +67,8 @@ public class MSDLPlayerWrapper {
 
     /** Perform MSDL feedback for a token with interaction properties */
     public void playToken(MSDLToken token, InteractionProperties properties) {
+        // Slider previews supply their own dynamic scale; preserve that scale and
+        // let the dedicated slider preference control whether feedback is enabled.
         mMSDLPlayer.playToken(token, properties);
     }
 
@@ -115,7 +117,7 @@ public class MSDLPlayerWrapper {
         } else if (token == MSDLToken.CANCEL) {
             return prefs.getPrimeHapticReorderCancel().get();
         }
-        return 100;
+        return prefs.getPrimeHapticOtherEvents().get();
     }
 
     public List<MSDLEvent> getHistory() {
