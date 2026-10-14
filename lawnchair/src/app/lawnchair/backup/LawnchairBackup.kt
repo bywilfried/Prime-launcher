@@ -86,8 +86,8 @@ class LawnchairBackup(
         if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
             // The archive uses launcher.db, while the workspace uses a grid-specific
             // database name. Restoring to restored.db never populates the active workspace.
-            val dbName = DeviceGridState(info.gridState).dbFile
-            require(dbName.isNotBlank()) { "Backup has no workspace database name" }
+            val dbName = LauncherAppState.getIDP(context).dbFile
+            require(dbName.isNotBlank()) { "Active grid has no workspace database name" }
             handlers[LAUNCHER_DB_FILE_NAME] = { input ->
                 val target = context.getDatabasePath(dbName)
                 target.parentFile?.mkdirs()
