@@ -40,6 +40,7 @@ import com.android.launcher3.dagger.LauncherBaseAppComponent;
 import javax.inject.Inject;
 
 import com.android.launcher3.Utilities;
+import app.lawnchair.preferences.PreferenceManager;
 
 /**
  * Wrapper around {@link Vibrator} to easily perform haptic feedback where necessary.
@@ -68,6 +69,7 @@ public class VibratorWrapper {
     public static final VibrationEffect OVERVIEW_HAPTIC = EFFECT_CLICK;
 
     private final Vibrator mVibrator;
+    private final Context mContext;
     private final boolean mHasVibrator;
 
     @VisibleForTesting
@@ -80,6 +82,7 @@ public class VibratorWrapper {
     public VibratorWrapper(@ApplicationContext Context context, SettingsCache settingsCache,
             DaggerSingletonTracker tracker) {
 
+        mContext = context;
         mVibrator = context.getSystemService(Vibrator.class);
         mHasVibrator = mVibrator.hasVibrator();
         if (mHasVibrator) {
@@ -159,13 +162,10 @@ public class VibratorWrapper {
 
     /** Indicates that Taskbar has been invoked. */
     public void vibrateForTaskbarUnstash() {
-        if (Utilities.ATLEAST_S && mVibrator.areAllPrimitivesSupported(PRIMITIVE_LOW_TICK)) {
-            VibrationEffect primitiveLowTickEffect = VibrationEffect
-                    .startComposition()
-                    .addPrimitive(PRIMITIVE_LOW_TICK, LOW_TICK_SCALE)
-                    .compose();
-
-            vibrate(primitiveLowTickEffect);
+        if (Utilities.ATLEAST_S) {
+            float scale = PreferenceManager.getInstance(mContext)
+                    .getPrimeHapticTaskbar().get() / 100f;
+            vibrateScaled(PRIMITIVE_LOW_TICK, scale * LOW_TICK_SCALE, 8L);
         }
     }
 }
