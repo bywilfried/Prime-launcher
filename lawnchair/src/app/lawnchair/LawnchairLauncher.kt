@@ -415,15 +415,16 @@ class LawnchairLauncher : QuickstepLauncher() {
     ): OptionsPopupView<T>? where T : Context?, T : ActivityContext? {
         if (activityContext == null) return null
 
-        val isEmpty = WallpaperService.INSTANCE.get(this).getTopWallpapers().isEmpty()
-        val layout = if (isEmpty) R.layout.longpress_options_menu else R.layout.wallpaper_options_popup
+        // The carousel is explicitly enabled by the caller. Always inflate its
+        // container; wallpaper history may still be loading or initially empty.
+        val layout = R.layout.wallpaper_options_popup
 
         val popup = activityContext.layoutInflater.inflate(layout, activityContext.dragLayer, false) as OptionsPopupView<T>
         popup.setTargetRect(targetRect)
         popup.setShouldAddArrow(shouldAddArrow)
 
         for (item in items) {
-            val deepLayout = if (isEmpty) R.layout.system_shortcut else R.layout.wallpaper_options_popup_item
+            val deepLayout = R.layout.wallpaper_options_popup_item
 
             val view = popup.inflateAndAdd<DeepShortcutView>(deepLayout, popup)
             if (width > 0) view.layoutParams.width = width
