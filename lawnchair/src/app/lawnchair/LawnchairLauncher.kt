@@ -51,6 +51,7 @@ import app.lawnchair.root.RootNotAvailableException
 import app.lawnchair.theme.ThemeProvider
 import app.lawnchair.theme.ThemeColorInvalidation
 import app.lawnchair.ui.popup.LauncherOptionsPopup
+import app.lawnchair.ui.popup.toLauncherOptions
 import app.lawnchair.ui.popup.LawnchairShortcut
 import app.lawnchair.util.getThemedIconPacksInstalled
 import app.lawnchair.util.unsafeLazy
@@ -393,7 +394,9 @@ class LawnchairLauncher : QuickstepLauncher() {
     }
 
     override fun showDefaultOptions(x: Float, y: Float) {
-        val showWallpaperCarousel = "+carousel" in preferenceManager2.launcherPopupOrder.firstCached()
+        val showWallpaperCarousel = preferenceManager2.launcherPopupOrder.firstCached()
+            .toLauncherOptions()
+            .any { it.identifier == "carousel" && it.isEnabled }
 
         if (showWallpaperCarousel) {
             show<LawnchairLauncher>(
