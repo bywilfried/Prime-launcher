@@ -41,6 +41,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import app.lawnchair.preferences.PreferenceManager
 import app.lawnchair.preferences.PreferenceAdapter
 import app.lawnchair.preferences.rememberTransformAdapter
 import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
@@ -128,7 +129,9 @@ private fun SliderPreference(
 ) {
     var sliderValue by remember { mutableFloatStateOf(value) }
     var thresholdReached by remember { mutableStateOf<SliderThreshold?>(null) }
-    val mMSDLPlayerWrapper = MSDLPlayerWrapper.INSTANCE.get(LocalContext.current)
+    val context = LocalContext.current
+    val mMSDLPlayerWrapper = MSDLPlayerWrapper.INSTANCE.get(context)
+    val hapticPrefs = remember(context) { PreferenceManager.getInstance(context) }
     val getAppropriateHaptic = if (step == 0f) {
         MSDLToken.DRAG_INDICATOR_CONTINUOUS
     } else {
@@ -187,7 +190,7 @@ private fun SliderPreference(
                     if (threshold != null) {
                         if (threshold != thresholdReached) {
                             thresholdReached = threshold
-                            mMSDLPlayerWrapper.playToken(
+                            mMSDLPlayerWrapper.playPrimeSliderToken(
                                 MSDLToken.DRAG_THRESHOLD_INDICATOR_LIMIT,
                             )
                         }
@@ -203,10 +206,10 @@ private fun SliderPreference(
                             playScaledSliderHaptic(
                                 mMSDLPlayerWrapper,
                                 getAppropriateHaptic,
-                                scale,
+                                scale * (hapticPrefs.primeHapticSlider.get() / 100f),
                             )
                         } else {
-                            mMSDLPlayerWrapper.playToken(getAppropriateHaptic)
+                            mMSDLPlayerWrapper.playPrimeSliderToken(getAppropriateHaptic)
                         }
                     }
                 },
