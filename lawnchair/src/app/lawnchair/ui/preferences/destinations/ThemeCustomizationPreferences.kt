@@ -61,10 +61,14 @@ import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
 fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSection: Boolean = false, categoryTabId: String? = null, folderKey: String? = null, folderSection: String? = null) {
     val context = LocalContext.current
     var bulkResetRevision by remember { mutableStateOf(0) }
-    var variant by rememberSaveable { mutableStateOf(context.effectiveThemeVariant()) }
-    var expanded by rememberSaveable(openDrawerSection, categoryTabId, folderKey) {
-        mutableStateOf<ThemeColorRole.Section?>(if (folderKey != null) ThemeColorRole.Section.valueOf(folderSection ?: "HOME") else if (openDrawerSection || categoryTabId != null) ThemeColorRole.Section.DRAWER else null)
+    // Save stable strings rather than Serializable enums: R8 may rename/remove the
+    // synthetic enum values() method used by Android Parcel restoration.
+    var variantName by rememberSaveable { mutableStateOf(context.effectiveThemeVariant().name) }
+    val variant = ThemeVariant.valueOf(variantName)
+    var expandedName by rememberSaveable(openDrawerSection, categoryTabId, folderKey) {
+        mutableStateOf(if (folderKey != null) (folderSection ?: "HOME") else if (openDrawerSection || categoryTabId != null) ThemeColorRole.Section.DRAWER.name else null)
     }
+    val expanded = expandedName?.let(ThemeColorRole.Section::valueOf)
     var confirmThemeReset by rememberSaveable { mutableStateOf(false) }
     var confirmVariantReset by rememberSaveable { mutableStateOf(false) }
     val profile = ThemeProfile.current(context)
@@ -109,11 +113,11 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
                 endWidget = {
                     Row {
                         val light = variant == ThemeVariant.LIGHT
-                        if (light) Button(onClick = { variant = ThemeVariant.LIGHT }) { Text("Clair") }
-                        else OutlinedButton(onClick = { variant = ThemeVariant.LIGHT }) { Text("Clair") }
+                        if (light) Button(onClick = { variantName = ThemeVariant.LIGHT.name }) { Text("Clair") }
+                        else OutlinedButton(onClick = { variantName = ThemeVariant.LIGHT.name }) { Text("Clair") }
                         val dark = variant == ThemeVariant.DARK
-                        if (dark) Button(onClick = { variant = ThemeVariant.DARK }) { Text("Sombre") }
-                        else OutlinedButton(onClick = { variant = ThemeVariant.DARK }) { Text("Sombre") }
+                        if (dark) Button(onClick = { variantName = ThemeVariant.DARK.name }) { Text("Sombre") }
+                        else OutlinedButton(onClick = { variantName = ThemeVariant.DARK.name }) { Text("Sombre") }
                     }
                 },
             )
@@ -125,7 +129,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             section = ThemeColorRole.Section.GLOBAL,
             expanded = expanded,
             bulkResetRevision = bulkResetRevision,
-            onToggle = { expanded = if (expanded == it) null else it },
+            onToggle = { expandedName = if (expanded == it) null else it.name },
         )
         if (categoryTabId == null && folderKey == null) ThemeSection(
             title = "Accueil",
@@ -133,7 +137,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             section = ThemeColorRole.Section.HOME,
             expanded = expanded,
             bulkResetRevision = bulkResetRevision,
-            onToggle = { expanded = if (expanded == it) null else it },
+            onToggle = { expandedName = if (expanded == it) null else it.name },
         )
         if (categoryTabId == null && folderKey == null) ThemeSection(
             title = "Dock",
@@ -141,7 +145,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             section = ThemeColorRole.Section.DOCK,
             expanded = expanded,
             bulkResetRevision = bulkResetRevision,
-            onToggle = { expanded = if (expanded == it) null else it },
+            onToggle = { expandedName = if (expanded == it) null else it.name },
         )
         if (folderKey != null) ThemeSection(
             title = "Couleurs du dossier",
@@ -151,7 +155,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             section = ThemeColorRole.Section.valueOf(folderSection ?: "HOME"),
             expanded = expanded,
             bulkResetRevision = bulkResetRevision,
-            onToggle = { expanded = if (expanded == it) null else it },
+            onToggle = { expandedName = if (expanded == it) null else it.name },
         )
         if (folderKey == null) ThemeSection(
             title = "Tiroir des applications",
@@ -160,7 +164,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             section = ThemeColorRole.Section.DRAWER,
             expanded = expanded,
             bulkResetRevision = bulkResetRevision,
-            onToggle = { expanded = if (expanded == it) null else it },
+            onToggle = { expandedName = if (expanded == it) null else it.name },
         )
 
         PreferenceGroup(heading = if (folderKey != null) "Gestion du dossier" else if (categoryTabId == null) "Gestion du thème" else "Gestion de la catégorie") {
