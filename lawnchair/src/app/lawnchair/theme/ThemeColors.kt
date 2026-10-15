@@ -157,6 +157,7 @@ object ThemeColors {
                 if (dark) recipe("Accent2", 800, 14) else recipe("Accent2", 300, 58)
             ThemeColorRole.DRAWER_PROFILE_TAB_UNSELECTED_BACKGROUND ->
                 if (dark) recipe("Neutral1", 500, 22) else recipe("Neutral1", 500, 90)
+            ThemeColorRole.DRAWER_HANDLE -> if (dark) recipe("Neutral1", 50) else recipe("Neutral1", 900)
             ThemeColorRole.DRAWER_PROFILE_TAB_TEXT ->
                 if (dark) recipe("Neutral1", 50) else recipe("Neutral1", 900)
         ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND ->
@@ -448,7 +449,9 @@ object ThemeColors {
                 val backgroundRole = when (role) {
                     ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND
                     ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND
-                    ThemeColorRole.DRAWER_TEXT, ThemeColorRole.DRAWER_ICON_TEXT,
+                    ThemeColorRole.DRAWER_HANDLE,
+                    ThemeColorRole.DRAWER_HANDLE,
+        ThemeColorRole.DRAWER_TEXT, ThemeColorRole.DRAWER_ICON_TEXT,
                     ThemeColorRole.DRAWER_FOLDER_ICON_TEXT -> ThemeColorRole.DRAWER_BACKGROUND
                     ThemeColorRole.DRAWER_SEARCH_TEXT, ThemeColorRole.DRAWER_SEARCH_HINT,
                     ThemeColorRole.DRAWER_SEARCH_ICON -> ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE
@@ -723,6 +726,8 @@ object ThemeColors {
                 context, ThemeProvider.INSTANCE.get(context).colorScheme,
                 if (variant == ThemeVariant.DARK) UiColorMode.Dark else UiColorMode.Light,
             )
+        ThemeColorRole.DRAWER_HANDLE ->
+            resolveLegacyToken(context, ColorTokens.TextColorPrimary, variant)
         ThemeColorRole.DRAWER_TEXT,
         ThemeColorRole.HOME_SEARCH_TEXT,
         ThemeColorRole.HOME_SEARCH_HINT,
