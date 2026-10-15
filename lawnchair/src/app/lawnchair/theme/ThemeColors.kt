@@ -429,6 +429,9 @@ object ThemeColors {
             ColorOption.Default -> official
             ColorOption.LegacyBehavior -> legacy(context, role, variant)
             ColorOption.AutomaticBlackWhite -> when (role) {
+                ThemeColorRole.DRAWER_HANDLE -> categoryBlackWhite(
+                    resolveTheme(context, profile, ThemeColorRole.DRAWER_BACKGROUND, variant), variant,
+                )
                 ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE,
                 ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE -> workspacePaginationDefault(context, variant)
                 ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT,
@@ -450,8 +453,7 @@ object ThemeColors {
                     ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND
                     ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND
                     ThemeColorRole.DRAWER_HANDLE,
-                    ThemeColorRole.DRAWER_HANDLE,
-        ThemeColorRole.DRAWER_TEXT, ThemeColorRole.DRAWER_ICON_TEXT,
+                    ThemeColorRole.DRAWER_TEXT, ThemeColorRole.DRAWER_ICON_TEXT,
                     ThemeColorRole.DRAWER_FOLDER_ICON_TEXT -> ThemeColorRole.DRAWER_BACKGROUND
                     ThemeColorRole.DRAWER_SEARCH_TEXT, ThemeColorRole.DRAWER_SEARCH_HINT,
                     ThemeColorRole.DRAWER_SEARCH_ICON -> ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE
@@ -560,6 +562,7 @@ object ThemeColors {
     private fun categoryContrastSurface(role: ThemeColorRole): ThemeColorRole? = when (role) {
         ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND
         ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND
+        ThemeColorRole.DRAWER_HANDLE,
         ThemeColorRole.DRAWER_TEXT, ThemeColorRole.DRAWER_ICON_TEXT,
         ThemeColorRole.DRAWER_FOLDER_ICON_TEXT -> ThemeColorRole.DRAWER_BACKGROUND
         ThemeColorRole.DRAWER_SEARCH_TEXT, ThemeColorRole.DRAWER_SEARCH_HINT,
