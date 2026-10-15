@@ -36,6 +36,7 @@ import static com.android.launcher3.util.SystemUiController.UI_STATE_ALL_APPS;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
+import android.os.VibrationEffect;
 import android.util.FloatProperty;
 import android.view.HapticFeedbackConstants;
 import android.view.View;
@@ -57,6 +58,7 @@ import com.android.launcher3.statemanager.StateManager.StateHandler;
 import com.android.launcher3.states.StateAnimationConfig;
 import com.android.launcher3.touch.AllAppsSwipeController;
 import com.android.launcher3.util.MSDLPlayerWrapper;
+import com.android.launcher3.util.VibratorWrapper;
 import com.android.launcher3.util.MultiPropertyFactory;
 import com.android.launcher3.util.MultiPropertyFactory.MultiProperty;
 import com.android.launcher3.util.MultiValueAlpha;
@@ -66,6 +68,7 @@ import com.android.launcher3.views.ScrimView;
 
 import com.google.android.msdl.data.model.MSDLToken;
 
+import app.lawnchair.preferences.PreferenceManager;
 import app.lawnchair.preferences2.PreferenceManager2;
 import app.lawnchair.preferences2.PreferenceCacheExtensionsKt;
 
@@ -409,17 +412,14 @@ public class AllAppsTransitionController
                     prefs.getAppDrawerHapticFeedback(), prefs);
 
             if (hapticEnabled) {
-                if (Flags.msdlFeedback()) {
-                    if (config.isUserControlled()) {
-                        mMSDLPlayerWrapper.playToken(MSDLToken.SWIPE_THRESHOLD_INDICATOR);
-                    } else {
-                        mMSDLPlayerWrapper.playToken(MSDLToken.TAP_HIGH_EMPHASIS);
-                    }
-                } else {
-                    mLauncher.getAppsView().performHapticFeedback(
-                            HapticFeedbackConstants.VIRTUAL_KEY,
-                            HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING);
-                }
+                // Use Prime's existing drawer threshold intensity for both swipe and tap
+                // transitions. Do not play MSDL or view feedback as well: that would
+                // produce an unscaled second vibration.
+                int intensity = PreferenceManager.getInstance(mLauncher)
+                        .getPrimeHapticDrawerThreshold().get();
+                float scale = Math.max(0f, Math.min(1f, intensity / 150f));
+                VibratorWrapper.INSTANCE.get(mLauncher).vibrateScaled(
+                        VibrationEffect.Composition.PRIMITIVE_CLICK, scale, 8L);
             }
         }
     }
