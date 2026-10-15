@@ -29,14 +29,23 @@ fun PrimeHapticTuningPreference() {
     )
     val levelAdapter = prefs.vibrationFeedbackLevel.getAdapter()
     val selectedLevel = levelAdapter.state.value
-    val presetValue = when (selectedLevel) {
-        FeedbackLevel.NO_FEEDBACK.ordinal -> 0
-        FeedbackLevel.MINIMAL.ordinal -> 50
-        FeedbackLevel.DEFAULT.ordinal -> 100
-        FeedbackLevel.EXPRESSIVE.ordinal -> 150
-        else -> null
+    // MINIMAL is the underlying feedback level for both 15% and 50% presets.
+    // The individual values distinguish the two without changing persisted enum ordinals.
+    val uniformValue = sliders.first().get().takeIf { value ->
+        sliders.all { it.get() == value }
     }
-    val isCustom = presetValue == null || sliders.any { it.get() != presetValue }
+    val selectedPreset = when (selectedLevel) {
+        FeedbackLevel.NO_FEEDBACK.ordinal -> if (uniformValue == 0) 0 else -1
+        FeedbackLevel.MINIMAL.ordinal -> when (uniformValue) {
+            15 -> 15
+            50 -> 50
+            else -> -1
+        }
+        FeedbackLevel.DEFAULT.ordinal -> if (uniformValue == 100) 100 else -1
+        FeedbackLevel.EXPRESSIVE.ordinal -> if (uniformValue == 150) 150 else -1
+        else -> -1
+    }
+    val isCustom = selectedPreset == -1
 
     PreferenceLayout(
         label = stringResource(R.string.prime_haptic_tuning),
@@ -44,25 +53,28 @@ fun PrimeHapticTuningPreference() {
     ) {
         PreferenceGroup(heading = stringResource(R.string.vibration_feedback_level_label)) {
             ListPreference(
-                value = if (isCustom) -1 else selectedLevel,
-                onValueChange = { level ->
-                    if (level >= 0) {
-                        levelAdapter.onChange(level)
-                        val value = when (level) {
-                            FeedbackLevel.NO_FEEDBACK.ordinal -> 0
-                            FeedbackLevel.MINIMAL.ordinal -> 50
-                            FeedbackLevel.DEFAULT.ordinal -> 100
-                            FeedbackLevel.EXPRESSIVE.ordinal -> 150
-                            else -> 100
+                value = selectedPreset,
+                onValueChange = { value ->
+                    if (value >= 0) {
+                        val level = when (value) {
+                            0 -> FeedbackLevel.NO_FEEDBACK.ordinal
+                            15, 50 -> FeedbackLevel.MINIMAL.ordinal
+                            100 -> FeedbackLevel.DEFAULT.ordinal
+                            150 -> FeedbackLevel.EXPRESSIVE.ordinal
+                            else -> null
                         }
-                        sliders.forEach { it.set(value) }
+                        if (level != null) {
+                            levelAdapter.onChange(level)
+                            sliders.forEach { it.set(value) }
+                        }
                     }
                 },
                 entries = listOf(
-                    ListPreferenceEntry(FeedbackLevel.NO_FEEDBACK.ordinal) { stringResource(R.string.vibration_feedback_no_feedback_choice) },
-                    ListPreferenceEntry(FeedbackLevel.MINIMAL.ordinal) { stringResource(R.string.vibration_feedback_minimal_choice) },
-                    ListPreferenceEntry(FeedbackLevel.DEFAULT.ordinal) { stringResource(R.string.vibration_feedback_default_choice) },
-                    ListPreferenceEntry(FeedbackLevel.EXPRESSIVE.ordinal) { stringResource(R.string.vibration_feedback_expressive_choice) },
+                    ListPreferenceEntry(0) { stringResource(R.string.vibration_feedback_no_feedback_choice) },
+                    ListPreferenceEntry(15) { stringResource(R.string.vibration_feedback_minimal_choice) },
+                    ListPreferenceEntry(50) { stringResource(R.string.prime_haptic_medium) },
+                    ListPreferenceEntry(100) { stringResource(R.string.vibration_feedback_default_choice) },
+                    ListPreferenceEntry(150) { stringResource(R.string.vibration_feedback_expressive_choice) },
                     ListPreferenceEntry(-1) { stringResource(R.string.prime_haptic_custom) },
                 ),
                 label = if (isCustom) stringResource(R.string.prime_haptic_custom) else stringResource(R.string.vibration_feedback_level_label),
@@ -107,6 +119,7 @@ fun PrimeHapticTuningPreference() {
                     prefs.primeHapticSlider.set(100)
                     prefs.primeHapticTaskbar.set(100)
                     prefs.primeHapticContextualSearch.set(100)
+                    levelAdapter.onChange(FeedbackLevel.DEFAULT.ordinal)
                 },
             )
         }
