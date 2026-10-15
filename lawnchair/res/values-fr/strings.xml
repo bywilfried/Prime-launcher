@@ -51,4 +51,6 @@
     <string name="return_to_main_home_page_label">Toujours revenir à la page principale</string>
     <string name="return_to_main_home_page_description">Revenir à la page principale avec le bouton Accueil, même après une application</string>
     <string name="prime_haptic_medium">Moyen</string>
+    <string name="prime_haptic_notifications_group">Notifications</string>
+    <string name="prime_haptic_notification_gesture">Ouverture des notifications par geste</string>
 </resources>
