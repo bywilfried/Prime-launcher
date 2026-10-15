@@ -1174,4 +1174,6 @@
     <string name="prime_haptic_taskbar_label">Taskbar unstash</string>
     <string name="prime_haptic_contextual_label">Contextual search and gesture hint</string>
     <string name="prime_haptic_medium">Medium</string>
+    <string name="prime_haptic_notifications_group">Notifications</string>
+    <string name="prime_haptic_notification_gesture">Open notifications by gesture</string>
 </resources>
