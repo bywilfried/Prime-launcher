@@ -506,6 +506,7 @@ private fun roleLabel(role: ThemeColorRole): String = when (role) {
     ThemeColorRole.DOCK_FOLDER_BORDER -> "Dossiers — bordure"
     ThemeColorRole.DRAWER_BACKGROUND -> "Général — fond"
     ThemeColorRole.DRAWER_TEXT -> "Général — texte"
+    ThemeColorRole.DRAWER_HANDLE -> "Général — poignée du tiroir"
     ThemeColorRole.DRAWER_ICON_TEXT -> "Texte des icônes"
     ThemeColorRole.DRAWER_FOLDER_ICON_TEXT -> "Dossier ouvert — texte des icônes"
     ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE -> "Recherche — fond inactif"
