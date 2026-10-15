@@ -1173,4 +1173,5 @@
     <string name="prime_haptic_slider_label">Settings sliders</string>
     <string name="prime_haptic_taskbar_label">Taskbar unstash</string>
     <string name="prime_haptic_contextual_label">Contextual search and gesture hint</string>
+    <string name="prime_haptic_medium">Medium</string>
 </resources>
