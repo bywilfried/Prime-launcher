@@ -16,12 +16,15 @@
 
 package app.lawnchair.gestures
 
+import android.os.VibrationEffect
 import androidx.lifecycle.lifecycleScope
 import app.lawnchair.LawnchairApp
 import app.lawnchair.LawnchairLauncher
 import app.lawnchair.gestures.config.GestureHandlerConfig
 import app.lawnchair.gestures.handlers.GestureHandler
 import app.lawnchair.gestures.handlers.NoOpGestureHandler
+import app.lawnchair.gestures.handlers.OpenNotificationsHandler
+import app.lawnchair.preferences.PreferenceManager
 import app.lawnchair.preferences2.PreferenceManager2
 import com.android.launcher3.util.VibratorWrapper
 import com.patrykmichalik.opto.domain.Preference
@@ -77,7 +80,19 @@ class GestureController(private val launcher: LawnchairLauncher) {
         launcher.lifecycleScope.launch {
             val handler = handler.createHandler(launcher)
             handler.onTrigger(launcher)
+            if (handler is OpenNotificationsHandler) {
+                vibrateForNotifications()
+            }
         }
+    }
+
+    private fun vibrateForNotifications() {
+        val intensity = PreferenceManager.getInstance(launcher)
+            .primeHapticNotificationGesture.get()
+        val scale = (intensity / 150f).coerceIn(0f, 1f)
+        VibratorWrapper.INSTANCE.get(launcher).vibrateScaled(
+            VibrationEffect.Composition.PRIMITIVE_CLICK, scale, 8L,
+        )
     }
 
     private fun triggerHandler(handlerFlow: Flow<GestureHandler>, withHaptic: Boolean = true) {
@@ -87,7 +102,9 @@ class GestureController(private val launcher: LawnchairLauncher) {
                 return@launch
             }
             handler.onTrigger(launcher)
-            if (withHaptic) {
+            if (handler is OpenNotificationsHandler) {
+                vibrateForNotifications()
+            } else if (withHaptic) {
                 VibratorWrapper.INSTANCE.get(launcher).vibrate(VibratorWrapper.OVERVIEW_HAPTIC)
             }
         }
