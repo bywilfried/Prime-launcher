@@ -328,6 +328,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         mBottomSheetBackground = findViewById(R.id.bottom_sheet_background);
         mBottomSheetHandleArea = findViewById(R.id.bottom_sheet_handle_area);
         mBottomSheetHandle = findViewById(R.id.bottom_sheet_handle);
+        refreshPrimeDrawerHandleColor();
         mSearchRecyclerView = findViewById(R.id.search_results_list_view);
         mFastScroller = findViewById(R.id.fast_scroller);
         mFastScroller.setPopupView(findViewById(R.id.fast_scroller_popup));
@@ -1027,7 +1028,21 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                 app.lawnchair.theme.ThemeColors.resolveLegacyToken(
                         getContext(), ColorTokens.SurfaceDimColor, variant);
         updateBottomSheetBackgroundColor();
+        refreshPrimeDrawerHandleColor();
         invalidate();
+    }
+
+    /** Apply the selected Prime drawer/category handle color to the actual drag pill. */
+    private void refreshPrimeDrawerHandleColor() {
+        if (mBottomSheetHandle == null || mBottomSheetHandle.getBackground() == null) return;
+        app.lawnchair.theme.ThemeProfile profile =
+                app.lawnchair.theme.ThemeProfile.Companion.current(getContext());
+        app.lawnchair.theme.ThemeVariant variant =
+                app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(getContext());
+        int color = app.lawnchair.theme.ThemeColors.INSTANCE.resolve(
+                getContext(), profile, app.lawnchair.theme.ThemeColorRole.DRAWER_HANDLE, variant);
+        mBottomSheetHandle.getBackground().mutate().setTint(color);
+        mBottomSheetHandle.invalidate();
     }
 
     int getBottomSheetBackgroundColor() {
