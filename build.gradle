@@ -300,16 +300,16 @@ android {
         }
 
         lawn {
-            java.srcDirs = ['src_flags', 'src_shortcuts_overrides', 'lawnchair/src', 'tests/shared']
-            kotlin.directories.addAll('src_flags', 'src_shortcuts_overrides', 'lawnchair/src', 'tests/shared')
-            aidl.srcDirs = ['lawnchair/aidl']
-            res.srcDirs = ['lawnchair/res', 'platform_frameworks_libs_systemui/animationlib/res']
-            manifest.srcFile "lawnchair/AndroidManifest.xml"
+            java.srcDirs = ['src_flags', 'src_shortcuts_overrides', 'prime/src', 'tests/shared']
+            kotlin.directories.addAll('src_flags', 'src_shortcuts_overrides', 'prime/src', 'tests/shared')
+            aidl.srcDirs = ['prime/aidl']
+            res.srcDirs = ['prime/res', 'platform_frameworks_libs_systemui/animationlib/res']
+            manifest.srcFile "prime/AndroidManifest.xml"
             assets {
-                srcDirs 'lawnchair/assets'
+                srcDirs 'prime/assets'
             }
             proto {
-                srcDirs = ['lawnchair/protos/']
+                srcDirs = ['prime/protos/']
             }
         }
 
@@ -512,7 +512,7 @@ spotless {
         removeUnusedImports()
     }
     kotlin {
-        target("lawnchair/src/**/*.kt")
+        target("prime/src/**/*.kt")
         ktlint(libs.ktlint.get().version).customRuleSets([
             libs.composeRules.get().toString()
         ]).editorConfigOverride([
