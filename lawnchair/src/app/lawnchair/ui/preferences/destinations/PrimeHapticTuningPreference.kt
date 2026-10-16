@@ -10,6 +10,7 @@ import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences.preferenceManager
 import app.lawnchair.ui.preferences.components.controls.ClickablePreference
 import app.lawnchair.ui.preferences.components.controls.SliderPreference
+import app.lawnchair.ui.preferences.components.controls.SwitchPreference
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
 import com.android.launcher3.R
@@ -52,6 +53,12 @@ fun PrimeHapticTuningPreference() {
         label = stringResource(R.string.prime_haptic_tuning),
         backArrowVisible = true,
     ) {
+        PreferenceGroup {
+            SwitchPreference(
+                adapter = prefs.primeHapticOverrideAndroid.getAdapter(),
+                label = stringResource(R.string.prime_haptic_override_android),
+            )
+        }
         PreferenceGroup(heading = stringResource(R.string.vibration_feedback_level_label)) {
             ListPreference(
                 value = selectedPreset,
