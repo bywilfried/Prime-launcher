@@ -78,7 +78,8 @@ fun ColorPreference(
         },
         endWidget = {
             when {
-                selectedColor == ColorOption.AdaptiveThemeText -> ContrastColorDot()
+                selectedColor == ColorOption.AdaptiveThemeText -> DynamicContrastColorDot()
+                selectedColor == ColorOption.AutomaticBlackWhite -> ContrastColorDot()
                 automaticContrastPreview -> ContrastColorDot()
                 dynamicContrastPreview -> DynamicContrastColorDot()
                 iconColorPreview -> IconColorDot()
