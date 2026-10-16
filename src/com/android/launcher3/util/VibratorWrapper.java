@@ -104,9 +104,18 @@ public class VibratorWrapper {
         UI_HELPER_EXECUTOR.execute(mVibrator::cancel);
     }
 
+    /**
+     * Prime may opt in to launcher-owned vibration while Android touch feedback is off.
+     * This does not override hardware, DND, or other system vibration restrictions.
+     */
+    private boolean isPrimeHapticAllowed() {
+        return mIsHapticFeedbackEnabled || PreferenceManager.getInstance(mContext)
+                .getPrimeHapticOverrideAndroid().get();
+    }
+
     /** Vibrates with the given effect if haptic feedback is available and enabled. */
     public void vibrate(VibrationEffect vibrationEffect) {
-        if (mHasVibrator && mIsHapticFeedbackEnabled) {
+        if (mHasVibrator && isPrimeHapticAllowed()) {
             UI_HELPER_EXECUTOR.execute(() -> mVibrator.vibrate(vibrationEffect, VIBRATION_ATTRS));
         }
     }
@@ -117,7 +126,7 @@ public class VibratorWrapper {
      */
     @SuppressLint("NewApi")
     public void vibrate(int primitiveId, float primitiveScale, VibrationEffect fallbackEffect) {
-        if (mHasVibrator && mIsHapticFeedbackEnabled) {
+        if (mHasVibrator && isPrimeHapticAllowed()) {
             UI_HELPER_EXECUTOR.execute(() -> {
                 if (primitiveId >= 0 && mVibrator.areAllPrimitivesSupported(primitiveId)) {
                     mVibrator.vibrate(VibrationEffect.startComposition()
@@ -137,7 +146,7 @@ public class VibratorWrapper {
      */
     @SuppressLint("NewApi")
     public boolean vibrateScaled(int primitiveId, float scale, long fallbackDurationMs) {
-        if (!mHasVibrator || !mIsHapticFeedbackEnabled || scale <= 0f) {
+        if (!mHasVibrator || !isPrimeHapticAllowed() || scale <= 0f) {
             return scale <= 0f;
         }
         final float clampedScale = Math.max(0f, Math.min(1f, scale));
