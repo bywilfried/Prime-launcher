@@ -1176,4 +1176,5 @@
     <string name="prime_haptic_medium">Medium</string>
     <string name="prime_haptic_notifications_group">Notifications</string>
     <string name="prime_haptic_notification_gesture">Open notifications by gesture</string>
+    <string name="prime_haptic_override_android">Allow Prime vibrations when Android touch feedback is off</string>
 </resources>
