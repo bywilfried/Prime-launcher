@@ -16,6 +16,7 @@ import app.lawnchair.gestures.handlers.OpenAppTarget
 import app.lawnchair.gestures.handlers.OpenAssistantHandler
 import app.lawnchair.gestures.handlers.OpenNotificationsHandler
 import app.lawnchair.gestures.handlers.OpenQuickSettingsHandler
+import app.lawnchair.gestures.handlers.OpenPrimeSearchGestureHandler
 import app.lawnchair.gestures.handlers.OpenSearchGestureHandler
 import app.lawnchair.gestures.handlers.RecentsGestureHandler
 import app.lawnchair.gestures.handlers.SleepGestureHandler
@@ -112,6 +113,14 @@ sealed class GestureHandlerConfig {
         Simple(R.string.gesture_handler_open_app_search, ::OpenAppSearchGestureHandler) {
         override val iconRes = R.drawable.ic_search
 
+        override fun isExternallyInvokable() = true
+    }
+
+    @Serializable
+    @SerialName("openPrimeSearch")
+    data object OpenPrimeSearch :
+        Simple(R.string.gesture_handler_open_app_search, ::OpenPrimeSearchGestureHandler) {
+        override val iconRes = R.drawable.ic_search
         override fun isExternallyInvokable() = true
     }
 
