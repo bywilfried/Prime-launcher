@@ -106,9 +106,10 @@ object PrimeSearchOverlay {
             val settings = TextView(launcher).apply {
                 text = "⚙"
                 textSize = 24f
-                gravity = Gravity.END
+                gravity = Gravity.END or Gravity.CENTER_VERTICAL
+                minHeight = (48 * density).toInt()
                 setTextColor(themed(ThemeColorRole.PRIME_SEARCH_TEXT))
-                setPadding(inset, 0, inset, 0)
+                setPadding(inset, (6 * density).toInt(), inset, (6 * density).toInt())
                 contentDescription = "Options Prime Search"
                 setOnClickListener {
                     PrimeSearchOverlay.dismiss()
@@ -331,7 +332,9 @@ object PrimeSearchOverlay {
                     // height, then cap it to the visible region above the IME.
                     val barHeight = input.height.coerceAtLeast((64 * density).toInt())
                     val desiredContent = if (zeroState.visibility == View.VISIBLE) zeroState.measuredHeight else results.measuredHeight
-                    val desired = (barHeight + desiredContent + inset * 2)
+                    val footerHeight = container.getChildAt(container.childCount - 1).measuredHeight
+                        .coerceAtLeast((48 * density).toInt())
+                    val desired = (barHeight + desiredContent + footerHeight + inset * 2)
                         .coerceIn((120 * density).toInt(), maximum)
                     if (desired != lastHeight) {
                         lastHeight = desired
