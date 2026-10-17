@@ -119,7 +119,7 @@ sealed class GestureHandlerConfig {
     @Serializable
     @SerialName("openPrimeSearch")
     data object OpenPrimeSearch :
-        Simple(R.string.gesture_handler_open_app_search, ::OpenPrimeSearchGestureHandler) {
+        Simple(R.string.gesture_handler_prime_search, ::OpenPrimeSearchGestureHandler) {
         override val iconRes = R.drawable.ic_search
         override fun isExternallyInvokable() = true
     }
