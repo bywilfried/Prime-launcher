@@ -22,6 +22,12 @@ object PrimeSearchResultPreferences {
         CALCULATOR("calculator", "Calculatrice", "Résultats de calcul"),
     }
 
+    fun floatingWindow(context: Context): Boolean = prefs(context).getBoolean("floating_window", true)
+
+    fun setFloatingWindow(context: Context, enabled: Boolean) {
+        prefs(context).edit().putBoolean("floating_window", enabled).apply()
+    }
+
     fun fuzzyApps(context: Context): Boolean = prefs(context).getBoolean("fuzzy_apps", true)
 
     fun setFuzzyApps(context: Context, enabled: Boolean) {
