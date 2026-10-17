@@ -18,6 +18,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.GridLayout
+import android.view.ViewGroup
 import com.android.app.search.LayoutType
 import android.view.LayoutInflater
 import android.view.View
@@ -42,6 +43,7 @@ object PrimeSearchOverlay {
         if (activeDialog?.isShowing == true) return
         val density = launcher.resources.displayMetrics.density
         val inset = (16 * density).toInt()
+        val floating = PrimeSearchResultPreferences.floatingWindow(launcher)
         val profile = ThemeProfile.current(launcher)
         val variant = launcher.effectiveThemeVariant()
         fun themed(role: ThemeColorRole) = ThemeColors.resolve(launcher, profile, role, variant)
@@ -68,7 +70,11 @@ object PrimeSearchOverlay {
         }
         val container = LinearLayout(launcher).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(themed(ThemeColorRole.PRIME_SEARCH_WINDOW_BACKGROUND))
+            background = GradientDrawable().apply {
+                setColor(themed(ThemeColorRole.PRIME_SEARCH_WINDOW_BACKGROUND))
+                cornerRadius = if (floating) 22 * density else 0f
+            }
+            clipToOutline = floating
             setPadding(inset, inset, inset, inset)
             addView(input, LinearLayout.LayoutParams(-1, -2))
             addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
@@ -76,6 +82,7 @@ object PrimeSearchOverlay {
         val dialog = Dialog(launcher).apply {
             setContentView(container)
             setCanceledOnTouchOutside(true)
+            window?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
             setOnDismissListener {
                 algorithm.cancel(true)
                 if (activeAlgorithm === algorithm) activeAlgorithm = null
@@ -155,7 +162,17 @@ object PrimeSearchOverlay {
         dialog.window?.apply {
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             setGravity(Gravity.TOP)
-            setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
+            if (floating) {
+                val metrics = launcher.resources.displayMetrics
+                val width = (metrics.widthPixels - (24 * density).toInt() * 2)
+                    .coerceAtMost((600 * density).toInt())
+                val height = (metrics.heightPixels * 0.72f).toInt()
+                setLayout(width, height)
+                attributes = attributes.apply { dimAmount = 0.18f }
+            } else {
+                setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
+                attributes = attributes.apply { dimAmount = 0f }
+            }
             setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or
                 WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         }
