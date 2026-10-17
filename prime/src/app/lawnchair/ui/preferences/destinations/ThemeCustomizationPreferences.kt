@@ -474,6 +474,16 @@ private fun rolesForUi(section: ThemeColorRole.Section): List<ThemeColorRole> = 
 }
 
 private fun roleLabel(role: ThemeColorRole): String = when (role) {
+    ThemeColorRole.PRIME_SEARCH_WINDOW_BACKGROUND -> "Fenêtre — fond"
+    ThemeColorRole.PRIME_SEARCH_BAR_BACKGROUND -> "Barre — fond"
+    ThemeColorRole.PRIME_SEARCH_TEXT -> "Barre — texte"
+    ThemeColorRole.PRIME_SEARCH_HINT -> "Barre — indication"
+    ThemeColorRole.PRIME_SEARCH_ICON -> "Barre — icônes"
+    ThemeColorRole.PRIME_SEARCH_BORDER -> "Barre — bordure"
+    ThemeColorRole.PRIME_SEARCH_TAB_ACTIVE -> "Onglets — actif"
+    ThemeColorRole.PRIME_SEARCH_TAB_INACTIVE -> "Onglets — inactif"
+    ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND -> "Résultats — fond"
+    ThemeColorRole.PRIME_SEARCH_RESULT_TEXT -> "Résultats — texte"
     ThemeColorRole.GLOBAL_ACCENT -> "Couleur des éléments modifiables"
     ThemeColorRole.GLOBAL_SETTINGS_BACKGROUND -> "Interface — fond des menus"
     ThemeColorRole.GLOBAL_SETTINGS_CARD_BACKGROUND -> "Interface — fond des cartes"
