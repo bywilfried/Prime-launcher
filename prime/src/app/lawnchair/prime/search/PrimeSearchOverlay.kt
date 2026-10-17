@@ -26,6 +26,7 @@ import app.lawnchair.search.LawnchairSearchAdapterProvider
 import app.lawnchair.LawnchairLauncher
 import app.lawnchair.search.adapter.SearchAdapterItem
 import app.lawnchair.search.algorithms.LawnchairSearchAlgorithm
+import app.lawnchair.search.algorithms.LawnchairLocalSearchAlgorithm
 import com.android.launcher3.allapps.BaseAllAppsAdapter
 import com.android.launcher3.search.SearchCallback
 
@@ -44,7 +45,7 @@ object PrimeSearchOverlay {
         val profile = ThemeProfile.current(launcher)
         val variant = launcher.effectiveThemeVariant()
         fun themed(role: ThemeColorRole) = ThemeColors.resolve(launcher, profile, role, variant)
-        val algorithm = LawnchairSearchAlgorithm.create(launcher)
+        val algorithm = LawnchairLocalSearchAlgorithm(launcher, primeSearch = true)
         activeAlgorithm = algorithm
         val input = EditText(launcher).apply {
             isSingleLine = true
