@@ -285,8 +285,9 @@ fun PrimeColorSelection(
     // Keep the dynamic editor anchored to the semantic theme recipe until the user actually
     // applies a dynamic override. This avoids the generic Accent1/500 fallback when Default or
     // a fixed custom color is currently active.
-    val dynamicEditorInitial = remember(appliedColor, defaultDynamicColor) {
-        (appliedColor as? ColorOption.DynamicColor) ?: defaultDynamicColor
+    val dynamicEditorInitial = remember(currentAppliedColor, selectedColor.intValue, defaultDynamicColor) {
+        (currentAppliedColor as? ColorOption.DynamicColor)
+            ?: nearestDynamicColorRecipe(context, selectedColor.intValue)
     }
     val onPresetClick = { option: ColorOption ->
         selectedColor.intValue = if (option == ColorOption.Default || option == ColorOption.LegacyBehavior) {
@@ -396,6 +397,14 @@ fun PrimeColorSelection(
                             )
                         }
                         if (customMode.intValue == 0) {
+                            androidx.compose.material3.TextButton(
+                                onClick = {
+                                    selectedColor.intValue = if (currentAppliedColor == ColorOption.Default ||
+                                        currentAppliedColor == ColorOption.LegacyBehavior) themeFallbackColor
+                                    else currentAppliedColor.forCustomPicker(context)
+                                },
+                                modifier = Modifier.align(Alignment.End).padding(end = 16.dp),
+                            ) { Text("Réinitialiser à la couleur active") }
                             CustomColorPicker(
                                 selectedColor = selectedColor.intValue,
                                 onSelect = { selectedColor.intValue = it },
@@ -409,6 +418,7 @@ fun PrimeColorSelection(
                                 // Use appliedColor (the route snapshot), not the mutable preset state:
                                 // visiting Presets must not silently replace the editor's baseline.
                                 initial = dynamicEditorInitial,
+                                targetColor = selectedColor.intValue,
                                 onApply = { option ->
                                     currentAppliedColor = option
                                     onApply(option)
@@ -429,4 +439,27 @@ private fun ColorOption.forCustomPicker(context: Context): Int {
         return Color.BLACK
     }
     return color
+}
+
+/** Find the closest current Monet swatch/shade to the color the user is editing. */
+private fun nearestDynamicColorRecipe(context: Context, target: Int): ColorOption.DynamicColor {
+    val swatches = listOf("Neutral1", "Neutral2", "Accent1", "Accent2", "Accent3")
+    val shades = listOf(0, 10, 20, 50, 100, 200, 300, 400, 500, 600, 650, 700, 800, 900, 950, 1000)
+    val dark = app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(context) == app.lawnchair.theme.ThemeVariant.DARK
+    val targetLab = DoubleArray(3)
+    androidx.core.graphics.ColorUtils.colorToLAB(target, targetLab)
+    var best = ColorOption.DynamicColor("Accent1", 500, null)
+    var bestDistance = Double.POSITIVE_INFINITY
+    for (swatch in swatches) for (shade in shades) {
+        val option = ColorOption.DynamicColor(swatch, shade, null)
+        val color = if (dark) option.colorPreferenceEntry.darkColor(context) else option.colorPreferenceEntry.lightColor(context)
+        val lab = DoubleArray(3)
+        androidx.core.graphics.ColorUtils.colorToLAB(color, lab)
+        val distance = androidx.core.graphics.ColorUtils.distanceEuclidean(targetLab, lab)
+        if (distance < bestDistance) {
+            bestDistance = distance
+            best = option
+        }
+    }
+    return best
 }
