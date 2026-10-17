@@ -26,6 +26,7 @@ import com.google.android.msdl.data.model.MSDLToken
 enum class SearchRoute {
     DOCK_SEARCH,
     DRAWER_SEARCH,
+    PRIME_SEARCH,
 }
 
 @Composable
@@ -78,6 +79,8 @@ fun SearchPreferences(
             Spacer(Modifier.height(8.dp))
             DrawerSearchPreference()
         },
+        thirdPageLabel = "Prime Search",
+        thirdPageContent = { app.lawnchair.ui.preferences.components.search.PrimeSearchPreference() },
         modifier = modifier,
     )
 }
