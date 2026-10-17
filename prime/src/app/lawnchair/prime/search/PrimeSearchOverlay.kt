@@ -3,6 +3,11 @@ package app.lawnchair.prime.search
 import android.app.Dialog
 import android.content.Context
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
+import app.lawnchair.theme.ThemeColors
+import app.lawnchair.theme.ThemeColorRole
+import app.lawnchair.theme.ThemeProfile
+import app.lawnchair.theme.effectiveThemeVariant
 import android.graphics.drawable.ColorDrawable
 import android.text.Editable
 import android.text.TextWatcher
@@ -32,25 +37,33 @@ object PrimeSearchOverlay {
         if (activeDialog?.isShowing == true) return
         val density = launcher.resources.displayMetrics.density
         val inset = (16 * density).toInt()
+        val profile = ThemeProfile.current(launcher)
+        val variant = launcher.effectiveThemeVariant()
+        fun themed(role: ThemeColorRole) = ThemeColors.resolve(launcher, profile, role, variant)
         val algorithm = LawnchairSearchAlgorithm.create(launcher)
         activeAlgorithm = algorithm
         val input = EditText(launcher).apply {
             isSingleLine = true
             hint = "Prime Search"
             setPadding(inset, inset, inset, inset)
-            setBackgroundColor(Color.WHITE)
-            setTextColor(Color.BLACK)
-            setHintTextColor(Color.DKGRAY)
+            background = GradientDrawable().apply {
+                setColor(themed(ThemeColorRole.PRIME_SEARCH_BAR_BACKGROUND))
+                cornerRadius = 24 * density
+                setStroke((1 * density).toInt().coerceAtLeast(1), themed(ThemeColorRole.PRIME_SEARCH_BORDER))
+            }
+            setTextColor(themed(ThemeColorRole.PRIME_SEARCH_TEXT))
+            setHintTextColor(themed(ThemeColorRole.PRIME_SEARCH_HINT))
         }
         val results = LinearLayout(launcher).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.WHITE)
+            setBackgroundColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND))
         }
         val scroll = ScrollView(launcher).apply {
             addView(results)
         }
         val container = LinearLayout(launcher).apply {
             orientation = LinearLayout.VERTICAL
+            setBackgroundColor(themed(ThemeColorRole.PRIME_SEARCH_WINDOW_BACKGROUND))
             setPadding(inset, inset, inset, inset)
             addView(input, LinearLayout.LayoutParams(-1, -2))
             addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
@@ -85,7 +98,7 @@ object PrimeSearchOverlay {
                     val row = TextView(launcher).apply {
                         text = title
                         textSize = 16f
-                        setTextColor(Color.BLACK)
+                        setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
                         setPadding(inset, inset, inset, inset)
                         setOnClickListener {
                             try {
