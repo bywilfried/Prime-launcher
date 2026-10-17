@@ -22,6 +22,13 @@ object PrimeSearchResultPreferences {
         CALCULATOR("calculator", "Calculatrice", "Résultats de calcul"),
     }
 
+    fun zeroStateRows(context: Context): Int =
+        prefs(context).getInt("zero_state_rows", 1).coerceIn(1, 2)
+
+    fun setZeroStateRows(context: Context, rows: Int) {
+        prefs(context).edit().putInt("zero_state_rows", rows.coerceIn(1, 2)).apply()
+    }
+
     fun floatingWindow(context: Context): Boolean = prefs(context).getBoolean("floating_window", true)
 
     fun setFloatingWindow(context: Context, enabled: Boolean) {
