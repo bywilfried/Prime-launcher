@@ -55,6 +55,26 @@ fun PrimeSearchPreference() {
             description = { Text("Prime Search utilise les mêmes sources et réglages que la recherche du tiroir.") },
         )
     }
+    PreferenceGroup(heading = "Fenêtre Prime Search") {
+        var floating by remember { mutableStateOf(PrimeSearchResultPreferences.floatingWindow(context)) }
+        PreferenceTemplate(
+            title = { Text("Fenêtre flottante (overlay)") },
+            description = { Text("Afficher Prime Search au-dessus de l'accueil avec des marges visibles. Désactiver pour le plein écran.") },
+            endWidget = {
+                androidx.compose.material3.Switch(
+                    checked = floating,
+                    onCheckedChange = {
+                        floating = it
+                        PrimeSearchResultPreferences.setFloatingWindow(context, it)
+                    },
+                )
+            },
+            onClick = {
+                floating = !floating
+                PrimeSearchResultPreferences.setFloatingWindow(context, floating)
+            },
+        )
+    }
     PreferenceGroup(heading = "Recherche d'applications") {
         var fuzzyEnabled by remember { mutableStateOf(PrimeSearchResultPreferences.fuzzyApps(context)) }
         PreferenceTemplate(
