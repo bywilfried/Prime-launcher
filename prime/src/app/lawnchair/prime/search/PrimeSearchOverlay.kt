@@ -79,7 +79,7 @@ object PrimeSearchOverlay {
             clipToOutline = floating
             setPadding(inset, inset, inset, inset)
             addView(input, LinearLayout.LayoutParams(-1, -2))
-            addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+            addView(scroll, LinearLayout.LayoutParams(-1, -2))
         }
         val dialog = Dialog(launcher).apply {
             setContentView(container)
@@ -95,6 +95,8 @@ object PrimeSearchOverlay {
             override fun onSearchResult(query: String, items: ArrayList<BaseAllAppsAdapter.AdapterItem>?) {
                 if (!dialog.isShowing || input.text.toString() != query) return
                 results.removeAllViews()
+                // Re-measure after the search results have changed.
+                results.post { if (dialog.isShowing) container.requestLayout() }
                 // Preserve the algorithm's order and section boundaries. Each item is
                 // inflated with the same layout used by the drawer's adapter provider.
                 val inflater = LayoutInflater.from(launcher)
@@ -145,10 +147,12 @@ object PrimeSearchOverlay {
                         view.minimumHeight = 0
                     }
                 }
+                results.requestLayout()
             }
 
             override fun clearSearchResult() {
                 results.removeAllViews()
+                results.requestLayout()
             }
         }
         input.addTextChangedListener(object : TextWatcher {
@@ -196,10 +200,14 @@ object PrimeSearchOverlay {
                     }
                     val visible = Rect()
                     decor.getWindowVisibleDisplayFrame(visible)
-                    // For a dialog with ADJUST_RESIZE, the visible frame tracks the
-                    // area above the IME. Avoid relying on a fixed display height.
                     val available = visible.height().coerceAtMost(screenHeight)
-                    val desired = (available - margin).coerceAtLeast((160 * density).toInt())
+                    val maximum = (available - margin).coerceAtLeast((160 * density).toInt())
+                    // Measure natural content height independently of the dialog
+                    // height, then cap it to the visible region above the IME.
+                    val barHeight = input.height.coerceAtLeast((64 * density).toInt())
+                    val desiredContent = results.measuredHeight
+                    val desired = (barHeight + desiredContent + inset * 2)
+                        .coerceIn((120 * density).toInt(), maximum)
                     if (desired != lastHeight) {
                         lastHeight = desired
                         window.setLayout(targetWidth, desired)
