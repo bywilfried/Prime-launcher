@@ -34,6 +34,14 @@ import com.android.app.search.LayoutType
 import android.view.LayoutInflater
 import android.view.View
 import android.graphics.Rect
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.PixelFormat
+import android.graphics.drawable.Drawable
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 import app.lawnchair.allapps.views.SearchResultView
 import app.lawnchair.search.LawnchairSearchAdapterProvider
 import app.lawnchair.LawnchairLauncher
@@ -103,13 +111,52 @@ object PrimeSearchOverlay {
             addView(input, LinearLayout.LayoutParams(-1, -2))
             addView(zeroState, LinearLayout.LayoutParams(-1, -2))
             addView(scroll, LinearLayout.LayoutParams(-1, -2))
-            val settings = TextView(launcher).apply {
-                text = "⚙"
-                textSize = 24f
-                gravity = Gravity.END or Gravity.CENTER_VERTICAL
-                minHeight = (48 * density).toInt()
-                setTextColor(themed(ThemeColorRole.PRIME_SEARCH_TEXT))
-                setPadding(inset, (6 * density).toInt(), inset, (6 * density).toInt())
+            // Use a real outlined vector-like gear instead of the platform
+            // Unicode gear glyph, whose filled appearance varies by font.
+            val settingsIcon = object : Drawable() {
+                private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = themed(ThemeColorRole.PRIME_SEARCH_TEXT)
+                    style = Paint.Style.STROKE
+                    strokeWidth = 2.1f
+                    strokeJoin = Paint.Join.ROUND
+                    strokeCap = Paint.Cap.ROUND
+                }
+                override fun draw(canvas: Canvas) {
+                    val bounds = bounds
+                    val side = minOf(bounds.width(), bounds.height()).toFloat()
+                    val save = canvas.save()
+                    canvas.translate(bounds.exactCenterX(), bounds.exactCenterY())
+                    canvas.scale(side / 24f, side / 24f)
+                    val outline = Path()
+                    // Eight teeth, each with two shoulders and a flat tip.
+                    for (tooth in 0 until 8) {
+                        for (point in 0 until 4) {
+                            val angle = -PI / 2 + (tooth * 4 + point) * PI / 16
+                            val radius = if (point == 1 || point == 2) 10.5 else 8.1
+                            val x = (cos(angle) * radius).toFloat()
+                            val y = (sin(angle) * radius).toFloat()
+                            if (tooth == 0 && point == 0) outline.moveTo(x, y)
+                            else outline.lineTo(x, y)
+                        }
+                    }
+                    outline.close()
+                    canvas.drawPath(outline, paint)
+                    canvas.drawCircle(0f, 0f, 3.2f, paint)
+                    canvas.restoreToCount(save)
+                }
+                override fun setAlpha(alpha: Int) { paint.alpha = alpha; invalidateSelf() }
+                override fun setColorFilter(filter: android.graphics.ColorFilter?) {
+                    paint.colorFilter = filter
+                    invalidateSelf()
+                }
+                @Deprecated("Deprecated in Java")
+                override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+            }
+            val settings = ImageView(launcher).apply {
+                setImageDrawable(settingsIcon)
+                scaleType = ImageView.ScaleType.CENTER_INSIDE
+                setPadding((10 * density).toInt(), (10 * density).toInt(),
+                    (10 * density).toInt(), (10 * density).toInt())
                 contentDescription = "Options Prime Search"
                 setOnClickListener {
                     PrimeSearchOverlay.dismiss()
@@ -118,7 +165,13 @@ object PrimeSearchOverlay {
                     )
                 }
             }
-            addView(settings, LinearLayout.LayoutParams(-1, -2))
+            val settingsFooter = LinearLayout(launcher).apply {
+                gravity = Gravity.END or Gravity.CENTER_VERTICAL
+                addView(settings, LinearLayout.LayoutParams(
+                    (48 * density).toInt(), (48 * density).toInt(),
+                ))
+            }
+            addView(settingsFooter, LinearLayout.LayoutParams(-1, (48 * density).toInt()))
         }
         val dialog = Dialog(launcher).apply {
             setContentView(container)
