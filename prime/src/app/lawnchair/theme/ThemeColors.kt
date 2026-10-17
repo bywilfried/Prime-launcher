@@ -683,7 +683,7 @@ object ThemeColors {
         ThemeColorRole.PRIME_SEARCH_RESULT_TEXT,
         ThemeColorRole.PRIME_SEARCH_APP_LABEL,
         ThemeColorRole.PRIME_SEARCH_SETTINGS_ICON ->
-            resolveLegacyToken(context, ColorTokens.ColorOnSurface, variant)
+            resolveLegacyToken(context, ColorTokens.TextColorPrimary, variant)
         ThemeColorRole.PRIME_SEARCH_BORDER ->
             resolveLegacyToken(context, ColorTokens.ColorAccent, variant)
         ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND ->
