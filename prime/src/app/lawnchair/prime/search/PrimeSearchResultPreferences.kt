@@ -22,6 +22,13 @@ object PrimeSearchResultPreferences {
         CALCULATOR("calculator", "Calculatrice", "Résultats de calcul"),
     }
 
+    fun appsPerRow(context: Context): Int =
+        prefs(context).getInt("apps_per_row", 4).coerceIn(3, 6)
+
+    fun setAppsPerRow(context: Context, count: Int) {
+        prefs(context).edit().putInt("apps_per_row", count.coerceIn(3, 6)).apply()
+    }
+
     private fun prefs(context: Context) =
         context.getSharedPreferences(STORE, Context.MODE_PRIVATE)
 
