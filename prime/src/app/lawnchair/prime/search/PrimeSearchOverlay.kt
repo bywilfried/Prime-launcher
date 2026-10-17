@@ -19,9 +19,11 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.GridLayout
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import com.android.app.search.LayoutType
 import android.view.LayoutInflater
 import android.view.View
+import android.graphics.Rect
 import app.lawnchair.allapps.views.SearchResultView
 import app.lawnchair.search.LawnchairSearchAdapterProvider
 import app.lawnchair.LawnchairLauncher
@@ -166,8 +168,9 @@ object PrimeSearchOverlay {
                 val metrics = launcher.resources.displayMetrics
                 val width = (metrics.widthPixels - (24 * density).toInt() * 2)
                     .coerceAtMost((600 * density).toInt())
-                val height = (metrics.heightPixels * 0.72f).toInt()
-                setLayout(width, height)
+                // Resize dynamically when the IME opens: fixed 72% screen height
+                // otherwise extends underneath the keyboard on some devices.
+                setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
                 attributes = attributes.apply { dimAmount = 0.18f }
             } else {
                 setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
@@ -175,6 +178,33 @@ object PrimeSearchOverlay {
             }
             setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or
                 WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        }
+        if (floating) {
+            val window = dialog.window
+            val decor = window?.decorView
+            val screenHeight = launcher.resources.displayMetrics.heightPixels
+            val margin = (24 * density).toInt()
+            val targetWidth = (launcher.resources.displayMetrics.widthPixels - margin * 2)
+                .coerceAtMost((600 * density).toInt())
+            var lastHeight = -1
+            decor?.viewTreeObserver?.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+                override fun onGlobalLayout() {
+                    if (!dialog.isShowing) {
+                        decor.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                        return
+                    }
+                    val visible = Rect()
+                    decor.getWindowVisibleDisplayFrame(visible)
+                    // For a dialog with ADJUST_RESIZE, the visible frame tracks the
+                    // area above the IME. Avoid relying on a fixed display height.
+                    val available = visible.height().coerceAtMost(screenHeight)
+                    val desired = (available - margin).coerceAtLeast((160 * density).toInt())
+                    if (desired != lastHeight) {
+                        lastHeight = desired
+                        window.setLayout(targetWidth, desired)
+                    }
+                }
+            })
         }
         container.translationY = -120 * density
         container.animate().translationY(0f).setDuration(220).start()
