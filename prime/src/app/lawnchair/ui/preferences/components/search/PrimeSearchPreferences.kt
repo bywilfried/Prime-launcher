@@ -108,16 +108,15 @@ fun PrimeSearchPreference() {
             var dragging by remember(category) { mutableStateOf(false) }
             val animatedLift by animateFloatAsState(if (dragging) 1.06f else 1f, label = "primeDragLift")
             PreferenceTemplate(
-                title = {
-                    Text(
-                        category.title,
-                        modifier = Modifier.graphicsLayer {
-                            translationY = if (dragging) dragDistance else 0f
-                            scaleX = animatedLift
-                            scaleY = animatedLift
-                        }.zIndex(if (dragging) 2f else 0f),
-                    )
-                },
+                modifier = Modifier
+                    .zIndex(if (dragging) 10f else 0f)
+                    .graphicsLayer {
+                        translationY = if (dragging) dragDistance else 0f
+                        scaleX = animatedLift
+                        scaleY = animatedLift
+                        shadowElevation = if (dragging) 12.dp.toPx() else 0f
+                    },
+                title = { Text(category.title) },
                 description = { Text(category.description) },
                 endWidget = {
                     Row {
