@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.ResultReceiver
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -21,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -49,6 +51,7 @@ fun GestureHandlerPreference(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val maxSheetListHeight = (LocalConfiguration.current.screenHeightDp * 0.65f).dp
     val scope = rememberCoroutineScope()
     val bottomSheetHandler = LocalBottomSheetHandler.current
     val prefs2 = preferenceManager2()
@@ -84,7 +87,7 @@ fun GestureHandlerPreference(
                         }
                     },
                 ) {
-                    LazyColumn {
+                    LazyColumn(modifier = Modifier.heightIn(max = maxSheetListHeight)) {
                         itemsIndexed(newOptions) { index, option ->
                             if (index > 0) {
                                 PreferenceDivider(startIndent = 40.dp)
