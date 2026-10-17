@@ -215,6 +215,9 @@ object PrimeSearchOverlay {
                     text = name
                     textSize = 12f
                     setTextColor(themed(if (index == selectedTab) ThemeColorRole.PRIME_SEARCH_TAB_ACTIVE else ThemeColorRole.PRIME_SEARCH_TAB_INACTIVE))
+                    // Preserve independent theme colors while making selection
+                    // legible even when both roles resolve to similar colors.
+                    alpha = if (index == selectedTab) 1f else 0.55f
                     gravity = Gravity.CENTER
                     setPadding((8 * density).toInt(), inset, (8 * density).toInt(), inset)
                     setOnClickListener { selectedTab = index; renderZeroState() }
