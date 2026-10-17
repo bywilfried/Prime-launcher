@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.ui.platform.LocalDensity
+import kotlin.math.roundToInt
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.input.pointer.pointerInput
@@ -99,19 +101,31 @@ fun PrimeSearchPreference() {
         categories = reordered
         PrimeSearchResultPreferences.saveOrder(context, reordered)
     }
+    var activeDrag by remember { mutableStateOf<PrimeSearchResultPreferences.Category?>(null) }
+    var dragOrigin by remember { mutableStateOf(0) }
+    var dragOffset by remember { mutableStateOf(0f) }
     PreferenceGroup(heading = "Afficher dans les résultats de recherche") {
         categories.forEachIndexed { index, category ->
             var checked by remember(category) {
                 mutableStateOf(PrimeSearchResultPreferences.enabled(context, category))
             }
-            var dragDistance by remember(category) { mutableStateOf(0f) }
-            var dragging by remember(category) { mutableStateOf(false) }
+            val dragging = activeDrag == category
+            val rowPixels = with(LocalDensity.current) { 112.dp.toPx() }
+            val targetIndex = (dragOrigin + (dragOffset / rowPixels).roundToInt()).coerceIn(0, categories.lastIndex)
+            val displacement = if (activeDrag != null && !dragging) {
+                when {
+                    index > dragOrigin && index <= targetIndex -> -rowPixels
+                    index < dragOrigin && index >= targetIndex -> rowPixels
+                    else -> 0f
+                }
+            } else 0f
+            val animatedDisplacement by animateFloatAsState(displacement, label = "primeCategoryShift")
             val animatedLift by animateFloatAsState(if (dragging) 1.06f else 1f, label = "primeDragLift")
             PreferenceTemplate(
                 modifier = Modifier
                     .zIndex(if (dragging) 10f else 0f)
                     .graphicsLayer {
-                        translationY = if (dragging) dragDistance else 0f
+                        translationY = if (dragging) dragOffset else animatedDisplacement
                         scaleX = animatedLift
                         scaleY = animatedLift
                         shadowElevation = if (dragging) 12.dp.toPx() else 0f
@@ -128,18 +142,18 @@ fun PrimeSearchPreference() {
                                 .pointerInput(category, index) {
                                     var distance = 0f
                                     detectDragGesturesAfterLongPress(
-                                        onDragStart = { distance = 0f; dragDistance = 0f; dragging = true },
+                                        onDragStart = { distance = 0f; dragOrigin = index; dragOffset = 0f; activeDrag = category },
                                         onDragEnd = {
-                                            dragging = false
-                                            dragDistance = 0f
-                                            val offset = (distance / (88f * density)).toInt()
-                                            if (offset != 0) moveCategory(index, (index + offset).coerceIn(0, categories.lastIndex))
+                                            val destination = (dragOrigin + (dragOffset / rowPixels).roundToInt()).coerceIn(0, categories.lastIndex)
+                                            activeDrag = null
+                                            dragOffset = 0f
+                                            moveCategory(index, destination)
                                         },
-                                        onDragCancel = { distance = 0f; dragDistance = 0f; dragging = false },
+                                        onDragCancel = { distance = 0f; dragOffset = 0f; activeDrag = null },
                                         onDrag = { change, dragAmount ->
                                             change.consume()
                                             distance += dragAmount.y
-                                            dragDistance = distance
+                                            dragOffset = distance
                                         },
                                     )
                                 },
