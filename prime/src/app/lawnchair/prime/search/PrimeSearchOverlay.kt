@@ -118,7 +118,7 @@ object PrimeSearchOverlay {
             // Unicode gear glyph, whose filled appearance varies by font.
             val settingsIcon = object : Drawable() {
                 private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = themed(ThemeColorRole.PRIME_SEARCH_TEXT)
+                    color = themed(ThemeColorRole.PRIME_SEARCH_SETTINGS_ICON)
                     style = Paint.Style.STROKE
                     strokeWidth = 2.1f
                     strokeJoin = Paint.Join.ROUND
@@ -212,8 +212,7 @@ object PrimeSearchOverlay {
                 val tab = TextView(launcher).apply {
                     text = name
                     textSize = 12f
-                    setTextColor(themed(ThemeColorRole.PRIME_SEARCH_TEXT))
-                    alpha = if (index == selectedTab) 1f else 0.55f
+                    setTextColor(themed(if (index == selectedTab) ThemeColorRole.PRIME_SEARCH_TAB_ACTIVE else ThemeColorRole.PRIME_SEARCH_TAB_INACTIVE))
                     gravity = Gravity.CENTER
                     setPadding((8 * density).toInt(), inset, (8 * density).toInt(), inset)
                     setOnClickListener { selectedTab = index; renderZeroState() }
@@ -299,7 +298,7 @@ object PrimeSearchOverlay {
                         gravity = Gravity.CENTER
                         maxLines = 1
                         ellipsize = android.text.TextUtils.TruncateAt.END
-                        setTextColor(themed(ThemeColorRole.PRIME_SEARCH_TEXT))
+                        setTextColor(themed(ThemeColorRole.PRIME_SEARCH_APP_LABEL))
                     }
                     cell.addView(title, LinearLayout.LayoutParams(-1, -2))
                     row.addView(cell, LinearLayout.LayoutParams(cellWidth, rowHeight))
