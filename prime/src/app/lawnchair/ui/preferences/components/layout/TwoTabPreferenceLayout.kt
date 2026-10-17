@@ -39,6 +39,8 @@ fun TwoTabPreferenceLayout(
     firstPageContent: @Composable ColumnScope.() -> Unit,
     secondPageLabel: String,
     secondPageContent: @Composable ColumnScope.() -> Unit,
+    thirdPageLabel: String? = null,
+    thirdPageContent: (@Composable ColumnScope.() -> Unit)? = null,
     modifier: Modifier = Modifier,
     backArrowVisible: Boolean = true,
     isExpandedScreen: Boolean = LocalIsExpandedScreen.current,
@@ -53,7 +55,7 @@ fun TwoTabPreferenceLayout(
     ) {
         val pagerState = rememberPagerState(
             initialPage = defaultPage,
-            pageCount = { 2 },
+            pageCount = { if (thirdPageContent != null) 3 else 2 },
         )
 
         val scope = rememberCoroutineScope()
@@ -85,6 +87,14 @@ fun TwoTabPreferenceLayout(
                 currentOffset = pagerState.currentPage + pagerState.currentPageOffsetFraction,
                 page = 1,
             )
+            if (thirdPageLabel != null && thirdPageContent != null) {
+                Tab(
+                    label = thirdPageLabel,
+                    onClick = { scrollToPage(2) },
+                    currentOffset = pagerState.currentPage + pagerState.currentPageOffsetFraction,
+                    page = 2,
+                )
+            }
         }
 
         HorizontalPager(
@@ -103,6 +113,9 @@ fun TwoTabPreferenceLayout(
                     Column {
                         secondPageContent()
                     }
+                }
+                2 -> {
+                    Column { thirdPageContent?.invoke(this) }
                 }
             }
         }
