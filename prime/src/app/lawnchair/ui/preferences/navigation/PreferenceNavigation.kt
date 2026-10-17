@@ -231,7 +231,12 @@ fun PreferenceNavigation(
                     role == ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT ||
                     role == ThemeColorRole.DRAWER_ICON_TEXT ||
                     role == ThemeColorRole.DRAWER_FOLDER_ICON_TEXT ||
-                    role == ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT,
+                    role == ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT ||
+                    role == ThemeColorRole.PRIME_SEARCH_TEXT ||
+                    role == ThemeColorRole.PRIME_SEARCH_HINT ||
+                    role == ThemeColorRole.PRIME_SEARCH_TAB_ACTIVE ||
+                    role == ThemeColorRole.PRIME_SEARCH_TAB_INACTIVE ||
+                    role == ThemeColorRole.PRIME_SEARCH_RESULT_TEXT,
                 categoryTabText = role == ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT ||
                     role == ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT,
                 automaticContrastDefaultLabel = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT,
