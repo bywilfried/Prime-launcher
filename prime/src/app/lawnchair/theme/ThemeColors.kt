@@ -420,6 +420,7 @@ object ThemeColors {
     /** Parent theme color, without any category-specific override. */
     private fun primeSearchTextBackground(role: ThemeColorRole): ThemeColorRole = when (role) {
         ThemeColorRole.PRIME_SEARCH_RESULT_TEXT -> ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND
+        ThemeColorRole.PRIME_SEARCH_APP_LABEL -> ThemeColorRole.PRIME_SEARCH_WINDOW_BACKGROUND
         ThemeColorRole.PRIME_SEARCH_TAB_ACTIVE,
         ThemeColorRole.PRIME_SEARCH_TAB_INACTIVE -> ThemeColorRole.PRIME_SEARCH_WINDOW_BACKGROUND
         else -> ThemeColorRole.PRIME_SEARCH_BAR_BACKGROUND
@@ -441,7 +442,8 @@ object ThemeColors {
                 ThemeColorRole.PRIME_SEARCH_ICON,
                 ThemeColorRole.PRIME_SEARCH_TAB_ACTIVE,
                 ThemeColorRole.PRIME_SEARCH_TAB_INACTIVE,
-                ThemeColorRole.PRIME_SEARCH_RESULT_TEXT -> {
+                ThemeColorRole.PRIME_SEARCH_RESULT_TEXT,
+                ThemeColorRole.PRIME_SEARCH_APP_LABEL -> {
                     val backgroundRole = primeSearchTextBackground(role)
                     val surface = resolveTheme(context, profile, backgroundRole, variant)
                     val opaque = ColorUtils.compositeColors(surface, if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE)
@@ -677,6 +679,8 @@ object ThemeColors {
         ThemeColorRole.PRIME_SEARCH_TAB_INACTIVE -> legacy(context, ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT, variant)
         ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND -> legacy(context, ThemeColorRole.DRAWER_BACKGROUND, variant)
         ThemeColorRole.PRIME_SEARCH_RESULT_TEXT -> legacy(context, ThemeColorRole.DRAWER_TEXT, variant)
+        ThemeColorRole.PRIME_SEARCH_APP_LABEL -> legacy(context, ThemeColorRole.DRAWER_ICON_TEXT, variant)
+        ThemeColorRole.PRIME_SEARCH_SETTINGS_ICON -> legacy(context, ThemeColorRole.DRAWER_SEARCH_ICON, variant)
         // This role historically follows the selected accent source and color style through
         // the dynamic palette. Resolve the same token used by the launcher.
         ThemeColorRole.GLOBAL_ACCENT ->
