@@ -17,10 +17,12 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
-import android.widget.TextView
+import android.view.LayoutInflater
+import android.view.View
+import app.lawnchair.allapps.views.SearchResultView
+import app.lawnchair.search.LawnchairSearchAdapterProvider
 import app.lawnchair.LawnchairLauncher
 import app.lawnchair.search.adapter.SearchAdapterItem
-import app.lawnchair.search.adapter.SearchTargetCompat
 import app.lawnchair.search.algorithms.LawnchairSearchAlgorithm
 import com.android.launcher3.allapps.BaseAllAppsAdapter
 import com.android.launcher3.search.SearchCallback
@@ -81,42 +83,20 @@ object PrimeSearchOverlay {
             override fun onSearchResult(query: String, items: ArrayList<BaseAllAppsAdapter.AdapterItem>?) {
                 if (!dialog.isShowing || input.text.toString() != query) return
                 results.removeAllViews()
+                // Preserve the algorithm's order and section boundaries. Each item is
+                // inflated with the same layout used by the drawer's adapter provider.
+                val inflater = LayoutInflater.from(launcher)
                 items.orEmpty().filterIsInstance<SearchAdapterItem>().forEach { item ->
-                    val target = item.searchTarget
-                    val action = target.searchAction
-                    val title = action?.title?.toString()
-                        ?: if (target.resultType == SearchTargetCompat.RESULT_TYPE_APPLICATION) {
-                            try {
-                                launcher.packageManager.getApplicationLabel(
-                                    launcher.packageManager.getApplicationInfo(target.packageName, 0),
-                                ).toString()
-                            } catch (_: Exception) {
-                                target.packageName
-                            }
-                        } else null
-                    if (title.isNullOrBlank()) return@forEach
-                    val row = TextView(launcher).apply {
-                        text = title
-                        textSize = 16f
-                        setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
-                        setPadding(inset, inset, inset, inset)
-                        setOnClickListener {
-                            try {
-                                when {
-                                    action?.pendingIntent != null -> action.pendingIntent.send()
-                                    action?.intent != null -> launcher.startActivity(action.intent)
-                                    target.resultType == SearchTargetCompat.RESULT_TYPE_APPLICATION -> {
-                                        launcher.packageManager.getLaunchIntentForPackage(target.packageName)
-                                            ?.let(launcher::startActivity)
-                                    }
-                                }
-                                dialog.dismiss()
-                            } catch (_: Exception) {
-                                // Ignore unavailable targets; do not crash the launcher.
-                            }
-                        }
+                    val layout = LawnchairSearchAdapterProvider.layoutForViewType(item.viewType)
+                        ?: return@forEach
+                    val view = inflater.inflate(layout, results, false)
+                    val resultView = view as? SearchResultView ?: return@forEach
+                    item.setRippleEffect(view)
+                    results.addView(view)
+                    resultView.bind(item.searchTarget, emptyList())
+                    view.setOnClickListener {
+                        if (resultView.launch()) dialog.dismiss()
                     }
-                    results.addView(row)
                 }
             }
 
