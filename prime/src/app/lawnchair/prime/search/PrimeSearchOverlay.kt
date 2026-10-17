@@ -122,12 +122,22 @@ object PrimeSearchOverlay {
                     val view = inflater.inflate(layout, parent, false)
                     val resultView = view as? SearchResultView ?: return@forEach
                     if (isAppIcon) {
+                        // Reserve every column, including the unused ones on a
+                        // partially filled last row. Weighted cells otherwise
+                        // expand to fill the row and spread two apps far apart.
+                        val grid = parent as GridLayout
+                        val availableWidth = launcher.resources.displayMetrics.widthPixels -
+                            (if (floating) (48 * density).toInt() else 0) - inset * 2
+                        val gridWidth = availableWidth.coerceAtMost(
+                            if (floating) (600 * density).toInt() - inset * 2 else availableWidth,
+                        )
+                        val cellWidth = (gridWidth / columns).coerceAtLeast(1)
                         val params = GridLayout.LayoutParams().apply {
-                            width = 0
+                            width = cellWidth
                             height = GridLayout.LayoutParams.WRAP_CONTENT
-                            columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+                            columnSpec = GridLayout.spec(GridLayout.UNDEFINED)
                         }
-                        parent.addView(view, params)
+                        grid.addView(view, params)
                     } else {
                         parent.addView(view)
                     }
@@ -137,7 +147,6 @@ object PrimeSearchOverlay {
                         // Drawer icons assign an all-apps cell height during inflation.
                         // Override it for compact, top-aligned Prime Search rows.
                         val params = view.layoutParams as GridLayout.LayoutParams
-                        params.width = 0
                         params.height = (112 * density).toInt()
                         params.setGravity(Gravity.TOP)
                         view.layoutParams = params
