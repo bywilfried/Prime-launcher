@@ -22,6 +22,12 @@ object PrimeSearchResultPreferences {
         CALCULATOR("calculator", "Calculatrice", "Résultats de calcul"),
     }
 
+    fun fuzzyApps(context: Context): Boolean = prefs(context).getBoolean("fuzzy_apps", true)
+
+    fun setFuzzyApps(context: Context, enabled: Boolean) {
+        prefs(context).edit().putBoolean("fuzzy_apps", enabled).apply()
+    }
+
     fun appsPerRow(context: Context): Int =
         prefs(context).getInt("apps_per_row", 4).coerceIn(3, 6)
 
