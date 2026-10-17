@@ -99,57 +99,49 @@ object PrimeSearchOverlay {
                 // inflated with the same layout used by the drawer's adapter provider.
                 val inflater = LayoutInflater.from(launcher)
                 val columns = PrimeSearchResultPreferences.appsPerRow(launcher)
-                var appGrid: GridLayout? = null
+                // Each row is centered independently. Fixed-width cells keep
+                // identical spacing whether the row has 1, 2 or 6 apps.
+                val availableWidth = launcher.resources.displayMetrics.widthPixels -
+                    (if (floating) (48 * density).toInt() else 0) - inset * 2
+                val gridWidth = availableWidth.coerceAtMost(
+                    if (floating) (600 * density).toInt() - inset * 2 else availableWidth,
+                )
+                val cellWidth = (gridWidth / columns).coerceAtLeast(1)
+                var appRow: LinearLayout? = null
+                var appsInRow = 0
                 PrimeSearchResultPreferences.filter(
                     launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(),
                 ).forEach { item ->
                     val isAppIcon = item.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT
                     if (isAppIcon) {
-                        if (appGrid == null) {
-                            appGrid = GridLayout(launcher).apply {
-                                columnCount = columns
-                                alignmentMode = GridLayout.ALIGN_BOUNDS
-                                useDefaultMargins = false
+                        if (appRow == null || appsInRow == columns) {
+                            appRow = LinearLayout(launcher).apply {
+                                orientation = LinearLayout.HORIZONTAL
+                                gravity = Gravity.CENTER_HORIZONTAL
                             }
-                            results.addView(appGrid, LinearLayout.LayoutParams(-1, -2))
+                            results.addView(appRow, LinearLayout.LayoutParams(-1, -2))
+                            appsInRow = 0
                         }
                     } else {
-                        appGrid = null
+                        appRow = null
+                        appsInRow = 0
                     }
-                    val parent = if (isAppIcon) appGrid!! else results
+                    val parent = if (isAppIcon) appRow!! else results
                     val layout = LawnchairSearchAdapterProvider.layoutForViewType(item.viewType)
                         ?: return@forEach
                     val view = inflater.inflate(layout, parent, false)
                     val resultView = view as? SearchResultView ?: return@forEach
                     if (isAppIcon) {
-                        // Reserve every column, including the unused ones on a
-                        // partially filled last row. Weighted cells otherwise
-                        // expand to fill the row and spread two apps far apart.
-                        val grid = parent as GridLayout
-                        val availableWidth = launcher.resources.displayMetrics.widthPixels -
-                            (if (floating) (48 * density).toInt() else 0) - inset * 2
-                        val gridWidth = availableWidth.coerceAtMost(
-                            if (floating) (600 * density).toInt() - inset * 2 else availableWidth,
-                        )
-                        val cellWidth = (gridWidth / columns).coerceAtLeast(1)
-                        val params = GridLayout.LayoutParams().apply {
-                            width = cellWidth
-                            height = GridLayout.LayoutParams.WRAP_CONTENT
-                            columnSpec = GridLayout.spec(GridLayout.UNDEFINED)
-                        }
-                        grid.addView(view, params)
+                        parent.addView(view, LinearLayout.LayoutParams(
+                            cellWidth, (112 * density).toInt(),
+                        ))
+                        appsInRow++
                     } else {
                         parent.addView(view)
                     }
                     item.setRippleEffect(view)
                     resultView.bind(item.searchTarget, emptyList())
                     if (isAppIcon) {
-                        // Drawer icons assign an all-apps cell height during inflation.
-                        // Override it for compact, top-aligned Prime Search rows.
-                        val params = view.layoutParams as GridLayout.LayoutParams
-                        params.height = (112 * density).toInt()
-                        params.setGravity(Gravity.TOP)
-                        view.layoutParams = params
                         view.minimumHeight = 0
                     }
                 }
