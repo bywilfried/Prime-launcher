@@ -1,6 +1,16 @@
 package app.lawnchair.prime.search
 
 import android.app.Dialog
+import android.app.usage.UsageStatsManager
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.widget.TextView
+import android.widget.ImageView
+import android.widget.ImageButton
+import android.widget.HorizontalScrollView
+import app.lawnchair.ui.preferences.PreferenceActivity
+import app.lawnchair.ui.preferences.navigation.Search
+import app.lawnchair.ui.preferences.destinations.SearchRoute
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
@@ -67,6 +77,18 @@ object PrimeSearchOverlay {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND))
         }
+        val zeroState = LinearLayout(launcher).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+        val tabs = LinearLayout(launcher).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+        }
+        val zeroApps = LinearLayout(launcher).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+        zeroState.addView(tabs, LinearLayout.LayoutParams(-1, -2))
+        zeroState.addView(zeroApps, LinearLayout.LayoutParams(-1, -2))
         val scroll = ScrollView(launcher).apply {
             addView(results)
         }
@@ -79,7 +101,23 @@ object PrimeSearchOverlay {
             clipToOutline = floating
             setPadding(inset, inset, inset, inset)
             addView(input, LinearLayout.LayoutParams(-1, -2))
+            addView(zeroState, LinearLayout.LayoutParams(-1, -2))
             addView(scroll, LinearLayout.LayoutParams(-1, -2))
+            val settings = TextView(launcher).apply {
+                text = "⚙"
+                textSize = 24f
+                gravity = Gravity.END
+                setTextColor(themed(ThemeColorRole.PRIME_SEARCH_TEXT))
+                setPadding(inset, 0, inset, 0)
+                contentDescription = "Options Prime Search"
+                setOnClickListener {
+                    PrimeSearchOverlay.dismiss()
+                    launcher.startActivity(
+                        PreferenceActivity.createIntent(launcher, Search(SearchRoute.PRIME_SEARCH)),
+                    )
+                }
+            }
+            addView(settings, LinearLayout.LayoutParams(-1, -2))
         }
         val dialog = Dialog(launcher).apply {
             setContentView(container)
@@ -91,6 +129,89 @@ object PrimeSearchOverlay {
                 activeDialog = null
             }
         }
+        val packageManager = launcher.packageManager
+        val installed = packageManager.getInstalledApplications(0).filter {
+            packageManager.getLaunchIntentForPackage(it.packageName) != null
+        }
+        val now = System.currentTimeMillis()
+        val usage = try {
+            launcher.getSystemService(UsageStatsManager::class.java)
+                ?.queryAndAggregateUsageStats(now - 30L * 24 * 60 * 60 * 1000, now)
+                .orEmpty()
+        } catch (_: Exception) {
+            emptyMap()
+        }
+        val sections = listOf("FRÉQUENTES", "RÉCENTES", "NOUVELLES")
+        var selectedTab = 0
+        fun renderZeroState() {
+            tabs.removeAllViews()
+            zeroApps.removeAllViews()
+            sections.forEachIndexed { index, name ->
+                val tab = TextView(launcher).apply {
+                    text = name
+                    textSize = 12f
+                    setTextColor(themed(ThemeColorRole.PRIME_SEARCH_TEXT))
+                    alpha = if (index == selectedTab) 1f else 0.55f
+                    gravity = Gravity.CENTER
+                    setPadding((8 * density).toInt(), inset, (8 * density).toInt(), inset)
+                    setOnClickListener { selectedTab = index; renderZeroState() }
+                }
+                tabs.addView(tab, LinearLayout.LayoutParams(0, -2, 1f))
+            }
+            val ranked = when (selectedTab) {
+                0 -> installed.sortedByDescending {
+                    usage[it.packageName]?.totalTimeInForeground ?: 0L
+                }.filter { (usage[it.packageName]?.totalTimeInForeground ?: 0L) > 0L }
+                1 -> installed.sortedByDescending {
+                    usage[it.packageName]?.lastTimeUsed ?: 0L
+                }.filter { (usage[it.packageName]?.lastTimeUsed ?: 0L) > 0L }
+                else -> installed.sortedByDescending {
+                    try { packageManager.getPackageInfo(it.packageName, 0).firstInstallTime }
+                    catch (_: Exception) { 0L }
+                }
+            }
+            val columns = PrimeSearchResultPreferences.appsPerRow(launcher)
+            val maxCount = columns * PrimeSearchResultPreferences.zeroStateRows(launcher)
+            val usableWidth = launcher.resources.displayMetrics.widthPixels -
+                (if (floating) (48 * density).toInt() else 0) - inset * 2
+            val cellWidth = (usableWidth.coerceAtMost((600 * density).toInt() - inset * 2) / columns)
+                .coerceAtLeast(1)
+            ranked.take(maxCount).chunked(columns).forEach { apps ->
+                val row = LinearLayout(launcher).apply { gravity = Gravity.CENTER_HORIZONTAL }
+                zeroApps.addView(row, LinearLayout.LayoutParams(-1, -2))
+                apps.forEach { app ->
+                    val cell = LinearLayout(launcher).apply {
+                        orientation = LinearLayout.VERTICAL
+                        gravity = Gravity.CENTER
+                        setPadding(2, (6 * density).toInt(), 2, 0)
+                        setOnClickListener {
+                            packageManager.getLaunchIntentForPackage(app.packageName)?.let { intent ->
+                                dialog.dismiss()
+                                launcher.startActivity(intent)
+                            }
+                        }
+                    }
+                    val icon = ImageView(launcher).apply {
+                        setImageDrawable(packageManager.getApplicationIcon(app))
+                    }
+                    cell.addView(icon, LinearLayout.LayoutParams(
+                        (48 * density).toInt(), (48 * density).toInt(),
+                    ))
+                    val title = TextView(launcher).apply {
+                        text = packageManager.getApplicationLabel(app)
+                        textSize = 11f
+                        gravity = Gravity.CENTER
+                        maxLines = 1
+                        ellipsize = android.text.TextUtils.TruncateAt.END
+                        setTextColor(themed(ThemeColorRole.PRIME_SEARCH_TEXT))
+                    }
+                    cell.addView(title, LinearLayout.LayoutParams(-1, -2))
+                    row.addView(cell, LinearLayout.LayoutParams(cellWidth, (100 * density).toInt()))
+                }
+            }
+            zeroState.requestLayout()
+        }
+        renderZeroState()
         val callback = object : SearchCallback<BaseAllAppsAdapter.AdapterItem> {
             override fun onSearchResult(query: String, items: ArrayList<BaseAllAppsAdapter.AdapterItem>?) {
                 if (!dialog.isShowing || input.text.toString() != query) return
@@ -159,8 +280,12 @@ object PrimeSearchOverlay {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val query = s?.toString().orEmpty()
-                if (query.isBlank()) algorithm.doZeroStateSearch(callback)
-                else algorithm.doSearch(query, callback)
+                zeroState.visibility = if (query.isBlank()) View.VISIBLE else View.GONE
+                scroll.visibility = if (query.isBlank()) View.GONE else View.VISIBLE
+                if (query.isBlank()) {
+                    results.removeAllViews()
+                    renderZeroState()
+                } else algorithm.doSearch(query, callback)
             }
             override fun afterTextChanged(s: Editable?) = Unit
         })
@@ -205,7 +330,7 @@ object PrimeSearchOverlay {
                     // Measure natural content height independently of the dialog
                     // height, then cap it to the visible region above the IME.
                     val barHeight = input.height.coerceAtLeast((64 * density).toInt())
-                    val desiredContent = results.measuredHeight
+                    val desiredContent = if (zeroState.visibility == View.VISIBLE) zeroState.measuredHeight else results.measuredHeight
                     val desired = (barHeight + desiredContent + inset * 2)
                         .coerceIn((120 * density).toInt(), maximum)
                     if (desired != lastHeight) {
@@ -221,7 +346,8 @@ object PrimeSearchOverlay {
         input.post {
             (launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
                 .showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
-            algorithm.doZeroStateSearch(callback)
+            zeroState.visibility = View.VISIBLE
+            scroll.visibility = View.GONE
         }
     }
 
