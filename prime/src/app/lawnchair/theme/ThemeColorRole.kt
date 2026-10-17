@@ -77,6 +77,17 @@ enum class ThemeColorRole(val id: String, val section: Section) {
     DRAWER_POPUP_TEXT("drawer.popup.text", Section.DRAWER),
     DRAWER_POPUP_ICON("drawer.popup.icon", Section.DRAWER),
 
+    PRIME_SEARCH_WINDOW_BACKGROUND("prime_search.window.background", Section.PRIME_SEARCH),
+    PRIME_SEARCH_BAR_BACKGROUND("prime_search.bar.background", Section.PRIME_SEARCH),
+    PRIME_SEARCH_TEXT("prime_search.text", Section.PRIME_SEARCH),
+    PRIME_SEARCH_HINT("prime_search.hint", Section.PRIME_SEARCH),
+    PRIME_SEARCH_ICON("prime_search.icon", Section.PRIME_SEARCH),
+    PRIME_SEARCH_BORDER("prime_search.border", Section.PRIME_SEARCH),
+    PRIME_SEARCH_TAB_ACTIVE("prime_search.tab.active", Section.PRIME_SEARCH),
+    PRIME_SEARCH_TAB_INACTIVE("prime_search.tab.inactive", Section.PRIME_SEARCH),
+    PRIME_SEARCH_RESULT_BACKGROUND("prime_search.result.background", Section.PRIME_SEARCH),
+    PRIME_SEARCH_RESULT_TEXT("prime_search.result.text", Section.PRIME_SEARCH),
+
     TABS_CATEGORY_ACTIVE_BACKGROUND("tabs.category.active.background", Section.TABS),
     TABS_CATEGORY_INACTIVE_BACKGROUND("tabs.category.inactive.background", Section.TABS),
     TABS_CATEGORY_TEXT("tabs.category.text", Section.TABS),
@@ -91,6 +102,7 @@ enum class ThemeColorRole(val id: String, val section: Section) {
         DOCK,
         DRAWER,
         TABS,
+        PRIME_SEARCH,
     }
 
     companion object {
