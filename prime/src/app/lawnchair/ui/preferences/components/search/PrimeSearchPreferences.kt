@@ -1,5 +1,10 @@
 package app.lawnchair.ui.preferences.components.search
 
+import android.app.AppOpsManager
+import android.content.Context
+import android.content.Intent
+import android.os.Process
+import android.provider.Settings
 import androidx.compose.material3.Text
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -73,6 +78,23 @@ fun PrimeSearchPreference() {
             onClick = {
                 floating = !floating
                 PrimeSearchResultPreferences.setFloatingWindow(context, floating)
+            },
+        )
+    }
+    PreferenceGroup(heading = "Accès aux données d’utilisation") {
+        val usageGranted = try {
+            val ops = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+            ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), context.packageName) ==
+                AppOpsManager.MODE_ALLOWED
+        } catch (_: Exception) { false }
+        PreferenceTemplate(
+            title = { Text("Applications fréquentes et récentes") },
+            description = {
+                Text(if (usageGranted) "Autorisation accordée"
+                    else "Autorisation nécessaire pour afficher les applications fréquentes et récentes. Appuyer pour ouvrir les paramètres Android.")
+            },
+            onClick = {
+                context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
             },
         )
     }
