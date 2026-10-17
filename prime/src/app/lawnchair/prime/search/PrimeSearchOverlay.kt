@@ -181,7 +181,18 @@ object PrimeSearchOverlay {
             // has fewer apps (or none). This keeps the overlay height stable
             // while switching between Fréquentes, Récentes and Nouvelles.
             val rows = PrimeSearchResultPreferences.zeroStateRows(launcher)
-            val rowHeight = (100 * density).toInt()
+            // Derive row height from the actual icon dimension, font metrics
+            // and vertical padding instead of a hard-coded 100dp.
+            val iconSize = (48 * density).toInt()
+            val titleTextSizeSp = 11f
+            val titlePaint = android.text.TextPaint().apply {
+                textSize = titleTextSizeSp * launcher.resources.displayMetrics.scaledDensity
+            }
+            val titleHeight = (titlePaint.fontMetrics.bottom - titlePaint.fontMetrics.top)
+                .toInt().coerceAtLeast(1)
+            val cellTopPadding = (6 * density).toInt()
+            val cellBottomPadding = (8 * density).toInt()
+            val rowHeight = iconSize + titleHeight + cellTopPadding + cellBottomPadding
             val displayedApps = ranked.take(maxCount)
             repeat(rows) { rowIndex ->
                 val apps = displayedApps.drop(rowIndex * columns).take(columns)
@@ -194,7 +205,7 @@ object PrimeSearchOverlay {
                     val cell = LinearLayout(launcher).apply {
                         orientation = LinearLayout.VERTICAL
                         gravity = Gravity.CENTER
-                        setPadding(2, (6 * density).toInt(), 2, 0)
+                        setPadding(2, cellTopPadding, 2, cellBottomPadding)
                         setOnClickListener {
                             packageManager.getLaunchIntentForPackage(app.packageName)?.let { intent ->
                                 dialog.dismiss()
@@ -206,18 +217,18 @@ object PrimeSearchOverlay {
                         setImageDrawable(packageManager.getApplicationIcon(app))
                     }
                     cell.addView(icon, LinearLayout.LayoutParams(
-                        (48 * density).toInt(), (48 * density).toInt(),
+                        iconSize, iconSize,
                     ))
                     val title = TextView(launcher).apply {
                         text = packageManager.getApplicationLabel(app)
-                        textSize = 11f
+                        textSize = titleTextSizeSp
                         gravity = Gravity.CENTER
                         maxLines = 1
                         ellipsize = android.text.TextUtils.TruncateAt.END
                         setTextColor(themed(ThemeColorRole.PRIME_SEARCH_TEXT))
                     }
                     cell.addView(title, LinearLayout.LayoutParams(-1, -2))
-                    row.addView(cell, LinearLayout.LayoutParams(cellWidth, (100 * density).toInt()))
+                    row.addView(cell, LinearLayout.LayoutParams(cellWidth, rowHeight))
                 }
             }
             zeroState.requestLayout()
