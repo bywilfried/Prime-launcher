@@ -10,6 +10,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.input.pointer.pointerInput
@@ -101,8 +105,19 @@ fun PrimeSearchPreference() {
                 mutableStateOf(PrimeSearchResultPreferences.enabled(context, category))
             }
             var dragDistance by remember(category) { mutableStateOf(0f) }
+            var dragging by remember(category) { mutableStateOf(false) }
+            val animatedLift by animateFloatAsState(if (dragging) 1.06f else 1f, label = "primeDragLift")
             PreferenceTemplate(
-                title = { Text(category.title) },
+                title = {
+                    Text(
+                        category.title,
+                        modifier = Modifier.graphicsLayer {
+                            translationY = if (dragging) dragDistance else 0f
+                            scaleX = animatedLift
+                            scaleY = animatedLift
+                        }.zIndex(if (dragging) 2f else 0f),
+                    )
+                },
                 description = { Text(category.description) },
                 endWidget = {
                     Row {
@@ -114,15 +129,18 @@ fun PrimeSearchPreference() {
                                 .pointerInput(category, index) {
                                     var distance = 0f
                                     detectDragGesturesAfterLongPress(
-                                        onDragStart = { distance = 0f },
+                                        onDragStart = { distance = 0f; dragDistance = 0f; dragging = true },
                                         onDragEnd = {
+                                            dragging = false
+                                            dragDistance = 0f
                                             val offset = (distance / (88f * density)).toInt()
                                             if (offset != 0) moveCategory(index, (index + offset).coerceIn(0, categories.lastIndex))
                                         },
-                                        onDragCancel = { distance = 0f },
+                                        onDragCancel = { distance = 0f; dragDistance = 0f; dragging = false },
                                         onDrag = { change, dragAmount ->
                                             change.consume()
                                             distance += dragAmount.y
+                                            dragDistance = distance
                                         },
                                     )
                                 },
