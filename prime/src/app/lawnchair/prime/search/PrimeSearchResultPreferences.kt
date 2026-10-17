@@ -39,6 +39,25 @@ object PrimeSearchResultPreferences {
         prefs(context).edit().putBoolean(category.key, enabled).apply()
     }
 
+    fun order(context: Context): List<Category> {
+        val saved = prefs(context).getString("category_order", null)
+            ?.split(",")
+            ?.mapNotNull { key -> Category.entries.firstOrNull { it.key == key } }
+            .orEmpty()
+        return (saved + Category.entries).distinct()
+    }
+
+    fun saveOrder(context: Context, categories: List<Category>) {
+        prefs(context).edit().putString(
+            "category_order",
+            (categories + Category.entries).distinct().joinToString(",") { it.key },
+        ).apply()
+    }
+
+    fun resetOrder(context: Context) {
+        prefs(context).edit().remove("category_order").apply()
+    }
+
     private fun category(item: SearchAdapterItem): Category? {
         val target = item.searchTarget
         return when (target.resultType) {
@@ -61,12 +80,31 @@ object PrimeSearchResultPreferences {
         val kept = items.filter { item ->
             category(item)?.let { enabled(context, it) } ?: true
         }
-        return kept.filterIndexed { index, item ->
+        val cleaned = kept.filterIndexed { index, item ->
             if (item.searchTarget.resultType != SearchTargetCompat.RESULT_TYPE_SECTION_HEADER &&
                 item.searchTarget.layoutType != LayoutType.EMPTY_DIVIDER) return@filterIndexed true
             kept.drop(index + 1).takeWhile {
                 it.searchTarget.resultType != SearchTargetCompat.RESULT_TYPE_SECTION_HEADER
             }.any { category(it) != null }
         }
+        // The engine already emits sections in order. Keep each section intact
+        // (header, items and spacers) while sorting whole sections by preference.
+        val sections = mutableListOf<MutableList<SearchAdapterItem>>()
+        cleaned.forEach { item ->
+            if (sections.isEmpty() ||
+                (item.searchTarget.resultType == SearchTargetCompat.RESULT_TYPE_SECTION_HEADER &&
+                    item.searchTarget.layoutType != LayoutType.EMPTY_DIVIDER)
+            ) {
+                sections.add(mutableListOf())
+            }
+            sections.last().add(item)
+        }
+        val priorities = order(context).withIndex().associate { it.value to it.index }
+        return sections.withIndex().sortedWith(
+            compareBy({ indexed ->
+                indexed.value.firstNotNullOfOrNull { category(it) }
+                    ?.let { priorities[it] } ?: Int.MAX_VALUE
+            }, { it.index }),
+        ).flatMap { it.value }
     }
 }
