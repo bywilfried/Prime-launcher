@@ -236,7 +236,8 @@ fun PreferenceNavigation(
                     role == ThemeColorRole.PRIME_SEARCH_HINT ||
                     role == ThemeColorRole.PRIME_SEARCH_TAB_ACTIVE ||
                     role == ThemeColorRole.PRIME_SEARCH_TAB_INACTIVE ||
-                    role == ThemeColorRole.PRIME_SEARCH_RESULT_TEXT,
+                    role == ThemeColorRole.PRIME_SEARCH_RESULT_TEXT ||
+                    role == ThemeColorRole.PRIME_SEARCH_APP_LABEL,
                 categoryTabText = role == ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT ||
                     role == ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT,
                 automaticContrastDefaultLabel = role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT,
