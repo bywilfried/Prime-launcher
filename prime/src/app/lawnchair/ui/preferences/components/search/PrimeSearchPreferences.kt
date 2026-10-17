@@ -1,6 +1,23 @@
 package app.lawnchair.ui.preferences.components.search
 
 import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
@@ -48,22 +65,47 @@ fun PrimeSearchPreference() {
             steps = 2,
         )
     }
+    var categories by remember {
+        mutableStateOf(PrimeSearchResultPreferences.order(context))
+    }
+    fun moveCategory(from: Int, to: Int) {
+        if (from !in categories.indices || to !in categories.indices || from == to) return
+        val reordered = categories.toMutableList()
+        reordered.add(to, reordered.removeAt(from))
+        categories = reordered
+        PrimeSearchResultPreferences.saveOrder(context, reordered)
+    }
     PreferenceGroup(heading = "Afficher dans les résultats de recherche") {
-        PrimeSearchResultPreferences.Category.entries.forEach { category ->
+        categories.forEachIndexed { index, category ->
             var checked by remember(category) {
                 mutableStateOf(PrimeSearchResultPreferences.enabled(context, category))
             }
+            var dragDistance by remember(category) { mutableStateOf(0f) }
             PreferenceTemplate(
                 title = { Text(category.title) },
                 description = { Text(category.description) },
                 endWidget = {
-                    androidx.compose.material3.Switch(
-                        checked = checked,
-                        onCheckedChange = { enabled ->
-                            checked = enabled
-                            PrimeSearchResultPreferences.setEnabled(context, category, enabled)
-                        },
-                    )
+                    Row {
+                        IconButton(
+                            onClick = { moveCategory(index, index - 1) },
+                            enabled = index > 0,
+                        ) {
+                            Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Monter")
+                        }
+                        IconButton(
+                            onClick = { moveCategory(index, index + 1) },
+                            enabled = index < categories.lastIndex,
+                        ) {
+                            Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Descendre")
+                        }
+                        androidx.compose.material3.Switch(
+                            checked = checked,
+                            onCheckedChange = { enabled ->
+                                checked = enabled
+                                PrimeSearchResultPreferences.setEnabled(context, category, enabled)
+                            },
+                        )
+                    }
                 },
                 onClick = {
                     checked = !checked
@@ -71,6 +113,10 @@ fun PrimeSearchPreference() {
                 },
             )
         }
+        TextButton(onClick = {
+            PrimeSearchResultPreferences.resetOrder(context)
+            categories = PrimeSearchResultPreferences.order(context)
+        }) { Text("Réinitialiser l'ordre") }
     }
     PreferenceGroup(heading = "Couleurs Prime Search") {
         ThemeColorRole.entries.filter { it.section == ThemeColorRole.Section.PRIME_SEARCH }.forEach { role ->
