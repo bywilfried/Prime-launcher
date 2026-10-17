@@ -1,6 +1,11 @@
 package app.lawnchair.ui.preferences.components.search
 
 import androidx.compose.material3.Text
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import app.lawnchair.prime.search.PrimeSearchResultPreferences
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import app.lawnchair.theme.ThemeColorRole
@@ -26,6 +31,30 @@ fun PrimeSearchPreference() {
             title = { Text("Moteur et catégories de résultats") },
             description = { Text("Prime Search utilise les mêmes sources et réglages que la recherche du tiroir.") },
         )
+    }
+    PreferenceGroup(heading = "Afficher dans les résultats de recherche") {
+        PrimeSearchResultPreferences.Category.entries.forEach { category ->
+            var checked by remember(category) {
+                mutableStateOf(PrimeSearchResultPreferences.enabled(context, category))
+            }
+            PreferenceTemplate(
+                title = { Text(category.title) },
+                description = { Text(category.description) },
+                endWidget = {
+                    androidx.compose.material3.Switch(
+                        checked = checked,
+                        onCheckedChange = { enabled ->
+                            checked = enabled
+                            PrimeSearchResultPreferences.setEnabled(context, category, enabled)
+                        },
+                    )
+                },
+                onClick = {
+                    checked = !checked
+                    PrimeSearchResultPreferences.setEnabled(context, category, checked)
+                },
+            )
+        }
     }
     PreferenceGroup(heading = "Couleurs Prime Search") {
         ThemeColorRole.entries.filter { it.section == ThemeColorRole.Section.PRIME_SEARCH }.forEach { role ->
