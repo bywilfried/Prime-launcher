@@ -35,7 +35,6 @@ import app.lawnchair.ui.preferences.components.layout.Chip
 @Composable
 fun PrimeDynamicColorPicker(
     initial: ColorOption.DynamicColor?,
-    targetColor: Int? = null,
     onApply: (ColorOption.DynamicColor) -> Unit,
 ) {
     val swatches = listOf("Neutral1", "Neutral2", "Accent1", "Accent2", "Accent3")
