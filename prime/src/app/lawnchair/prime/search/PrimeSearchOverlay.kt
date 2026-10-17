@@ -123,6 +123,16 @@ object PrimeSearchOverlay {
                     }
                     item.setRippleEffect(view)
                     resultView.bind(item.searchTarget, emptyList())
+                    if (isAppIcon) {
+                        // Drawer icons assign an all-apps cell height during inflation.
+                        // Override it for compact, top-aligned Prime Search rows.
+                        val params = view.layoutParams as GridLayout.LayoutParams
+                        params.width = 0
+                        params.height = (112 * density).toInt()
+                        params.setGravity(Gravity.TOP)
+                        view.layoutParams = params
+                        view.minimumHeight = 0
+                    }
                 }
             }
 
