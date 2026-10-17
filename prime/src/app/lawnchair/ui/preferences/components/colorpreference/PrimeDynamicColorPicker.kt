@@ -35,6 +35,7 @@ import app.lawnchair.ui.preferences.components.layout.Chip
 @Composable
 fun PrimeDynamicColorPicker(
     initial: ColorOption.DynamicColor?,
+    targetColor: Int? = null,
     onApply: (ColorOption.DynamicColor) -> Unit,
 ) {
     val swatches = listOf("Neutral1", "Neutral2", "Accent1", "Accent2", "Accent3")
@@ -50,6 +51,15 @@ fun PrimeDynamicColorPicker(
         verticalArrangement = Arrangement.spacedBy(20.dp),
         modifier = Modifier.fillMaxWidth().padding(16.dp),
     ) {
+        androidx.compose.material3.TextButton(
+            onClick = {
+                swatch = initial?.swatch ?: "Accent1"
+                shadeIndex = shades.indexOf(initial?.shade ?: 500).coerceAtLeast(0).toFloat()
+                useLStar = initial?.lStar != null
+                lStar = (initial?.lStar ?: 50).toFloat()
+            },
+            modifier = Modifier.align(Alignment.End),
+        ) { Text("Réinitialiser à la couleur active") }
         Text("Palette")
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
