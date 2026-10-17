@@ -1,0 +1,65 @@
+package app.lawnchair.prime.search
+
+import android.content.Context
+import app.lawnchair.search.adapter.SearchAdapterItem
+import app.lawnchair.search.adapter.SearchTargetCompat
+import com.android.app.search.LayoutType
+
+/**
+ * Prime Search visibility choices are separate from drawer preferences.
+ * Filtering happens after the common search algorithm has produced ordered results.
+ */
+object PrimeSearchResultPreferences {
+    private const val STORE = "prime_search_result_preferences"
+
+    enum class Category(val key: String, val title: String, val description: String) {
+        APPS("apps", "Applis et raccourcis", "Applications et raccourcis"),
+        WEB("web", "Suggestions Web", "Recherches et suggestions Internet"),
+        CONTACTS("contacts", "Personnes", "Contacts et autres"),
+        FILES("files", "Fichiers", "Contenu multimédia et fichiers"),
+        SETTINGS("settings", "Paramètres Android", "Réglages du système"),
+        HISTORY("history", "Historique des recherches", "Recherches récentes"),
+        CALCULATOR("calculator", "Calculatrice", "Résultats de calcul"),
+    }
+
+    private fun prefs(context: Context) =
+        context.getSharedPreferences(STORE, Context.MODE_PRIVATE)
+
+    fun enabled(context: Context, category: Category): Boolean =
+        prefs(context).getBoolean(category.key, true)
+
+    fun setEnabled(context: Context, category: Category, enabled: Boolean) {
+        prefs(context).edit().putBoolean(category.key, enabled).apply()
+    }
+
+    private fun category(item: SearchAdapterItem): Category? {
+        val target = item.searchTarget
+        return when (target.resultType) {
+            SearchTargetCompat.RESULT_TYPE_APPLICATION,
+            SearchTargetCompat.RESULT_TYPE_SHORTCUT -> Category.APPS
+            SearchTargetCompat.RESULT_TYPE_CONTACT_TILE -> Category.CONTACTS
+            SearchTargetCompat.RESULT_TYPE_FILE_TILE -> Category.FILES
+            SearchTargetCompat.RESULT_TYPE_SETTING_TILE -> Category.SETTINGS
+            SearchTargetCompat.RESULT_TYPE_CALCULATOR -> Category.CALCULATOR
+            SearchTargetCompat.RESULT_TYPE_SUGGESTIONS -> {
+                if (target.packageName == app.lawnchair.search.adapter.HISTORY) Category.HISTORY
+                else Category.WEB
+            }
+            else -> null
+        }
+    }
+
+    fun filter(context: Context, items: List<SearchAdapterItem>): List<SearchAdapterItem> {
+        // Headers/dividers are retained only when their section still has visible results.
+        val kept = items.filter { item ->
+            category(item)?.let { enabled(context, it) } ?: true
+        }
+        return kept.filterIndexed { index, item ->
+            if (item.searchTarget.resultType != SearchTargetCompat.RESULT_TYPE_SECTION_HEADER &&
+                item.searchTarget.layoutType != LayoutType.EMPTY_DIVIDER) return@filterIndexed true
+            kept.drop(index + 1).takeWhile {
+                it.searchTarget.resultType != SearchTargetCompat.RESULT_TYPE_SECTION_HEADER
+            }.any { category(it) != null }
+        }
+    }
+}
