@@ -15,12 +15,12 @@ object AppSearchProvider {
 
     private val DIACRITICS_REMOVE_PATTERN = "\\p{M}+".toRegex()
 
-    fun search(context: Context, query: String, allApps: AllAppsList, maxResultsOverride: Int? = null): List<SearchResult.App> {
+    fun search(context: Context, query: String, allApps: AllAppsList, maxResultsOverride: Int? = null, fuzzyOverride: Boolean? = null): List<SearchResult.App> {
         val prefs = PreferenceManager2.getInstance(context)
         val hiddenApps = prefs.hiddenApps.firstCached()
         val hiddenAppsInSearch = prefs.hiddenAppsInSearch.firstCached()
         val maxAppResults = maxResultsOverride ?: prefs.maxAppSearchResultCount.firstCached()
-        val enableFuzzySearch = prefs.enableFuzzySearch.firstCached()
+        val enableFuzzySearch = fuzzyOverride ?: prefs.enableFuzzySearch.firstCached()
 
         val queryNormalized = stripDiacritics(query).lowercase(Locale.getDefault())
 
