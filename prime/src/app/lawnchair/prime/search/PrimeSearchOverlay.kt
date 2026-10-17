@@ -86,7 +86,7 @@ object PrimeSearchOverlay {
                 // Preserve the algorithm's order and section boundaries. Each item is
                 // inflated with the same layout used by the drawer's adapter provider.
                 val inflater = LayoutInflater.from(launcher)
-                items.orEmpty().filterIsInstance<SearchAdapterItem>().forEach { item ->
+                PrimeSearchResultPreferences.filter(launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>()).forEach { item ->
                     val layout = LawnchairSearchAdapterProvider.layoutForViewType(item.viewType)
                         ?: return@forEach
                     val view = inflater.inflate(layout, results, false)
