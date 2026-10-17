@@ -27,12 +27,17 @@ object ContactsSearchProvider : SearchProvider, SearchPermission {
     override fun search(
         context: Context,
         query: String,
-    ): Flow<List<SearchResult>> = flow {
+    ): Flow<List<SearchResult>> = searchInternal(context, query, false)
+
+    fun searchForPrime(context: Context, query: String): Flow<List<SearchResult>> =
+        searchInternal(context, query, true)
+
+    private fun searchInternal(context: Context, query: String, primeSearch: Boolean): Flow<List<SearchResult>> = flow {
         val prefs = PreferenceManager.getInstance(context)
         val prefs2 = PreferenceManager2.getInstance(context)
 
         val permissionsGranted = checkPermission(context)
-        if (query.isBlank() || !prefs.searchResultPeople.get() || !permissionsGranted) {
+        if (query.isBlank() || (!primeSearch && !prefs.searchResultPeople.get()) || !permissionsGranted) {
             emit(emptyList())
             return@flow
         }
