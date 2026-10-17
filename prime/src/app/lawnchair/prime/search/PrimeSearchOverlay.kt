@@ -177,9 +177,19 @@ object PrimeSearchOverlay {
                 (if (floating) (48 * density).toInt() else 0) - inset * 2
             val cellWidth = (usableWidth.coerceAtMost((600 * density).toInt() - inset * 2) / columns)
                 .coerceAtLeast(1)
-            ranked.take(maxCount).chunked(columns).forEach { apps ->
-                val row = LinearLayout(launcher).apply { gravity = Gravity.CENTER_HORIZONTAL }
-                zeroApps.addView(row, LinearLayout.LayoutParams(-1, -2))
+            // Always allocate the configured number of rows, even if a tab
+            // has fewer apps (or none). This keeps the overlay height stable
+            // while switching between Fréquentes, Récentes and Nouvelles.
+            val rows = PrimeSearchResultPreferences.zeroStateRows(launcher)
+            val rowHeight = (100 * density).toInt()
+            val displayedApps = ranked.take(maxCount)
+            repeat(rows) { rowIndex ->
+                val apps = displayedApps.drop(rowIndex * columns).take(columns)
+                val row = LinearLayout(launcher).apply {
+                    gravity = Gravity.CENTER_HORIZONTAL
+                    minimumHeight = rowHeight
+                }
+                zeroApps.addView(row, LinearLayout.LayoutParams(-1, rowHeight))
                 apps.forEach { app ->
                     val cell = LinearLayout(launcher).apply {
                         orientation = LinearLayout.VERTICAL
