@@ -249,13 +249,4 @@ fun PrimeSearchPreference() {
             categories = PrimeSearchResultPreferences.order(context)
         }) { Text("Réinitialiser l'ordre") }
     }
-    PreferenceGroup(heading = "Couleurs Prime Search") {
-        ThemeColorRole.entries.filter { it.section == ThemeColorRole.Section.PRIME_SEARCH }.forEach { role ->
-            PreferenceTemplate(
-                title = { Text(role.id.substringAfterLast('.').replace('_', ' ')) },
-                description = { Text("Personnaliser la couleur pour la variante ${variant.name.lowercase()}") },
-                onClick = { navController.navigate(ThemeColorSelection(role.id, variant.name, null, null)) },
-            )
-        }
-    }
 }
