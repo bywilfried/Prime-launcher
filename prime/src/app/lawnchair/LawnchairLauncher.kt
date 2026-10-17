@@ -296,6 +296,13 @@ class LawnchairLauncher : QuickstepLauncher() {
     }
 
     override fun onNewIntent(intent: Intent?) {
+        // A second Home press should return to the workspace, not just hide
+        // the keyboard while leaving the Prime Search dialog visible.
+        if (intent?.action == Intent.ACTION_MAIN &&
+            intent.hasCategory(Intent.CATEGORY_HOME)
+        ) {
+            app.lawnchair.prime.search.PrimeSearchOverlay.dismiss()
+        }
         if (intent != null && intent.action == LawnchairShortcutActivity.START_ACTION) {
             val handlerString = intent.getStringExtra(LawnchairShortcutActivity.EXTRA_HANDLER)
             val config = handlerString?.let { GestureHandlerConfig.fromString(it) }
