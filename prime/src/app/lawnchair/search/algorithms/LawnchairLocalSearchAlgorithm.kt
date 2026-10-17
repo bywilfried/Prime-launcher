@@ -90,7 +90,8 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                     val calcResult = CalculatorSearchProvider.search(context, query)
                         .firstOrNull()
 
-                    val allResults = appResults + shortcutResults + (calcResult ?: emptyList()) + nonAppResults + generateActionResults(query)
+                    val actions = generateActionResults(query).filterNot { primeSearch && it is SearchResult.Action.SearchSettings }
+                    val allResults = appResults + shortcutResults + (calcResult ?: emptyList()) + nonAppResults + actions
 
                     val searchTargets = translateToSearchTargets(allResults)
                     setFirstItemQuickLaunch(searchTargets)
