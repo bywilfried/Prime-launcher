@@ -1,6 +1,9 @@
 package app.lawnchair.prime.search
 
 import android.app.Dialog
+import android.app.AppOpsManager
+import android.os.Process
+import android.provider.Settings
 import android.app.usage.UsageStatsManager
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -195,6 +198,11 @@ object PrimeSearchOverlay {
         } catch (_: Exception) {
             emptyMap()
         }
+        val hasUsageAccess = try {
+            val ops = launcher.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+            ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), launcher.packageName) ==
+                AppOpsManager.MODE_ALLOWED
+        } catch (_: Exception) { false }
         val sections = listOf("FRÉQUENTES", "RÉCENTES", "NOUVELLES")
         var selectedTab = 0
         fun renderZeroState() {
@@ -211,6 +219,19 @@ object PrimeSearchOverlay {
                     setOnClickListener { selectedTab = index; renderZeroState() }
                 }
                 tabs.addView(tab, LinearLayout.LayoutParams(0, -2, 1f))
+            }
+            if (selectedTab != 2 && !hasUsageAccess) {
+                val permission = TextView(launcher).apply {
+                    text = "Autoriser l’accès aux données d’utilisation pour afficher les applications fréquentes et récentes.\nAppuyer pour ouvrir les paramètres Android."
+                    textSize = 12f
+                    gravity = Gravity.CENTER
+                    setTextColor(themed(ThemeColorRole.PRIME_SEARCH_TEXT))
+                    setPadding(inset, (8 * density).toInt(), inset, (8 * density).toInt())
+                    setOnClickListener {
+                        launcher.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+                    }
+                }
+                zeroApps.addView(permission, LinearLayout.LayoutParams(-1, -2))
             }
             val ranked = when (selectedTab) {
                 0 -> installed.sortedByDescending {
