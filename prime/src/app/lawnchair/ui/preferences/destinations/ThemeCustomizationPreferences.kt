@@ -157,6 +157,14 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             bulkResetRevision = bulkResetRevision,
             onToggle = { expandedName = if (expanded == it) null else it.name },
         )
+        if (categoryTabId == null && folderKey == null) ThemeSection(
+            title = "Prime Search",
+            variant = variant,
+            section = ThemeColorRole.Section.PRIME_SEARCH,
+            expanded = expanded,
+            bulkResetRevision = bulkResetRevision,
+            onToggle = { expandedName = if (expanded == it) null else it.name },
+        )
         if (folderKey == null) ThemeSection(
             title = "Tiroir des applications",
             categoryTabId = categoryTabId,
