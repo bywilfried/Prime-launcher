@@ -104,6 +104,20 @@ class LawnchairSearchAdapterProvider(
     override fun getDecorator() = decorator
 
     companion object {
+        /** Shared layout lookup for the drawer and the Prime Search overlay. */
+        fun layoutForViewType(viewType: Int): Int? = when (viewType) {
+            SEARCH_RESULT_ICON -> R.layout.search_result_icon
+            SEARCH_RESULT_ICON_ROW -> R.layout.search_result_tall_icon_row
+            SEARCH_RESULT_SMALL_ICON_ROW -> R.layout.search_result_small_icon_row
+            SEARCH_RESULT_DIVIDER -> R.layout.search_result_divider
+            SEARCH_TEXT_HEADER -> R.layout.search_result_text_header
+            SEARCH_PEOPLE_TILE, SEARCH_RESULT_FILE_TILE -> R.layout.search_result_icon_right_left
+            SEARCH_RESULT_SUGGESTION_TILE, SEARCH_RESULT_SETTINGS_TILE, SEARCH_RESULT_RECENT_TILE -> R.layout.search_result_small_icon_row
+            SEARCH_RESULT_CALCULATOR -> R.layout.search_result_tall_icon_row_calculator
+            SEARCH_RESULT_EMPTY_STATE -> R.layout.search_result_empty_state
+            SEARCH_RESULT_SEARCH_SETTINGS -> R.layout.search_result_search_settings
+            else -> null
+        }
         private const val SEARCH_RESULT_ICON = (1 shl 10) or AllAppsGridAdapter.VIEW_TYPE_ICON
         private const val SEARCH_RESULT_ICON_ROW = 1 shl 11
         private const val SEARCH_RESULT_SMALL_ICON_ROW = 1 shl 12
