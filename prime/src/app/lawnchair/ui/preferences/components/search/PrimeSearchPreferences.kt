@@ -32,6 +32,22 @@ fun PrimeSearchPreference() {
             description = { Text("Prime Search utilise les mêmes sources et réglages que la recherche du tiroir.") },
         )
     }
+    PreferenceGroup(heading = "Affichage des applications") {
+        var appsPerRow by remember { mutableStateOf(PrimeSearchResultPreferences.appsPerRow(context)) }
+        PreferenceTemplate(
+            title = { Text("Applications par ligne") },
+            description = { Text("$appsPerRow applications par ligne (de 3 à 6)") },
+        )
+        androidx.compose.material3.Slider(
+            value = appsPerRow.toFloat(),
+            onValueChange = { value ->
+                appsPerRow = value.toInt().coerceIn(3, 6)
+                PrimeSearchResultPreferences.setAppsPerRow(context, appsPerRow)
+            },
+            valueRange = 3f..6f,
+            steps = 2,
+        )
+    }
     PreferenceGroup(heading = "Afficher dans les résultats de recherche") {
         PrimeSearchResultPreferences.Category.entries.forEach { category ->
             var checked by remember(category) {
