@@ -94,9 +94,6 @@ object PrimeSearchOverlay {
                     item.setRippleEffect(view)
                     results.addView(view)
                     resultView.bind(item.searchTarget, emptyList())
-                    view.setOnClickListener {
-                        if (resultView.launch()) dialog.dismiss()
-                    }
                 }
             }
 
