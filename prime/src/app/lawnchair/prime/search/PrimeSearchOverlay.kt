@@ -75,7 +75,9 @@ object PrimeSearchOverlay {
         val input = EditText(launcher).apply {
             isSingleLine = true
             hint = "Prime Search"
-            setPadding(inset, inset, inset, (4 * density).toInt())
+            gravity = Gravity.CENTER_VERTICAL
+            minHeight = (56 * density).toInt()
+            setPadding(inset, 0, inset, 0)
             background = GradientDrawable().apply {
                 setColor(themed(ThemeColorRole.PRIME_SEARCH_BAR_BACKGROUND))
                 cornerRadius = 24 * density
@@ -110,7 +112,7 @@ object PrimeSearchOverlay {
                 cornerRadius = if (floating) 22 * density else 0f
             }
             clipToOutline = floating
-            setPadding(inset, inset, inset, inset)
+            setPadding(inset, inset, inset, 0)
             addView(input, LinearLayout.LayoutParams(-1, -2))
             addView(zeroState, LinearLayout.LayoutParams(-1, -2))
             addView(scroll, LinearLayout.LayoutParams(-1, -2))
@@ -171,7 +173,7 @@ object PrimeSearchOverlay {
             val settingsFooter = LinearLayout(launcher).apply {
                 gravity = Gravity.END or Gravity.CENTER_VERTICAL
                 addView(settings, LinearLayout.LayoutParams(
-                    (48 * density).toInt(), (48 * density).toInt(),
+                    (40 * density).toInt(), (40 * density).toInt(),
                 ))
             }
             addView(settingsFooter, LinearLayout.LayoutParams(-1, (40 * density).toInt()))
@@ -444,7 +446,7 @@ object PrimeSearchOverlay {
                     val desiredContent = if (zeroState.visibility == View.VISIBLE) zeroState.measuredHeight else results.measuredHeight
                     val footerHeight = container.getChildAt(container.childCount - 1).measuredHeight
                         .coerceAtLeast((40 * density).toInt())
-                    val desired = (barHeight + desiredContent + footerHeight + inset + (4 * density).toInt())
+                    val desired = (barHeight + desiredContent + footerHeight + inset)
                         .coerceIn((120 * density).toInt(), maximum)
                     if (desired != lastHeight) {
                         lastHeight = desired
