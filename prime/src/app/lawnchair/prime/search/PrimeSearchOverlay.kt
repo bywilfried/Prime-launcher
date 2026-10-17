@@ -17,6 +17,8 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import android.widget.GridLayout
+import com.android.app.search.LayoutType
 import android.view.LayoutInflater
 import android.view.View
 import app.lawnchair.allapps.views.SearchResultView
@@ -86,13 +88,40 @@ object PrimeSearchOverlay {
                 // Preserve the algorithm's order and section boundaries. Each item is
                 // inflated with the same layout used by the drawer's adapter provider.
                 val inflater = LayoutInflater.from(launcher)
-                PrimeSearchResultPreferences.filter(launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>()).forEach { item ->
+                val columns = launcher.deviceProfile.allAppsProfile.numColumns.coerceIn(3, 6)
+                var appGrid: GridLayout? = null
+                PrimeSearchResultPreferences.filter(
+                    launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(),
+                ).forEach { item ->
+                    val isAppIcon = item.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT
+                    if (isAppIcon) {
+                        if (appGrid == null) {
+                            appGrid = GridLayout(launcher).apply {
+                                columnCount = columns
+                                alignmentMode = GridLayout.ALIGN_BOUNDS
+                                useDefaultMargins = false
+                            }
+                            results.addView(appGrid, LinearLayout.LayoutParams(-1, -2))
+                        }
+                    } else {
+                        appGrid = null
+                    }
+                    val parent = if (isAppIcon) appGrid!! else results
                     val layout = LawnchairSearchAdapterProvider.layoutForViewType(item.viewType)
                         ?: return@forEach
-                    val view = inflater.inflate(layout, results, false)
+                    val view = inflater.inflate(layout, parent, false)
                     val resultView = view as? SearchResultView ?: return@forEach
+                    if (isAppIcon) {
+                        val params = GridLayout.LayoutParams().apply {
+                            width = 0
+                            height = GridLayout.LayoutParams.WRAP_CONTENT
+                            columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+                        }
+                        parent.addView(view, params)
+                    } else {
+                        parent.addView(view)
+                    }
                     item.setRippleEffect(view)
-                    results.addView(view)
                     resultView.bind(item.searchTarget, emptyList())
                 }
             }
