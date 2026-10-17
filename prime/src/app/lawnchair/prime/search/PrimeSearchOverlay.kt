@@ -359,6 +359,22 @@ object PrimeSearchOverlay {
                     }
                     item.setRippleEffect(view)
                     resultView.bind(item.searchTarget, emptyList())
+                    // Drawer search result views may apply their own text colors
+                    // during bind. Override them after binding for Prime Search.
+                    fun applyPrimeTextColors(node: View) {
+                        if (node is TextView) {
+                            node.setTextColor(themed(
+                                if (isAppIcon) ThemeColorRole.PRIME_SEARCH_APP_LABEL
+                                else ThemeColorRole.PRIME_SEARCH_RESULT_TEXT,
+                            ))
+                        }
+                        if (node is ViewGroup) {
+                            for (childIndex in 0 until node.childCount) {
+                                applyPrimeTextColors(node.getChildAt(childIndex))
+                            }
+                        }
+                    }
+                    applyPrimeTextColors(view)
                     if (isAppIcon) {
                         view.minimumHeight = 0
                     }
