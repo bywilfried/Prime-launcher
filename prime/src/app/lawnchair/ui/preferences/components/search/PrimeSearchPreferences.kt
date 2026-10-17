@@ -86,6 +86,27 @@ fun PrimeSearchPreference() {
                 description = { Text(category.description) },
                 endWidget = {
                     Row {
+                        Icon(
+                            Icons.Default.DragHandle,
+                            contentDescription = "Maintenir puis glisser pour réorganiser",
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp, vertical = 12.dp)
+                                .pointerInput(category, index) {
+                                    var distance = 0f
+                                    detectDragGesturesAfterLongPress(
+                                        onDragStart = { distance = 0f },
+                                        onDragEnd = {
+                                            val offset = (distance / (88f * density)).toInt()
+                                            if (offset != 0) moveCategory(index, (index + offset).coerceIn(0, categories.lastIndex))
+                                        },
+                                        onDragCancel = { distance = 0f },
+                                        onDrag = { change, dragAmount ->
+                                            change.consume()
+                                            distance += dragAmount.y
+                                        },
+                                    )
+                                },
+                        )
                         IconButton(
                             onClick = { moveCategory(index, index - 1) },
                             enabled = index > 0,
