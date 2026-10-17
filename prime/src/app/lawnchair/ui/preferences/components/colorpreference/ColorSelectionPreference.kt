@@ -419,7 +419,6 @@ fun PrimeColorSelection(
                                 // Use appliedColor (the route snapshot), not the mutable preset state:
                                 // visiting Presets must not silently replace the editor's baseline.
                                 initial = dynamicEditorInitial,
-                                targetColor = selectedColor.intValue,
                                 onApply = { option ->
                                     currentAppliedColor = option
                                     onApply(option)
@@ -435,7 +434,8 @@ fun PrimeColorSelection(
 }
 
 private fun ColorOption.forCustomPicker(context: Context): Int {
-    val color = colorPreferenceEntry.lightColor(context)
+    val color = if (context.effectiveThemeVariant() == app.lawnchair.theme.ThemeVariant.DARK)
+        colorPreferenceEntry.darkColor(context) else colorPreferenceEntry.lightColor(context)
     if (color == 0) {
         return Color.BLACK
     }
