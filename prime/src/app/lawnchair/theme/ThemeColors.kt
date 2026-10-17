@@ -643,6 +643,16 @@ object ThemeColors {
     )
 
     private fun legacy(context: Context, role: ThemeColorRole, variant: ThemeVariant): Int = when (role) {
+        ThemeColorRole.PRIME_SEARCH_WINDOW_BACKGROUND -> legacy(context, ThemeColorRole.DRAWER_BACKGROUND, variant)
+        ThemeColorRole.PRIME_SEARCH_BAR_BACKGROUND -> legacy(context, ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE, variant)
+        ThemeColorRole.PRIME_SEARCH_TEXT -> legacy(context, ThemeColorRole.DRAWER_SEARCH_TEXT, variant)
+        ThemeColorRole.PRIME_SEARCH_HINT -> legacy(context, ThemeColorRole.DRAWER_SEARCH_HINT, variant)
+        ThemeColorRole.PRIME_SEARCH_ICON -> legacy(context, ThemeColorRole.DRAWER_SEARCH_ICON, variant)
+        ThemeColorRole.PRIME_SEARCH_BORDER -> legacy(context, ThemeColorRole.DRAWER_SEARCH_BORDER, variant)
+        ThemeColorRole.PRIME_SEARCH_TAB_ACTIVE -> legacy(context, ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT, variant)
+        ThemeColorRole.PRIME_SEARCH_TAB_INACTIVE -> legacy(context, ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT, variant)
+        ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND -> legacy(context, ThemeColorRole.DRAWER_BACKGROUND, variant)
+        ThemeColorRole.PRIME_SEARCH_RESULT_TEXT -> legacy(context, ThemeColorRole.DRAWER_TEXT, variant)
         // This role historically follows the selected accent source and color style through
         // the dynamic palette. Resolve the same token used by the launcher.
         ThemeColorRole.GLOBAL_ACCENT ->
