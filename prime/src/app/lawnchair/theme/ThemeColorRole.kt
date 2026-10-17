@@ -87,6 +87,8 @@ enum class ThemeColorRole(val id: String, val section: Section) {
     PRIME_SEARCH_TAB_INACTIVE("prime_search.tab.inactive", Section.PRIME_SEARCH),
     PRIME_SEARCH_RESULT_BACKGROUND("prime_search.result.background", Section.PRIME_SEARCH),
     PRIME_SEARCH_RESULT_TEXT("prime_search.result.text", Section.PRIME_SEARCH),
+    PRIME_SEARCH_APP_LABEL("prime_search.app.label", Section.PRIME_SEARCH),
+    PRIME_SEARCH_SETTINGS_ICON("prime_search.settings.icon", Section.PRIME_SEARCH),
 
     TABS_CATEGORY_ACTIVE_BACKGROUND("tabs.category.active.background", Section.TABS),
     TABS_CATEGORY_INACTIVE_BACKGROUND("tabs.category.inactive.background", Section.TABS),
