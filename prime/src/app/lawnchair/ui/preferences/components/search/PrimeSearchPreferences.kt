@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.LocalDensity
 import kotlin.math.roundToInt
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.material.icons.Icons
@@ -73,6 +74,22 @@ fun PrimeSearchPreference() {
                 floating = !floating
                 PrimeSearchResultPreferences.setFloatingWindow(context, floating)
             },
+        )
+    }
+    PreferenceGroup(heading = "Applications à l'ouverture") {
+        var rows by remember { mutableStateOf(PrimeSearchResultPreferences.zeroStateRows(context)) }
+        PreferenceTemplate(
+            title = { Text("Lignes d'applications") },
+            description = { Text("$rows ligne(s) pour Fréquentes, Récentes et Nouvelles") },
+        )
+        androidx.compose.material3.Slider(
+            value = rows.toFloat(),
+            onValueChange = {
+                rows = it.roundToInt().coerceIn(1, 2)
+                PrimeSearchResultPreferences.setZeroStateRows(context, rows)
+            },
+            valueRange = 1f..2f,
+            steps = 0,
         )
     }
     PreferenceGroup(heading = "Recherche d'applications") {
