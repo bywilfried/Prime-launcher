@@ -65,7 +65,7 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
     override fun doSearch(query: String, callback: SearchCallback<BaseAllAppsAdapter.AdapterItem>) {
         modelRetryJob?.cancel()
         modelRetryJob = appState.model.runWhenModelLoaded(coroutineScope) { apps ->
-            val appResults = appSearchProvider.search(context, query, apps, if (primeSearch) Int.MAX_VALUE else null)
+            val appResults = appSearchProvider.search(context, query, apps, if (primeSearch) Int.MAX_VALUE else null, if (primeSearch) app.lawnchair.prime.search.PrimeSearchResultPreferences.fuzzyApps(context) else null)
             val shortcutResults = shortcutSearchProvider.search(context, appResults)
 
             currentJob?.cancel()
