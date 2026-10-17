@@ -88,7 +88,7 @@ object PrimeSearchOverlay {
                 // Preserve the algorithm's order and section boundaries. Each item is
                 // inflated with the same layout used by the drawer's adapter provider.
                 val inflater = LayoutInflater.from(launcher)
-                val columns = launcher.deviceProfile.allAppsProfile.numColumns.coerceIn(3, 6)
+                val columns = PrimeSearchResultPreferences.appsPerRow(launcher)
                 var appGrid: GridLayout? = null
                 PrimeSearchResultPreferences.filter(
                     launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(),
