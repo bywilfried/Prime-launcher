@@ -49,6 +49,26 @@ fun PrimeSearchPreference() {
             description = { Text("Prime Search utilise les mêmes sources et réglages que la recherche du tiroir.") },
         )
     }
+    PreferenceGroup(heading = "Recherche d'applications") {
+        var fuzzyEnabled by remember { mutableStateOf(PrimeSearchResultPreferences.fuzzyApps(context)) }
+        PreferenceTemplate(
+            title = { Text("Tolérer les fautes de frappe") },
+            description = { Text("Recherche approximative des noms d'applications, indépendante du tiroir") },
+            endWidget = {
+                androidx.compose.material3.Switch(
+                    checked = fuzzyEnabled,
+                    onCheckedChange = {
+                        fuzzyEnabled = it
+                        PrimeSearchResultPreferences.setFuzzyApps(context, it)
+                    },
+                )
+            },
+            onClick = {
+                fuzzyEnabled = !fuzzyEnabled
+                PrimeSearchResultPreferences.setFuzzyApps(context, fuzzyEnabled)
+            },
+        )
+    }
     PreferenceGroup(heading = "Affichage des applications") {
         var appsPerRow by remember { mutableStateOf(PrimeSearchResultPreferences.appsPerRow(context)) }
         PreferenceTemplate(
