@@ -63,7 +63,8 @@ object PrimeSearchOverlay {
     private var activeAlgorithm: LawnchairSearchAlgorithm? = null
 
     fun show(launcher: LawnchairLauncher) {
-        if (activeDialog?.isShowing == true) return
+        if (activeDialog?.isShowing == true && activeDialog?.window?.decorView?.isAttachedToWindow == true) return
+        if (activeDialog != null) dismiss()
         val density = launcher.resources.displayMetrics.density
         val inset = (16 * density).toInt()
         val floating = PrimeSearchResultPreferences.floatingWindow(launcher)
@@ -185,7 +186,7 @@ object PrimeSearchOverlay {
             setOnDismissListener {
                 algorithm.cancel(true)
                 if (activeAlgorithm === algorithm) activeAlgorithm = null
-                activeDialog = null
+                if (activeDialog === this) activeDialog = null
             }
         }
         val packageManager = launcher.packageManager
@@ -470,6 +471,21 @@ object PrimeSearchOverlay {
     }
 
     fun dismiss() {
-        activeDialog?.dismiss()
+        val dialog = activeDialog ?: return
+        // Android can detach the dialog window before a second HOME intent
+        // arrives. Dialog.dismiss() then throws from removeViewImmediate().
+        activeDialog = null
+        if (dialog.window?.decorView?.isAttachedToWindow != true) {
+            activeAlgorithm?.cancel(true)
+            activeAlgorithm = null
+            return
+        }
+        try {
+            dialog.dismiss()
+        } catch (_: IllegalArgumentException) {
+            // WindowManager already removed the decor view.
+            activeAlgorithm?.cancel(true)
+            activeAlgorithm = null
+        }
     }
 }
