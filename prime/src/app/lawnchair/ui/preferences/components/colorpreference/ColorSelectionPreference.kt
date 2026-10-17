@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.toArgb
 import app.lawnchair.preferences.getAdapter
 import app.lawnchair.theme.color.ColorOption
+import app.lawnchair.theme.effectiveThemeVariant
 import app.lawnchair.ui.preferences.LocalNavController
 import app.lawnchair.ui.preferences.components.colorpreference.pickers.CustomColorPicker
 import app.lawnchair.ui.preferences.components.colorpreference.pickers.PresetsList
@@ -445,7 +446,7 @@ private fun ColorOption.forCustomPicker(context: Context): Int {
 private fun nearestDynamicColorRecipe(context: Context, target: Int): ColorOption.DynamicColor {
     val swatches = listOf("Neutral1", "Neutral2", "Accent1", "Accent2", "Accent3")
     val shades = listOf(0, 10, 20, 50, 100, 200, 300, 400, 500, 600, 650, 700, 800, 900, 950, 1000)
-    val dark = app.lawnchair.theme.ThemeAppearanceModeKt.effectiveThemeVariant(context) == app.lawnchair.theme.ThemeVariant.DARK
+    val dark = context.effectiveThemeVariant() == app.lawnchair.theme.ThemeVariant.DARK
     val targetLab = DoubleArray(3)
     androidx.core.graphics.ColorUtils.colorToLAB(target, targetLab)
     var best = ColorOption.DynamicColor("Accent1", 500, null)
