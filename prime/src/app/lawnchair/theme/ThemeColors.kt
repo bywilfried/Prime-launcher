@@ -418,6 +418,13 @@ object ThemeColors {
     }
 
     /** Parent theme color, without any category-specific override. */
+    private fun primeSearchTextBackground(role: ThemeColorRole): ThemeColorRole = when (role) {
+        ThemeColorRole.PRIME_SEARCH_RESULT_TEXT -> ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND
+        ThemeColorRole.PRIME_SEARCH_TAB_ACTIVE,
+        ThemeColorRole.PRIME_SEARCH_TAB_INACTIVE -> ThemeColorRole.PRIME_SEARCH_WINDOW_BACKGROUND
+        else -> ThemeColorRole.PRIME_SEARCH_BAR_BACKGROUND
+    }
+
     fun resolveTheme(
         context: Context,
         profile: ThemeProfile,
@@ -429,6 +436,17 @@ object ThemeColors {
             ColorOption.Default -> official
             ColorOption.LegacyBehavior -> legacy(context, role, variant)
             ColorOption.AutomaticBlackWhite -> when (role) {
+                ThemeColorRole.PRIME_SEARCH_TEXT,
+                ThemeColorRole.PRIME_SEARCH_HINT,
+                ThemeColorRole.PRIME_SEARCH_ICON,
+                ThemeColorRole.PRIME_SEARCH_TAB_ACTIVE,
+                ThemeColorRole.PRIME_SEARCH_TAB_INACTIVE,
+                ThemeColorRole.PRIME_SEARCH_RESULT_TEXT -> {
+                    val backgroundRole = primeSearchTextBackground(role)
+                    val surface = resolveTheme(context, profile, backgroundRole, variant)
+                    val opaque = ColorUtils.compositeColors(surface, if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE)
+                    if (ColorUtils.calculateContrast(Color.BLACK, opaque) >= ColorUtils.calculateContrast(Color.WHITE, opaque)) Color.BLACK else Color.WHITE
+                }
                 ThemeColorRole.DRAWER_HANDLE -> categoryBlackWhite(
                     resolveTheme(context, profile, ThemeColorRole.DRAWER_BACKGROUND, variant), variant,
                 )
@@ -450,6 +468,12 @@ object ThemeColors {
             }
             ColorOption.AdaptiveThemeText -> {
                 val backgroundRole = when (role) {
+                    ThemeColorRole.PRIME_SEARCH_TEXT,
+                    ThemeColorRole.PRIME_SEARCH_HINT,
+                    ThemeColorRole.PRIME_SEARCH_ICON,
+                    ThemeColorRole.PRIME_SEARCH_TAB_ACTIVE,
+                    ThemeColorRole.PRIME_SEARCH_TAB_INACTIVE,
+                    ThemeColorRole.PRIME_SEARCH_RESULT_TEXT -> primeSearchTextBackground(role)
                     ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND
                     ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND
                     ThemeColorRole.DRAWER_HANDLE,
