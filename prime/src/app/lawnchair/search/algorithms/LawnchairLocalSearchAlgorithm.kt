@@ -78,7 +78,9 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                 // See issue #7325 (symptom 1: results gated behind the slowest provider).
                 val nonAppProvidersFlow = combine(
                     searchProviders.map { provider ->
-                        provider.search(context, query).onStart { emit(emptyList()) }
+                        (if (primeSearch && provider === ContactsSearchProvider) {
+                            ContactsSearchProvider.searchForPrime(context, query)
+                        } else provider.search(context, query)).onStart { emit(emptyList()) }
                     },
                 ) { resultsArray ->
                     resultsArray.toList().flatten()
