@@ -75,7 +75,7 @@ object PrimeSearchOverlay {
         val input = EditText(launcher).apply {
             isSingleLine = true
             hint = "Prime Search"
-            setPadding(inset, inset, inset, inset)
+            setPadding(inset, inset, inset, (4 * density).toInt())
             background = GradientDrawable().apply {
                 setColor(themed(ThemeColorRole.PRIME_SEARCH_BAR_BACKGROUND))
                 cornerRadius = 24 * density
@@ -174,7 +174,7 @@ object PrimeSearchOverlay {
                     (48 * density).toInt(), (48 * density).toInt(),
                 ))
             }
-            addView(settingsFooter, LinearLayout.LayoutParams(-1, (48 * density).toInt()))
+            addView(settingsFooter, LinearLayout.LayoutParams(-1, (40 * density).toInt()))
         }
         val dialog = Dialog(launcher).apply {
             setContentView(container)
@@ -392,7 +392,7 @@ object PrimeSearchOverlay {
             setGravity(Gravity.TOP)
             if (floating) {
                 val metrics = launcher.resources.displayMetrics
-                val width = (metrics.widthPixels - (24 * density).toInt() * 2)
+                val width = (metrics.widthPixels - (12 * density).toInt() * 2)
                     .coerceAtMost((600 * density).toInt())
                 // Resize dynamically when the IME opens: fixed 72% screen height
                 // otherwise extends underneath the keyboard on some devices.
@@ -409,7 +409,7 @@ object PrimeSearchOverlay {
             val window = dialog.window
             val decor = window?.decorView
             val screenHeight = launcher.resources.displayMetrics.heightPixels
-            val margin = (24 * density).toInt()
+            val margin = (12 * density).toInt()
             val targetWidth = (launcher.resources.displayMetrics.widthPixels - margin * 2)
                 .coerceAtMost((600 * density).toInt())
             var lastHeight = -1
@@ -428,8 +428,8 @@ object PrimeSearchOverlay {
                     val barHeight = input.height.coerceAtLeast((64 * density).toInt())
                     val desiredContent = if (zeroState.visibility == View.VISIBLE) zeroState.measuredHeight else results.measuredHeight
                     val footerHeight = container.getChildAt(container.childCount - 1).measuredHeight
-                        .coerceAtLeast((48 * density).toInt())
-                    val desired = (barHeight + desiredContent + footerHeight + inset * 2)
+                        .coerceAtLeast((40 * density).toInt())
+                    val desired = (barHeight + desiredContent + footerHeight + inset + (4 * density).toInt())
                         .coerceIn((120 * density).toInt(), maximum)
                     if (desired != lastHeight) {
                         lastHeight = desired
