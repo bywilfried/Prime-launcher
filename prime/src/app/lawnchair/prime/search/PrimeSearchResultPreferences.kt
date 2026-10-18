@@ -210,7 +210,10 @@ object PrimeSearchResultPreferences {
         val kept = items.filter { item ->
             val target = item.searchTarget
             val type = target.resultType
-            if (type == SearchTargetCompat.RESULT_TYPE_CONTACT_TILE) {
+            if (type == SearchTargetCompat.RESULT_TYPE_SETTING_TILE) {
+                // Replace raw Android intent labels with localized Prime Search settings.
+                false
+            } else if (type == SearchTargetCompat.RESULT_TYPE_CONTACT_TILE) {
                 // Contacts are rendered by PrimeContactSearch so source selection is enforced.
                 false
             } else if (type == SearchTargetCompat.RESULT_TYPE_SUGGESTIONS &&
