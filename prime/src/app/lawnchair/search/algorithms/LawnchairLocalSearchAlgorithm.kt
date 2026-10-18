@@ -95,7 +95,26 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                     val actions = generateActionResults(query).filterNot { primeSearch && it is SearchResult.Action.SearchSettings }
                     val allResults = appResults + shortcutResults + (calcResult ?: emptyList()) + nonAppResults + actions
 
-                    val searchTargets = translateToSearchTargets(allResults)
+                    val visibleResults = if (primeSearch) allResults else {
+                        val prefs = app.lawnchair.prime.search.PrimeSearchResultPreferences
+                        val surface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
+                        allResults.filter { result ->
+                            val category = when (result) {
+                                is SearchResult.App -> prefs.Category.APPS
+                                is SearchResult.Shortcut -> prefs.Category.APP_SHORTCUTS
+                                is SearchResult.File -> prefs.Category.FILES
+                                is SearchResult.Contact -> prefs.Category.CONTACTS
+                                is SearchResult.Setting -> prefs.Category.SETTINGS
+                                is SearchResult.History -> prefs.Category.HISTORY
+                                is SearchResult.Calculation -> prefs.Category.CALCULATOR
+                                is SearchResult.WebSuggestion -> prefs.Category.WEB
+                                else -> null
+                            }
+                            category == null || !prefs.hasCategorySetting(context, category, surface) ||
+                                prefs.enabled(context, category, surface)
+                        }
+                    }
+                    val searchTargets = translateToSearchTargets(visibleResults)
                     setFirstItemQuickLaunch(searchTargets)
                     val adapterItems = transformSearchResults(searchTargets)
                     withContext(Dispatchers.Main) {
