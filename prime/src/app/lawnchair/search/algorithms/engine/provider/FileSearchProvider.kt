@@ -36,7 +36,11 @@ object FileSearchProvider : SearchProvider {
     override val id = "Files"
 
     override fun search(context: Context, query: String): Flow<List<SearchResult>> =
-        searchWithLimit(context, query, null)
+        searchWithLimit(context, query, app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER.let { surface ->
+            if (app.lawnchair.prime.search.PrimeSearchResultPreferences.hasCustomFileLimit(context, surface))
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.maxFileResults(context, surface)
+            else null
+        })
 
     fun searchForPrime(context: Context, query: String): Flow<List<SearchResult>> =
         searchWithLimit(context, query, app.lawnchair.prime.search.PrimeSearchResultPreferences.maxFileResults(context))
