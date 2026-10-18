@@ -91,6 +91,15 @@ object PrimeNotificationHistory {
         return matches
     }
 
+    fun searchForDrawer(context: Context, query: String, limit: Int = 30): List<Entry> {
+        val months = PrimeSearchResultPreferences.notificationRetention(
+            context, PrimeSearchResultPreferences.Surface.DRAWER
+        ).months
+        val cutoff = if (months == 0) Long.MIN_VALUE else
+            java.util.Calendar.getInstance().apply { add(java.util.Calendar.MONTH, -months) }.timeInMillis
+        return search(context, query, limit).filter { it.posted >= cutoff }
+    }
+
     fun clear(context: Context) {
         Store(context).use { it.writableDatabase.delete("notifications", null, null) }
     }
