@@ -633,6 +633,40 @@ fun PrimeSearchPreference() {
             PrimeSearchResultPreferences.Category.HISTORY,
             PrimeSearchResultPreferences.Category.CALCULATOR,
         )
+        var drawerOrder by remember { mutableStateOf(PrimeSearchResultPreferences.order(context, drawerSurface)) }
+        Text("Ordre des catégories du tiroir")
+        drawerOrder.filter { it in drawerCategories }.forEach { category ->
+            val index = drawerOrder.indexOf(category)
+            PreferenceTemplate(
+                title = { Text(category.title) },
+                endWidget = {
+                    Row {
+                        IconButton(
+                            onClick = {
+                                if (index > 0) {
+                                    val updated = drawerOrder.toMutableList()
+                                    updated.add(index - 1, updated.removeAt(index))
+                                    drawerOrder = updated
+                                    PrimeSearchResultPreferences.saveOrder(context, updated, drawerSurface)
+                                }
+                            },
+                            enabled = index > 0,
+                        ) { Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Monter") }
+                        IconButton(
+                            onClick = {
+                                if (index < drawerOrder.lastIndex) {
+                                    val updated = drawerOrder.toMutableList()
+                                    updated.add(index + 1, updated.removeAt(index))
+                                    drawerOrder = updated
+                                    PrimeSearchResultPreferences.saveOrder(context, updated, drawerSurface)
+                                }
+                            },
+                            enabled = index < drawerOrder.lastIndex,
+                        ) { Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Descendre") }
+                    }
+                },
+            )
+        }
         drawerCategories.forEach { category ->
             var enabled by remember(category) {
                 mutableStateOf(
