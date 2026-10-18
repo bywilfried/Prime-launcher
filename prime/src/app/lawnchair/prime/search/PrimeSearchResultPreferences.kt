@@ -14,7 +14,8 @@ object PrimeSearchResultPreferences {
 
     enum class Category(val key: String, val title: String, val description: String) {
         APPS("apps", "Applis et raccourcis", "Applications et raccourcis"),
-        WEB("web", "Suggestions Web", "Recherches et suggestions Internet"),
+        WEB("web", "Suggestions Web", "Suggestions Internet pendant la saisie"),
+        WEB_SHORTCUTS("web_shortcuts", "Recherche sur :", "Raccourcis vers les moteurs de recherche"),
         CONTACTS("contacts", "Personnes", "Contacts et autres"),
         FILES("files", "Fichiers", "Contenu multimédia et fichiers"),
         SETTINGS("settings", "Paramètres Android", "Réglages du système"),
@@ -75,6 +76,18 @@ object PrimeSearchResultPreferences {
         val current = enabledWebEngines(context).map { it.name }.toMutableSet()
         if (enabled) current.add(engine.name) else current.remove(engine.name)
         prefs(context).edit().putStringSet("web_engines", current).apply()
+    }
+
+    enum class SuggestionProvider(val title: String) {
+        GOOGLE("Google"), DUCKDUCKGO("DuckDuckGo")
+    }
+
+    fun suggestionProvider(context: Context): SuggestionProvider =
+        runCatching { SuggestionProvider.valueOf(prefs(context).getString("suggestion_provider", "GOOGLE") ?: "GOOGLE") }
+            .getOrDefault(SuggestionProvider.GOOGLE)
+
+    fun setSuggestionProvider(context: Context, provider: SuggestionProvider) {
+        prefs(context).edit().putString("suggestion_provider", provider.name).apply()
     }
 
     fun webSuggestionCount(context: Context): Int =
