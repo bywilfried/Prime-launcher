@@ -323,7 +323,7 @@ private fun DrawerAdvancedSearchPreferences() {
                 endWidget = {
                     Row {
                         IconButton(onClick = { categorySettings = category }) {
-                            Icon(androidx.compose.material.icons.Icons.Default.Build, contentDescription = "Paramètres de ${category.title}")
+                            Text("⚙")
                         }
                         IconButton(onClick = {
                             if (index > 0) {
