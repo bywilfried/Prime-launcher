@@ -65,6 +65,9 @@ object PrimeSearchResultPreferences {
         return fileOptionEnabled(context, option, surface)
     }
 
+    fun hasCustomFileLimit(context: Context, surface: Surface): Boolean =
+        surfacePrefs(context, surface).contains("prime_max_file_results")
+
     fun maxFileResults(context: Context, surface: Surface): Int =
         surfacePrefs(context, surface).getInt("prime_max_file_results", 5).coerceIn(3, 100)
 
