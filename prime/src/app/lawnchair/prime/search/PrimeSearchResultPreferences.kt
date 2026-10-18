@@ -20,6 +20,7 @@ object PrimeSearchResultPreferences {
         CONTACTS("contacts", "Contacts", "Contacts et autres"),
         CALENDAR("calendar", "Événements de l’agenda", "Événements du calendrier"),
         REMINDERS("reminders", "Rappels", "Rappels disponibles"),
+        NOTIFICATIONS("notifications", "Notifications", "Notifications des applications"),
         NOTES("notes", "Notes", "Notes disponibles"),
         FILES("files", "Fichiers", "Contenu multimédia et fichiers"),
         SETTINGS("settings", "Paramètres de l’appareil", "Réglages du système"),
