@@ -22,6 +22,38 @@ object PrimeSearchResultPreferences {
         CALCULATOR("calculator", "Calculatrice", "Résultats de calcul"),
     }
 
+    enum class WebEngine(val title: String, val url: String) {
+        GOOGLE("Google", "https://www.google.com/search?q="),
+        DUCKDUCKGO("DuckDuckGo", "https://duckduckgo.com/?q="),
+        BRAVE("Brave Search", "https://search.brave.com/search?q="),
+        BING("Bing", "https://www.bing.com/search?q="),
+        ECOSIA("Ecosia", "https://www.ecosia.org/search?q="),
+        STARTPAGE("Startpage", "https://www.startpage.com/sp/search?query="),
+        QWANT("Qwant", "https://www.qwant.com/?q="),
+        YOUTUBE("YouTube", "https://www.youtube.com/results?search_query="),
+        WIKIPEDIA("Wikipédia", "https://fr.wikipedia.org/w/index.php?search="),
+        REDDIT("Reddit", "https://www.reddit.com/search/?q="),
+    }
+
+    fun enabledWebEngines(context: Context): List<WebEngine> {
+        val selected = prefs(context).getStringSet("web_engines", setOf(WebEngine.GOOGLE.name))
+            .orEmpty()
+        return WebEngine.entries.filter { it.name in selected }
+    }
+
+    fun setWebEngineEnabled(context: Context, engine: WebEngine, enabled: Boolean) {
+        val current = enabledWebEngines(context).map { it.name }.toMutableSet()
+        if (enabled) current.add(engine.name) else current.remove(engine.name)
+        prefs(context).edit().putStringSet("web_engines", current).apply()
+    }
+
+    fun webSuggestionCount(context: Context): Int =
+        prefs(context).getInt("web_suggestion_count", 4).coerceIn(0, 8)
+
+    fun setWebSuggestionCount(context: Context, count: Int) {
+        prefs(context).edit().putInt("web_suggestion_count", count.coerceIn(0, 8)).apply()
+    }
+
     fun zeroStateRows(context: Context): Int =
         prefs(context).getInt("zero_state_rows", 1).coerceIn(1, 2)
 
