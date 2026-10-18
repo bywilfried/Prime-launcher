@@ -364,7 +364,8 @@ object PrimeSearchOverlay {
             if (query.isBlank() || count == 0 ||
                 !PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB)) return
             // Keep network I/O off the main thread; ignore stale responses.
-            Thread {
+            webHandler.postDelayed({
+                Thread {
                 val suggestions = try {
                     val url = URL("https://suggestqueries.google.com/complete/search?client=firefox&q=" +
                         Uri.encode(query))
