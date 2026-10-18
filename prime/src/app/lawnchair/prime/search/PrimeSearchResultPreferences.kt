@@ -28,6 +28,13 @@ object PrimeSearchResultPreferences {
         CALCULATOR("calculator", "Calculatrice", "Résultats de calcul"),
     }
 
+    fun maxFileResults(context: Context): Int =
+        prefs(context).getInt("prime_max_file_results", 30).coerceIn(3, 100)
+
+    fun setMaxFileResults(context: Context, value: Int) {
+        prefs(context).edit().putInt("prime_max_file_results", value.coerceIn(3, 100)).apply()
+    }
+
     enum class FileOption(val label: String, val defaultEnabled: Boolean) {
         PREVIEW("Aperçu des fichiers", true),
         FOLDERS("Dossiers", false),
