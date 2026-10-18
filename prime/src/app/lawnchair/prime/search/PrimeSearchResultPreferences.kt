@@ -40,6 +40,31 @@ object PrimeSearchResultPreferences {
         ).apply()
     }
 
+    fun fileOptionEnabled(context: Context, option: FileOption, surface: Surface): Boolean =
+        surfacePrefs(context, surface).getBoolean("file_option_" + option.name, option.defaultEnabled)
+
+    fun setFileOptionEnabled(context: Context, option: FileOption, enabled: Boolean, surface: Surface) {
+        surfacePrefs(context, surface).edit().putBoolean("file_option_" + option.name, enabled).apply()
+    }
+
+    fun fileAllowed(context: Context, filename: String, mime: String?, surface: Surface): Boolean {
+        val name = filename.trim()
+        if (name.isEmpty()) return true
+        val ext = name.substringAfterLast('.', "").lowercase(java.util.Locale.ROOT)
+        if (!fileOptionEnabled(context, FileOption.SYSTEM, surface) &&
+            (name.startsWith(".") || name.endsWith(".bin", ignoreCase = true))) return false
+        val option = when {
+            mime == "vnd.android.document/directory" -> FileOption.FOLDERS
+            ext in setOf("pdf", "doc", "docx", "odt", "txt", "rtf", "xls", "xlsx", "ods", "ppt", "pptx", "epub", "csv") -> FileOption.DOCUMENTS
+            ext in setOf("jpg", "jpeg", "png", "gif", "webp", "bmp", "heic", "svg") -> FileOption.IMAGES
+            ext in setOf("mp4", "mkv", "avi", "mov", "webm", "3gp") -> FileOption.VIDEOS
+            ext in setOf("mp3", "flac", "wav", "ogg", "m4a", "aac", "opus") -> FileOption.AUDIO
+            ext == "apk" -> FileOption.APKS
+            else -> FileOption.OTHER
+        }
+        return fileOptionEnabled(context, option, surface)
+    }
+
     fun maxFileResults(context: Context, surface: Surface): Int =
         surfacePrefs(context, surface).getInt("prime_max_file_results", 5).coerceIn(3, 100)
 
