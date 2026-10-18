@@ -78,9 +78,9 @@ object PrimeSearchResultPreferences {
     fun suggestionProvider(context: Context, surface: Surface): SuggestionProvider =
         runCatching {
             SuggestionProvider.valueOf(
-                surfacePrefs(context, surface).getString("suggestion_provider", "GOOGLE") ?: "GOOGLE"
+                surfacePrefs(context, surface).getString("suggestion_provider", "DUCKDUCKGO") ?: "DUCKDUCKGO"
             )
-        }.getOrDefault(SuggestionProvider.GOOGLE)
+        }.getOrDefault(SuggestionProvider.DUCKDUCKGO)
 
     fun setSuggestionProvider(context: Context, provider: SuggestionProvider, surface: Surface) {
         surfacePrefs(context, surface).edit().putString("suggestion_provider", provider.name).apply()
@@ -88,7 +88,7 @@ object PrimeSearchResultPreferences {
 
     fun enabledWebEngines(context: Context, surface: Surface): List<WebEngine> {
         val preferences = surfacePrefs(context, surface)
-        val selected = preferences.getStringSet("web_engines", setOf(WebEngine.GOOGLE.name)).orEmpty()
+        val selected = preferences.getStringSet("web_engines", setOf(WebEngine.DUCKDUCKGO.name)).orEmpty()
         val saved = preferences.getString("web_engine_order", null)
             ?.split(",")?.mapNotNull { name -> WebEngine.entries.firstOrNull { it.name == name } }.orEmpty()
         return (saved + WebEngine.entries).distinct().filter { it.name in selected }
@@ -215,7 +215,7 @@ object PrimeSearchResultPreferences {
     }
 
     fun enabledWebEngines(context: Context): List<WebEngine> {
-        val selected = prefs(context).getStringSet("web_engines", setOf(WebEngine.GOOGLE.name))
+        val selected = prefs(context).getStringSet("web_engines", setOf(WebEngine.DUCKDUCKGO.name))
             .orEmpty()
         return webEngineOrder(context).filter { it.name in selected }
     }
@@ -231,7 +231,7 @@ object PrimeSearchResultPreferences {
     }
 
     fun suggestionProvider(context: Context): SuggestionProvider =
-        runCatching { SuggestionProvider.valueOf(prefs(context).getString("suggestion_provider", "GOOGLE") ?: "GOOGLE") }
+        runCatching { SuggestionProvider.valueOf(prefs(context).getString("suggestion_provider", "DUCKDUCKGO") ?: "DUCKDUCKGO") }
             .getOrDefault(SuggestionProvider.GOOGLE)
 
     fun setSuggestionProvider(context: Context, provider: SuggestionProvider) {
