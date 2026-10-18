@@ -25,7 +25,14 @@ object PrimeNotificationHistory {
     fun isGranted(context: Context): Boolean {
         val enabled = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners").orEmpty()
         val component = ComponentName(context, PrimeNotificationListener::class.java)
-        return enabled.split(':').any { ComponentName.unflattenFromString(it) == component }
+        if (androidx.core.app.NotificationManagerCompat.getEnabledListenerPackages(context)
+                .contains(context.packageName)) return true
+        return enabled.split(':').any { entry ->
+            val granted = ComponentName.unflattenFromString(entry.trim())
+            granted == component ||
+                (granted?.packageName == context.packageName &&
+                    granted.className == PrimeNotificationListener::class.java.name)
+        }
     }
 
     fun accessIntent(context: Context): Intent =
