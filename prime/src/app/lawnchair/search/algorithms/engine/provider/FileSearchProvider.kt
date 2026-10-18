@@ -35,10 +35,13 @@ import okio.Path.Companion.toPath
 object FileSearchProvider : SearchProvider {
     override val id = "Files"
 
-    override fun search(
-        context: Context,
-        query: String,
-    ): Flow<List<SearchResult>> = flow {
+    override fun search(context: Context, query: String): Flow<List<SearchResult>> =
+        searchWithLimit(context, query, null)
+
+    fun searchForPrime(context: Context, query: String): Flow<List<SearchResult>> =
+        searchWithLimit(context, query, app.lawnchair.prime.search.PrimeSearchResultPreferences.maxFileResults(context))
+
+    private fun searchWithLimit(context: Context, query: String, overrideLimit: Int?): Flow<List<SearchResult>> = flow {
         val prefs = PreferenceManager.getInstance(context)
 
         val searchAllFiles = prefs.searchResultAllFiles.get()
@@ -54,7 +57,7 @@ object FileSearchProvider : SearchProvider {
         }
 
         val prefs2 = PreferenceManager2.getInstance(context)
-        val maxResults = prefs2.maxFileResultCount.firstCached()
+        val maxResults = overrideLimit ?: prefs2.maxFileResultCount.firstCached()
 
         // check for permissions:
         val fileAccessManager = FileAccessManager.getInstance(context)
