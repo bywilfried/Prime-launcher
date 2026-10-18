@@ -59,9 +59,41 @@ object WebSuggestionProvider : SearchProvider {
         val limit = settings.webSuggestionCount(context, surface)
         if (query.isBlank() || limit == 0) return flow { emit(emptyList()) }
         val selected = settings.suggestionProvider(context, surface)
+        if (selected != app.lawnchair.prime.search.PrimeSearchResultPreferences.SuggestionProvider.GOOGLE &&
+            selected != app.lawnchair.prime.search.PrimeSearchResultPreferences.SuggestionProvider.DUCKDUCKGO) {
+            return flow {
+                val endpoint = when (selected) {
+                    app.lawnchair.prime.search.PrimeSearchResultPreferences.SuggestionProvider.BING ->
+                        "https://api.bing.com/osjson.aspx?query="
+                    app.lawnchair.prime.search.PrimeSearchResultPreferences.SuggestionProvider.QWANT ->
+                        "https://api.qwant.com/v3/suggest?q="
+                    else -> "https://www.startpage.com/suggestions?format=opensearch&q="
+                }
+                val connection = java.net.URL(endpoint + android.net.Uri.encode(query))
+                    .openConnection() as java.net.HttpURLConnection
+                connection.connectTimeout = 2500
+                connection.readTimeout = 2500
+                try {
+                    val body = connection.inputStream.bufferedReader().use { it.readText() }
+                    val suggestions: List<String> = if (selected ==
+                        app.lawnchair.prime.search.PrimeSearchResultPreferences.SuggestionProvider.QWANT) {
+                        val items = org.json.JSONObject(body).optJSONObject("data")?.optJSONArray("items")
+                        if (items == null) emptyList() else (0 until minOf(items.length(), limit)).mapNotNull {
+                            items.optJSONObject(it)?.optString("value")?.takeIf(String::isNotBlank)
+                        }
+                    } else {
+                        val items = org.json.JSONArray(body).getJSONArray(1)
+                        (0 until minOf(items.length(), limit)).map { items.getString(it) }
+                    }
+                    emit(suggestions.map { SearchResult.WebSuggestion(it, selected.name.lowercase()) })
+                } finally {
+                    connection.disconnect()
+                }
+            }.flowOn(kotlinx.coroutines.Dispatchers.IO).catch { emit(emptyList()) }
+        }
         val provider = when (selected) {
             app.lawnchair.prime.search.PrimeSearchResultPreferences.SuggestionProvider.GOOGLE -> GoogleWebSearchProvider
-            app.lawnchair.prime.search.PrimeSearchResultPreferences.SuggestionProvider.DUCKDUCKGO -> DuckDuckGoWebSearchProvider
+            else -> DuckDuckGoWebSearchProvider
         }
         val timeout = PreferenceManager2.getInstance(context).maxWebSuggestionDelay.firstCached()
         return provider.getSuggestions(query)
