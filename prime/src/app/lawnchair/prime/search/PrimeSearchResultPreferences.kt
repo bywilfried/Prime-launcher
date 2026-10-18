@@ -118,7 +118,7 @@ object PrimeSearchResultPreferences {
     }
 
     fun clearNotificationHistory(context: Context) {
-        context.deleteDatabase("prime_notification_history.db")
+        PrimeNotificationHistory.clear(context)
     }
 
     fun webSuggestionCount(context: Context): Int =
