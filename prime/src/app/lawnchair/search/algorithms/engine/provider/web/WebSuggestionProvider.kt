@@ -60,8 +60,8 @@ object WebSuggestionProvider : SearchProvider {
         if (query.isBlank() || limit == 0) return flow { emit(emptyList()) }
         val selected = settings.suggestionProvider(context, surface)
         val provider = when (selected) {
-            app.lawnchair.prime.search.PrimeSearchResultPreferences.SuggestionProvider.GOOGLE -> WebSearchProvider.GOOGLE
-            app.lawnchair.prime.search.PrimeSearchResultPreferences.SuggestionProvider.DUCKDUCKGO -> WebSearchProvider.DUCKDUCKGO
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.SuggestionProvider.GOOGLE -> GoogleWebSearchProvider
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.SuggestionProvider.DUCKDUCKGO -> DuckDuckGoWebSearchProvider
         }
         val timeout = PreferenceManager2.getInstance(context).maxWebSuggestionDelay.firstCached()
         return provider.getSuggestions(query)
