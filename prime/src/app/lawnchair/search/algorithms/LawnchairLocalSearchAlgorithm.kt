@@ -80,6 +80,8 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                     searchProviders.map { provider ->
                         (if (primeSearch && provider === ContactsSearchProvider) {
                             ContactsSearchProvider.searchForPrime(context, query)
+                        } else if (primeSearch && provider === FileSearchProvider) {
+                            FileSearchProvider.searchForPrime(context, query)
                         } else provider.search(context, query)).onStart { emit(emptyList()) }
                     },
                 ) { resultsArray ->
