@@ -346,6 +346,34 @@ object PrimeSearchOverlay {
                     }
                 }
             }
+            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.CALENDAR)) {
+                val events = PrimeCalendarSearch.events(launcher, query)
+                if (events.isNotEmpty()) {
+                    row("Événements de l'agenda") {}
+                    events.forEach { event ->
+                        row("📅  ${event.title}\n${event.detail}") {
+                            runCatching {
+                                launcher.startActivity(Intent(Intent.ACTION_VIEW, event.uri))
+                                dismiss()
+                            }
+                        }
+                    }
+                }
+            }
+            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.REMINDERS)) {
+                val reminders = PrimeCalendarSearch.reminders(launcher, query)
+                if (reminders.isNotEmpty()) {
+                    row("Rappels de l'agenda") {}
+                    reminders.forEach { reminder ->
+                        row("⏰  ${reminder.title}\n${reminder.detail}") {
+                            runCatching {
+                                launcher.startActivity(Intent(Intent.ACTION_VIEW, reminder.uri))
+                                dismiss()
+                            }
+                        }
+                    }
+                }
+            }
             if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.NOTIFICATIONS)) {
                 if (PrimeNotificationHistory.isGranted(launcher)) {
                     val matches = runCatching { PrimeNotificationHistory.search(launcher, query) }
