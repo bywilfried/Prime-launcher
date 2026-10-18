@@ -197,22 +197,11 @@ object PrimeSearchOverlay {
             }
         }
         val packageManager = launcher.packageManager
-        val installed = packageManager.getInstalledApplications(0).filter {
-            packageManager.getLaunchIntentForPackage(it.packageName) != null
-        }
-        val now = System.currentTimeMillis()
-        val usage = try {
-            launcher.getSystemService(UsageStatsManager::class.java)
-                ?.queryAndAggregateUsageStats(now - 30L * 24 * 60 * 60 * 1000, now)
-                .orEmpty()
-        } catch (_: Exception) {
-            emptyMap()
-        }
-        val hasUsageAccess = try {
-            val ops = launcher.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-            ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), launcher.packageName) ==
-                AppOpsManager.MODE_ALLOWED
-        } catch (_: Exception) { false }
+        // Do not enumerate installed apps or query usage stats on the UI thread
+        // before the search window and its keyboard can appear.
+        var installed: List<android.content.pm.ApplicationInfo> = emptyList()
+        var usage: Map<String, android.app.usage.UsageStats> = emptyMap()
+        var hasUsageAccess = false
         val sections = listOf("FRÉQUENTES", "RÉCENTES", "NOUVELLES")
         var selectedTab = 0
         fun renderZeroState() {
@@ -830,6 +819,32 @@ object PrimeSearchOverlay {
                 }
             })
         }
+        Thread {
+            val loadedApps = runCatching {
+                packageManager.getInstalledApplications(0).filter {
+                    packageManager.getLaunchIntentForPackage(it.packageName) != null
+                }
+            }.getOrDefault(emptyList())
+            val now = System.currentTimeMillis()
+            val loadedUsage = runCatching {
+                launcher.getSystemService(UsageStatsManager::class.java)
+                    ?.queryAndAggregateUsageStats(now - 30L * 24 * 60 * 60 * 1000, now)
+                    .orEmpty()
+            }.getOrDefault(emptyMap())
+            val granted = runCatching {
+                val ops = launcher.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+                ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), launcher.packageName) ==
+                    AppOpsManager.MODE_ALLOWED
+            }.getOrDefault(false)
+            input.post {
+                if (activeDialog === dialog && dialog.isShowing) {
+                    installed = loadedApps
+                    usage = loadedUsage
+                    hasUsageAccess = granted
+                    if (input.text.isNullOrBlank()) renderZeroState()
+                }
+            }
+        }.start()
         container.translationY = -120 * density
         container.animate().translationY(0f).setDuration(220).start()
         input.requestFocus()
