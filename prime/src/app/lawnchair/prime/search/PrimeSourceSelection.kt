@@ -52,8 +52,30 @@ object PrimeSourceSelection {
     }
 
     private fun key(kind: String) = "selected_$kind"
-    private fun prefs(context: Context) =
-        context.getSharedPreferences("prime_search_sources", Context.MODE_PRIVATE)
+    private fun prefs(context: Context, surface: PrimeSearchResultPreferences.Surface) =
+        context.getSharedPreferences(
+            if (surface == PrimeSearchResultPreferences.Surface.DRAWER) "prime_drawer_search_sources"
+            else "prime_search_sources",
+            Context.MODE_PRIVATE,
+        )
+
+    private fun prefs(context: Context) = prefs(context, PrimeSearchResultPreferences.Surface.PRIME_SEARCH)
+
+    fun selected(context: Context, kind: String, surface: PrimeSearchResultPreferences.Surface): Set<String>? =
+        prefs(context, surface).getStringSet(key(kind), null)?.toSet()
+
+    fun isSelected(context: Context, kind: String, id: String, surface: PrimeSearchResultPreferences.Surface): Boolean =
+        selected(context, kind, surface)?.contains(id) ?: true
+
+    fun setSelected(context: Context, kind: String, id: String, enabled: Boolean, available: List<Source>, surface: PrimeSearchResultPreferences.Surface) {
+        val current = (selected(context, kind, surface) ?: available.map { it.id }.toSet()).toMutableSet()
+        if (enabled) current.add(id) else current.remove(id)
+        prefs(context, surface).edit().putStringSet(key(kind), current).apply()
+    }
+
+    fun reset(context: Context, kind: String, surface: PrimeSearchResultPreferences.Surface) {
+        prefs(context, surface).edit().remove(key(kind)).apply()
+    }
 
     fun selected(context: Context, kind: String): Set<String>? =
         prefs(context).getStringSet(key(kind), null)?.toSet()
