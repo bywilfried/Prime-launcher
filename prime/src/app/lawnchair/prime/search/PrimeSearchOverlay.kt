@@ -346,6 +346,20 @@ object PrimeSearchOverlay {
                     }
                 }
             }
+            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.CONTACTS)) {
+                val contacts = PrimeContactSearch.search(launcher, query)
+                if (contacts.isNotEmpty()) {
+                    row("Contacts") {}
+                    contacts.forEach { contact ->
+                        row("👤  ${contact.name}") {
+                            runCatching {
+                                launcher.startActivity(Intent(Intent.ACTION_VIEW, contact.uri))
+                                dismiss()
+                            }
+                        }
+                    }
+                }
+            }
             if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.CALENDAR)) {
                 val events = PrimeCalendarSearch.events(launcher, query)
                 if (events.isNotEmpty()) {
