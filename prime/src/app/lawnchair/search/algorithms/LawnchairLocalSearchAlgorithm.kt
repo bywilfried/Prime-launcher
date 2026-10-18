@@ -96,7 +96,22 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                         .firstOrNull()
 
                     val actions = generateActionResults(query).filterNot { primeSearch && it is SearchResult.Action.SearchSettings }
-                    val allResults = appResults + shortcutResults + (calcResult ?: emptyList()) + nonAppResults + actions
+                    val drawerWebActions = if (primeSearch) emptyList() else {
+                        val settings = app.lawnchair.prime.search.PrimeSearchResultPreferences
+                        val surface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
+                        if (settings.enabled(context, app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB_SHORTCUTS, surface)) {
+                            settings.enabledWebEngines(context, surface).map { engine ->
+                                SearchResult.Action.WebSearch(
+                                    query = query,
+                                    providerName = engine.title,
+                                    searchUrl = engine.url + android.net.Uri.encode(query),
+                                    providerIconRes = R.drawable.ic_allapps_search,
+                                    tintIcon = true,
+                                )
+                            }
+                        } else emptyList()
+                    }
+                    val allResults = appResults + shortcutResults + (calcResult ?: emptyList()) + nonAppResults + actions + drawerWebActions
 
                     val drawerEntries = if (primeSearch || query.isBlank()) emptyList() else {
                         val preferences = app.lawnchair.prime.search.PrimeSearchResultPreferences
