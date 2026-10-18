@@ -692,6 +692,37 @@ fun PrimeSearchPreference() {
                 },
             )
         }
+        listOf(
+            "calendars" to PrimeSearchResultPreferences.Category.CALENDAR,
+            "contacts" to PrimeSearchResultPreferences.Category.CONTACTS,
+        ).forEach { (kind, category) ->
+            val sources = remember(kind) {
+                if (kind == "calendars") app.lawnchair.prime.search.PrimeSourceSelection.calendars(context)
+                else app.lawnchair.prime.search.PrimeSourceSelection.contactAccounts(context)
+            }
+            Text("Sources du tiroir : ${category.title}")
+            sources.forEach { source ->
+                var checked by remember(kind, source.id) {
+                    mutableStateOf(app.lawnchair.prime.search.PrimeSourceSelection.isSelected(context, kind, source.id, drawerSurface))
+                }
+                PreferenceTemplate(
+                    title = { Text(source.label) },
+                    endWidget = {
+                        androidx.compose.material3.Switch(
+                            checked = checked,
+                            onCheckedChange = {
+                                checked = it
+                                app.lawnchair.prime.search.PrimeSourceSelection.setSelected(context, kind, source.id, it, sources, drawerSurface)
+                            },
+                        )
+                    },
+                    onClick = {
+                        checked = !checked
+                        app.lawnchair.prime.search.PrimeSourceSelection.setSelected(context, kind, source.id, checked, sources, drawerSurface)
+                    },
+                )
+            }
+        }
         var drawerMaxFiles by remember {
             mutableStateOf(
                 if (PrimeSearchResultPreferences.hasCustomFileLimit(context, drawerSurface))
