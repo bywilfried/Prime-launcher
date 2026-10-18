@@ -96,6 +96,31 @@ object PrimeSearchResultPreferences {
         prefs(context).edit().putString("suggestion_provider", provider.name).apply()
     }
 
+    enum class NotificationRetention(val label: String, val months: Int) {
+        ONE_MONTH("1 mois", 1),
+        TWO_MONTHS("2 mois", 2),
+        THREE_MONTHS("3 mois", 3),
+        SIX_MONTHS("6 mois", 6),
+        TWELVE_MONTHS("12 mois", 12),
+        FOREVER("Toujours", 0),
+    }
+
+    fun notificationRetention(context: Context): NotificationRetention =
+        runCatching {
+            NotificationRetention.valueOf(
+                prefs(context).getString("notification_retention", NotificationRetention.ONE_MONTH.name)
+                    ?: NotificationRetention.ONE_MONTH.name
+            )
+        }.getOrDefault(NotificationRetention.ONE_MONTH)
+
+    fun setNotificationRetention(context: Context, retention: NotificationRetention) {
+        prefs(context).edit().putString("notification_retention", retention.name).apply()
+    }
+
+    fun clearNotificationHistory(context: Context) {
+        context.deleteDatabase("prime_notification_history.db")
+    }
+
     fun webSuggestionCount(context: Context): Int =
         prefs(context).getInt("web_suggestion_count", 4).coerceIn(0, 8)
 
