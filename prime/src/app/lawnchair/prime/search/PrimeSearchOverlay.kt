@@ -565,22 +565,42 @@ object PrimeSearchOverlay {
                 Thread {
                 val suggestions = try {
                     val provider = PrimeSearchResultPreferences.suggestionProvider(launcher)
-                    val url = URL(if (provider == PrimeSearchResultPreferences.SuggestionProvider.DUCKDUCKGO)
-                        "https://duckduckgo.com/ac/?q=" + Uri.encode(query)
-                        else "https://suggestqueries.google.com/complete/search?client=firefox&q=" + Uri.encode(query))
+                    val endpoint = when (provider) {
+                        PrimeSearchResultPreferences.SuggestionProvider.DUCKDUCKGO ->
+                            "https://duckduckgo.com/ac/?q="
+                        PrimeSearchResultPreferences.SuggestionProvider.BING ->
+                            "https://api.bing.com/osjson.aspx?query="
+                        PrimeSearchResultPreferences.SuggestionProvider.QWANT ->
+                            "https://api.qwant.com/v3/suggest?q="
+                        PrimeSearchResultPreferences.SuggestionProvider.STARTPAGE ->
+                            "https://www.startpage.com/suggestions?format=opensearch&q="
+                        PrimeSearchResultPreferences.SuggestionProvider.GOOGLE ->
+                            "https://suggestqueries.google.com/complete/search?client=firefox&q="
+                    }
+                    val url = URL(endpoint + Uri.encode(query))
                     val connection = url.openConnection() as HttpURLConnection
                     connection.connectTimeout = 2500
                     connection.readTimeout = 2500
                     try {
                         val body = connection.inputStream.bufferedReader().use { it.readText() }
-                        if (provider == PrimeSearchResultPreferences.SuggestionProvider.DUCKDUCKGO) {
-                            val entries = JSONArray(body)
-                            (0 until minOf(entries.length(), count)).mapNotNull {
-                                entries.optJSONObject(it)?.optString("phrase")?.takeIf(String::isNotBlank)
+                        when (provider) {
+                            PrimeSearchResultPreferences.SuggestionProvider.DUCKDUCKGO -> {
+                                val entries = JSONArray(body)
+                                (0 until minOf(entries.length(), count)).mapNotNull {
+                                    entries.optJSONObject(it)?.optString("phrase")?.takeIf(String::isNotBlank)
+                                }
                             }
-                        } else {
-                            val entries = JSONArray(body).getJSONArray(1)
-                            (0 until minOf(entries.length(), count)).map { entries.getString(it) }
+                            PrimeSearchResultPreferences.SuggestionProvider.QWANT -> {
+                                val items = org.json.JSONObject(body).optJSONObject("data")?.optJSONArray("items")
+                                if (items == null) emptyList() else
+                                    (0 until minOf(items.length(), count)).mapNotNull {
+                                        items.optJSONObject(it)?.optString("value")?.takeIf(String::isNotBlank)
+                                    }
+                            }
+                            else -> {
+                                val entries = JSONArray(body).getJSONArray(1)
+                                (0 until minOf(entries.length(), count)).map { entries.getString(it) }
+                            }
                         }
                     } finally { connection.disconnect() }
                 } catch (_: Exception) {
