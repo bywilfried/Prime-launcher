@@ -385,7 +385,8 @@ object PrimeSearchOverlay {
                         container.requestLayout()
                     }
                 }
-            }.start()
+                }.start()
+            }, 250L)
         }
         val callback = object : SearchCallback<BaseAllAppsAdapter.AdapterItem> {
             override fun onSearchResult(query: String, items: ArrayList<BaseAllAppsAdapter.AdapterItem>?) {
