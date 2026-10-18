@@ -889,7 +889,7 @@ class PreferenceManager2 @Inject constructor(
 
     val homePressGestureHandler = serializablePreference<GestureHandlerConfig>(
         key = stringPreferencesKey("home_press_gesture_handler"),
-        defaultValue = GestureHandlerConfig.NoOp,
+        defaultValue = GestureHandlerConfig.OpenPrimeSearch,
     )
 
     val backPressGestureHandler = serializablePreference<GestureHandlerConfig>(
