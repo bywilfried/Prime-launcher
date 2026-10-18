@@ -319,7 +319,7 @@ fun PrimeSearchPreference() {
     var dragOffset by remember { mutableStateOf(0f) }
     PreferenceGroup(heading = "Afficher dans les résultats de recherche") {
         categories.forEachIndexed { index, category ->
-            var checked by remember(category) {
+            var checked by remember(category, permissionRefresh) {
                 mutableStateOf(PrimeSearchResultPreferences.enabled(context, category))
             }
             val permissionGranted = remember(category, permissionRefresh) { PrimeSearchPermissions.granted(context, category) }
