@@ -10,7 +10,6 @@ val gestureHandlerOptions = listOf(
     GestureHandlerOption.OpenNotifications,
     GestureHandlerOption.OpenQuickSettings,
     GestureHandlerOption.OpenAppDrawer,
-    GestureHandlerOption.OpenAppSearch,
     GestureHandlerOption.OpenPrimeSearch,
     GestureHandlerOption.OpenSearch,
     GestureHandlerOption.OpenApp,
