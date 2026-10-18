@@ -407,28 +407,45 @@ object PrimeSearchOverlay {
                     }
                 }
             }
-            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.SETTINGS) &&
-                listOf("paramètre", "réglage", "wifi", "bluetooth", "réseau", "affichage", "son", "batterie")
-                    .any { it.contains(query.trim(), ignoreCase = true) || query.contains(it, ignoreCase = true) }) {
-                row("Paramètres de l'appareil") {}
+            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.SETTINGS)) {
+                // Use localized labels rather than Android intent action class names.
                 val settingsActions = listOf(
-                    "Wi-Fi" to android.provider.Settings.ACTION_WIFI_SETTINGS,
-                    "Bluetooth" to android.provider.Settings.ACTION_BLUETOOTH_SETTINGS,
-                    "Affichage" to android.provider.Settings.ACTION_DISPLAY_SETTINGS,
-                    "Son" to android.provider.Settings.ACTION_SOUND_SETTINGS,
-                    "Batterie" to android.provider.Settings.ACTION_BATTERY_SAVER_SETTINGS,
-                    "Paramètres Android" to android.provider.Settings.ACTION_SETTINGS,
+                    Triple("Wi-Fi", android.provider.Settings.ACTION_WIFI_SETTINGS, listOf("wifi", "wi-fi", "réseau", "network")),
+                    Triple("Bluetooth", android.provider.Settings.ACTION_BLUETOOTH_SETTINGS, listOf("bluetooth")),
+                    Triple("Affichage", android.provider.Settings.ACTION_DISPLAY_SETTINGS, listOf("affichage", "écran", "display", "screen")),
+                    Triple("Son", android.provider.Settings.ACTION_SOUND_SETTINGS, listOf("son", "audio", "sound")),
+                    Triple("Batterie", android.provider.Settings.ACTION_BATTERY_SAVER_SETTINGS, listOf("batterie", "économie", "battery")),
+                    Triple("Date et heure", android.provider.Settings.ACTION_DATE_SETTINGS, listOf("date", "heure", "time")),
+                    Triple("Applications", android.provider.Settings.ACTION_APPLICATION_SETTINGS, listOf("application", "appli", "apps")),
+                    Triple("Paramètres Android", android.provider.Settings.ACTION_SETTINGS, listOf("paramètre", "réglage", "settings"))
                 )
-                settingsActions.filter { (name, _) ->
-                    name.contains(query, ignoreCase = true) ||
-                        query.contains("param", ignoreCase = true) ||
-                        query.contains("régl", ignoreCase = true)
-                }.forEach { (name, action) ->
-                    row("⚙  $name") {
-                        try {
-                            launcher.startActivity(Intent(action))
-                            dismiss()
-                        } catch (_: android.content.ActivityNotFoundException) { }
+                val locale = launcher.resources.configuration.locales[0].language
+                val labels = if (locale == "fr") settingsActions else settingsActions.map { (name, action, keywords) ->
+                    Triple(when (name) {
+                        "Affichage" -> "Display"
+                        "Son" -> "Sound"
+                        "Batterie" -> "Battery"
+                        "Date et heure" -> "Date & time"
+                        "Applications" -> "Apps"
+                        "Paramètres Android" -> "Android Settings"
+                        else -> name
+                    }, action, keywords)
+                }
+                val term = query.trim()
+                val generic = listOf("param", "régl", "setting").any { term.contains(it, ignoreCase = true) }
+                val matches = labels.filter { (name, _, keywords) ->
+                    generic || name.contains(term, ignoreCase = true) ||
+                        keywords.any { it.contains(term, ignoreCase = true) || term.contains(it, ignoreCase = true) }
+                }
+                if (term.length >= 2 && matches.isNotEmpty()) {
+                    row(if (locale == "fr") "Paramètres de l'appareil" else "Device settings") {}
+                    matches.forEach { (name, action, _) ->
+                        row("⚙  $name") {
+                            runCatching {
+                                launcher.startActivity(Intent(action))
+                                dismiss()
+                            }
+                        }
                     }
                 }
             }
