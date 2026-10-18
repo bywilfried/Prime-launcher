@@ -169,6 +169,7 @@ fun PrimeSearchPreference() {
         listOf(
             app.lawnchair.qsb.providers.Google,
             app.lawnchair.qsb.providers.DuckDuckGo,
+            app.lawnchair.qsb.providers.Qwant,
             app.lawnchair.qsb.providers.Ecosia,
             app.lawnchair.qsb.providers.Bing,
             app.lawnchair.qsb.providers.Brave,
