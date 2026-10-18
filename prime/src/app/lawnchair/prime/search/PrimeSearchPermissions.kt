@@ -12,6 +12,7 @@ object PrimeSearchPermissions {
     fun required(category: PrimeSearchResultPreferences.Category): Boolean = when (category) {
         PrimeSearchResultPreferences.Category.CONTACTS,
         PrimeSearchResultPreferences.Category.CALENDAR,
+        PrimeSearchResultPreferences.Category.REMINDERS,
         PrimeSearchResultPreferences.Category.FILES,
         PrimeSearchResultPreferences.Category.NOTIFICATIONS -> true
         else -> false
@@ -19,7 +20,8 @@ object PrimeSearchPermissions {
 
     fun runtimePermissions(category: PrimeSearchResultPreferences.Category): Array<String> = when (category) {
         PrimeSearchResultPreferences.Category.CONTACTS -> arrayOf(Manifest.permission.READ_CONTACTS)
-        PrimeSearchResultPreferences.Category.CALENDAR -> arrayOf(Manifest.permission.READ_CALENDAR)
+        PrimeSearchResultPreferences.Category.CALENDAR,
+        PrimeSearchResultPreferences.Category.REMINDERS -> arrayOf(Manifest.permission.READ_CALENDAR)
         PrimeSearchResultPreferences.Category.FILES -> if (Build.VERSION.SDK_INT >= 33) {
             arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO, Manifest.permission.READ_MEDIA_AUDIO)
         } else {
@@ -45,6 +47,7 @@ object PrimeSearchPermissions {
     fun explanation(category: PrimeSearchResultPreferences.Category): String = when (category) {
         PrimeSearchResultPreferences.Category.CONTACTS -> "Autoriser l'accès aux contacts pour les rechercher."
         PrimeSearchResultPreferences.Category.CALENDAR -> "Autoriser la lecture de l'agenda pour rechercher les événements."
+        PrimeSearchResultPreferences.Category.REMINDERS -> "Autoriser la lecture du calendrier pour rechercher les rappels."
         PrimeSearchResultPreferences.Category.FILES -> "Autoriser l'accès aux médias pour rechercher les fichiers compatibles."
         PrimeSearchResultPreferences.Category.NOTIFICATIONS -> "Activer l'accès aux notifications dans les paramètres Android pour enregistrer leur historique."
         else -> ""
