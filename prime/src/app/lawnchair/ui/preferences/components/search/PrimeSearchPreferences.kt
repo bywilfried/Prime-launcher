@@ -564,4 +564,81 @@ fun PrimeSearchPreference() {
             categories = PrimeSearchResultPreferences.order(context)
         }) { Text("Réinitialiser l'ordre") }
     }
+    PreferenceGroup(heading = "Recherche du tiroir d'applications") {
+        Text("Réglages indépendants de Prime Search. L'apparence du tiroir et de sa barre de recherche reste inchangée.")
+        val drawerSurface = PrimeSearchResultPreferences.Surface.DRAWER
+        val drawerCategories = listOf(
+            PrimeSearchResultPreferences.Category.APPS,
+            PrimeSearchResultPreferences.Category.APP_SHORTCUTS,
+            PrimeSearchResultPreferences.Category.CONTACTS,
+            PrimeSearchResultPreferences.Category.FILES,
+            PrimeSearchResultPreferences.Category.SETTINGS,
+            PrimeSearchResultPreferences.Category.WEB,
+            PrimeSearchResultPreferences.Category.HISTORY,
+            PrimeSearchResultPreferences.Category.CALCULATOR,
+        )
+        drawerCategories.forEach { category ->
+            var enabled by remember(category) {
+                mutableStateOf(
+                    !PrimeSearchResultPreferences.hasCategorySetting(context, category, drawerSurface) ||
+                        PrimeSearchResultPreferences.enabled(context, category, drawerSurface)
+                )
+            }
+            PreferenceTemplate(
+                title = { Text(category.title) },
+                description = { Text(category.description) },
+                endWidget = {
+                    androidx.compose.material3.Switch(
+                        checked = enabled,
+                        onCheckedChange = {
+                            enabled = it
+                            PrimeSearchResultPreferences.setEnabled(context, category, it, drawerSurface)
+                        },
+                    )
+                },
+                onClick = {
+                    enabled = !enabled
+                    PrimeSearchResultPreferences.setEnabled(context, category, enabled, drawerSurface)
+                },
+            )
+        }
+        var drawerMaxFiles by remember {
+            mutableStateOf(
+                if (PrimeSearchResultPreferences.hasCustomFileLimit(context, drawerSurface))
+                    PrimeSearchResultPreferences.maxFileResults(context, drawerSurface)
+                else 5
+            )
+        }
+        Text("Limite des fichiers du tiroir : $drawerMaxFiles")
+        androidx.compose.material3.Slider(
+            value = drawerMaxFiles.toFloat(),
+            onValueChange = {
+                drawerMaxFiles = it.roundToInt().coerceIn(3, 100)
+                PrimeSearchResultPreferences.setMaxFileResults(context, drawerMaxFiles, drawerSurface)
+            },
+            valueRange = 3f..100f,
+        )
+        PrimeSearchResultPreferences.FileOption.entries.forEach { option ->
+            var checked by remember(option) {
+                mutableStateOf(PrimeSearchResultPreferences.fileOptionEnabled(context, option, drawerSurface))
+            }
+            PreferenceTemplate(
+                title = { Text(option.label) },
+                endWidget = {
+                    androidx.compose.material3.Switch(
+                        checked = checked,
+                        onCheckedChange = {
+                            checked = it
+                            PrimeSearchResultPreferences.setFileOptionEnabled(context, option, it, drawerSurface)
+                        },
+                    )
+                },
+                onClick = {
+                    checked = !checked
+                    PrimeSearchResultPreferences.setFileOptionEnabled(context, option, checked, drawerSurface)
+                },
+            )
+        }
+    }
+
 }
