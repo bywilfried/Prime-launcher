@@ -263,8 +263,9 @@ object PrimeSearchOverlay {
             val titlePaint = android.text.TextPaint().apply {
                 textSize = titleTextSizeSp * launcher.resources.displayMetrics.scaledDensity
             }
-            val titleHeight = (titlePaint.fontMetrics.bottom - titlePaint.fontMetrics.top)
-                .toInt().coerceAtLeast(1)
+            val labelLines = if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
+            val titleHeight = ((titlePaint.fontMetrics.bottom - titlePaint.fontMetrics.top)
+                .toInt().coerceAtLeast(1)) * labelLines
             val cellTopPadding = (6 * density).toInt()
             val cellBottomPadding = (8 * density).toInt()
             val rowHeight = iconSize + titleHeight + cellTopPadding + cellBottomPadding
@@ -298,7 +299,7 @@ object PrimeSearchOverlay {
                         text = packageManager.getApplicationLabel(app)
                         textSize = titleTextSizeSp
                         gravity = Gravity.CENTER
-                        maxLines = 1
+                        maxLines = labelLines
                         ellipsize = android.text.TextUtils.TruncateAt.END
                         setTextColor(themed(ThemeColorRole.PRIME_SEARCH_APP_LABEL))
                     }
