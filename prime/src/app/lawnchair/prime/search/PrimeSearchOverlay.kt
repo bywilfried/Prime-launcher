@@ -612,6 +612,26 @@ object PrimeSearchOverlay {
                     }
                     item.setRippleEffect(view)
                     resultView.bind(item.searchTarget, emptyList())
+                    // The inherited drawer search action has no title property on
+                    // SearchTargetCompat. Inspect the actual bound row instead.
+                    // This affects Prime Search only, not the app drawer.
+                    fun isLegacyGoogleAction(node: View): Boolean {
+                        if (node is TextView) {
+                            val label = node.text?.toString()?.trim().orEmpty()
+                            if (label.equals("Rechercher avec Google", ignoreCase = true) ||
+                                label.equals("Search with Google", ignoreCase = true)) return true
+                        }
+                        if (node is ViewGroup) {
+                            for (i in 0 until node.childCount) {
+                                if (isLegacyGoogleAction(node.getChildAt(i))) return true
+                            }
+                        }
+                        return false
+                    }
+                    if (!isAppIcon && isLegacyGoogleAction(view)) {
+                        parent.removeView(view)
+                        return@forEach
+                    }
                     // Drawer search result views may apply their own text colors
                     // during bind. Override them after binding for Prime Search.
                     fun applyPrimeTextColors(node: View) {
