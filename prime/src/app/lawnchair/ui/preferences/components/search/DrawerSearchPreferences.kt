@@ -408,8 +408,8 @@ private fun DrawerAdvancedSearchPreferences() {
                                 count = it.roundToInt().coerceIn(0, 8)
                                 PrimeSearchResultPreferences.setWebSuggestionCount(context, count, drawerSurface)
                             }, valueRange = 0f..8f)
+                            var current by remember { mutableStateOf(PrimeSearchResultPreferences.suggestionProvider(context, drawerSurface)) }
                             PrimeSearchResultPreferences.SuggestionProvider.entries.forEach { provider ->
-                                var current by remember { mutableStateOf(PrimeSearchResultPreferences.suggestionProvider(context, drawerSurface)) }
                                 Row {
                                     androidx.compose.material3.RadioButton(selected = current == provider, onClick = {
                                         current = provider
