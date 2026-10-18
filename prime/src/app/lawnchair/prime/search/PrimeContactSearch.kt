@@ -6,9 +6,12 @@ import android.provider.ContactsContract
 
 object PrimeContactSearch {
     data class Result(val name: String, val uri: Uri)
-    fun search(context: Context, query: String): List<Result> {
+    fun search(context: Context, query: String): List<Result> =
+        search(context, query, PrimeSearchResultPreferences.Surface.PRIME_SEARCH)
+
+    fun search(context: Context, query: String, surface: PrimeSearchResultPreferences.Surface): List<Result> {
         if (query.isBlank() || !PrimeSearchPermissions.granted(context, PrimeSearchResultPreferences.Category.CONTACTS)) return emptyList()
-        val selected = PrimeSourceSelection.selected(context, "contacts")
+        val selected = PrimeSourceSelection.selected(context, "contacts", surface)
         val results = linkedMapOf<Long, Result>()
         runCatching {
             context.contentResolver.query(
