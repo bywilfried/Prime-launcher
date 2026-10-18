@@ -375,13 +375,13 @@ object PrimeSearchOverlay {
                 }
             }
             if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.REMINDERS)) {
-                val reminders = PrimeCalendarSearch.reminders(launcher, query)
-                if (reminders.isNotEmpty()) {
-                    row("Rappels de l'agenda") {}
-                    reminders.forEach { reminder ->
-                        row("⏰  ${reminder.title}\n${reminder.detail}") {
+                val tasks = PrimeTasksSearch.search(launcher, query)
+                if (tasks.isNotEmpty()) {
+                    row("Tâches · Tasks.org") {}
+                    tasks.forEach { task ->
+                        row("☑  ${task.title}\n${task.detail}") {
                             runCatching {
-                                launcher.startActivity(Intent(Intent.ACTION_VIEW, reminder.uri))
+                                launcher.startActivity(Intent(Intent.ACTION_VIEW, task.uri))
                                 dismiss()
                             }
                         }
