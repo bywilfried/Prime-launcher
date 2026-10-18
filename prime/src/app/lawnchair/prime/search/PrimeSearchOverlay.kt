@@ -346,6 +346,25 @@ object PrimeSearchOverlay {
                     }
                 }
             }
+            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.NOTIFICATIONS)) {
+                if (PrimeNotificationHistory.isGranted(launcher)) {
+                    val matches = runCatching { PrimeNotificationHistory.search(launcher, query) }
+                        .getOrDefault(emptyList())
+                    if (matches.isNotEmpty()) {
+                        row("Historique des notifications") {}
+                        val formatter = java.text.DateFormat.getDateTimeInstance(
+                            java.text.DateFormat.SHORT, java.text.DateFormat.SHORT
+                        )
+                        matches.forEach { entry ->
+                            row("🔔  ${entry.app} · ${entry.title}\n${entry.body.take(180)}\n${formatter.format(java.util.Date(entry.posted))}") {}
+                        }
+                    }
+                } else if (query.contains("notif", ignoreCase = true)) {
+                    row("Autoriser l'accès aux notifications") {
+                        launcher.startActivity(PrimeNotificationHistory.accessIntent(launcher))
+                    }
+                }
+            }
             if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.SETTINGS) &&
                 listOf("paramètre", "réglage", "wifi", "bluetooth", "réseau", "affichage", "son", "batterie")
                     .any { it.contains(query.trim(), ignoreCase = true) || query.contains(it, ignoreCase = true) }) {
