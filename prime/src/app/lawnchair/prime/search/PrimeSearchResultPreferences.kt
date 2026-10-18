@@ -158,7 +158,8 @@ object PrimeSearchResultPreferences {
         context.getSharedPreferences(STORE, Context.MODE_PRIVATE)
 
     fun enabled(context: Context, category: Category): Boolean =
-        prefs(context).getBoolean(category.key, true)
+        prefs(context).getBoolean(category.key, true) &&
+            (!PrimeSearchPermissions.required(category) || PrimeSearchPermissions.granted(context, category))
 
     fun setEnabled(context: Context, category: Category, enabled: Boolean) {
         prefs(context).edit().putBoolean(category.key, enabled).apply()
