@@ -12,6 +12,7 @@ import app.lawnchair.search.algorithms.engine.AppsAndShortcutsSectionBuilder
 import app.lawnchair.search.algorithms.engine.CalculationSectionBuilder
 import app.lawnchair.search.algorithms.engine.ContactsSectionBuilder
 import app.lawnchair.search.algorithms.engine.EmptyStateSectionBuilder
+import app.lawnchair.search.algorithms.engine.PrimeEntriesSectionBuilder
 import app.lawnchair.search.algorithms.engine.FilesSectionBuilder
 import app.lawnchair.search.algorithms.engine.HistorySectionBuilder
 import app.lawnchair.search.algorithms.engine.SearchProvider
@@ -95,6 +96,31 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                     val actions = generateActionResults(query).filterNot { primeSearch && it is SearchResult.Action.SearchSettings }
                     val allResults = appResults + shortcutResults + (calcResult ?: emptyList()) + nonAppResults + actions
 
+                    val drawerEntries = if (primeSearch || query.isBlank()) emptyList() else {
+                        val preferences = app.lawnchair.prime.search.PrimeSearchResultPreferences
+                        val surface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
+                        val entries = mutableListOf<SearchResult.PrimeEntry>()
+                        if (preferences.enabled(context, preferences.Category.CALENDAR, surface)) {
+                            runCatching { app.lawnchair.prime.search.PrimeCalendarSearch.events(context, query) }
+                                .getOrDefault(emptyList()).forEach {
+                                    entries.add(SearchResult.PrimeEntry("Agenda", it.title, it.detail, it.uri))
+                                }
+                        }
+                        if (preferences.enabled(context, preferences.Category.REMINDERS, surface)) {
+                            runCatching { app.lawnchair.prime.search.PrimeTasksSearch.search(context, query) }
+                                .getOrDefault(emptyList()).forEach {
+                                    entries.add(SearchResult.PrimeEntry("Tâches", it.title, it.detail, it.uri))
+                                }
+                        }
+                        if (preferences.enabled(context, preferences.Category.NOTIFICATIONS, surface) &&
+                            app.lawnchair.prime.search.PrimeNotificationHistory.isGranted(context)) {
+                            runCatching { app.lawnchair.prime.search.PrimeNotificationHistory.search(context, query) }
+                                .getOrDefault(emptyList()).forEach {
+                                    entries.add(SearchResult.PrimeEntry("Notifications", it.app + " · " + it.title, it.body, null))
+                                }
+                        }
+                        entries
+                    }
                     val visibleResults = if (primeSearch) allResults else {
                         val prefs = app.lawnchair.prime.search.PrimeSearchResultPreferences
                         val surface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
@@ -114,7 +140,7 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                                 prefs.enabled(context, category, surface)
                         }
                     }
-                    val searchTargets = translateToSearchTargets(visibleResults)
+                    val searchTargets = translateToSearchTargets(visibleResults + drawerEntries)
                     setFirstItemQuickLaunch(searchTargets)
                     val adapterItems = transformSearchResults(searchTargets)
                     withContext(Dispatchers.Main) {
@@ -208,6 +234,7 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
         WebSuggestionsSectionBuilder,
         ContactsSectionBuilder,
         FilesSectionBuilder,
+        PrimeEntriesSectionBuilder,
         SettingsSectionBuilder,
         HistorySectionBuilder,
         ActionsSectionBuilder,
