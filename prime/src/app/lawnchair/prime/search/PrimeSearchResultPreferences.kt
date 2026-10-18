@@ -20,6 +20,9 @@ object PrimeSearchResultPreferences {
     private fun surfacePrefs(context: Context, surface: Surface) =
         context.getSharedPreferences(surface.store, Context.MODE_PRIVATE)
 
+    fun hasCategorySetting(context: Context, category: Category, surface: Surface): Boolean =
+        surfacePrefs(context, surface).contains(category.key)
+
     fun enabled(context: Context, category: Category, surface: Surface): Boolean =
         surfacePrefs(context, surface).getBoolean(category.key, true) &&
             (!PrimeSearchPermissions.required(category) || PrimeSearchPermissions.granted(context, category))
