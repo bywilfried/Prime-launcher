@@ -168,6 +168,9 @@ object PrimeSearchResultPreferences {
                 Category.SETTINGS
             SearchTargetCompat.RESULT_TYPE_CALCULATOR -> Category.CALCULATOR
             SearchTargetCompat.RESULT_TYPE_SUGGESTIONS -> {
+                // Prime Search renders its own configurable Web suggestions.
+                // Keep local search history, but suppress the drawer's Web provider
+                // in Prime Search only to avoid duplicate suggestion sections.
                 if (target.packageName == app.lawnchair.search.adapter.HISTORY) Category.HISTORY
                 else Category.WEB
             }
@@ -178,7 +181,13 @@ object PrimeSearchResultPreferences {
     fun filter(context: Context, items: List<SearchAdapterItem>): List<SearchAdapterItem> {
         // Headers/dividers are retained only when their section still has visible results.
         val kept = items.filter { item ->
-            category(item)?.let { enabled(context, it) } ?: true
+            val type = item.searchTarget.resultType
+            if (type == SearchTargetCompat.RESULT_TYPE_SUGGESTIONS &&
+                item.searchTarget.packageName != app.lawnchair.search.adapter.HISTORY) {
+                false
+            } else {
+                category(item)?.let { enabled(context, it) } ?: true
+            }
         }
         val cleaned = kept.filterIndexed { index, item ->
             if (item.searchTarget.resultType != SearchTargetCompat.RESULT_TYPE_SECTION_HEADER &&
