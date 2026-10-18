@@ -248,7 +248,23 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
         val factory = SearchTargetFactory(context)
 
         // The new function is just a flatMap. It's declarative and beautiful.
-        return sectionBuilders.flatMap { builder ->
+        val builders = if (primeSearch) sectionBuilders else {
+            val settings = app.lawnchair.prime.search.PrimeSearchResultPreferences
+            val order = settings.order(context, settings.Surface.DRAWER)
+            val byCategory = mapOf(
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS to AppsAndShortcutsSectionBuilder,
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALCULATOR to CalculationSectionBuilder,
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB to WebSuggestionsSectionBuilder,
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CONTACTS to ContactsSectionBuilder,
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.FILES to FilesSectionBuilder,
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.SETTINGS to SettingsSectionBuilder,
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.HISTORY to HistorySectionBuilder,
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALENDAR to PrimeEntriesSectionBuilder,
+            )
+            val ordered = order.mapNotNull { byCategory[it] }.distinct()
+            ordered + sectionBuilders.filterNot { it in ordered }
+        }
+        return builders.flatMap { builder ->
             builder.build(context, factory, results)
         }
     }
