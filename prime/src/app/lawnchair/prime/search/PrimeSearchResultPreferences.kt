@@ -29,7 +29,7 @@ object PrimeSearchResultPreferences {
     }
 
     fun maxFileResults(context: Context): Int =
-        prefs(context).getInt("prime_max_file_results", 30).coerceIn(3, 100)
+        prefs(context).getInt("prime_max_file_results", 5).coerceIn(3, 100)
 
     fun setMaxFileResults(context: Context, value: Int) {
         prefs(context).edit().putInt("prime_max_file_results", value.coerceIn(3, 100)).apply()
