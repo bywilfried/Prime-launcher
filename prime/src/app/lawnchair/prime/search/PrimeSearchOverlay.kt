@@ -449,19 +449,6 @@ object PrimeSearchOverlay {
                     }
                 }
             }
-            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.APP_SETTINGS) &&
-                listOf("prime", "launcher", "application", "paramètre").any {
-                    it.contains(query.trim(), ignoreCase = true) || query.contains(it, ignoreCase = true)
-                }) {
-                row("Paramètres de l'app") {}
-                row("⚙  Paramètres de Prime Launcher") {
-                    try {
-                        launcher.startActivity(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                            Uri.parse("package:" + launcher.packageName)))
-                        dismiss()
-                    } catch (_: android.content.ActivityNotFoundException) { }
-                }
-            }
             val engines = if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB_SHORTCUTS))
                 PrimeSearchResultPreferences.enabledWebEngines(launcher) else emptyList()
             if (engines.isNotEmpty()) {
