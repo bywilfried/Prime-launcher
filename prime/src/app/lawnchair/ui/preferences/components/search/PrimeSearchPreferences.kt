@@ -448,6 +448,44 @@ fun PrimeSearchPreference() {
                                 Text("Effacer l'historique des notifications")
                             }
                             Text("L'enregistrement nécessite l'accès aux notifications Android.")
+                        } else if (selected == PrimeSearchResultPreferences.Category.CALENDAR ||
+                            selected == PrimeSearchResultPreferences.Category.CONTACTS) {
+                            val kind = if (selected == PrimeSearchResultPreferences.Category.CALENDAR) "calendars" else "contacts"
+                            val granted = PrimeSearchPermissions.granted(context, selected)
+                            if (!granted) {
+                                Text(PrimeSearchPermissions.explanation(selected))
+                                TextButton(onClick = { requestCategory(selected) }) { Text("Autoriser l'accès") }
+                            } else {
+                                val sources = remember(selected, permissionRefresh) {
+                                    if (kind == "calendars")
+                                        app.lawnchair.prime.search.PrimeSourceSelection.calendars(context)
+                                    else app.lawnchair.prime.search.PrimeSourceSelection.contactAccounts(context)
+                                }
+                                var selectedIds by remember(selected) {
+                                    mutableStateOf(app.lawnchair.prime.search.PrimeSourceSelection.selected(context, kind))
+                                }
+                                Text(if (kind == "calendars") "Agendas utilisés pour la recherche" else "Comptes de contacts utilisés pour la recherche")
+                                if (sources.isEmpty()) Text("Aucune source disponible sur cet appareil.")
+                                androidx.compose.foundation.lazy.LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f, fill = false)) {
+                                    items(sources.size) { index ->
+                                        val source = sources[index]
+                                        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                            androidx.compose.material3.Checkbox(
+                                                checked = selectedIds?.contains(source.id) ?: true,
+                                                onCheckedChange = { enabled ->
+                                                    app.lawnchair.prime.search.PrimeSourceSelection.setSelected(context, kind, source.id, enabled, sources)
+                                                    selectedIds = app.lawnchair.prime.search.PrimeSourceSelection.selected(context, kind)
+                                                },
+                                            )
+                                            Text(source.label)
+                                        }
+                                    }
+                                }
+                                TextButton(onClick = {
+                                    app.lawnchair.prime.search.PrimeSourceSelection.reset(context, kind)
+                                    selectedIds = null
+                                }) { Text("Tout sélectionner") }
+                            }
                         } else {
                             if (PrimeSearchPermissions.required(selected)) {
                                 val granted = PrimeSearchPermissions.granted(context, selected)
