@@ -55,6 +55,7 @@ import app.lawnchair.allapps.views.SearchResultView
 import app.lawnchair.search.LawnchairSearchAdapterProvider
 import app.lawnchair.LawnchairLauncher
 import app.lawnchair.search.adapter.SearchAdapterItem
+import app.lawnchair.search.adapter.SearchTargetCompat
 import app.lawnchair.search.algorithms.LawnchairSearchAlgorithm
 import app.lawnchair.search.algorithms.LawnchairLocalSearchAlgorithm
 import com.android.launcher3.allapps.BaseAllAppsAdapter
