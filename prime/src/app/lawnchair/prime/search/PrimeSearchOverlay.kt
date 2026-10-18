@@ -206,7 +206,12 @@ object PrimeSearchOverlay {
         var usage: Map<String, android.app.usage.UsageStats> = cachedUsage.orEmpty()
         var hasUsageAccess = cachedUsageGranted
         val sections = listOf("FRÉQUENTES", "RÉCENTES", "NOUVELLES")
-        var selectedTab = 0
+        var selectedTab = when (PrimeSearchResultPreferences.openingTab(launcher)) {
+            PrimeSearchResultPreferences.OpeningTab.LAST -> PrimeSearchResultPreferences.lastOpenedTab(launcher)
+            PrimeSearchResultPreferences.OpeningTab.FREQUENT -> 0
+            PrimeSearchResultPreferences.OpeningTab.RECENT -> 1
+            PrimeSearchResultPreferences.OpeningTab.NEW -> 2
+        }
         fun renderZeroState() {
             tabs.removeAllViews()
             zeroApps.removeAllViews()
@@ -220,7 +225,11 @@ object PrimeSearchOverlay {
                     alpha = if (index == selectedTab) 1f else 0.55f
                     gravity = Gravity.CENTER
                     setPadding((8 * density).toInt(), inset, (8 * density).toInt(), inset)
-                    setOnClickListener { selectedTab = index; renderZeroState() }
+                    setOnClickListener {
+                        selectedTab = index
+                        PrimeSearchResultPreferences.setLastOpenedTab(launcher, index)
+                        renderZeroState()
+                    }
                 }
                 tabs.addView(tab, LinearLayout.LayoutParams(0, -2, 1f))
             }
