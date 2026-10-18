@@ -65,7 +65,11 @@ object PrimeNotificationHistory {
     }
 
     fun prune(context: Context) {
-        val months = PrimeSearchResultPreferences.notificationRetention(context).months
+        val primeMonths = PrimeSearchResultPreferences.notificationRetention(context).months
+        val drawerMonths = PrimeSearchResultPreferences.notificationRetention(
+            context, PrimeSearchResultPreferences.Surface.DRAWER
+        ).months
+        val months = if (primeMonths == 0 || drawerMonths == 0) 0 else maxOf(primeMonths, drawerMonths)
         if (months == 0) return
         val cutoff = java.util.Calendar.getInstance().apply { add(java.util.Calendar.MONTH, -months) }.timeInMillis
         Store(context).use { helper ->
@@ -107,7 +111,9 @@ object PrimeNotificationHistory {
 
 class PrimeNotificationListener : NotificationListenerService() {
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        if (PrimeSearchResultPreferences.enabled(this, PrimeSearchResultPreferences.Category.NOTIFICATIONS)) {
+        if (PrimeSearchResultPreferences.enabled(this, PrimeSearchResultPreferences.Category.NOTIFICATIONS) ||
+            PrimeSearchResultPreferences.enabled(this, PrimeSearchResultPreferences.Category.NOTIFICATIONS,
+                PrimeSearchResultPreferences.Surface.DRAWER)) {
             runCatching { PrimeNotificationHistory.save(this, sbn) }
         }
     }
