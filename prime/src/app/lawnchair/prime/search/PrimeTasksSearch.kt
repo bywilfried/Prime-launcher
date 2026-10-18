@@ -23,10 +23,13 @@ object PrimeTasksSearch {
         return result
     }
 
-    fun search(context: Context, query: String): List<Task> {
+    fun search(context: Context, query: String): List<Task> =
+        search(context, query, PrimeSearchResultPreferences.Surface.PRIME_SEARCH)
+
+    fun search(context: Context, query: String, surface: PrimeSearchResultPreferences.Surface): List<Task> {
         if (query.isBlank() || !PrimeSearchPermissions.granted(context, PrimeSearchResultPreferences.Category.REMINDERS) || !available(context)) return emptyList()
         val result = mutableListOf<Task>()
-        val selected = PrimeSourceSelection.selected(context, "tasks")
+        val selected = PrimeSourceSelection.selected(context, "tasks", surface)
         if (selected != null && selected.isEmpty()) return emptyList()
         runCatching {
             val uri = base.buildUpon().appendPath("tasks")
