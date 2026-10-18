@@ -347,13 +347,83 @@ object PrimeSearchOverlay {
                     }
                 }
             }
-            PrimeSearchResultPreferences.enabledWebEngines(launcher).forEach { engine ->
-                row("Rechercher « $query » avec ${engine.title}") {
-                    val url = engine.url + Uri.encode(query)
-                    try {
-                        launcher.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                        dismiss()
-                    } catch (_: android.content.ActivityNotFoundException) { }
+            val engines = PrimeSearchResultPreferences.enabledWebEngines(launcher)
+            if (engines.isNotEmpty()) {
+                row("Recherche sur :") {}
+                val columns = 5
+                engines.chunked(columns).forEach { group ->
+                    val icons = LinearLayout(launcher).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        gravity = Gravity.START
+                    }
+                    group.forEach { engine ->
+                        val cell = LinearLayout(launcher).apply {
+                            orientation = LinearLayout.VERTICAL
+                            gravity = Gravity.CENTER
+                            setPadding((4 * density).toInt(), (5 * density).toInt(),
+                                (4 * density).toInt(), (8 * density).toInt())
+                            contentDescription = "Rechercher sur ${engine.title}"
+                            setOnClickListener {
+                                val url = engine.url + Uri.encode(query)
+                                try {
+                                    // Android App Links may open the corresponding app
+                                    // when installed; otherwise use the default browser.
+                                    launcher.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                                    dismiss()
+                                } catch (_: android.content.ActivityNotFoundException) { }
+                            }
+                        }
+                        val icon = ImageView(launcher).apply {
+                            val iconSize = (36 * density).toInt()
+                            layoutParams = LinearLayout.LayoutParams(iconSize, iconSize)
+                            contentDescription = engine.title
+                            // Start with an installed app icon when available.
+                            val packageName = when (engine) {
+                                PrimeSearchResultPreferences.WebEngine.SPOTIFY -> "com.spotify.music"
+                                PrimeSearchResultPreferences.WebEngine.DUCKDUCKGO -> "com.duckduckgo.mobile.android"
+                                PrimeSearchResultPreferences.WebEngine.WIKIPEDIA -> "org.wikipedia"
+                                PrimeSearchResultPreferences.WebEngine.YOUTUBE -> "com.google.android.youtube"
+                                PrimeSearchResultPreferences.WebEngine.REDDIT -> "com.reddit.frontpage"
+                                else -> null
+                            }
+                            val drawable = try { packageName?.let { packageManager.getApplicationIcon(it) } }
+                                catch (_: Exception) { null }
+                            if (drawable != null) {
+                                setImageDrawable(drawable)
+                            } else {
+                                val fallback = android.graphics.drawable.GradientDrawable().apply {
+                                    shape = android.graphics.drawable.GradientDrawable.OVAL
+                                    setColor(themed(ThemeColorRole.PRIME_SEARCH_BAR_BACKGROUND))
+                                    setStroke((1 * density).toInt().coerceAtLeast(1),
+                                        themed(ThemeColorRole.PRIME_SEARCH_BORDER))
+                                }
+                                background = fallback
+                                val site = Uri.parse(engine.url).host.orEmpty()
+                                Thread {
+                                    val bitmap = try {
+                                        val connection = URL("https://www.google.com/s2/favicons?domain=" +
+                                            Uri.encode(site) + "&sz=96").openConnection() as HttpURLConnection
+                                        connection.connectTimeout = 2000
+                                        connection.readTimeout = 2000
+                                        try { connection.inputStream.use { android.graphics.BitmapFactory.decodeStream(it) } }
+                                        finally { connection.disconnect() }
+                                    } catch (_: Exception) { null }
+                                    if (bitmap != null) post { setImageBitmap(bitmap) }
+                                }.start()
+                            }
+                        }
+                        cell.addView(icon)
+                        cell.addView(TextView(launcher).apply {
+                            text = engine.title
+                            textSize = 10f
+                            maxLines = 1
+                            ellipsize = android.text.TextUtils.TruncateAt.END
+                            gravity = Gravity.CENTER
+                            setTextColor(foreground)
+                        }, LinearLayout.LayoutParams(-1, -2))
+                        icons.addView(cell, LinearLayout.LayoutParams(0, -2, 1f))
+                    }
+                    webPanel.addView(icons, LinearLayout.LayoutParams(-1, -2))
                 }
             }
         }
