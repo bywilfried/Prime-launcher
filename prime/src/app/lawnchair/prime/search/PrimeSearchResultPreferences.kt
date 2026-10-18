@@ -247,6 +247,18 @@ object PrimeSearchResultPreferences {
         FOREVER("Toujours", 0),
     }
 
+    fun notificationRetention(context: Context, surface: Surface): NotificationRetention =
+        runCatching {
+            NotificationRetention.valueOf(
+                surfacePrefs(context, surface).getString("notification_retention", NotificationRetention.ONE_MONTH.name)
+                    ?: NotificationRetention.ONE_MONTH.name
+            )
+        }.getOrDefault(NotificationRetention.ONE_MONTH)
+
+    fun setNotificationRetention(context: Context, retention: NotificationRetention, surface: Surface) {
+        surfacePrefs(context, surface).edit().putString("notification_retention", retention.name).apply()
+    }
+
     fun notificationRetention(context: Context): NotificationRetention =
         runCatching {
             NotificationRetention.valueOf(
