@@ -181,6 +181,59 @@ fun PrimeSearchPreference() {
             },
         )
     }
+    PreferenceGroup(heading = "Applications à l'ouverture") {
+        var openingTab by remember { mutableStateOf(PrimeSearchResultPreferences.openingTab(context)) }
+        var showOpeningChoices by remember { mutableStateOf(false) }
+        PreferenceTemplate(
+            title = { Text("Onglet affiché à l'ouverture") },
+            description = { Text(openingTab.label) },
+            onClick = { showOpeningChoices = true },
+        )
+        if (showOpeningChoices) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { showOpeningChoices = false },
+                title = { Text("Ouvrir Prime Search sur") },
+                text = {
+                    androidx.compose.foundation.layout.Column {
+                        PrimeSearchResultPreferences.OpeningTab.entries.forEach { option ->
+                            androidx.compose.foundation.layout.Row {
+                                androidx.compose.material3.RadioButton(
+                                    selected = openingTab == option,
+                                    onClick = {
+                                        openingTab = option
+                                        PrimeSearchResultPreferences.setOpeningTab(context, option)
+                                        showOpeningChoices = false
+                                    },
+                                )
+                                androidx.compose.material3.TextButton(onClick = {
+                                    openingTab = option
+                                    PrimeSearchResultPreferences.setOpeningTab(context, option)
+                                    showOpeningChoices = false
+                                }) { Text(option.label) }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    androidx.compose.material3.TextButton(onClick = { showOpeningChoices = false }) { Text("Fermer") }
+                },
+            )
+        }
+        var rows by remember { mutableStateOf(PrimeSearchResultPreferences.zeroStateRows(context)) }
+        PreferenceTemplate(
+            title = { Text("Lignes d'applications") },
+            description = { Text("$rows ligne(s) pour Fréquentes, Récentes et Nouvelles") },
+        )
+        androidx.compose.material3.Slider(
+            value = rows.toFloat(),
+            onValueChange = {
+                rows = it.roundToInt().coerceIn(1, 2)
+                PrimeSearchResultPreferences.setZeroStateRows(context, rows)
+            },
+            valueRange = 1f..2f,
+            steps = 0,
+        )
+    }
     PreferenceGroup(heading = "Accès aux données d’utilisation") {
         val usageGranted = try {
             val ops = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
@@ -196,22 +249,6 @@ fun PrimeSearchPreference() {
             onClick = {
                 context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
             },
-        )
-    }
-    PreferenceGroup(heading = "Applications à l'ouverture") {
-        var rows by remember { mutableStateOf(PrimeSearchResultPreferences.zeroStateRows(context)) }
-        PreferenceTemplate(
-            title = { Text("Lignes d'applications") },
-            description = { Text("$rows ligne(s) pour Fréquentes, Récentes et Nouvelles") },
-        )
-        androidx.compose.material3.Slider(
-            value = rows.toFloat(),
-            onValueChange = {
-                rows = it.roundToInt().coerceIn(1, 2)
-                PrimeSearchResultPreferences.setZeroStateRows(context, rows)
-            },
-            valueRange = 1f..2f,
-            steps = 0,
         )
     }
     PreferenceGroup(heading = "Recherche d'applications") {
