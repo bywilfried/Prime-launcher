@@ -160,6 +160,35 @@ fun PrimeSearchPreference() {
             )
         }
     }
+    PreferenceGroup(heading = "Recherche Web par défaut") {
+        val searchPrefs = app.lawnchair.preferences2.preferenceManager2()
+        val providerAdapter = app.lawnchair.preferences.getAdapter(searchPrefs.hotseatQsbProvider)
+        val currentProvider = providerAdapter.state.value
+        Text("Moteur utilisé par le geste « Ouvrir la recherche Web » et la barre de recherche du dock.")
+        listOf(
+            app.lawnchair.qsb.providers.Google,
+            app.lawnchair.qsb.providers.DuckDuckGo,
+            app.lawnchair.qsb.providers.Ecosia,
+            app.lawnchair.qsb.providers.Bing,
+            app.lawnchair.qsb.providers.Brave,
+            app.lawnchair.qsb.providers.Startpage,
+            app.lawnchair.qsb.providers.StartpageEU,
+            app.lawnchair.qsb.providers.Kagi,
+            app.lawnchair.qsb.providers.Presearch,
+            app.lawnchair.qsb.providers.Wikipedia,
+        ).forEach { provider ->
+            PreferenceTemplate(
+                title = { Text(context.getString(provider.name)) },
+                endWidget = {
+                    androidx.compose.material3.RadioButton(
+                        selected = currentProvider.id == provider.id,
+                        onClick = { providerAdapter.onChange(provider) },
+                    )
+                },
+                onClick = { providerAdapter.onChange(provider) },
+            )
+        }
+    }
     PreferenceGroup(heading = "Fenêtre Prime Search") {
         var floating by remember { mutableStateOf(PrimeSearchResultPreferences.floatingWindow(context)) }
         PreferenceTemplate(
