@@ -457,74 +457,7 @@ private fun DrawerAdvancedSearchPreferences() {
                 },
             )
         }
-        listOf(
-            "calendars" to PrimeSearchResultPreferences.Category.CALENDAR,
-            "contacts" to PrimeSearchResultPreferences.Category.CONTACTS,
-        ).forEach { (kind, category) ->
-            val sources = remember(kind) {
-                if (kind == "calendars") app.lawnchair.prime.search.PrimeSourceSelection.calendars(context)
-                else app.lawnchair.prime.search.PrimeSourceSelection.contactAccounts(context)
-            }
-            Text("Sources du tiroir : ${category.title}")
-            sources.forEach { source ->
-                var checked by remember(kind, source.id) {
-                    mutableStateOf(app.lawnchair.prime.search.PrimeSourceSelection.isSelected(context, kind, source.id, drawerSurface))
-                }
-                PreferenceTemplate(
-                    title = { Text(source.label) },
-                    endWidget = {
-                        androidx.compose.material3.Switch(
-                            checked = checked,
-                            onCheckedChange = {
-                                checked = it
-                                app.lawnchair.prime.search.PrimeSourceSelection.setSelected(context, kind, source.id, it, sources, drawerSurface)
-                            },
-                        )
-                    },
-                    onClick = {
-                        checked = !checked
-                        app.lawnchair.prime.search.PrimeSourceSelection.setSelected(context, kind, source.id, checked, sources, drawerSurface)
-                    },
-                )
-            }
-        }
-        var drawerMaxFiles by remember {
-            mutableStateOf(
-                if (PrimeSearchResultPreferences.hasCustomFileLimit(context, drawerSurface))
-                    PrimeSearchResultPreferences.maxFileResults(context, drawerSurface)
-                else 5
-            )
-        }
-        Text("Limite des fichiers du tiroir : $drawerMaxFiles")
-        androidx.compose.material3.Slider(
-            value = drawerMaxFiles.toFloat(),
-            onValueChange = {
-                drawerMaxFiles = it.roundToInt().coerceIn(3, 100)
-                PrimeSearchResultPreferences.setMaxFileResults(context, drawerMaxFiles, drawerSurface)
-            },
-            valueRange = 3f..100f,
-        )
-        PrimeSearchResultPreferences.FileOption.entries.forEach { option ->
-            var checked by remember(option) {
-                mutableStateOf(PrimeSearchResultPreferences.fileOptionEnabled(context, option, drawerSurface))
-            }
-            PreferenceTemplate(
-                title = { Text(option.label) },
-                endWidget = {
-                    androidx.compose.material3.Switch(
-                        checked = checked,
-                        onCheckedChange = {
-                            checked = it
-                            PrimeSearchResultPreferences.setFileOptionEnabled(context, option, it, drawerSurface)
-                        },
-                    )
-                },
-                onClick = {
-                    checked = !checked
-                    PrimeSearchResultPreferences.setFileOptionEnabled(context, option, checked, drawerSurface)
-                },
-            )
-        }
+
     }
 
 }
