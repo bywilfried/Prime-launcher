@@ -6,6 +6,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import app.lawnchair.preferences.getAdapter
 import app.lawnchair.prime.search.PrimeSearchPermissions
 import android.app.AppOpsManager
 import android.content.Context
@@ -162,7 +163,7 @@ fun PrimeSearchPreference() {
     }
     PreferenceGroup(heading = "Recherche Web par défaut") {
         val searchPrefs = app.lawnchair.preferences2.preferenceManager2()
-        val providerAdapter = app.lawnchair.preferences.getAdapter(searchPrefs.hotseatQsbProvider)
+        val providerAdapter = searchPrefs.hotseatQsbProvider.getAdapter()
         val currentProvider = providerAdapter.state.value
         Text("Moteur utilisé par le geste « Ouvrir la recherche Web » et la barre de recherche du dock.")
         listOf(
