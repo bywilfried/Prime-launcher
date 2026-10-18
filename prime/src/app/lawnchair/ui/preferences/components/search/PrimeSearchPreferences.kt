@@ -369,6 +369,11 @@ fun PrimeSearchPreference() {
                             var retention by remember {
                                 mutableStateOf(PrimeSearchResultPreferences.notificationRetention(context))
                             }
+                            val granted = app.lawnchair.prime.search.PrimeNotificationHistory.isGranted(context)
+                            Text(if (granted) "Accès aux notifications autorisé" else "Accès aux notifications non autorisé")
+                            TextButton(onClick = {
+                                context.startActivity(app.lawnchair.prime.search.PrimeNotificationHistory.accessIntent(context))
+                            }) { Text(if (granted) "Gérer l'autorisation Android" else "Autoriser l'accès aux notifications") }
                             Text("Conserver les notifications pendant :")
                             PrimeSearchResultPreferences.NotificationRetention.entries.forEach { option ->
                                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
