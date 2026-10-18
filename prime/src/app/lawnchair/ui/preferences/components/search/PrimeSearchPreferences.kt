@@ -443,22 +443,33 @@ fun PrimeSearchPreference() {
                             }
                             Text("L'enregistrement nécessite l'accès aux notifications Android.")
                         } else if (selected == PrimeSearchResultPreferences.Category.CALENDAR ||
-                            selected == PrimeSearchResultPreferences.Category.CONTACTS) {
-                            val kind = if (selected == PrimeSearchResultPreferences.Category.CALENDAR) "calendars" else "contacts"
+                            selected == PrimeSearchResultPreferences.Category.CONTACTS ||
+                            selected == PrimeSearchResultPreferences.Category.REMINDERS) {
+                            val kind = when (selected) {
+                                PrimeSearchResultPreferences.Category.CALENDAR -> "calendars"
+                                PrimeSearchResultPreferences.Category.REMINDERS -> "tasks"
+                                else -> "contacts"
+                            }
                             val granted = PrimeSearchPermissions.granted(context, selected)
                             if (!granted) {
                                 Text(PrimeSearchPermissions.explanation(selected))
                                 TextButton(onClick = { requestCategory(selected) }) { Text("Autoriser l'accès") }
                             } else {
                                 val sources = remember(selected, permissionRefresh) {
-                                    if (kind == "calendars")
-                                        app.lawnchair.prime.search.PrimeSourceSelection.calendars(context)
-                                    else app.lawnchair.prime.search.PrimeSourceSelection.contactAccounts(context)
+                                    when (kind) {
+                                        "calendars" -> app.lawnchair.prime.search.PrimeSourceSelection.calendars(context)
+                                        "tasks" -> app.lawnchair.prime.search.PrimeTasksSearch.lists(context)
+                                        else -> app.lawnchair.prime.search.PrimeSourceSelection.contactAccounts(context)
+                                    }
                                 }
                                 var selectedIds by remember(selected) {
                                     mutableStateOf(app.lawnchair.prime.search.PrimeSourceSelection.selected(context, kind))
                                 }
-                                Text(if (kind == "calendars") "Agendas utilisés pour la recherche" else "Comptes de contacts utilisés pour la recherche")
+                                Text(when (kind) {
+                                    "calendars" -> "Agendas utilisés pour la recherche"
+                                    "tasks" -> "Listes Tasks.org utilisées pour la recherche"
+                                    else -> "Comptes de contacts utilisés pour la recherche"
+                                })
                                 if (sources.isEmpty()) Text("Aucune source disponible sur cet appareil.")
                                 androidx.compose.foundation.lazy.LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f, fill = false)) {
                                     items(sources.size) { index ->
