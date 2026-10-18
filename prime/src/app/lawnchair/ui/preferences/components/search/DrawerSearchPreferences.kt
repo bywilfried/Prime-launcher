@@ -15,6 +15,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.ui.unit.dp
@@ -379,6 +380,24 @@ private fun DrawerAdvancedSearchPreferences() {
                                 Text("Autoriser l'accès")
                             }
                         }
+                        if (selected == PrimeSearchResultPreferences.Category.NOTIFICATIONS) {
+                            var retention by remember {
+                                mutableStateOf(PrimeSearchResultPreferences.notificationRetention(context, drawerSurface))
+                            }
+                            Text("Durée des notifications affichées")
+                            PrimeSearchResultPreferences.NotificationRetention.entries.forEach { option ->
+                                Row {
+                                    androidx.compose.material3.RadioButton(
+                                        selected = retention == option,
+                                        onClick = {
+                                            retention = option
+                                            PrimeSearchResultPreferences.setNotificationRetention(context, option, drawerSurface)
+                                        },
+                                    )
+                                    Text(option.label)
+                                }
+                            }
+                        }
                         if (selected == PrimeSearchResultPreferences.Category.FILES) {
                             var limit by remember { mutableStateOf(PrimeSearchResultPreferences.maxFileResults(context, drawerSurface)) }
                             Text("Nombre maximal de fichiers : $limit")
@@ -431,11 +450,18 @@ private fun DrawerAdvancedSearchPreferences() {
                                 }
                             }
                         }
-                        if (selected == PrimeSearchResultPreferences.Category.CALENDAR || selected == PrimeSearchResultPreferences.Category.CONTACTS) {
-                            val kind = if (selected == PrimeSearchResultPreferences.Category.CALENDAR) "calendars" else "contacts"
+                        if (selected == PrimeSearchResultPreferences.Category.CALENDAR || selected == PrimeSearchResultPreferences.Category.CONTACTS || selected == PrimeSearchResultPreferences.Category.REMINDERS) {
+                            val kind = when (selected) {
+                                PrimeSearchResultPreferences.Category.CALENDAR -> "calendars"
+                                PrimeSearchResultPreferences.Category.REMINDERS -> "tasks"
+                                else -> "contacts"
+                            }
                             val sources = remember(selected, permissionRefresh) {
-                                if (kind == "calendars") app.lawnchair.prime.search.PrimeSourceSelection.calendars(context)
-                                else app.lawnchair.prime.search.PrimeSourceSelection.contactAccounts(context)
+                                when (kind) {
+                                    "calendars" -> app.lawnchair.prime.search.PrimeSourceSelection.calendars(context)
+                                    "tasks" -> app.lawnchair.prime.search.PrimeTasksSearch.lists(context)
+                                    else -> app.lawnchair.prime.search.PrimeSourceSelection.contactAccounts(context)
+                                }
                             }
                             sources.forEach { source ->
                                 var active by remember(source.id) {
