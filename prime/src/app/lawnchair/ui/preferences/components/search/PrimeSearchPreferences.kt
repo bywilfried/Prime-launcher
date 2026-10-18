@@ -63,6 +63,7 @@ fun PrimeSearchPreference() {
         )
     }
     var showSources by remember { mutableStateOf(false) }
+    var showSuggestionSettings by remember { mutableStateOf(false) }
     PreferenceGroup(heading = "Suggestions et moteurs Web") {
         var suggestionCount by remember { mutableStateOf(PrimeSearchResultPreferences.webSuggestionCount(context)) }
         PreferenceTemplate(
@@ -78,6 +79,34 @@ fun PrimeSearchPreference() {
             valueRange = 0f..8f,
             steps = 7,
         )
+        if (showSuggestionSettings) {
+            var provider by remember { mutableStateOf(PrimeSearchResultPreferences.suggestionProvider(context)) }
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { showSuggestionSettings = false },
+                title = { Text("Suggestions Web") },
+                text = {
+                    Column {
+                        Text("Fournisseur de suggestions")
+                        PrimeSearchResultPreferences.SuggestionProvider.entries.forEach { option ->
+                            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                androidx.compose.material3.RadioButton(
+                                    selected = provider == option,
+                                    onClick = {
+                                        provider = option
+                                        PrimeSearchResultPreferences.setSuggestionProvider(context, option)
+                                    },
+                                )
+                                Text(option.title)
+                            }
+                        }
+                        Text("Les termes saisis sont transmis au fournisseur sélectionné.")
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showSuggestionSettings = false }) { Text("Terminé") }
+                },
+            )
+        }
         if (showSources) {
             var engines by remember { mutableStateOf(PrimeSearchResultPreferences.webEngineOrder(context)) }
             androidx.compose.material3.AlertDialog(
@@ -266,9 +295,13 @@ fun PrimeSearchPreference() {
                 description = { Text(category.description) },
                 endWidget = {
                     Row {
-                        if (category == PrimeSearchResultPreferences.Category.WEB) {
-                            IconButton(onClick = { showSources = true }) {
-                                Icon(Icons.Default.Settings, contentDescription = "Configurer les sources de recherche Web")
+                        if (category == PrimeSearchResultPreferences.Category.WEB ||
+                            category == PrimeSearchResultPreferences.Category.WEB_SHORTCUTS) {
+                            IconButton(onClick = {
+                                if (category == PrimeSearchResultPreferences.Category.WEB) showSuggestionSettings = true
+                                else showSources = true
+                            }) {
+                                Icon(Icons.Default.Settings, contentDescription = if (category == PrimeSearchResultPreferences.Category.WEB) "Configurer les suggestions Web" else "Configurer les sources de recherche")
                             }
                         }
                         Icon(
