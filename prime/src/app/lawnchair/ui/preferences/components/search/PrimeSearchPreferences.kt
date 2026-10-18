@@ -76,25 +76,64 @@ fun PrimeSearchPreference() {
             valueRange = 0f..8f,
             steps = 7,
         )
-        PrimeSearchResultPreferences.WebEngine.entries.forEach { engine ->
-            var enabled by remember(engine) {
-                mutableStateOf(engine in PrimeSearchResultPreferences.enabledWebEngines(context))
-            }
-            PreferenceTemplate(
-                title = { Text(engine.title) },
-                description = { Text("Afficher ce moteur dans les résultats Web") },
-                endWidget = {
-                    androidx.compose.material3.Switch(
-                        checked = enabled,
-                        onCheckedChange = {
-                            enabled = it
-                            PrimeSearchResultPreferences.setWebEngineEnabled(context, engine, it)
-                        },
-                    )
+        var showSources by remember { mutableStateOf(false) }
+        PreferenceTemplate(
+            title = { Text("Sources de recherche") },
+            description = { Text("Choisir les moteurs, leur ordre et les icônes affichées sous « Recherche sur : »") },
+            onClick = { showSources = true },
+        )
+        if (showSources) {
+            var engines by remember { mutableStateOf(PrimeSearchResultPreferences.webEngineOrder(context)) }
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { showSources = false },
+                title = { Text("Sources de recherche Web") },
+                text = {
+                    androidx.compose.foundation.lazy.LazyColumn {
+                        items(engines.size) { index ->
+                            val engine = engines[index]
+                            var enabled by remember(engine) {
+                                mutableStateOf(engine in PrimeSearchResultPreferences.enabledWebEngines(context))
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                            ) {
+                                androidx.compose.material3.Switch(
+                                    checked = enabled,
+                                    onCheckedChange = {
+                                        enabled = it
+                                        PrimeSearchResultPreferences.setWebEngineEnabled(context, engine, it)
+                                    },
+                                )
+                                Text(engine.title, modifier = Modifier.weight(1f).padding(start = 8.dp))
+                                IconButton(onClick = {
+                                    if (index > 0) {
+                                        val reordered = engines.toMutableList()
+                                        java.util.Collections.swap(reordered, index, index - 1)
+                                        engines = reordered
+                                        PrimeSearchResultPreferences.saveWebEngineOrder(context, reordered)
+                                    }
+                                }, enabled = index > 0) {
+                                    Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Monter")
+                                }
+                                IconButton(onClick = {
+                                    if (index < engines.lastIndex) {
+                                        val reordered = engines.toMutableList()
+                                        java.util.Collections.swap(reordered, index, index + 1)
+                                        engines = reordered
+                                        PrimeSearchResultPreferences.saveWebEngineOrder(context, reordered)
+                                    }
+                                }, enabled = index < engines.lastIndex) {
+                                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Descendre")
+                                }
+                            }
+                        }
+                    }
                 },
-                onClick = {
-                    enabled = !enabled
-                    PrimeSearchResultPreferences.setWebEngineEnabled(context, engine, enabled)
+                confirmButton = {
+                    androidx.compose.material3.TextButton(onClick = { showSources = false }) {
+                        Text("Terminé")
+                    }
                 },
             )
         }
