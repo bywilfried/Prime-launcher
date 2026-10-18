@@ -19,7 +19,7 @@ object PrimeSearchResultPreferences {
         WEB_SHORTCUTS("web_shortcuts", "Recherche sur :", "Raccourcis vers les moteurs de recherche"),
         CONTACTS("contacts", "Contacts", "Contacts et autres"),
         CALENDAR("calendar", "Événements de l’agenda", "Événements du calendrier"),
-        REMINDERS("reminders", "Rappels", "Rappels disponibles"),
+        REMINDERS("reminders", "Tâches", "Tâches locales et synchronisées"),
         NOTIFICATIONS("notifications", "Notifications", "Notifications des applications"),
         NOTES("notes", "Notes", "Notes disponibles"),
         FILES("files", "Fichiers", "Contenu multimédia et fichiers"),
