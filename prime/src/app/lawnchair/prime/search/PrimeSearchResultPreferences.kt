@@ -24,7 +24,6 @@ object PrimeSearchResultPreferences {
         NOTES("notes", "Notes", "Notes disponibles"),
         FILES("files", "Fichiers", "Contenu multimédia et fichiers"),
         SETTINGS("settings", "Paramètres de l’appareil", "Réglages du système"),
-        APP_SETTINGS("app_settings", "Paramètres de l’app", "Réglages de Prime Launcher"),
         HISTORY("history", "Historique des recherches", "Recherches récentes"),
         CALCULATOR("calculator", "Calculatrice", "Résultats de calcul"),
     }
