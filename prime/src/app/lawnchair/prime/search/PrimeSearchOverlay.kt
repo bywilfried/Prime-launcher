@@ -678,6 +678,31 @@ object PrimeSearchOverlay {
                         parent.removeView(view)
                         return@forEach
                     }
+                    if (item.searchTarget.resultType == SearchTargetCompat.RESULT_TYPE_FILE_TILE) {
+                        fun fileLabels(node: View): List<String> =
+                            when (node) {
+                                is TextView -> listOf(node.text?.toString().orEmpty())
+                                is ViewGroup -> (0 until node.childCount).flatMap { fileLabels(node.getChildAt(it)) }
+                                else -> emptyList()
+                            }
+                        val filename = fileLabels(view).firstOrNull { it.contains('.') }
+                            ?: fileLabels(view).firstOrNull().orEmpty()
+                        if (!PrimeSearchResultPreferences.fileAllowed(launcher, filename)) {
+                            parent.removeView(view)
+                            return@forEach
+                        }
+                        if (!PrimeSearchResultPreferences.fileOptionEnabled(
+                                launcher, PrimeSearchResultPreferences.FileOption.PREVIEW)) {
+                            fun hidePreview(node: View) {
+                                if (node is android.widget.ImageView) {
+                                    node.setImageDrawable(null)
+                                } else if (node is ViewGroup) {
+                                    for (i in 0 until node.childCount) hidePreview(node.getChildAt(i))
+                                }
+                            }
+                            hidePreview(view)
+                        }
+                    }
                     // Drawer search result views may apply their own text colors
                     // during bind. Override them after binding for Prime Search.
                     fun applyPrimeTextColors(node: View) {
