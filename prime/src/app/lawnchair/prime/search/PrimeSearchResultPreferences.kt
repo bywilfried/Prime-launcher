@@ -13,12 +13,17 @@ object PrimeSearchResultPreferences {
     private const val STORE = "prime_search_result_preferences"
 
     enum class Category(val key: String, val title: String, val description: String) {
-        APPS("apps", "Applis et raccourcis", "Applications et raccourcis"),
+        APPS("apps", "Applications", "Applications installées"),
+        APP_SHORTCUTS("app_shortcuts", "Raccourcis d’app", "Raccourcis des applications"),
         WEB("web", "Suggestions Web", "Suggestions Internet pendant la saisie"),
         WEB_SHORTCUTS("web_shortcuts", "Recherche sur :", "Raccourcis vers les moteurs de recherche"),
-        CONTACTS("contacts", "Personnes", "Contacts et autres"),
+        CONTACTS("contacts", "Contacts", "Contacts et autres"),
+        CALENDAR("calendar", "Événements de l’agenda", "Événements du calendrier"),
+        REMINDERS("reminders", "Rappels", "Rappels disponibles"),
+        NOTES("notes", "Notes", "Notes disponibles"),
         FILES("files", "Fichiers", "Contenu multimédia et fichiers"),
-        SETTINGS("settings", "Paramètres Android", "Réglages du système"),
+        SETTINGS("settings", "Paramètres de l’appareil", "Réglages du système"),
+        APP_SETTINGS("app_settings", "Paramètres de l’app", "Réglages de Prime Launcher"),
         HISTORY("history", "Historique des recherches", "Recherches récentes"),
         CALCULATOR("calculator", "Calculatrice", "Résultats de calcul"),
     }
@@ -155,11 +160,12 @@ object PrimeSearchResultPreferences {
     private fun category(item: SearchAdapterItem): Category? {
         val target = item.searchTarget
         return when (target.resultType) {
-            SearchTargetCompat.RESULT_TYPE_APPLICATION,
-            SearchTargetCompat.RESULT_TYPE_SHORTCUT -> Category.APPS
+            SearchTargetCompat.RESULT_TYPE_APPLICATION -> Category.APPS
+            SearchTargetCompat.RESULT_TYPE_SHORTCUT -> Category.APP_SHORTCUTS
             SearchTargetCompat.RESULT_TYPE_CONTACT_TILE -> Category.CONTACTS
             SearchTargetCompat.RESULT_TYPE_FILE_TILE -> Category.FILES
-            SearchTargetCompat.RESULT_TYPE_SETTING_TILE -> Category.SETTINGS
+            SearchTargetCompat.RESULT_TYPE_SETTING_TILE ->
+                Category.SETTINGS
             SearchTargetCompat.RESULT_TYPE_CALCULATOR -> Category.CALCULATOR
             SearchTargetCompat.RESULT_TYPE_SUGGESTIONS -> {
                 if (target.packageName == app.lawnchair.search.adapter.HISTORY) Category.HISTORY
