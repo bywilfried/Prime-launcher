@@ -33,12 +33,27 @@ object PrimeSearchResultPreferences {
         YOUTUBE("YouTube", "https://www.youtube.com/results?search_query="),
         WIKIPEDIA("Wikipédia", "https://fr.wikipedia.org/w/index.php?search="),
         REDDIT("Reddit", "https://www.reddit.com/search/?q="),
+        SPOTIFY("Spotify", "https://open.spotify.com/search/"),
+        GITHUB("GitHub", "https://github.com/search?q="),
+        AMAZON("Amazon", "https://www.amazon.fr/s?k="),
+    }
+
+    fun webEngineOrder(context: Context): List<WebEngine> {
+        val saved = prefs(context).getString("web_engine_order", null)
+            ?.split(",")?.mapNotNull { name -> WebEngine.entries.firstOrNull { it.name == name } }
+            .orEmpty()
+        return (saved + WebEngine.entries).distinct()
+    }
+
+    fun saveWebEngineOrder(context: Context, engines: List<WebEngine>) {
+        prefs(context).edit().putString("web_engine_order",
+            (engines + WebEngine.entries).distinct().joinToString(",") { it.name }).apply()
     }
 
     fun enabledWebEngines(context: Context): List<WebEngine> {
         val selected = prefs(context).getStringSet("web_engines", setOf(WebEngine.GOOGLE.name))
             .orEmpty()
-        return WebEngine.entries.filter { it.name in selected }
+        return webEngineOrder(context).filter { it.name in selected }
     }
 
     fun setWebEngineEnabled(context: Context, engine: WebEngine, enabled: Boolean) {
