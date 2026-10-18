@@ -58,8 +58,46 @@ fun PrimeSearchPreference() {
     PreferenceGroup(heading = "Recherche") {
         PreferenceTemplate(
             title = { Text("Moteur et catégories de résultats") },
-            description = { Text("Prime Search utilise les mêmes sources et réglages que la recherche du tiroir.") },
+            description = { Text("Les moteurs et suggestions Web de Prime Search sont configurés ci-dessous, indépendamment du tiroir.") },
         )
+    }
+    PreferenceGroup(heading = "Suggestions et moteurs Web") {
+        var suggestionCount by remember { mutableStateOf(PrimeSearchResultPreferences.webSuggestionCount(context)) }
+        PreferenceTemplate(
+            title = { Text("Suggestions Web") },
+            description = { Text("$suggestionCount suggestion(s) pendant la saisie (0 pour désactiver)") },
+        )
+        androidx.compose.material3.Slider(
+            value = suggestionCount.toFloat(),
+            onValueChange = {
+                suggestionCount = it.roundToInt().coerceIn(0, 8)
+                PrimeSearchResultPreferences.setWebSuggestionCount(context, suggestionCount)
+            },
+            valueRange = 0f..8f,
+            steps = 7,
+        )
+        PrimeSearchResultPreferences.WebEngine.entries.forEach { engine ->
+            var enabled by remember(engine) {
+                mutableStateOf(engine in PrimeSearchResultPreferences.enabledWebEngines(context))
+            }
+            PreferenceTemplate(
+                title = { Text(engine.title) },
+                description = { Text("Afficher ce moteur dans les résultats Web") },
+                endWidget = {
+                    androidx.compose.material3.Switch(
+                        checked = enabled,
+                        onCheckedChange = {
+                            enabled = it
+                            PrimeSearchResultPreferences.setWebEngineEnabled(context, engine, it)
+                        },
+                    )
+                },
+                onClick = {
+                    enabled = !enabled
+                    PrimeSearchResultPreferences.setWebEngineEnabled(context, engine, enabled)
+                },
+            )
+        }
     }
     PreferenceGroup(heading = "Fenêtre Prime Search") {
         var floating by remember { mutableStateOf(PrimeSearchResultPreferences.floatingWindow(context)) }
