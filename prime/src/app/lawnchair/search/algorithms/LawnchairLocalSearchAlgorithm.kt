@@ -100,7 +100,7 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                         val surface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
                         allResults.filter { result ->
                             val category = when (result) {
-                                is SearchResult.App -> prefs.Category.APPS
+                                is SearchResult.App -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS
                                 is SearchResult.Shortcut -> prefs.Category.APP_SHORTCUTS
                                 is SearchResult.File -> prefs.Category.FILES
                                 is SearchResult.Contact -> prefs.Category.CONTACTS
