@@ -7,6 +7,12 @@ import android.provider.CalendarContract
 /** Search calendar events and their reminders from the Android calendar provider. */
 object PrimeCalendarSearch {
     data class Result(val title: String, val detail: String, val uri: Uri)
+    fun futureOnly(context: Context): Boolean =
+        context.getSharedPreferences("prime_calendar_search", Context.MODE_PRIVATE).getBoolean("future_only", true)
+    fun setFutureOnly(context: Context, enabled: Boolean) {
+        context.getSharedPreferences("prime_calendar_search", Context.MODE_PRIVATE)
+            .edit().putBoolean("future_only", enabled).apply()
+    }
     fun events(context: Context, query: String): List<Result> {
         if (query.isBlank() || !PrimeSearchPermissions.granted(context, PrimeSearchResultPreferences.Category.CALENDAR)) return emptyList()
         val results = mutableListOf<Result>()
@@ -16,8 +22,10 @@ object PrimeCalendarSearch {
         runCatching {
             context.contentResolver.query(
                 CalendarContract.Events.CONTENT_URI, columns,
-                "${CalendarContract.Events.TITLE} LIKE ? OR ${CalendarContract.Events.DESCRIPTION} LIKE ? OR ${CalendarContract.Events.EVENT_LOCATION} LIKE ?",
-                Array(3) { "%${query.trim()}%" },
+                "(${CalendarContract.Events.TITLE} LIKE ? OR ${CalendarContract.Events.DESCRIPTION} LIKE ? OR ${CalendarContract.Events.EVENT_LOCATION} LIKE ?)" +
+                    if (futureOnly(context)) " AND ${CalendarContract.Events.DTSTART} >= ?" else "",
+                (Array(3) { "%${query.trim()}%" }.toList() +
+                    if (futureOnly(context)) listOf(System.currentTimeMillis().toString()) else emptyList()).toTypedArray(),
                 "${CalendarContract.Events.DTSTART} DESC"
             )?.use { cursor ->
                 while (cursor.moveToNext() && results.size < 25) {
