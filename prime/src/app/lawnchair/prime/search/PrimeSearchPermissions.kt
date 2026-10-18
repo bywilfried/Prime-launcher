@@ -20,7 +20,7 @@ object PrimeSearchPermissions {
 
     fun runtimePermissions(category: PrimeSearchResultPreferences.Category): Array<String> = when (category) {
         PrimeSearchResultPreferences.Category.CONTACTS -> arrayOf(Manifest.permission.READ_CONTACTS)
-        PrimeSearchResultPreferences.Category.CALENDAR,
+        PrimeSearchResultPreferences.Category.CALENDAR -> arrayOf(Manifest.permission.READ_CALENDAR)
         PrimeSearchResultPreferences.Category.REMINDERS -> arrayOf("org.tasks.permission.READ_TASKS")
         PrimeSearchResultPreferences.Category.FILES -> if (Build.VERSION.SDK_INT >= 33) {
             arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO, Manifest.permission.READ_MEDIA_AUDIO)
