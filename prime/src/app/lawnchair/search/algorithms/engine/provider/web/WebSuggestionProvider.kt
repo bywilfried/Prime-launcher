@@ -53,5 +53,24 @@ object WebSuggestionProvider : SearchProvider {
             }
     }
 
+    fun searchForDrawer(context: Context, query: String): Flow<List<SearchResult>> {
+        val settings = app.lawnchair.prime.search.PrimeSearchResultPreferences
+        val surface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
+        val limit = settings.webSuggestionCount(context, surface)
+        if (query.isBlank() || limit == 0) return flow { emit(emptyList()) }
+        val selected = settings.suggestionProvider(context, surface)
+        val provider = when (selected) {
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.SuggestionProvider.GOOGLE -> WebSearchProvider.GOOGLE
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.SuggestionProvider.DUCKDUCKGO -> WebSearchProvider.DUCKDUCKGO
+        }
+        val timeout = PreferenceManager2.getInstance(context).maxWebSuggestionDelay.firstCached()
+        return provider.getSuggestions(query)
+            .timeout(timeout.milliseconds)
+            .catch { emit(emptyList()) }
+            .map { suggestions ->
+                suggestions.take(limit).map { SearchResult.WebSuggestion(it, provider.id) }
+            }
+    }
+
     const val TAG: String = "WebSuggestionProvider"
 }
