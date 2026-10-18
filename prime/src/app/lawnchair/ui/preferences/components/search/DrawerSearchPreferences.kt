@@ -87,37 +87,7 @@ fun DrawerSearchPreference(
 
         DrawerAdvancedSearchPreferences()
 
-        val searchAlgorithm = preferenceManager2().searchAlgorithm.getAdapter().state.value
-        val navController = LocalNavController.current
-        PreferenceGroup(heading = stringResource(id = R.string.show_search_result_types)) {
-            if (searchAlgorithm != LawnchairSearchAlgorithm.ASI_SEARCH) {
-                val canDisable = searchAlgorithm != LawnchairSearchAlgorithm.APP_SEARCH
-                val adapter = prefs.searchResultApps.getAdapter()
 
-                TwoTargetSwitchPreference(
-                    checked = if (canDisable) adapter.state.value else true,
-                    onCheckedChange = if (canDisable) adapter::onChange else ({}),
-                    enabled = canDisable,
-                    label = stringResource(R.string.search_pref_result_apps_and_shortcuts_title),
-                    onClick = {
-                        navController.navigate(SearchProviderPreference(SearchProviderId.APPS))
-                    },
-                )
-            }
-            when (searchAlgorithm) {
-                LawnchairSearchAlgorithm.LOCAL_SEARCH -> {
-                    LocalSearchSettings(
-                        prefs = prefs,
-                        prefs2 = prefs2,
-                        context = context,
-                    )
-                }
-
-                LawnchairSearchAlgorithm.ASI_SEARCH -> {
-                    ASISearchSettings(prefs)
-                }
-            }
-        }
     }
 }
 
@@ -337,54 +307,11 @@ private fun DrawerAdvancedSearchPreferences() {
                 },
             )
         }
-        val drawerCategories = listOf(
-            PrimeSearchResultPreferences.Category.APPS,
-            PrimeSearchResultPreferences.Category.APP_SHORTCUTS,
-            PrimeSearchResultPreferences.Category.CONTACTS,
-            PrimeSearchResultPreferences.Category.CALENDAR,
-            PrimeSearchResultPreferences.Category.REMINDERS,
-            PrimeSearchResultPreferences.Category.NOTIFICATIONS,
-            PrimeSearchResultPreferences.Category.FILES,
-            PrimeSearchResultPreferences.Category.SETTINGS,
-            PrimeSearchResultPreferences.Category.WEB,
-            PrimeSearchResultPreferences.Category.HISTORY,
-            PrimeSearchResultPreferences.Category.CALCULATOR,
-        )
-        var drawerOrder by remember { mutableStateOf(PrimeSearchResultPreferences.order(context, drawerSurface)) }
-        Text("Ordre des catégories du tiroir")
-        drawerOrder.filter { it in drawerCategories }.forEach { category ->
-            val index = drawerOrder.indexOf(category)
-            PreferenceTemplate(
-                title = { Text(category.title) },
-                endWidget = {
-                    Row {
-                        IconButton(
-                            onClick = {
-                                if (index > 0) {
-                                    val updated = drawerOrder.toMutableList()
-                                    updated.add(index - 1, updated.removeAt(index))
-                                    drawerOrder = updated
-                                    PrimeSearchResultPreferences.saveOrder(context, updated, drawerSurface)
-                                }
-                            },
-                            enabled = index > 0,
-                        ) { Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Monter") }
-                        IconButton(
-                            onClick = {
-                                if (index < drawerOrder.lastIndex) {
-                                    val updated = drawerOrder.toMutableList()
-                                    updated.add(index + 1, updated.removeAt(index))
-                                    drawerOrder = updated
-                                    PrimeSearchResultPreferences.saveOrder(context, updated, drawerSurface)
-                                }
-                            },
-                            enabled = index < drawerOrder.lastIndex,
-                        ) { Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Descendre") }
-                    }
-                },
-            )
-        }
-        drawerCategories.forEach { category ->
+        val drawerCategories = PrimeSearchResultPreferences.order(context, drawerSurface)
+        var drawerOrder by remember { mutableStateOf(drawerCategories) }
+        var categorySettings by remember { mutableStateOf<PrimeSearchResultPreferences.Category?>(null) }
+        Text("Afficher dans les résultats de recherche")
+        drawerOrder.forEachIndexed { index, category ->
             val needsPermission = PrimeSearchPermissions.required(category) &&
                 !PrimeSearchPermissions.granted(context, category)
             val enabled = PrimeSearchResultPreferences.enabled(context, category, drawerSurface)
@@ -394,25 +321,139 @@ private fun DrawerAdvancedSearchPreferences() {
                     Text(if (needsPermission) PrimeSearchPermissions.explanation(category) else category.description)
                 },
                 endWidget = {
-                    androidx.compose.material3.Switch(
-                        checked = enabled,
-                        onCheckedChange = { value ->
-                            if (value && needsPermission) {
-                                requestCategory(category, drawerSurface)
-                            } else {
-                                PrimeSearchResultPreferences.setEnabled(context, category, value, drawerSurface)
-                                permissionRefresh++
+                    Row {
+                        IconButton(onClick = { categorySettings = category }) {
+                            Icon(androidx.compose.material.icons.filled.Settings, contentDescription = "Paramètres de ${category.title}")
+                        }
+                        IconButton(onClick = {
+                            if (index > 0) {
+                                val updated = drawerOrder.toMutableList()
+                                updated.add(index - 1, updated.removeAt(index))
+                                drawerOrder = updated
+                                PrimeSearchResultPreferences.saveOrder(context, updated, drawerSurface)
                             }
-                        },
-                    )
+                        }, enabled = index > 0) {
+                            Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Monter")
+                        }
+                        IconButton(onClick = {
+                            if (index < drawerOrder.lastIndex) {
+                                val updated = drawerOrder.toMutableList()
+                                updated.add(index + 1, updated.removeAt(index))
+                                drawerOrder = updated
+                                PrimeSearchResultPreferences.saveOrder(context, updated, drawerSurface)
+                            }
+                        }, enabled = index < drawerOrder.lastIndex) {
+                            Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Descendre")
+                        }
+                        androidx.compose.material3.Switch(
+                            checked = enabled,
+                            onCheckedChange = { value ->
+                                if (value && needsPermission) requestCategory(category, drawerSurface)
+                                else {
+                                    PrimeSearchResultPreferences.setEnabled(context, category, value, drawerSurface)
+                                    permissionRefresh++
+                                }
+                            },
+                        )
+                    }
                 },
                 onClick = {
-                    if (needsPermission) {
-                        requestCategory(category, drawerSurface)
-                    } else {
+                    if (needsPermission) requestCategory(category, drawerSurface)
+                    else {
                         PrimeSearchResultPreferences.setEnabled(context, category, !enabled, drawerSurface)
                         permissionRefresh++
                     }
+                },
+            )
+        }
+        categorySettings?.let { selected ->
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { categorySettings = null },
+                title = { Text(selected.title) },
+                text = {
+                    androidx.compose.foundation.layout.Column {
+                        Text(selected.description)
+                        if (PrimeSearchPermissions.required(selected) && !PrimeSearchPermissions.granted(context, selected)) {
+                            Text(PrimeSearchPermissions.explanation(selected))
+                            androidx.compose.material3.TextButton(onClick = { requestCategory(selected, drawerSurface) }) {
+                                Text("Autoriser l'accès")
+                            }
+                        }
+                        if (selected == PrimeSearchResultPreferences.Category.FILES) {
+                            var limit by remember { mutableStateOf(PrimeSearchResultPreferences.maxFileResults(context, drawerSurface)) }
+                            Text("Nombre maximal de fichiers : $limit")
+                            androidx.compose.material3.Slider(
+                                value = limit.toFloat(),
+                                onValueChange = {
+                                    limit = it.roundToInt().coerceIn(3, 100)
+                                    PrimeSearchResultPreferences.setMaxFileResults(context, limit, drawerSurface)
+                                },
+                                valueRange = 3f..100f,
+                            )
+                            PrimeSearchResultPreferences.FileOption.entries.forEach { option ->
+                                var active by remember(option) { mutableStateOf(PrimeSearchResultPreferences.fileOptionEnabled(context, option, drawerSurface)) }
+                                Row {
+                                    Text(option.label, modifier = Modifier.weight(1f))
+                                    androidx.compose.material3.Switch(checked = active, onCheckedChange = {
+                                        active = it
+                                        PrimeSearchResultPreferences.setFileOptionEnabled(context, option, it, drawerSurface)
+                                    })
+                                }
+                            }
+                        }
+                        if (selected == PrimeSearchResultPreferences.Category.WEB) {
+                            var count by remember { mutableStateOf(PrimeSearchResultPreferences.webSuggestionCount(context, drawerSurface)) }
+                            Text("Nombre de suggestions : $count")
+                            androidx.compose.material3.Slider(value = count.toFloat(), onValueChange = {
+                                count = it.roundToInt().coerceIn(0, 8)
+                                PrimeSearchResultPreferences.setWebSuggestionCount(context, count, drawerSurface)
+                            }, valueRange = 0f..8f)
+                            PrimeSearchResultPreferences.SuggestionProvider.entries.forEach { provider ->
+                                var current by remember { mutableStateOf(PrimeSearchResultPreferences.suggestionProvider(context, drawerSurface)) }
+                                Row {
+                                    androidx.compose.material3.RadioButton(selected = current == provider, onClick = {
+                                        current = provider
+                                        PrimeSearchResultPreferences.setSuggestionProvider(context, provider, drawerSurface)
+                                    })
+                                    Text(provider.title)
+                                }
+                            }
+                        }
+                        if (selected == PrimeSearchResultPreferences.Category.WEB_SHORTCUTS) {
+                            PrimeSearchResultPreferences.WebEngine.entries.forEach { engine ->
+                                var active by remember(engine) { mutableStateOf(engine in PrimeSearchResultPreferences.enabledWebEngines(context, drawerSurface)) }
+                                Row {
+                                    Text(engine.title, modifier = Modifier.weight(1f))
+                                    androidx.compose.material3.Switch(checked = active, onCheckedChange = {
+                                        active = it
+                                        PrimeSearchResultPreferences.setWebEngineEnabled(context, engine, it, drawerSurface)
+                                    })
+                                }
+                            }
+                        }
+                        if (selected == PrimeSearchResultPreferences.Category.CALENDAR || selected == PrimeSearchResultPreferences.Category.CONTACTS) {
+                            val kind = if (selected == PrimeSearchResultPreferences.Category.CALENDAR) "calendars" else "contacts"
+                            val sources = remember(selected, permissionRefresh) {
+                                if (kind == "calendars") app.lawnchair.prime.search.PrimeSourceSelection.calendars(context)
+                                else app.lawnchair.prime.search.PrimeSourceSelection.contactAccounts(context)
+                            }
+                            sources.forEach { source ->
+                                var active by remember(source.id) {
+                                    mutableStateOf(app.lawnchair.prime.search.PrimeSourceSelection.isSelected(context, kind, source.id, drawerSurface))
+                                }
+                                Row {
+                                    Text(source.label, modifier = Modifier.weight(1f))
+                                    androidx.compose.material3.Switch(checked = active, onCheckedChange = {
+                                        active = it
+                                        app.lawnchair.prime.search.PrimeSourceSelection.setSelected(context, kind, source.id, it, sources, drawerSurface)
+                                    })
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    androidx.compose.material3.TextButton(onClick = { categorySettings = null }) { Text("Terminé") }
                 },
             )
         }
