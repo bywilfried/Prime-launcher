@@ -11,6 +11,42 @@ import com.android.app.search.LayoutType
  */
 object PrimeSearchResultPreferences {
     private const val STORE = "prime_search_result_preferences"
+    /** Drawer and overlay preferences are deliberately isolated. */
+    enum class Surface(val store: String) {
+        PRIME_SEARCH(STORE),
+        DRAWER("prime_drawer_search_result_preferences"),
+    }
+
+    private fun surfacePrefs(context: Context, surface: Surface) =
+        context.getSharedPreferences(surface.store, Context.MODE_PRIVATE)
+
+    fun enabled(context: Context, category: Category, surface: Surface): Boolean =
+        surfacePrefs(context, surface).getBoolean(category.key, true) &&
+            (!PrimeSearchPermissions.required(category) || PrimeSearchPermissions.granted(context, category))
+
+    fun setEnabled(context: Context, category: Category, enabled: Boolean, surface: Surface) {
+        surfacePrefs(context, surface).edit().putBoolean(category.key, enabled).apply()
+    }
+
+    fun order(context: Context, surface: Surface): List<Category> {
+        val saved = surfacePrefs(context, surface).getString("category_order", null)
+            ?.split(",")?.mapNotNull { key -> Category.entries.firstOrNull { it.key == key } }.orEmpty()
+        return (saved + Category.entries).distinct()
+    }
+
+    fun saveOrder(context: Context, categories: List<Category>, surface: Surface) {
+        surfacePrefs(context, surface).edit().putString(
+            "category_order", (categories + Category.entries).distinct().joinToString(",") { it.key }
+        ).apply()
+    }
+
+    fun maxFileResults(context: Context, surface: Surface): Int =
+        surfacePrefs(context, surface).getInt("prime_max_file_results", 5).coerceIn(3, 100)
+
+    fun setMaxFileResults(context: Context, value: Int, surface: Surface) {
+        surfacePrefs(context, surface).edit().putInt("prime_max_file_results", value.coerceIn(3, 100)).apply()
+    }
+
 
     enum class Category(val key: String, val title: String, val description: String) {
         APPS("apps", "Applications", "Applications installées"),
