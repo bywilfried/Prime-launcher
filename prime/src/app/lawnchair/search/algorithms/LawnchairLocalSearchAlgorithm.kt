@@ -100,7 +100,7 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                         val preferences = app.lawnchair.prime.search.PrimeSearchResultPreferences
                         val surface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
                         val entries = mutableListOf<SearchResult.PrimeEntry>()
-                        if (preferences.enabled(context, preferences.Category.CALENDAR, surface)) {
+                        if (preferences.enabled(context, app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALENDAR, surface)) {
                             runCatching { app.lawnchair.prime.search.PrimeCalendarSearch.events(context, query) }
                                 .getOrDefault(emptyList()).forEach {
                                     entries.add(SearchResult.PrimeEntry("Agenda", it.title, it.detail, it.uri))
