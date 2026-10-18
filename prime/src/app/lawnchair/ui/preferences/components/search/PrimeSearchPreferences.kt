@@ -303,7 +303,7 @@ fun PrimeSearchPreference() {
                                 else -> categorySettings = category
                             }
                         }) {
-                            Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Paramètres de ${category.title}")
+                            Icon(Icons.Default.Settings, contentDescription = "Paramètres de ${category.title}")
                         }
                         Icon(
                             Icons.Default.DragHandle,
