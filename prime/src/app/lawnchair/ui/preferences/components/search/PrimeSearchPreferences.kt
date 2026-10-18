@@ -414,6 +414,18 @@ fun PrimeSearchPreference() {
                     Column {
                         Text(selected.description)
                         if (selected == PrimeSearchResultPreferences.Category.FILES) {
+                            var maxFiles by remember {
+                                mutableStateOf(PrimeSearchResultPreferences.maxFileResults(context))
+                            }
+                            Text("Nombre maximal de fichiers : $maxFiles")
+                            androidx.compose.material3.Slider(
+                                value = maxFiles.toFloat(),
+                                onValueChange = {
+                                    maxFiles = it.roundToInt().coerceIn(3, 100)
+                                    PrimeSearchResultPreferences.setMaxFileResults(context, maxFiles)
+                                },
+                                valueRange = 3f..100f,
+                            )
                             PrimeSearchResultPreferences.FileOption.entries.forEach { option ->
                                 var enabled by remember(option) {
                                     mutableStateOf(PrimeSearchResultPreferences.fileOptionEnabled(context, option))
