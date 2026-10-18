@@ -13,7 +13,10 @@ object PrimeCalendarSearch {
         context.getSharedPreferences("prime_calendar_search", Context.MODE_PRIVATE)
             .edit().putBoolean("future_only", enabled).apply()
     }
-    fun events(context: Context, query: String): List<Result> {
+    fun events(context: Context, query: String): List<Result> =
+        events(context, query, PrimeSearchResultPreferences.Surface.PRIME_SEARCH)
+
+    fun events(context: Context, query: String, surface: PrimeSearchResultPreferences.Surface): List<Result> {
         if (query.isBlank() || !PrimeSearchPermissions.granted(context, PrimeSearchResultPreferences.Category.CALENDAR)) return emptyList()
         val results = mutableListOf<Result>()
         val columns = arrayOf(CalendarContract.Events._ID, CalendarContract.Events.TITLE,
@@ -30,7 +33,7 @@ object PrimeCalendarSearch {
             )?.use { cursor ->
                 while (cursor.moveToNext() && results.size < 25) {
                     val id = cursor.getLong(0)
-                    if (!PrimeSourceSelection.isSelected(context, "calendars", cursor.getLong(5).toString())) continue
+                    if (!PrimeSourceSelection.isSelected(context, "calendars", cursor.getLong(5).toString(), surface)) continue
                     val title = cursor.getString(1).orEmpty()
                     val description = cursor.getString(2).orEmpty()
                     val start = cursor.getLong(3)
