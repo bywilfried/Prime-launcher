@@ -413,6 +413,24 @@ fun PrimeSearchPreference() {
                 text = {
                     Column {
                         Text(selected.description)
+                        if (selected == PrimeSearchResultPreferences.Category.FILES) {
+                            PrimeSearchResultPreferences.FileOption.entries.forEach { option ->
+                                var enabled by remember(option) {
+                                    mutableStateOf(PrimeSearchResultPreferences.fileOptionEnabled(context, option))
+                                }
+                                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                    Text(option.label, modifier = Modifier.weight(1f))
+                                    androidx.compose.material3.Switch(
+                                        checked = enabled,
+                                        onCheckedChange = {
+                                            enabled = it
+                                            PrimeSearchResultPreferences.setFileOptionEnabled(context, option, it)
+                                        },
+                                    )
+                                }
+                            }
+                            Text("Les fichiers accessibles dépendent des autorisations Android.")
+                        }
                         if (selected == PrimeSearchResultPreferences.Category.CALENDAR) {
                             var futureOnly by remember { mutableStateOf(app.lawnchair.prime.search.PrimeCalendarSearch.futureOnly(context)) }
                             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
