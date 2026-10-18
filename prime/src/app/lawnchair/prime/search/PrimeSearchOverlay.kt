@@ -309,7 +309,8 @@ object PrimeSearchOverlay {
             }
             zeroState.requestLayout()
         }
-        renderZeroState()
+        // Populate the zero-state after the window has been attached so the
+        // first frame and the keyboard are not blocked by building app views.
         val webHandler = Handler(Looper.getMainLooper())
         var webRequestSerial = 0
         var currentSuggestions = emptyList<String>()
@@ -768,6 +769,7 @@ object PrimeSearchOverlay {
             override fun afterTextChanged(s: Editable?) = Unit
         })
         activeDialog = dialog
+        input.requestFocus()
         dialog.show()
         dialog.window?.apply {
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
@@ -846,14 +848,15 @@ object PrimeSearchOverlay {
                 }
             }
         }.start()
-        container.translationY = -120 * density
-        container.animate().translationY(0f).setDuration(220).start()
-        input.requestFocus()
+        // Let the IME start before creating the potentially expensive app grid.
+        // Avoid the extra 220 ms entrance translation: the dialog is usable immediately.
         input.post {
+            if (activeDialog !== dialog || !dialog.isShowing) return@post
             (launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
                 .showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
             zeroState.visibility = View.VISIBLE
             scroll.visibility = View.GONE
+            renderZeroState()
         }
     }
 
