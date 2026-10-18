@@ -28,6 +28,43 @@ object PrimeSearchResultPreferences {
         CALCULATOR("calculator", "Calculatrice", "Résultats de calcul"),
     }
 
+    enum class FileOption(val label: String, val defaultEnabled: Boolean) {
+        PREVIEW("Aperçu des fichiers", true),
+        FOLDERS("Dossiers", false),
+        DOCUMENTS("Documents", true),
+        IMAGES("Images", true),
+        VIDEOS("Vidéos", true),
+        AUDIO("Audio", true),
+        APKS("APKs", true),
+        OTHER("Autre", true),
+        SYSTEM("Fichiers système", false),
+    }
+
+    fun fileOptionEnabled(context: Context, option: FileOption): Boolean =
+        prefs(context).getBoolean("file_option_" + option.name, option.defaultEnabled)
+
+    fun setFileOptionEnabled(context: Context, option: FileOption, enabled: Boolean) {
+        prefs(context).edit().putBoolean("file_option_" + option.name, enabled).apply()
+    }
+
+    fun fileAllowed(context: Context, filename: String, mime: String? = null): Boolean {
+        val name = filename.trim()
+        if (name.isEmpty()) return true
+        val ext = name.substringAfterLast('.', "").lowercase(java.util.Locale.ROOT)
+        if (!fileOptionEnabled(context, FileOption.SYSTEM) &&
+            (name.startsWith(".") || name.endsWith(".bin", ignoreCase = true))) return false
+        val type = when {
+            mime == "vnd.android.document/directory" -> FileOption.FOLDERS
+            ext in setOf("pdf", "doc", "docx", "odt", "txt", "rtf", "xls", "xlsx", "ods", "ppt", "pptx", "epub", "csv") -> FileOption.DOCUMENTS
+            ext in setOf("jpg", "jpeg", "png", "gif", "webp", "bmp", "heic", "svg") -> FileOption.IMAGES
+            ext in setOf("mp4", "mkv", "avi", "mov", "webm", "3gp") -> FileOption.VIDEOS
+            ext in setOf("mp3", "flac", "wav", "ogg", "m4a", "aac", "opus") -> FileOption.AUDIO
+            ext == "apk" -> FileOption.APKS
+            else -> FileOption.OTHER
+        }
+        return fileOptionEnabled(context, type)
+    }
+
     enum class WebEngine(val title: String, val url: String) {
         GOOGLE("Google", "https://www.google.com/search?q="),
         DUCKDUCKGO("DuckDuckGo", "https://duckduckgo.com/?q="),
