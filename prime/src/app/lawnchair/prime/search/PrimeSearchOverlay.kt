@@ -365,12 +365,33 @@ object PrimeSearchOverlay {
                             contentDescription = "Rechercher sur ${engine.title}"
                             setOnClickListener {
                                 val url = engine.url + Uri.encode(query)
-                                try {
-                                    // Android App Links may open the corresponding app
-                                    // when installed; otherwise use the default browser.
-                                    launcher.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                                    dismiss()
-                                } catch (_: android.content.ActivityNotFoundException) { }
+                                val preferredPackages = when (engine) {
+                                    PrimeSearchResultPreferences.WebEngine.FDROID ->
+                                        listOf("org.fdroid.fdroid", "com.machiav3lli.fdroid")
+                                    PrimeSearchResultPreferences.WebEngine.GOOGLE_PLAY ->
+                                        listOf("com.android.vending")
+                                    else -> emptyList()
+                                }
+                                var opened = false
+                                // Try an installed compatible client first, then the browser.
+                                for (packageId in preferredPackages) {
+                                    try {
+                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                                            setPackage(packageId)
+                                        }
+                                        launcher.startActivity(intent)
+                                        opened = true
+                                        break
+                                    } catch (_: android.content.ActivityNotFoundException) { }
+                                      catch (_: SecurityException) { }
+                                }
+                                if (!opened) {
+                                    try {
+                                        launcher.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                                        opened = true
+                                    } catch (_: android.content.ActivityNotFoundException) { }
+                                }
+                                if (opened) dismiss()
                             }
                         }
                         val icon = ImageView(launcher).apply {
