@@ -185,16 +185,14 @@ data object ActionsSectionBuilder : SectionBuilder {
                 targets.add(it)
             }
         }
-        if (webSearch.isNotEmpty()) {
-            factory.createWebSearchActionTarget(
-                query = webSearch.first().query,
-                providerName = webSearch.first().providerName,
-                searchUrl = webSearch.first().searchUrl,
-                providerIconRes = webSearch.first().providerIconRes,
-                tintIcon = webSearch.first().tintIcon,
-            ).let {
-                targets.add(it)
-            }
+        webSearch.distinctBy { it.searchUrl }.forEach { action ->
+            targets.add(factory.createWebSearchActionTarget(
+                query = action.query,
+                providerName = action.providerName,
+                searchUrl = action.searchUrl,
+                providerIconRes = action.providerIconRes,
+                tintIcon = action.tintIcon,
+            ))
         }
         targets.add(factory.createHeaderTarget(SPACE))
         return targets
