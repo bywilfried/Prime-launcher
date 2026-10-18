@@ -66,27 +66,24 @@ fun PrimeSearchPreference() {
     var showSources by remember { mutableStateOf(false) }
     var showSuggestionSettings by remember { mutableStateOf(false) }
     PreferenceGroup(heading = "Suggestions et moteurs Web") {
-        var suggestionCount by remember { mutableStateOf(PrimeSearchResultPreferences.webSuggestionCount(context)) }
-        PreferenceTemplate(
-            title = { Text("Suggestions Web") },
-            description = { Text("$suggestionCount suggestion(s) pendant la saisie (0 pour désactiver)") },
-        )
-        androidx.compose.material3.Slider(
-            value = suggestionCount.toFloat(),
-            onValueChange = {
-                suggestionCount = it.roundToInt().coerceIn(0, 8)
-                PrimeSearchResultPreferences.setWebSuggestionCount(context, suggestionCount)
-            },
-            valueRange = 0f..8f,
-            steps = 7,
-        )
         if (showSuggestionSettings) {
             var provider by remember { mutableStateOf(PrimeSearchResultPreferences.suggestionProvider(context)) }
+            var suggestionCount by remember { mutableStateOf(PrimeSearchResultPreferences.webSuggestionCount(context)) }
             androidx.compose.material3.AlertDialog(
                 onDismissRequest = { showSuggestionSettings = false },
                 title = { Text("Suggestions Web") },
                 text = {
                     Column {
+                        Text("Nombre de suggestions : $suggestionCount")
+                        androidx.compose.material3.Slider(
+                            value = suggestionCount.toFloat(),
+                            onValueChange = {
+                                suggestionCount = it.roundToInt().coerceIn(0, 8)
+                                PrimeSearchResultPreferences.setWebSuggestionCount(context, suggestionCount)
+                            },
+                            valueRange = 0f..8f,
+                            steps = 7,
+                        )
                         Text("Fournisseur de suggestions")
                         PrimeSearchResultPreferences.SuggestionProvider.entries.forEach { option ->
                             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
@@ -416,6 +413,16 @@ fun PrimeSearchPreference() {
                 text = {
                     Column {
                         Text(selected.description)
+                        if (selected == PrimeSearchResultPreferences.Category.CALENDAR) {
+                            var futureOnly by remember { mutableStateOf(app.lawnchair.prime.search.PrimeCalendarSearch.futureOnly(context)) }
+                            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                Text("Événements futurs uniquement", modifier = Modifier.weight(1f))
+                                androidx.compose.material3.Switch(checked = futureOnly, onCheckedChange = {
+                                    futureOnly = it
+                                    app.lawnchair.prime.search.PrimeCalendarSearch.setFutureOnly(context, it)
+                                })
+                            }
+                        }
                         if (selected == PrimeSearchResultPreferences.Category.NOTIFICATIONS) {
                             var retention by remember {
                                 mutableStateOf(PrimeSearchResultPreferences.notificationRetention(context))
