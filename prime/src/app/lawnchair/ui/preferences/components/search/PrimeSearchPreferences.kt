@@ -263,6 +263,7 @@ fun PrimeSearchPreference() {
         PrimeSearchResultPreferences.saveOrder(context, reordered)
     }
     var categorySettings by remember { mutableStateOf<PrimeSearchResultPreferences.Category?>(null) }
+    var confirmNotificationClear by remember { mutableStateOf(false) }
     var activeDrag by remember { mutableStateOf<PrimeSearchResultPreferences.Category?>(null) }
     var dragOrigin by remember { mutableStateOf(0) }
     var dragOffset by remember { mutableStateOf(0f) }
@@ -364,11 +365,50 @@ fun PrimeSearchPreference() {
                 text = {
                     Column {
                         Text(selected.description)
-                        Text("Les réglages détaillés de cette catégorie seront ajoutés ici. Les résultats dépendent des fournisseurs disponibles et des autorisations Android.")
+                        if (selected == PrimeSearchResultPreferences.Category.NOTIFICATIONS) {
+                            var retention by remember {
+                                mutableStateOf(PrimeSearchResultPreferences.notificationRetention(context))
+                            }
+                            Text("Conserver les notifications pendant :")
+                            PrimeSearchResultPreferences.NotificationRetention.entries.forEach { option ->
+                                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                    androidx.compose.material3.RadioButton(
+                                        selected = retention == option,
+                                        onClick = {
+                                            retention = option
+                                            PrimeSearchResultPreferences.setNotificationRetention(context, option)
+                                        },
+                                    )
+                                    Text(option.label)
+                                }
+                            }
+                            TextButton(onClick = { confirmNotificationClear = true }) {
+                                Text("Effacer l'historique des notifications")
+                            }
+                            Text("L'enregistrement nécessite l'accès aux notifications Android.")
+                        } else {
+                            Text("Les réglages détaillés de cette catégorie seront ajoutés ici. Les résultats dépendent des fournisseurs disponibles et des autorisations Android.")
+                        }
                     }
                 },
                 confirmButton = {
                     TextButton(onClick = { categorySettings = null }) { Text("Fermer") }
+                },
+            )
+        }
+        if (confirmNotificationClear) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { confirmNotificationClear = false },
+                title = { Text("Effacer l'historique ?") },
+                text = { Text("Cette action supprimera les notifications enregistrées dans Prime Launcher.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        PrimeSearchResultPreferences.clearNotificationHistory(context)
+                        confirmNotificationClear = false
+                    }) { Text("Effacer") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { confirmNotificationClear = false }) { Text("Annuler") }
                 },
             )
         }
