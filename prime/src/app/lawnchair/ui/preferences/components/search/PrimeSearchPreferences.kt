@@ -235,6 +235,24 @@ fun PrimeSearchPreference() {
         )
     }
     PreferenceGroup(heading = "Affichage des applications") {
+        var twoLines by remember { mutableStateOf(PrimeSearchResultPreferences.twoLineAppLabels(context)) }
+        PreferenceTemplate(
+            title = { Text("Noms des applications sur deux lignes") },
+            description = { Text("Afficher jusqu'à deux lignes pour les noms longs dans Prime Search.") },
+            endWidget = {
+                androidx.compose.material3.Switch(
+                    checked = twoLines,
+                    onCheckedChange = {
+                        twoLines = it
+                        PrimeSearchResultPreferences.setTwoLineAppLabels(context, it)
+                    },
+                )
+            },
+            onClick = {
+                twoLines = !twoLines
+                PrimeSearchResultPreferences.setTwoLineAppLabels(context, twoLines)
+            },
+        )
         var appsPerRow by remember { mutableStateOf(PrimeSearchResultPreferences.appsPerRow(context)) }
         PreferenceTemplate(
             title = { Text("Applications par ligne") },
