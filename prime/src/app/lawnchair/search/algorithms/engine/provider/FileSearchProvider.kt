@@ -40,12 +40,12 @@ object FileSearchProvider : SearchProvider {
             if (app.lawnchair.prime.search.PrimeSearchResultPreferences.hasCustomFileLimit(context, surface))
                 app.lawnchair.prime.search.PrimeSearchResultPreferences.maxFileResults(context, surface)
             else null
-        })
+        }, true)
 
     fun searchForPrime(context: Context, query: String): Flow<List<SearchResult>> =
-        searchWithLimit(context, query, app.lawnchair.prime.search.PrimeSearchResultPreferences.maxFileResults(context))
+        searchWithLimit(context, query, app.lawnchair.prime.search.PrimeSearchResultPreferences.maxFileResults(context), false)
 
-    private fun searchWithLimit(context: Context, query: String, overrideLimit: Int?): Flow<List<SearchResult>> = flow {
+    private fun searchWithLimit(context: Context, query: String, overrideLimit: Int?, drawer: Boolean): Flow<List<SearchResult>> = flow {
         val prefs = PreferenceManager.getInstance(context)
 
         val searchAllFiles = prefs.searchResultAllFiles.get()
@@ -100,7 +100,14 @@ object FileSearchProvider : SearchProvider {
             }
         }
 
-        val uniqueResults = results.distinctBy { it.path }.take(maxResults)
+        val uniqueResults = results.distinctBy { it.path }.filter { file ->
+            if (!drawer) true else {
+                val settings = app.lawnchair.prime.search.PrimeSearchResultPreferences
+                val surface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
+                val filename = file.path.toString().substringAfterLast('/')
+                settings.fileAllowed(context, filename, null, surface)
+            }
+        }.take(maxResults)
         emit(uniqueResults.map { SearchResult.File(it) })
     }
 
