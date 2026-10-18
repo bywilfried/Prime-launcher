@@ -28,7 +28,12 @@ data object PrimeEntriesSectionBuilder : SectionBuilder {
         results: List<SearchResult>,
     ): List<SearchTargetCompat> {
         val entries = results.filterIsInstance<SearchResult.PrimeEntry>()
-        return entries.groupBy { it.category }.flatMap { (category, group) ->
+        val surface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
+        val order = app.lawnchair.prime.search.PrimeSearchResultPreferences.order(context, surface)
+        val categoryOrder = order.map { it.title }.withIndex().associate { it.value to it.index }
+        return entries.groupBy { it.category }.toList().sortedBy { (category, _) ->
+            categoryOrder[category] ?: Int.MAX_VALUE
+        }.flatMap { (category, group) ->
             listOf(factory.createHeaderTarget(category)) +
                 group.map { factory.createPrimeEntryTarget(it) } +
                 listOf(factory.createHeaderTarget(SPACE))
