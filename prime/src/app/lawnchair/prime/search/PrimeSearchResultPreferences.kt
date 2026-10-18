@@ -227,7 +227,7 @@ object PrimeSearchResultPreferences {
     }
 
     enum class SuggestionProvider(val title: String) {
-        GOOGLE("Google"), DUCKDUCKGO("DuckDuckGo")
+        GOOGLE("Google"), DUCKDUCKGO("DuckDuckGo"), BING("Bing"), QWANT("Qwant"), STARTPAGE("Startpage")
     }
 
     fun suggestionProvider(context: Context): SuggestionProvider =
