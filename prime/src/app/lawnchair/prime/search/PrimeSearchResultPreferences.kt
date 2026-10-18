@@ -68,6 +68,38 @@ object PrimeSearchResultPreferences {
         return fileOptionEnabled(context, option, surface)
     }
 
+    fun webSuggestionCount(context: Context, surface: Surface): Int =
+        surfacePrefs(context, surface).getInt("web_suggestion_count", 4).coerceIn(0, 8)
+
+    fun setWebSuggestionCount(context: Context, count: Int, surface: Surface) {
+        surfacePrefs(context, surface).edit().putInt("web_suggestion_count", count.coerceIn(0, 8)).apply()
+    }
+
+    fun suggestionProvider(context: Context, surface: Surface): SuggestionProvider =
+        runCatching {
+            SuggestionProvider.valueOf(
+                surfacePrefs(context, surface).getString("suggestion_provider", "GOOGLE") ?: "GOOGLE"
+            )
+        }.getOrDefault(SuggestionProvider.GOOGLE)
+
+    fun setSuggestionProvider(context: Context, provider: SuggestionProvider, surface: Surface) {
+        surfacePrefs(context, surface).edit().putString("suggestion_provider", provider.name).apply()
+    }
+
+    fun enabledWebEngines(context: Context, surface: Surface): List<WebEngine> {
+        val preferences = surfacePrefs(context, surface)
+        val selected = preferences.getStringSet("web_engines", setOf(WebEngine.GOOGLE.name)).orEmpty()
+        val saved = preferences.getString("web_engine_order", null)
+            ?.split(",")?.mapNotNull { name -> WebEngine.entries.firstOrNull { it.name == name } }.orEmpty()
+        return (saved + WebEngine.entries).distinct().filter { it.name in selected }
+    }
+
+    fun setWebEngineEnabled(context: Context, engine: WebEngine, enabled: Boolean, surface: Surface) {
+        val current = enabledWebEngines(context, surface).map { it.name }.toMutableSet()
+        if (enabled) current.add(engine.name) else current.remove(engine.name)
+        surfacePrefs(context, surface).edit().putStringSet("web_engines", current).apply()
+    }
+
     fun hasCustomFileLimit(context: Context, surface: Surface): Boolean =
         surfacePrefs(context, surface).contains("prime_max_file_results")
 
