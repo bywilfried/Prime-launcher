@@ -124,7 +124,7 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                                 }
                         }
                         if (preferences.enabled(context, app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.REMINDERS, surface)) {
-                            runCatching { app.lawnchair.prime.search.PrimeTasksSearch.search(context, query) }
+                            runCatching { app.lawnchair.prime.search.PrimeTasksSearch.search(context, query, surface) }
                                 .getOrDefault(emptyList()).forEach {
                                     entries.add(SearchResult.PrimeEntry("Tâches", it.title, it.detail, it.uri))
                                 }
