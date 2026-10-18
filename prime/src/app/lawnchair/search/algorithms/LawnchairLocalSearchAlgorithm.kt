@@ -106,13 +106,13 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                                     entries.add(SearchResult.PrimeEntry("Agenda", it.title, it.detail, it.uri))
                                 }
                         }
-                        if (preferences.enabled(context, preferences.Category.REMINDERS, surface)) {
+                        if (preferences.enabled(context, app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.REMINDERS, surface)) {
                             runCatching { app.lawnchair.prime.search.PrimeTasksSearch.search(context, query) }
                                 .getOrDefault(emptyList()).forEach {
                                     entries.add(SearchResult.PrimeEntry("Tâches", it.title, it.detail, it.uri))
                                 }
                         }
-                        if (preferences.enabled(context, preferences.Category.NOTIFICATIONS, surface) &&
+                        if (preferences.enabled(context, app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.NOTIFICATIONS, surface) &&
                             app.lawnchair.prime.search.PrimeNotificationHistory.isGranted(context)) {
                             runCatching { app.lawnchair.prime.search.PrimeNotificationHistory.search(context, query) }
                                 .getOrDefault(emptyList()).forEach {
@@ -127,13 +127,13 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                         allResults.filter { result ->
                             val category = when (result) {
                                 is SearchResult.App -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS
-                                is SearchResult.Shortcut -> prefs.Category.APP_SHORTCUTS
-                                is SearchResult.File -> prefs.Category.FILES
-                                is SearchResult.Contact -> prefs.Category.CONTACTS
-                                is SearchResult.Setting -> prefs.Category.SETTINGS
-                                is SearchResult.History -> prefs.Category.HISTORY
-                                is SearchResult.Calculation -> prefs.Category.CALCULATOR
-                                is SearchResult.WebSuggestion -> prefs.Category.WEB
+                                is SearchResult.Shortcut -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS
+                                is SearchResult.File -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.FILES
+                                is SearchResult.Contact -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CONTACTS
+                                is SearchResult.Setting -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.SETTINGS
+                                is SearchResult.History -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.HISTORY
+                                is SearchResult.Calculation -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALCULATOR
+                                is SearchResult.WebSuggestion -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB
                                 else -> null
                             }
                             category == null || !prefs.hasCategorySetting(context, category, surface) ||
@@ -250,7 +250,7 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
         // The new function is just a flatMap. It's declarative and beautiful.
         val builders = if (primeSearch) sectionBuilders else {
             val settings = app.lawnchair.prime.search.PrimeSearchResultPreferences
-            val order = settings.order(context, settings.Surface.DRAWER)
+            val order = settings.order(context, app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER)
             val byCategory = mapOf(
                 app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS to AppsAndShortcutsSectionBuilder,
                 app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALCULATOR to CalculationSectionBuilder,
