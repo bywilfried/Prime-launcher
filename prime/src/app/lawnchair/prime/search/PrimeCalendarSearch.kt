@@ -12,7 +12,7 @@ object PrimeCalendarSearch {
         val results = mutableListOf<Result>()
         val columns = arrayOf(CalendarContract.Events._ID, CalendarContract.Events.TITLE,
             CalendarContract.Events.DESCRIPTION, CalendarContract.Events.DTSTART,
-            CalendarContract.Events.EVENT_LOCATION)
+            CalendarContract.Events.EVENT_LOCATION, CalendarContract.Events.CALENDAR_ID)
         runCatching {
             context.contentResolver.query(
                 CalendarContract.Events.CONTENT_URI, columns,
@@ -22,6 +22,7 @@ object PrimeCalendarSearch {
             )?.use { cursor ->
                 while (cursor.moveToNext() && results.size < 25) {
                     val id = cursor.getLong(0)
+                    if (!PrimeSourceSelection.isSelected(context, "calendars", cursor.getLong(5).toString())) continue
                     val title = cursor.getString(1).orEmpty()
                     val description = cursor.getString(2).orEmpty()
                     val start = cursor.getLong(3)
@@ -49,7 +50,7 @@ object PrimeCalendarSearch {
                 while (cursor.moveToNext() && ids.size < 2000) ids.add(cursor.getLong(0))
                 if (ids.isNotEmpty()) {
                     val columns = arrayOf(CalendarContract.Events._ID, CalendarContract.Events.TITLE,
-                        CalendarContract.Events.DTSTART)
+                        CalendarContract.Events.DTSTART, CalendarContract.Events.CALENDAR_ID)
                     context.contentResolver.query(
                         CalendarContract.Events.CONTENT_URI, columns,
                         "${CalendarContract.Events.TITLE} LIKE ?",
@@ -58,7 +59,7 @@ object PrimeCalendarSearch {
                     )?.use { events ->
                         while (events.moveToNext() && results.size < 20) {
                             val id = events.getLong(0)
-                            if (id !in ids) continue
+                            if (id !in ids || !PrimeSourceSelection.isSelected(context, "calendars", events.getLong(3).toString())) continue
                             val title = events.getString(1).orEmpty()
                             val date = java.text.DateFormat.getDateTimeInstance().format(java.util.Date(events.getLong(2)))
                             results.add(Result(title.ifBlank { "Rappel" }, date,
