@@ -325,8 +325,7 @@ object PrimeSearchOverlay {
         val webPanel = LinearLayout(launcher).apply { orientation = LinearLayout.VERTICAL }
         fun renderWebPanel(query: String) {
             webPanel.removeAllViews()
-            if (query.isBlank() || !PrimeSearchResultPreferences.enabled(launcher,
-                    PrimeSearchResultPreferences.Category.WEB)) return
+            if (query.isBlank()) return
             val foreground = themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT)
             fun row(title: String, action: () -> Unit) {
                 val label = TextView(launcher).apply {
@@ -338,7 +337,7 @@ object PrimeSearchOverlay {
                 }
                 webPanel.addView(label, LinearLayout.LayoutParams(-1, -2))
             }
-            if (currentSuggestions.isNotEmpty()) {
+            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB) && currentSuggestions.isNotEmpty()) {
                 row("Suggestions Web") {}
                 currentSuggestions.forEach { suggestion ->
                     row("⌕  $suggestion") {
@@ -347,7 +346,8 @@ object PrimeSearchOverlay {
                     }
                 }
             }
-            val engines = PrimeSearchResultPreferences.enabledWebEngines(launcher)
+            val engines = if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB_SHORTCUTS))
+                PrimeSearchResultPreferences.enabledWebEngines(launcher) else emptyList()
             if (engines.isNotEmpty()) {
                 row("Recherche sur :") {}
                 val columns = 5
@@ -437,15 +437,24 @@ object PrimeSearchOverlay {
             webHandler.postDelayed({
                 Thread {
                 val suggestions = try {
-                    val url = URL("https://suggestqueries.google.com/complete/search?client=firefox&q=" +
-                        Uri.encode(query))
+                    val provider = PrimeSearchResultPreferences.suggestionProvider(launcher)
+                    val url = URL(if (provider == PrimeSearchResultPreferences.SuggestionProvider.DUCKDUCKGO)
+                        "https://duckduckgo.com/ac/?q=" + Uri.encode(query)
+                        else "https://suggestqueries.google.com/complete/search?client=firefox&q=" + Uri.encode(query))
                     val connection = url.openConnection() as HttpURLConnection
                     connection.connectTimeout = 2500
                     connection.readTimeout = 2500
                     try {
                         val body = connection.inputStream.bufferedReader().use { it.readText() }
-                        val entries = JSONArray(body).getJSONArray(1)
-                        (0 until minOf(entries.length(), count)).map { entries.getString(it) }
+                        if (provider == PrimeSearchResultPreferences.SuggestionProvider.DUCKDUCKGO) {
+                            val entries = JSONArray(body)
+                            (0 until minOf(entries.length(), count)).mapNotNull {
+                                entries.optJSONObject(it)?.optString("phrase")?.takeIf(String::isNotBlank)
+                            }
+                        } else {
+                            val entries = JSONArray(body).getJSONArray(1)
+                            (0 until minOf(entries.length(), count)).map { entries.getString(it) }
+                        }
                     } finally { connection.disconnect() }
                 } catch (_: Exception) {
                     // Google suggestions can be unavailable on some networks.
