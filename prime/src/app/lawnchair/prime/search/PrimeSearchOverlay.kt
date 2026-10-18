@@ -680,29 +680,58 @@ object PrimeSearchOverlay {
                         return@forEach
                     }
                     if (item.searchTarget.resultType == SearchTargetCompat.RESULT_TYPE_FILE_TILE) {
-                        fun fileLabels(node: View): List<String> =
-                            when (node) {
-                                is TextView -> listOf(node.text?.toString().orEmpty())
-                                is ViewGroup -> (0 until node.childCount).flatMap { fileLabels(node.getChildAt(it)) }
-                                else -> emptyList()
+                        // The drawer file tile has large internal spacing; build a
+                        // dedicated compact Prime Search row instead.
+                        fun findFileTitle(node: View): String? {
+                            if (node is TextView && !node.text.isNullOrBlank()) return node.text.toString()
+                            if (node is ViewGroup) for (i in 0 until node.childCount) {
+                                findFileTitle(node.getChildAt(i))?.let { return it }
                             }
-                        val filename = fileLabels(view).firstOrNull { it.contains('.') }
-                            ?: fileLabels(view).firstOrNull().orEmpty()
+                            return null
+                        }
+                        fun findFileIcon(node: View): android.graphics.drawable.Drawable? {
+                            if (node is ImageView && node.drawable != null) return node.drawable
+                            if (node is ViewGroup) for (i in 0 until node.childCount) {
+                                findFileIcon(node.getChildAt(i))?.let { return it }
+                            }
+                            return null
+                        }
+                        val filename = findFileTitle(view).orEmpty()
                         if (!PrimeSearchResultPreferences.fileAllowed(launcher, filename)) {
                             parent.removeView(view)
                             return@forEach
                         }
-                        if (!PrimeSearchResultPreferences.fileOptionEnabled(
-                                launcher, PrimeSearchResultPreferences.FileOption.PREVIEW)) {
-                            fun hidePreview(node: View) {
-                                if (node is android.widget.ImageView) {
-                                    node.setImageDrawable(null)
-                                } else if (node is ViewGroup) {
-                                    for (i in 0 until node.childCount) hidePreview(node.getChildAt(i))
-                                }
-                            }
-                            hidePreview(view)
+                        val compact = LinearLayout(launcher).apply {
+                            orientation = LinearLayout.HORIZONTAL
+                            gravity = Gravity.CENTER_VERTICAL
+                            setPadding((12 * density).toInt(), (4 * density).toInt(),
+                                (12 * density).toInt(), (4 * density).toInt())
+                            minimumHeight = (60 * density).toInt()
+                            isClickable = true
+                            isFocusable = true
+                            setOnClickListener { view.performClick() }
                         }
+                        val icon = ImageView(launcher).apply {
+                            setImageDrawable(findFileIcon(view)?.constantState?.newDrawable()?.mutate()
+                                ?: findFileIcon(view))
+                            scaleType = ImageView.ScaleType.CENTER_INSIDE
+                        }
+                        compact.addView(icon, LinearLayout.LayoutParams(
+                            (40 * density).toInt(), (40 * density).toInt()).apply {
+                            marginEnd = (12 * density).toInt()
+                        })
+                        val title = TextView(launcher).apply {
+                            text = filename
+                            setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+                            textSize = 15f
+                            maxLines = 2
+                            ellipsize = android.text.TextUtils.TruncateAt.END
+                            gravity = Gravity.CENTER_VERTICAL
+                        }
+                        compact.addView(title, LinearLayout.LayoutParams(0, -2, 1f))
+                        parent.removeView(view)
+                        parent.addView(compact)
+                        return@forEach
                     }
                     // Drawer search result views may apply their own text colors
                     // during bind. Override them after binding for Prime Search.
@@ -722,27 +751,6 @@ object PrimeSearchOverlay {
                     applyPrimeTextColors(view)
                     if (isAppIcon) {
                         view.minimumHeight = 0
-                    } else if (item.searchTarget.layoutType.toString().contains("FILE", ignoreCase = true)) {
-                        // Compact file results only; keep other result types unchanged.
-                        view.minimumHeight = 0
-                        view.layoutParams = view.layoutParams.apply {
-                            height = (76 * density).toInt()
-                        }
-                        fun compactFileImages(node: View) {
-                            if (node is android.widget.ImageView) {
-                                node.layoutParams?.let { params ->
-                                    if (params.width > (56 * density).toInt()) {
-                                        params.width = (52 * density).toInt()
-                                        params.height = (52 * density).toInt()
-                                        node.layoutParams = params
-                                    }
-                                }
-                            }
-                            if (node is ViewGroup) {
-                                for (index in 0 until node.childCount) compactFileImages(node.getChildAt(index))
-                            }
-                        }
-                        compactFileImages(view)
                     }
                 }
                 results.addView(webPanel)
