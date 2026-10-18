@@ -280,15 +280,15 @@ fun PrimeSearchPreference() {
         )
     }
     var permissionRefresh by remember { mutableStateOf(0) }
-    var pendingCategory by remember { mutableStateOf<PrimeSearchResultPreferences.Category?>(null) }
+    var pendingCategory by remember { mutableStateOf<Pair<PrimeSearchResultPreferences.Category, PrimeSearchResultPreferences.Surface>?>(null) }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 permissionRefresh++
-                pendingCategory?.let { category ->
+                pendingCategory?.let { (category, surface) ->
                     if (PrimeSearchPermissions.granted(context, category)) {
-                        PrimeSearchResultPreferences.setEnabled(context, category, true)
+                        PrimeSearchResultPreferences.setEnabled(context, category, true, surface)
                         pendingCategory = null
                     }
                 }
@@ -301,15 +301,15 @@ fun PrimeSearchPreference() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { _ ->
         permissionRefresh++
-        pendingCategory?.let { category ->
+        pendingCategory?.let { (category, surface) ->
             if (PrimeSearchPermissions.granted(context, category)) {
-                PrimeSearchResultPreferences.setEnabled(context, category, true)
+                PrimeSearchResultPreferences.setEnabled(context, category, true, surface)
                 pendingCategory = null
             }
         }
     }
-    fun requestCategory(category: PrimeSearchResultPreferences.Category) {
-        pendingCategory = category
+    fun requestCategory(category: PrimeSearchResultPreferences.Category, surface: PrimeSearchResultPreferences.Surface = PrimeSearchResultPreferences.Surface.PRIME_SEARCH) {
+        pendingCategory = category to surface
         val special = PrimeSearchPermissions.specialAccessIntent(category)
         if (special != null) {
             runCatching { context.startActivity(special) }
@@ -417,10 +417,13 @@ fun PrimeSearchPreference() {
                         }
                         androidx.compose.material3.Switch(
                             checked = displayedChecked,
-                            enabled = !needsPermission,
                             onCheckedChange = { enabled ->
+                                if (enabled && needsPermission) {
+                                    requestCategory(category)
+                                } else {
                                 checked = enabled
                                 PrimeSearchResultPreferences.setEnabled(context, category, enabled)
+                                }
                             },
                         )
                     }
@@ -698,27 +701,34 @@ fun PrimeSearchPreference() {
             )
         }
         drawerCategories.forEach { category ->
-            var enabled by remember(category) {
-                mutableStateOf(
-                    !PrimeSearchResultPreferences.hasCategorySetting(context, category, drawerSurface) ||
-                        PrimeSearchResultPreferences.enabled(context, category, drawerSurface)
-                )
-            }
+            val needsPermission = PrimeSearchPermissions.required(category) &&
+                !PrimeSearchPermissions.granted(context, category)
+            val enabled = PrimeSearchResultPreferences.enabled(context, category, drawerSurface)
             PreferenceTemplate(
                 title = { Text(category.title) },
-                description = { Text(category.description) },
+                description = {
+                    Text(if (needsPermission) PrimeSearchPermissions.explanation(category) else category.description)
+                },
                 endWidget = {
                     androidx.compose.material3.Switch(
                         checked = enabled,
-                        onCheckedChange = {
-                            enabled = it
-                            PrimeSearchResultPreferences.setEnabled(context, category, it, drawerSurface)
+                        onCheckedChange = { value ->
+                            if (value && needsPermission) {
+                                requestCategory(category, drawerSurface)
+                            } else {
+                                PrimeSearchResultPreferences.setEnabled(context, category, value, drawerSurface)
+                                permissionRefresh++
+                            }
                         },
                     )
                 },
                 onClick = {
-                    enabled = !enabled
-                    PrimeSearchResultPreferences.setEnabled(context, category, enabled, drawerSurface)
+                    if (needsPermission) {
+                        requestCategory(category, drawerSurface)
+                    } else {
+                        PrimeSearchResultPreferences.setEnabled(context, category, !enabled, drawerSurface)
+                        permissionRefresh++
+                    }
                 },
             )
         }
