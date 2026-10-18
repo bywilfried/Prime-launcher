@@ -131,7 +131,7 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                         }
                         if (preferences.enabled(context, app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.NOTIFICATIONS, surface) &&
                             app.lawnchair.prime.search.PrimeNotificationHistory.isGranted(context)) {
-                            runCatching { app.lawnchair.prime.search.PrimeNotificationHistory.search(context, query) }
+                            runCatching { app.lawnchair.prime.search.PrimeNotificationHistory.searchForDrawer(context, query) }
                                 .getOrDefault(emptyList()).forEach {
                                     entries.add(SearchResult.PrimeEntry("Notifications", it.app + " · " + it.title, it.body, null))
                                 }
