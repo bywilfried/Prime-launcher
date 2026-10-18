@@ -68,6 +68,9 @@ import com.android.launcher3.search.SearchCallback
 object PrimeSearchOverlay {
     private var activeDialog: Dialog? = null
     private var activeAlgorithm: LawnchairSearchAlgorithm? = null
+    @Volatile private var cachedApps: List<android.content.pm.ApplicationInfo>? = null
+    @Volatile private var cachedUsage: Map<String, android.app.usage.UsageStats>? = null
+    @Volatile private var cachedUsageGranted = false
 
     fun show(launcher: LawnchairLauncher) {
         if (activeDialog?.isShowing == true && activeDialog?.window?.decorView?.isAttachedToWindow == true) return
@@ -199,9 +202,9 @@ object PrimeSearchOverlay {
         val packageManager = launcher.packageManager
         // Do not enumerate installed apps or query usage stats on the UI thread
         // before the search window and its keyboard can appear.
-        var installed: List<android.content.pm.ApplicationInfo> = emptyList()
-        var usage: Map<String, android.app.usage.UsageStats> = emptyMap()
-        var hasUsageAccess = false
+        var installed: List<android.content.pm.ApplicationInfo> = cachedApps.orEmpty()
+        var usage: Map<String, android.app.usage.UsageStats> = cachedUsage.orEmpty()
+        var hasUsageAccess = cachedUsageGranted
         val sections = listOf("FRÉQUENTES", "RÉCENTES", "NOUVELLES")
         var selectedTab = 0
         fun renderZeroState() {
@@ -309,8 +312,7 @@ object PrimeSearchOverlay {
             }
             zeroState.requestLayout()
         }
-        // Populate the zero-state after the window has been attached so the
-        // first frame and the keyboard are not blocked by building app views.
+        renderZeroState()
         val webHandler = Handler(Looper.getMainLooper())
         var webRequestSerial = 0
         var currentSuggestions = emptyList<String>()
@@ -839,6 +841,9 @@ object PrimeSearchOverlay {
                 ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), launcher.packageName) ==
                     AppOpsManager.MODE_ALLOWED
             }.getOrDefault(false)
+            cachedApps = loadedApps
+            cachedUsage = loadedUsage
+            cachedUsageGranted = granted
             input.post {
                 if (activeDialog === dialog && dialog.isShowing) {
                     installed = loadedApps
@@ -848,15 +853,14 @@ object PrimeSearchOverlay {
                 }
             }
         }.start()
-        // Let the IME start before creating the potentially expensive app grid.
-        // Avoid the extra 220 ms entrance translation: the dialog is usable immediately.
+        container.translationY = -120 * density
+        container.animate().translationY(0f).setDuration(220).start()
         input.post {
             if (activeDialog !== dialog || !dialog.isShowing) return@post
             (launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
                 .showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
             zeroState.visibility = View.VISIBLE
             scroll.visibility = View.GONE
-            renderZeroState()
         }
     }
 
