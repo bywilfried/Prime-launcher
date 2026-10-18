@@ -125,6 +125,19 @@ class SearchTargetFactory(
         )
     }
 
+    fun createPrimeEntryTarget(entry: app.lawnchair.search.algorithms.engine.SearchResult.PrimeEntry): SearchTargetCompat {
+        val id = "prime:${entry.category}:${entry.title}:${entry.uri}"
+        val action = SearchActionCompat.Builder(id, entry.title)
+            .setIcon(Icon.createWithResource(context, R.drawable.ic_allapps_search))
+            .setSubtitle(entry.detail)
+            .setIntent(entry.uri?.let { Intent(Intent.ACTION_VIEW, it) } ?: Intent())
+            .build()
+        return createSearchTarget(
+            id, action, LayoutType.HORIZONTAL_MEDIUM_TEXT,
+            SearchTargetCompat.RESULT_TYPE_SUGGESTIONS, entry.category,
+        )
+    }
+
     fun createHeaderTarget(header: String, pkg: String = HEADER): SearchTargetCompat {
         val id = "header_$header"
         val action = SearchActionCompat.Builder(id, header)
