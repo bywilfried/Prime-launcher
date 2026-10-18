@@ -1,5 +1,12 @@
 package app.lawnchair.ui.preferences.components.search
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.DisposableEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import app.lawnchair.prime.search.PrimeSearchPermissions
 import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
@@ -252,6 +259,49 @@ fun PrimeSearchPreference() {
             steps = 2,
         )
     }
+    var permissionRefresh by remember { mutableStateOf(0) }
+    var pendingCategory by remember { mutableStateOf<PrimeSearchResultPreferences.Category?>(null) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                permissionRefresh++
+                pendingCategory?.let { category ->
+                    if (PrimeSearchPermissions.granted(context, category)) {
+                        PrimeSearchResultPreferences.setEnabled(context, category, true)
+                        pendingCategory = null
+                    }
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { _ ->
+        permissionRefresh++
+        pendingCategory?.let { category ->
+            if (PrimeSearchPermissions.granted(context, category)) {
+                PrimeSearchResultPreferences.setEnabled(context, category, true)
+                pendingCategory = null
+            }
+        }
+    }
+    fun requestCategory(category: PrimeSearchResultPreferences.Category) {
+        pendingCategory = category
+        val special = PrimeSearchPermissions.specialAccessIntent(category)
+        if (special != null) {
+            runCatching { context.startActivity(special) }
+        } else {
+            val missing = PrimeSearchPermissions.runtimePermissions(category).filter {
+                androidx.core.content.ContextCompat.checkSelfPermission(
+                    context, it
+                ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+            }
+            if (missing.isNotEmpty()) permissionLauncher.launch(missing.toTypedArray())
+        }
+    }
     var categories by remember {
         mutableStateOf(PrimeSearchResultPreferences.order(context))
     }
@@ -272,6 +322,9 @@ fun PrimeSearchPreference() {
             var checked by remember(category) {
                 mutableStateOf(PrimeSearchResultPreferences.enabled(context, category))
             }
+            val permissionGranted = remember(category, permissionRefresh) { PrimeSearchPermissions.granted(context, category) }
+            val needsPermission = PrimeSearchPermissions.required(category) && !permissionGranted
+            val displayedChecked = checked && !needsPermission
             val dragging = activeDrag == category
             val rowPixels = with(LocalDensity.current) { 112.dp.toPx() }
             val targetIndex = (dragOrigin + (dragOffset / rowPixels).roundToInt()).coerceIn(0, categories.lastIndex)
@@ -294,7 +347,7 @@ fun PrimeSearchPreference() {
                         shadowElevation = if (dragging) 12.dp.toPx() else 0f
                     },
                 title = { Text(category.title) },
-                description = { Text(category.description) },
+                description = { Text(if (needsPermission) PrimeSearchPermissions.explanation(category) else category.description, color = if (needsPermission) androidx.compose.ui.graphics.Color.Gray else androidx.compose.ui.graphics.Color.Unspecified) },
                 endWidget = {
                     Row {
                         IconButton(onClick = {
@@ -343,7 +396,8 @@ fun PrimeSearchPreference() {
                             Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Descendre")
                         }
                         androidx.compose.material3.Switch(
-                            checked = checked,
+                            checked = displayedChecked,
+                            enabled = !needsPermission,
                             onCheckedChange = { enabled ->
                                 checked = enabled
                                 PrimeSearchResultPreferences.setEnabled(context, category, enabled)
@@ -352,8 +406,11 @@ fun PrimeSearchPreference() {
                     }
                 },
                 onClick = {
-                    checked = !checked
-                    PrimeSearchResultPreferences.setEnabled(context, category, checked)
+                    if (needsPermission) requestCategory(category)
+                    else {
+                        checked = !checked
+                        PrimeSearchResultPreferences.setEnabled(context, category, checked)
+                    }
                 },
             )
         }
@@ -369,10 +426,10 @@ fun PrimeSearchPreference() {
                             var retention by remember {
                                 mutableStateOf(PrimeSearchResultPreferences.notificationRetention(context))
                             }
-                            val granted = app.lawnchair.prime.search.PrimeNotificationHistory.isGranted(context)
+                            val granted = PrimeSearchPermissions.granted(context, selected)
                             Text(if (granted) "Accès aux notifications autorisé" else "Accès aux notifications non autorisé")
                             TextButton(onClick = {
-                                context.startActivity(app.lawnchair.prime.search.PrimeNotificationHistory.accessIntent(context))
+                                requestCategory(selected)
                             }) { Text(if (granted) "Gérer l'autorisation Android" else "Autoriser l'accès aux notifications") }
                             Text("Conserver les notifications pendant :")
                             PrimeSearchResultPreferences.NotificationRetention.entries.forEach { option ->
@@ -392,7 +449,12 @@ fun PrimeSearchPreference() {
                             }
                             Text("L'enregistrement nécessite l'accès aux notifications Android.")
                         } else {
-                            Text("Les réglages détaillés de cette catégorie seront ajoutés ici. Les résultats dépendent des fournisseurs disponibles et des autorisations Android.")
+                            if (PrimeSearchPermissions.required(selected)) {
+                                val granted = PrimeSearchPermissions.granted(context, selected)
+                                Text(if (granted) "Autorisation accordée" else PrimeSearchPermissions.explanation(selected))
+                                if (!granted) TextButton(onClick = { requestCategory(selected) }) { Text("Autoriser l’accès") }
+                            }
+                            Text("Les résultats dépendent des fournisseurs disponibles et des autorisations Android.")
                         }
                     }
                 },
