@@ -30,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
@@ -61,6 +62,7 @@ fun PrimeSearchPreference() {
             description = { Text("Les moteurs et suggestions Web de Prime Search sont configurés ci-dessous, indépendamment du tiroir.") },
         )
     }
+    var showSources by remember { mutableStateOf(false) }
     PreferenceGroup(heading = "Suggestions et moteurs Web") {
         var suggestionCount by remember { mutableStateOf(PrimeSearchResultPreferences.webSuggestionCount(context)) }
         PreferenceTemplate(
@@ -75,12 +77,6 @@ fun PrimeSearchPreference() {
             },
             valueRange = 0f..8f,
             steps = 7,
-        )
-        var showSources by remember { mutableStateOf(false) }
-        PreferenceTemplate(
-            title = { Text("Sources de recherche") },
-            description = { Text("Choisir les moteurs, leur ordre et les icônes affichées sous « Recherche sur : »") },
-            onClick = { showSources = true },
         )
         if (showSources) {
             var engines by remember { mutableStateOf(PrimeSearchResultPreferences.webEngineOrder(context)) }
@@ -270,6 +266,11 @@ fun PrimeSearchPreference() {
                 description = { Text(category.description) },
                 endWidget = {
                     Row {
+                        if (category == PrimeSearchResultPreferences.Category.WEB) {
+                            IconButton(onClick = { showSources = true }) {
+                                Icon(Icons.Default.Settings, contentDescription = "Configurer les sources de recherche Web")
+                            }
+                        }
                         Icon(
                             Icons.Default.DragHandle,
                             contentDescription = "Maintenir puis glisser pour réorganiser",
