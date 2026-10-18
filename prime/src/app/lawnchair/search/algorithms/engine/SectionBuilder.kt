@@ -30,7 +30,14 @@ data object PrimeEntriesSectionBuilder : SectionBuilder {
         val entries = results.filterIsInstance<SearchResult.PrimeEntry>()
         val surface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
         val order = app.lawnchair.prime.search.PrimeSearchResultPreferences.order(context, surface)
-        val categoryOrder = order.map { it.title }.withIndex().associate { it.value to it.index }
+        val categoryOrder = order.map {
+            when (it) {
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALENDAR -> "Agenda"
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.REMINDERS -> "Tâches"
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.NOTIFICATIONS -> "Notifications"
+                else -> it.title
+            }
+        }.withIndex().associate { it.value to it.index }
         return entries.groupBy { it.category }.toList().sortedBy { (category, _) ->
             categoryOrder[category] ?: Int.MAX_VALUE
         }.flatMap { (category, group) ->
