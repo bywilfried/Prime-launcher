@@ -262,6 +262,7 @@ fun PrimeSearchPreference() {
         categories = reordered
         PrimeSearchResultPreferences.saveOrder(context, reordered)
     }
+    var categorySettings by remember { mutableStateOf<PrimeSearchResultPreferences.Category?>(null) }
     var activeDrag by remember { mutableStateOf<PrimeSearchResultPreferences.Category?>(null) }
     var dragOrigin by remember { mutableStateOf(0) }
     var dragOffset by remember { mutableStateOf(0f) }
@@ -295,14 +296,14 @@ fun PrimeSearchPreference() {
                 description = { Text(category.description) },
                 endWidget = {
                     Row {
-                        if (category == PrimeSearchResultPreferences.Category.WEB ||
-                            category == PrimeSearchResultPreferences.Category.WEB_SHORTCUTS) {
-                            IconButton(onClick = {
-                                if (category == PrimeSearchResultPreferences.Category.WEB) showSuggestionSettings = true
-                                else showSources = true
-                            }) {
-                                Icon(Icons.Default.Settings, contentDescription = if (category == PrimeSearchResultPreferences.Category.WEB) "Configurer les suggestions Web" else "Configurer les sources de recherche")
+                        IconButton(onClick = {
+                            when (category) {
+                                PrimeSearchResultPreferences.Category.WEB -> showSuggestionSettings = true
+                                PrimeSearchResultPreferences.Category.WEB_SHORTCUTS -> showSources = true
+                                else -> categorySettings = category
                             }
+                        }) {
+                            Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Paramètres de ${category.title}")
                         }
                         Icon(
                             Icons.Default.DragHandle,
@@ -352,6 +353,22 @@ fun PrimeSearchPreference() {
                 onClick = {
                     checked = !checked
                     PrimeSearchResultPreferences.setEnabled(context, category, checked)
+                },
+            )
+        }
+        if (categorySettings != null) {
+            val selected = categorySettings!!
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { categorySettings = null },
+                title = { Text(selected.title) },
+                text = {
+                    Column {
+                        Text(selected.description)
+                        Text("Les réglages détaillés de cette catégorie seront ajoutés ici. Les résultats dépendent des fournisseurs disponibles et des autorisations Android.")
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { categorySettings = null }) { Text("Fermer") }
                 },
             )
         }
