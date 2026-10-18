@@ -301,6 +301,13 @@ object PrimeSearchResultPreferences {
         prefs(context).edit().putBoolean("fuzzy_apps", enabled).apply()
     }
 
+    fun twoLineAppLabels(context: Context): Boolean =
+        prefs(context).getBoolean("two_line_app_labels", false)
+
+    fun setTwoLineAppLabels(context: Context, enabled: Boolean) {
+        prefs(context).edit().putBoolean("two_line_app_labels", enabled).apply()
+    }
+
     fun appsPerRow(context: Context): Int =
         prefs(context).getInt("apps_per_row", 4).coerceIn(3, 6)
 
