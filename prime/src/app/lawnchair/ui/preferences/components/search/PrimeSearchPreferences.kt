@@ -63,12 +63,6 @@ fun PrimeSearchPreference() {
     val context = LocalContext.current
     val navController = LocalNavController.current
     val variant = context.effectiveThemeVariant()
-    PreferenceGroup(heading = "Recherche") {
-        PreferenceTemplate(
-            title = { Text("Moteur et catégories de résultats") },
-            description = { Text("Les moteurs et suggestions Web de Prime Search sont configurés ci-dessous, indépendamment du tiroir.") },
-        )
-    }
     var showSources by remember { mutableStateOf(false) }
     var showSuggestionSettings by remember { mutableStateOf(false) }
     PreferenceGroup(heading = "Suggestions et moteurs Web") {
