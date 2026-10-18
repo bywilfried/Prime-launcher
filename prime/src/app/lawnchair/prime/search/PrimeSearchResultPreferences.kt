@@ -181,8 +181,15 @@ object PrimeSearchResultPreferences {
     fun filter(context: Context, items: List<SearchAdapterItem>): List<SearchAdapterItem> {
         // Headers/dividers are retained only when their section still has visible results.
         val kept = items.filter { item ->
-            val type = item.searchTarget.resultType
-            if (type == SearchTargetCompat.RESULT_TYPE_SUGGESTIONS &&
+            val target = item.searchTarget
+            val type = target.resultType
+            val actionTitle = target.title?.toString().orEmpty()
+            val duplicateGoogleAction =
+                actionTitle.startsWith("Rechercher avec Google", ignoreCase = true) ||
+                actionTitle.startsWith("Search with Google", ignoreCase = true)
+            if (duplicateGoogleAction) {
+                false
+            } else if (type == SearchTargetCompat.RESULT_TYPE_SUGGESTIONS &&
                 item.searchTarget.packageName != app.lawnchair.search.adapter.HISTORY) {
                 false
             } else {
