@@ -346,6 +346,44 @@ object PrimeSearchOverlay {
                     }
                 }
             }
+            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.SETTINGS) &&
+                listOf("paramètre", "réglage", "wifi", "bluetooth", "réseau", "affichage", "son", "batterie")
+                    .any { it.contains(query.trim(), ignoreCase = true) || query.contains(it, ignoreCase = true) }) {
+                row("Paramètres de l'appareil") {}
+                val settingsActions = listOf(
+                    "Wi-Fi" to android.provider.Settings.ACTION_WIFI_SETTINGS,
+                    "Bluetooth" to android.provider.Settings.ACTION_BLUETOOTH_SETTINGS,
+                    "Affichage" to android.provider.Settings.ACTION_DISPLAY_SETTINGS,
+                    "Son" to android.provider.Settings.ACTION_SOUND_SETTINGS,
+                    "Batterie" to android.provider.Settings.ACTION_BATTERY_SAVER_SETTINGS,
+                    "Paramètres Android" to android.provider.Settings.ACTION_SETTINGS,
+                )
+                settingsActions.filter { (name, _) ->
+                    name.contains(query, ignoreCase = true) ||
+                        query.contains("param", ignoreCase = true) ||
+                        query.contains("régl", ignoreCase = true)
+                }.forEach { (name, action) ->
+                    row("⚙  $name") {
+                        try {
+                            launcher.startActivity(Intent(action))
+                            dismiss()
+                        } catch (_: android.content.ActivityNotFoundException) { }
+                    }
+                }
+            }
+            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.APP_SETTINGS) &&
+                listOf("prime", "launcher", "application", "paramètre").any {
+                    it.contains(query.trim(), ignoreCase = true) || query.contains(it, ignoreCase = true)
+                }) {
+                row("Paramètres de l'app") {}
+                row("⚙  Paramètres de Prime Launcher") {
+                    try {
+                        launcher.startActivity(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.parse("package:" + launcher.packageName)))
+                        dismiss()
+                    } catch (_: android.content.ActivityNotFoundException) { }
+                }
+            }
             val engines = if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB_SHORTCUTS))
                 PrimeSearchResultPreferences.enabledWebEngines(launcher) else emptyList()
             if (engines.isNotEmpty()) {
