@@ -282,6 +282,29 @@ object PrimeSearchResultPreferences {
         prefs(context).edit().putInt("web_suggestion_count", count.coerceIn(0, 8)).apply()
     }
 
+    enum class OpeningTab(val label: String) {
+        LAST("Dernière consultée"),
+        FREQUENT("Fréquentes"),
+        RECENT("Récentes"),
+        NEW("Nouvelles"),
+    }
+
+    fun openingTab(context: Context): OpeningTab =
+        runCatching {
+            OpeningTab.valueOf(prefs(context).getString("opening_tab", OpeningTab.FREQUENT.name)!!)
+        }.getOrDefault(OpeningTab.FREQUENT)
+
+    fun setOpeningTab(context: Context, tab: OpeningTab) {
+        prefs(context).edit().putString("opening_tab", tab.name).apply()
+    }
+
+    fun lastOpenedTab(context: Context): Int =
+        prefs(context).getInt("last_opened_tab", 0).coerceIn(0, 2)
+
+    fun setLastOpenedTab(context: Context, tab: Int) {
+        prefs(context).edit().putInt("last_opened_tab", tab.coerceIn(0, 2)).apply()
+    }
+
     fun zeroStateRows(context: Context): Int =
         prefs(context).getInt("zero_state_rows", 1).coerceIn(1, 2)
 
