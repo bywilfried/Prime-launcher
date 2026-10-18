@@ -6,6 +6,12 @@ import android.os.Process
 import android.provider.Settings
 import android.app.usage.UsageStatsManager
 import android.content.Intent
+import android.net.Uri
+import android.os.Handler
+import android.os.Looper
+import org.json.JSONArray
+import java.net.HttpURLConnection
+import java.net.URL
 import android.content.pm.PackageManager
 import android.widget.TextView
 import android.widget.ImageView
@@ -313,6 +319,73 @@ object PrimeSearchOverlay {
             zeroState.requestLayout()
         }
         renderZeroState()
+        val webHandler = Handler(Looper.getMainLooper())
+        var webRequestSerial = 0
+        var currentSuggestions = emptyList<String>()
+        val webPanel = LinearLayout(launcher).apply { orientation = LinearLayout.VERTICAL }
+        fun renderWebPanel(query: String) {
+            webPanel.removeAllViews()
+            if (query.isBlank() || !PrimeSearchResultPreferences.enabled(launcher,
+                    PrimeSearchResultPreferences.Category.WEB)) return
+            val foreground = themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT)
+            fun row(title: String, action: () -> Unit) {
+                val label = TextView(launcher).apply {
+                    text = title
+                    textSize = 14f
+                    setTextColor(foreground)
+                    setPadding(inset, (11 * density).toInt(), inset, (11 * density).toInt())
+                    setOnClickListener { action() }
+                }
+                webPanel.addView(label, LinearLayout.LayoutParams(-1, -2))
+            }
+            if (currentSuggestions.isNotEmpty()) {
+                row("Suggestions Web") {}
+                currentSuggestions.forEach { suggestion ->
+                    row("⌕  $suggestion") {
+                        input.setText(suggestion)
+                        input.setSelection(suggestion.length)
+                    }
+                }
+            }
+            PrimeSearchResultPreferences.enabledWebEngines(launcher).forEach { engine ->
+                row("Rechercher « $query » avec ${engine.title}") {
+                    val url = engine.url + Uri.encode(query)
+                    try {
+                        launcher.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                        dismiss()
+                    } catch (_: android.content.ActivityNotFoundException) { }
+                }
+            }
+        }
+        fun updateWebSuggestions(query: String) {
+            val request = ++webRequestSerial
+            currentSuggestions = emptyList()
+            val count = PrimeSearchResultPreferences.webSuggestionCount(launcher)
+            if (query.isBlank() || count == 0 ||
+                !PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB)) return
+            // Keep network I/O off the main thread; ignore stale responses.
+            Thread {
+                val suggestions = try {
+                    val url = URL("https://suggestqueries.google.com/complete/search?client=firefox&q=" +
+                        Uri.encode(query))
+                    val connection = url.openConnection() as HttpURLConnection
+                    connection.connectTimeout = 2500
+                    connection.readTimeout = 2500
+                    try {
+                        val body = connection.inputStream.bufferedReader().use { it.readText() }
+                        val entries = JSONArray(body).getJSONArray(1)
+                        (0 until minOf(entries.length(), count)).map { entries.getString(it) }
+                    } finally { connection.disconnect() }
+                } catch (_: Exception) { emptyList() }
+                webHandler.post {
+                    if (request == webRequestSerial && input.text.toString() == query && dialog.isShowing) {
+                        currentSuggestions = suggestions
+                        renderWebPanel(query)
+                        container.requestLayout()
+                    }
+                }
+            }.start()
+        }
         val callback = object : SearchCallback<BaseAllAppsAdapter.AdapterItem> {
             override fun onSearchResult(query: String, items: ArrayList<BaseAllAppsAdapter.AdapterItem>?) {
                 if (!dialog.isShowing || input.text.toString() != query) return
@@ -385,6 +458,8 @@ object PrimeSearchOverlay {
                         view.minimumHeight = 0
                     }
                 }
+                results.addView(webPanel)
+                renderWebPanel(query)
                 results.requestLayout()
             }
 
@@ -399,6 +474,7 @@ object PrimeSearchOverlay {
                 val query = s?.toString().orEmpty()
                 zeroState.visibility = if (query.isBlank()) View.VISIBLE else View.GONE
                 scroll.visibility = if (query.isBlank()) View.GONE else View.VISIBLE
+                updateWebSuggestions(query)
                 if (query.isBlank()) {
                     results.removeAllViews()
                     renderZeroState()
