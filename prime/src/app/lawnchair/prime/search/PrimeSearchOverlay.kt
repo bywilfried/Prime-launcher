@@ -696,6 +696,27 @@ object PrimeSearchOverlay {
                     applyPrimeTextColors(view)
                     if (isAppIcon) {
                         view.minimumHeight = 0
+                    } else if (item.searchTarget.layoutType.toString().contains("FILE", ignoreCase = true)) {
+                        // Compact file results only; keep other result types unchanged.
+                        view.minimumHeight = 0
+                        view.layoutParams = view.layoutParams.apply {
+                            height = (76 * density).toInt()
+                        }
+                        fun compactFileImages(node: View) {
+                            if (node is android.widget.ImageView) {
+                                node.layoutParams?.let { params ->
+                                    if (params.width > (56 * density).toInt()) {
+                                        params.width = (52 * density).toInt()
+                                        params.height = (52 * density).toInt()
+                                        node.layoutParams = params
+                                    }
+                                }
+                            }
+                            if (node is ViewGroup) {
+                                for (index in 0 until node.childCount) compactFileImages(node.getChildAt(index))
+                            }
+                        }
+                        compactFileImages(view)
                     }
                 }
                 results.addView(webPanel)
