@@ -329,9 +329,7 @@ class PreferenceManager2 @Inject constructor(
 
     val hotseatQsbProvider = preference(
         key = stringPreferencesKey(name = "dock_search_bar_provider"),
-        defaultValue = getRemoteDefault("dock_search_bar_provider")?.let {
-            QsbSearchProvider.fromId(it)
-        } ?: QsbSearchProvider.resolveDefault(context),
+        defaultValue = app.lawnchair.qsb.providers.DuckDuckGo,
         parse = { QsbSearchProvider.fromId(it) },
         save = { it.id },
     )
@@ -642,10 +640,7 @@ class PreferenceManager2 @Inject constructor(
 
     val webSuggestionProvider = preference(
         key = stringPreferencesKey(name = "web_suggestion_provider"),
-        defaultValue = WebSearchProvider.fromString(
-            getRemoteDefault("web_suggestion_provider")
-                ?: context.resources.getString(R.string.config_default_web_suggestion_provider),
-        ),
+        defaultValue = app.lawnchair.search.algorithms.engine.provider.web.DuckDuckGoWebSearchProvider,
         parse = { WebSearchProvider.fromString(it) },
         save = { it.toString() },
         onSet = { reloadHelper.recreate() },
