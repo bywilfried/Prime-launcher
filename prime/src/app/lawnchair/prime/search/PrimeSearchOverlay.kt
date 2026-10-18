@@ -447,7 +447,22 @@ object PrimeSearchOverlay {
                         val entries = JSONArray(body).getJSONArray(1)
                         (0 until minOf(entries.length(), count)).map { entries.getString(it) }
                     } finally { connection.disconnect() }
-                } catch (_: Exception) { emptyList() }
+                } catch (_: Exception) {
+                    // Google suggestions can be unavailable on some networks.
+                    // DuckDuckGo provides a compatible fallback.
+                    try {
+                        val connection = URL("https://duckduckgo.com/ac/?q=" + Uri.encode(query))
+                            .openConnection() as HttpURLConnection
+                        connection.connectTimeout = 2500
+                        connection.readTimeout = 2500
+                        try {
+                            val entries = JSONArray(connection.inputStream.bufferedReader().use { it.readText() })
+                            (0 until minOf(entries.length(), count)).mapNotNull {
+                                entries.optJSONObject(it)?.optString("phrase")?.takeIf(String::isNotBlank)
+                            }
+                        } finally { connection.disconnect() }
+                    } catch (_: Exception) { emptyList() }
+                }
                 webHandler.post {
                     if (request == webRequestSerial && input.text.toString() == query && dialog.isShowing) {
                         currentSuggestions = suggestions
