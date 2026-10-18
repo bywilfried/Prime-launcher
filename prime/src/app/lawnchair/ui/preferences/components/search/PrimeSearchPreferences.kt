@@ -566,6 +566,60 @@ fun PrimeSearchPreference() {
     PreferenceGroup(heading = "Recherche du tiroir d'applications") {
         Text("Réglages indépendants de Prime Search. L'apparence du tiroir et de sa barre de recherche reste inchangée.")
         val drawerSurface = PrimeSearchResultPreferences.Surface.DRAWER
+        var drawerWebCount by remember {
+            mutableStateOf(PrimeSearchResultPreferences.webSuggestionCount(context, drawerSurface))
+        }
+        Text("Suggestions Web du tiroir : $drawerWebCount")
+        androidx.compose.material3.Slider(
+            value = drawerWebCount.toFloat(),
+            onValueChange = {
+                drawerWebCount = it.roundToInt().coerceIn(0, 8)
+                PrimeSearchResultPreferences.setWebSuggestionCount(context, drawerWebCount, drawerSurface)
+            },
+            valueRange = 0f..8f,
+        )
+        var drawerSuggestionProvider by remember {
+            mutableStateOf(PrimeSearchResultPreferences.suggestionProvider(context, drawerSurface))
+        }
+        PrimeSearchResultPreferences.SuggestionProvider.entries.forEach { provider ->
+            PreferenceTemplate(
+                title = { Text("Suggestions : ${provider.title}") },
+                endWidget = {
+                    androidx.compose.material3.RadioButton(
+                        selected = drawerSuggestionProvider == provider,
+                        onClick = {
+                            drawerSuggestionProvider = provider
+                            PrimeSearchResultPreferences.setSuggestionProvider(context, provider, drawerSurface)
+                        },
+                    )
+                },
+                onClick = {
+                    drawerSuggestionProvider = provider
+                    PrimeSearchResultPreferences.setSuggestionProvider(context, provider, drawerSurface)
+                },
+            )
+        }
+        PrimeSearchResultPreferences.WebEngine.entries.forEach { engine ->
+            var active by remember(engine) {
+                mutableStateOf(engine in PrimeSearchResultPreferences.enabledWebEngines(context, drawerSurface))
+            }
+            PreferenceTemplate(
+                title = { Text("Moteur Web : ${engine.title}") },
+                endWidget = {
+                    androidx.compose.material3.Switch(
+                        checked = active,
+                        onCheckedChange = {
+                            active = it
+                            PrimeSearchResultPreferences.setWebEngineEnabled(context, engine, it, drawerSurface)
+                        },
+                    )
+                },
+                onClick = {
+                    active = !active
+                    PrimeSearchResultPreferences.setWebEngineEnabled(context, engine, active, drawerSurface)
+                },
+            )
+        }
         val drawerCategories = listOf(
             PrimeSearchResultPreferences.Category.APPS,
             PrimeSearchResultPreferences.Category.APP_SHORTCUTS,
