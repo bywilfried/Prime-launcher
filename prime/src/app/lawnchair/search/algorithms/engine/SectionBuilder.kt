@@ -21,6 +21,21 @@ sealed interface SectionBuilder {
     ): List<SearchTargetCompat>
 }
 
+data object PrimeEntriesSectionBuilder : SectionBuilder {
+    override fun build(
+        context: Context,
+        factory: SearchTargetFactory,
+        results: List<SearchResult>,
+    ): List<SearchTargetCompat> {
+        val entries = results.filterIsInstance<SearchResult.PrimeEntry>()
+        return entries.groupBy { it.category }.flatMap { (category, group) ->
+            listOf(factory.createHeaderTarget(category)) +
+                group.map { factory.createPrimeEntryTarget(it) } +
+                listOf(factory.createHeaderTarget(SPACE))
+        }
+    }
+}
+
 data object ContactsSectionBuilder : SectionBuilder {
     override fun build(
         context: Context,
