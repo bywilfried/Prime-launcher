@@ -143,6 +143,13 @@ fun DockSearchPreference(
                 }
             }
         } else {
+            PreferenceGroup(heading = "Recherche Web par défaut") {
+                NavigationActionPreference(
+                    label = stringResource(R.string.search_provider),
+                    destination = DockSearchProvider,
+                    subtitle = stringResource(hotseatQsbProviderAdapter.name),
+                )
+            }
             PreferenceTemplate(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 onClick = {
