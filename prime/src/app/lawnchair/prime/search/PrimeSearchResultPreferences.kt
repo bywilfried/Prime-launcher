@@ -36,6 +36,21 @@ object PrimeSearchResultPreferences {
         SPOTIFY("Spotify", "https://open.spotify.com/search/"),
         GITHUB("GitHub", "https://github.com/search?q="),
         AMAZON("Amazon", "https://www.amazon.fr/s?k="),
+        CHATGPT("ChatGPT", "https://chatgpt.com/?q="),
+        GEMINI("Gemini", "https://gemini.google.com/app?q="),
+        PERPLEXITY("Perplexity", "https://www.perplexity.ai/search?q="),
+        GOOGLE_PLAY("Google Play", "https://play.google.com/store/search?q="),
+        GOOGLE_MAPS("Google Maps", "https://www.google.com/maps/search/?api=1&query="),
+        GROK("Grok", "https://grok.com/?q="),
+        FDROID("F-Droid", "https://search.f-droid.org/?q="),
+        X("X", "https://x.com/search?q="),
+        GOOGLE_DRIVE("Google Drive", "https://drive.google.com/drive/u/0/search?q="),
+        GOOGLE_PHOTOS("Google Photos", "https://photos.google.com/search/"),
+        MODE_AI("Mode AI", "https://www.google.com/search?udm=50&q="),
+        FACEBOOK_MARKETPLACE("Facebook Marketplace", "https://www.facebook.com/marketplace/search/?query="),
+        YOU_COM("You.com", "https://you.com/search?q="),
+        KAGI("Kagi", "https://kagi.com/search?q="),
+        BRAVE_BROWSER("Navigateur Brave", "https://search.brave.com/search?q="),
     }
 
     fun webEngineOrder(context: Context): List<WebEngine> {
