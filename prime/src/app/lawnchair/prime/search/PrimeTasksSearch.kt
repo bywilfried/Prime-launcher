@@ -2,11 +2,16 @@ package app.lawnchair.prime.search
 
 import android.content.Context
 import android.net.Uri
+import java.text.Normalizer
+import java.util.Locale
 
 /** Read-only Tasks.org v0 provider integration. Supports local and synced lists. */
 object PrimeTasksSearch {
     private val base = Uri.parse("content://org.tasks.api/v0")
     data class Task(val title: String, val detail: String, val uri: Uri)
+    private fun fold(text: String): String = Normalizer.normalize(text, Normalizer.Form.NFD)
+        .replace(Regex("\\p{M}+"), "").lowercase(Locale.ROOT)
+
     fun available(context: Context): Boolean =
         context.packageManager.resolveContentProvider("org.tasks.api", 0) != null
 
@@ -33,9 +38,10 @@ object PrimeTasksSearch {
         val selected = PrimeSourceSelection.selected(context, "tasks", surface)
         if (selected != null && selected.isEmpty()) return emptyList()
         runCatching {
+            // Read a bounded set and match locally: the provider search parameter
+            // may reject unaccented text when a task title contains accents.
             val uri = base.buildUpon().appendPath("tasks")
-                .appendQueryParameter("search", query.trim())
-                .appendQueryParameter("limit", "200")
+                .appendQueryParameter("limit", "1000")
                 .build()
             context.contentResolver.query(uri, arrayOf("_id", "title", "notes", "due_date", "list_id", "completed_at"), null, null, null)?.use { c ->
                 val id = c.getColumnIndexOrThrow("_id")
@@ -44,7 +50,12 @@ object PrimeTasksSearch {
                 val due = c.getColumnIndexOrThrow("due_date")
                 val list = c.getColumnIndexOrThrow("list_id")
                 val completed = c.getColumnIndexOrThrow("completed_at")
-                while (c.moveToNext() && result.size < 30) {
+                val words = fold(query.trim()).split(Regex("\\s+")).filter { it.isNotEmpty() }
+                var scanned = 0
+                while (c.moveToNext() && result.size < 30 && scanned++ < 1000) {
+                    val taskTitle = c.getString(title).orEmpty()
+                    val taskNotes = c.getString(notes).orEmpty()
+                    if (!words.all { it in fold(taskTitle + " " + taskNotes) }) continue
                     if (selected != null && c.getLong(list).toString() !in selected) continue
                     if (!includeCompleted && c.getLong(completed) != 0L) continue
                     val dueDate = c.getLong(due)
