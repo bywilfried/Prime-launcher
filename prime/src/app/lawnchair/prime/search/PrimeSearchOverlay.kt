@@ -1,6 +1,8 @@
 package app.lawnchair.prime.search
 
-import android.app.Dialog
+import android.widget.FrameLayout
+import android.view.MotionEvent
+import android.view.ViewConfiguration
 import android.app.AppOpsManager
 import android.os.Process
 import android.provider.Settings
@@ -66,73 +68,133 @@ import com.android.launcher3.search.SearchCallback
  * TODO: replace simple result rows with the full Lawnchair result view holders.
  */
 object PrimeSearchOverlay {
-    private var activeDialog: Dialog? = null
+    private var activeDialog: PrimeSearchSurface? = null
     private var activeAlgorithm: LawnchairSearchAlgorithm? = null
     @Volatile private var cachedApps: List<android.content.pm.ApplicationInfo>? = null
     @Volatile private var cachedUsage: Map<String, android.app.usage.UsageStats>? = null
     @Volatile private var cachedUsageGranted = false
 
     /**
-     * Native shortcut popup requires an icon attached to Launcher's DragLayer.
-     * Transfer it out of the dialog before opening the popup.
+     * Prime Search shares the launcher's window and DragLayer with the workspace.
+     * This preserves the touch stream and the native popup's icon coordinates.
      */
+    private class PrimeSearchSurface(
+        private val launcher: LawnchairLauncher,
+        private val content: View,
+        private val floating: Boolean,
+        private val density: Float,
+        private val onDismiss: () -> Unit,
+    ) {
+        private val layer = launcher.dragLayer
+        private val scrim = FrameLayout(launcher).apply {
+            isClickable = true
+            setBackgroundColor(if (floating) 0x30000000 else android.graphics.Color.TRANSPARENT)
+            setOnClickListener { dismiss() }
+        }
+        val isShowing get() = scrim.parent != null
+        fun show() {
+            if (isShowing) return
+            layer.addView(scrim, FrameLayout.LayoutParams(-1, -1))
+            val width = if (floating) {
+                (launcher.resources.displayMetrics.widthPixels - (24 * density).toInt())
+                    .coerceAtMost((600 * density).toInt())
+            } else FrameLayout.LayoutParams.MATCH_PARENT
+            scrim.addView(content, FrameLayout.LayoutParams(width, if (floating) -2 else -1).apply {
+                gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                if (floating) topMargin = (12 * density).toInt()
+            })
+            content.isClickable = true
+        }
+        fun dismiss() {
+            if (!isShowing) return
+            (content.parent as? ViewGroup)?.removeView(content)
+            layer.removeView(scrim)
+            onDismiss()
+        }
+        fun hideForDrag() {
+            scrim.visibility = View.INVISIBLE
+        }
+        fun restoreAfterDrag() {
+            if (isShowing) scrim.visibility = View.VISIBLE
+        }
+        fun updateHeight(height: Int) {
+            val params = content.layoutParams as? FrameLayout.LayoutParams ?: return
+            if (params.height != height) {
+                params.height = height
+                content.layoutParams = params
+            }
+        }
+        fun observeLayout(listener: ViewTreeObserver.OnGlobalLayoutListener) {
+            content.viewTreeObserver.addOnGlobalLayoutListener(listener)
+        }
+        val decorView: View get() = content
+    }
+
     private fun showNativeAppPopup(
         launcher: LawnchairLauncher,
-        dialog: Dialog,
+        surface: PrimeSearchSurface,
         icon: com.android.launcher3.BubbleTextView,
     ): Boolean {
         if (icon.tag !is com.android.launcher3.model.data.ItemInfo) return false
-        val position = IntArray(2)
-        icon.getLocationOnScreen(position)
-        val width = icon.width.coerceAtLeast(1)
-        val height = icon.height.coerceAtLeast(1)
-        val dragLayer = launcher.dragLayer
-        val layerPosition = IntArray(2)
-        dragLayer.getLocationOnScreen(layerPosition)
-        dialog.dismiss()
-        (icon.parent as? ViewGroup)?.removeView(icon)
-        val params = android.widget.FrameLayout.LayoutParams(width, height).apply {
-            gravity = Gravity.TOP or Gravity.START
-        }
-        params.leftMargin = position[0] - layerPosition[0]
-        params.topMargin = position[1] - layerPosition[1]
-        dragLayer.addView(icon, params)
-        val popup = com.android.launcher3.popup.PopupContainerWithArrow.showForIcon(icon)
-        if (popup == null) {
-            dragLayer.removeView(icon)
-            return false
-        }
-        // Keep the temporary icon alive while its popup is visible or dragging.
-        // An arbitrary short delay would remove the drag source too early.
-        val cleanup = object : com.android.launcher3.dragndrop.DragController.DragListener {
-            override fun onDragStart(
-                dragObject: com.android.launcher3.DropTarget.DragObject,
-                options: com.android.launcher3.dragndrop.DragOptions,
-            ) = Unit
+        if (com.android.launcher3.popup.PopupContainerWithArrow.getOpen(launcher) != null) return false
+        return com.android.launcher3.popup.PopupContainerWithArrow.showForIcon(icon) != null
+    }
 
-            override fun onDragEnd() {
-                dragLayer.removeView(icon)
-                launcher.dragController.removeDragListener(this)
-            }
+    private fun enableNativeAppGestures(
+        launcher: LawnchairLauncher,
+        surface: PrimeSearchSurface,
+        icon: com.android.launcher3.BubbleTextView,
+    ) {
+        val slop = ViewConfiguration.get(launcher).scaledTouchSlop
+        var pressed = false
+        var downX = 0f
+        var downY = 0f
+        icon.setOnLongClickListener {
+            pressed = showNativeAppPopup(launcher, surface, icon)
+            pressed
         }
-        launcher.dragController.addDragListener(cleanup)
-        fun scheduleCleanup() {
-            icon.postDelayed({
-                if (launcher.dragController.isDragging) return@postDelayed
-                if (com.android.launcher3.popup.PopupContainerWithArrow.getOpen(launcher) != null) {
-                    scheduleCleanup()
-                } else {
-                    dragLayer.removeView(icon)
-                    launcher.dragController.removeDragListener(cleanup)
+        icon.setOnTouchListener { _, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    pressed = false
+                    downX = event.x
+                    downY = event.y
                 }
-            }, 300L)
+                MotionEvent.ACTION_MOVE -> {
+                    if (pressed && kotlin.math.hypot(
+                            (event.x - downX).toDouble(),
+                            (event.y - downY).toDouble(),
+                        ) > slop * 2) {
+                        pressed = false
+                        com.android.launcher3.popup.PopupContainerWithArrow.getOpen(launcher)?.close(true)
+                        if (com.android.launcher3.touch.ItemLongClickListener.canStartDrag(launcher)) {
+                            launcher.workspace.beginDragShared(
+                                icon, launcher.appsView,
+                                com.android.launcher3.dragndrop.DragOptions(),
+                            )
+                            surface.hideForDrag()
+                            val listener = object : com.android.launcher3.dragndrop.DragController.DragListener {
+                                override fun onDragStart(
+                                    dragObject: com.android.launcher3.DropTarget.DragObject,
+                                    options: com.android.launcher3.dragndrop.DragOptions,
+                                ) = Unit
+                                override fun onDragEnd() {
+                                    launcher.dragController.removeDragListener(this)
+                                    surface.dismiss()
+                                }
+                            }
+                            launcher.dragController.addDragListener(listener)
+                        }
+                    }
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> pressed = false
+            }
+            false
         }
-        scheduleCleanup()
-        return true
     }
 
     fun show(launcher: LawnchairLauncher) {
-        if (activeDialog?.isShowing == true && activeDialog?.window?.decorView?.isAttachedToWindow == true) return
+        if (activeDialog?.isShowing == true) return
         if (activeDialog != null) dismiss()
         val density = launcher.resources.displayMetrics.density
         val inset = (16 * density).toInt()
@@ -248,15 +310,11 @@ object PrimeSearchOverlay {
             }
             addView(settingsFooter, LinearLayout.LayoutParams(-1, (40 * density).toInt()))
         }
-        val dialog = Dialog(launcher).apply {
-            setContentView(container)
-            setCanceledOnTouchOutside(true)
-            window?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-            setOnDismissListener {
-                algorithm.cancel(true)
-                if (activeAlgorithm === algorithm) activeAlgorithm = null
-                if (activeDialog === this) activeDialog = null
-            }
+        lateinit var dialog: PrimeSearchSurface
+        dialog = PrimeSearchSurface(launcher, container, floating, density) {
+            algorithm.cancel(true)
+            if (activeAlgorithm === algorithm) activeAlgorithm = null
+            if (activeDialog === dialog) activeDialog = null
         }
         val packageManager = launcher.packageManager
         // Do not enumerate installed apps or query usage stats on the UI thread
@@ -373,14 +431,10 @@ object PrimeSearchOverlay {
                                 dialog.dismiss()
                                 com.android.launcher3.touch.ItemClickHandler.INSTANCE.onClick(this)
                             }
-                            setOnLongClickListener {
-                                showNativeAppPopup(launcher, dialog, this)
-                            }
+                            
                         }
                         cell.addView(nativeIcon, LinearLayout.LayoutParams(iconSize, iconSize))
-                        cell.setOnLongClickListener {
-                            showNativeAppPopup(launcher, dialog, nativeIcon)
-                        }
+                        enableNativeAppGestures(launcher, dialog, nativeIcon)
                     } else {
                         val fallbackIcon = ImageView(launcher).apply {
                             setImageDrawable(packageManager.getApplicationIcon(app))
@@ -864,9 +918,7 @@ object PrimeSearchOverlay {
                     if (isAppIcon) {
                         view.minimumHeight = 0
                         (view as? app.lawnchair.allapps.views.SearchResultIcon)?.let { icon ->
-                            icon.setOnLongClickListener {
-                                showNativeAppPopup(launcher, dialog, icon)
-                            }
+                            enableNativeAppGestures(launcher, dialog, icon)
                         }
                     }
                 }
@@ -897,33 +949,12 @@ object PrimeSearchOverlay {
         activeDialog = dialog
         input.requestFocus()
         dialog.show()
-        dialog.window?.apply {
-            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            setGravity(Gravity.TOP)
-            if (floating) {
-                val metrics = launcher.resources.displayMetrics
-                val width = (metrics.widthPixels - (12 * density).toInt() * 2)
-                    .coerceAtMost((600 * density).toInt())
-                // Resize dynamically when the IME opens: fixed 72% screen height
-                // otherwise extends underneath the keyboard on some devices.
-                setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
-                attributes = attributes.apply { dimAmount = 0.18f }
-            } else {
-                setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
-                attributes = attributes.apply { dimAmount = 0f }
-            }
-            setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or
-                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
-        }
         if (floating) {
-            val window = dialog.window
-            val decor = window?.decorView
+            val decor = dialog.decorView
             val screenHeight = launcher.resources.displayMetrics.heightPixels
             val margin = (12 * density).toInt()
-            val targetWidth = (launcher.resources.displayMetrics.widthPixels - margin * 2)
-                .coerceAtMost((600 * density).toInt())
             var lastHeight = -1
-            decor?.viewTreeObserver?.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+            dialog.observeLayout(object : ViewTreeObserver.OnGlobalLayoutListener {
                 override fun onGlobalLayout() {
                     if (!dialog.isShowing) {
                         decor.viewTreeObserver.removeOnGlobalLayoutListener(this)
@@ -933,8 +964,6 @@ object PrimeSearchOverlay {
                     decor.getWindowVisibleDisplayFrame(visible)
                     val available = visible.height().coerceAtMost(screenHeight)
                     val maximum = (available - margin).coerceAtLeast((160 * density).toInt())
-                    // Measure natural content height independently of the dialog
-                    // height, then cap it to the visible region above the IME.
                     val barHeight = input.height.coerceAtLeast((64 * density).toInt())
                     val desiredContent = if (zeroState.visibility == View.VISIBLE) zeroState.measuredHeight else results.measuredHeight
                     val footerHeight = container.getChildAt(container.childCount - 1).measuredHeight
@@ -943,7 +972,7 @@ object PrimeSearchOverlay {
                         .coerceIn((120 * density).toInt(), maximum)
                     if (desired != lastHeight) {
                         lastHeight = desired
-                        window.setLayout(targetWidth, desired)
+                        dialog.updateHeight(desired)
                     }
                 }
             })
@@ -989,21 +1018,7 @@ object PrimeSearchOverlay {
     }
 
     fun dismiss() {
-        val dialog = activeDialog ?: return
-        // Android can detach the dialog window before a second HOME intent
-        // arrives. Dialog.dismiss() then throws from removeViewImmediate().
+        activeDialog?.dismiss()
         activeDialog = null
-        if (dialog.window?.decorView?.isAttachedToWindow != true) {
-            activeAlgorithm?.cancel(true)
-            activeAlgorithm = null
-            return
-        }
-        try {
-            dialog.dismiss()
-        } catch (_: IllegalArgumentException) {
-            // WindowManager already removed the decor view.
-            activeAlgorithm?.cancel(true)
-            activeAlgorithm = null
-        }
     }
 }
