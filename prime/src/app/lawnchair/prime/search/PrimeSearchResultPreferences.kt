@@ -20,6 +20,13 @@ object PrimeSearchResultPreferences {
     private fun surfacePrefs(context: Context, surface: Surface) =
         context.getSharedPreferences(surface.store, Context.MODE_PRIVATE)
 
+    fun showCompletedTasks(context: Context, surface: Surface): Boolean =
+        surfacePrefs(context, surface).getBoolean("show_completed_tasks", false)
+
+    fun setShowCompletedTasks(context: Context, surface: Surface, enabled: Boolean) {
+        surfacePrefs(context, surface).edit().putBoolean("show_completed_tasks", enabled).apply()
+    }
+
     fun hasCategorySetting(context: Context, category: Category, surface: Surface): Boolean =
         surfacePrefs(context, surface).contains(category.key)
 
