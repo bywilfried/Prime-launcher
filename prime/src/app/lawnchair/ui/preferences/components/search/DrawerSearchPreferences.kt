@@ -215,6 +215,7 @@ private fun DrawerAdvancedSearchPreferences() {
     val context = LocalContext.current
     var permissionRefresh by remember { mutableStateOf(0) }
     var pendingCategory by remember { mutableStateOf<PrimeSearchResultPreferences.Category?>(null) }
+    var categoryStates by remember { mutableStateOf(PrimeSearchResultPreferences.order(context, PrimeSearchResultPreferences.Surface.DRAWER).associateWith { PrimeSearchResultPreferences.enabled(context, it, PrimeSearchResultPreferences.Surface.DRAWER) }) }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -315,7 +316,6 @@ private fun DrawerAdvancedSearchPreferences() {
         val drawerCategories = PrimeSearchResultPreferences.order(context, drawerSurface)
         var drawerOrder by remember { mutableStateOf(drawerCategories) }
         var categorySettings by remember { mutableStateOf<PrimeSearchResultPreferences.Category?>(null) }
-        var categoryStates by remember { mutableStateOf(drawerOrder.associateWith { PrimeSearchResultPreferences.enabled(context, it, drawerSurface) }) }
         Text("Afficher dans les résultats de recherche")
         drawerOrder.forEachIndexed { index, category ->
             val needsPermission = PrimeSearchPermissions.required(category) &&
