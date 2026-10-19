@@ -98,7 +98,7 @@ fun DockSearchPreference(
                             heading = stringResource(R.string.search_bar_settings),
                         ) {
                             NavigationActionPreference(
-                                label = stringResource(R.string.search_provider),
+                                label = "Moteur de recherche du dock",
                                 destination = DockSearchProvider,
                                 subtitle = stringResource(
                                     id = QsbSearchProvider.values()
