@@ -87,50 +87,53 @@ class LawnchairBackup(
                 wallpaperManager.setBitmap(BitmapFactory.decodeStream(it))
             }
         }
-        if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
-            // The archive uses launcher.db, while the workspace uses a grid-specific
-            // database name. Restoring to restored.db never populates the active workspace.
-            val dbName = LauncherAppState.getIDP(context).dbFile
-            require(dbName.isNotBlank()) { "Active grid has no workspace database name" }
-            handlers[LAUNCHER_DB_FILE_NAME] = { input ->
-                val target = context.getDatabasePath(dbName)
-                target.parentFile?.mkdirs()
-                // Stage and validate the archive database before replacing the active one.
-                // Never validate it through a ModelDbController whose SQLite connection
-                // may still reference the old workspace database.
-                val staged = File(target.parentFile, "$dbName.prime-restore")
-                try {
-                    staged.outputStream().use { output -> input.copyTo(output) }
-                    val db = SQLiteDatabase.openDatabase(
-                        staged.absolutePath,
+        // Stage the workspace until all preferences have been restored. The archive's
+        // entry order must not decide which grid-specific database receives the layout.
+        val stagedWorkspace = File(context.cacheDir, "prime-workspace-restore.db")
+        try {
+            if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
+                handlers[LAUNCHER_DB_FILE_NAME] = { input ->
+                    stagedWorkspace.outputStream().use { output -> input.copyTo(output) }
+                    SQLiteDatabase.openDatabase(
+                        stagedWorkspace.absolutePath,
                         null,
                         SQLiteDatabase.OPEN_READONLY,
-                    )
-                    db.use {
+                    ).use { db ->
                         val count = DatabaseUtils.longForQuery(
-                            it,
+                            db,
                             "SELECT COUNT(*) FROM favorites",
                             null,
                         )
                         require(count > 0L) { "Backup workspace database contains no items" }
                     }
-                    check(context.deleteDatabase(dbName) || !target.exists()) {
-                        "Unable to replace the active workspace database"
-                    }
-                    staged.inputStream().use { source ->
-                        target.outputStream().use { output -> source.copyTo(output) }
-                    }
-                } finally {
-                    staged.delete()
                 }
             }
-        }
-        readZip(handlers)
-        if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
-            DeviceGridState(info.gridState).writeToPrefs(context, true)
-            // Perform profile remapping and widget validation on the next launcher
-            // startup, after its existing SQLite connections have been closed.
-            RestoreDbTask.setPending(context)
+            readZip(handlers)
+            if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
+                DeviceGridState(info.gridState).writeToPrefs(context, true)
+                check(stagedWorkspace.exists()) { "Backup workspace database is missing" }
+
+                // DB_FILE comes from the restored launcher preferences, not the
+                // pre-restore IDP, which may still reflect the default grid.
+                val dbName = LauncherPrefs.get(context).get(LauncherPrefs.DB_FILE)
+                    .takeIf { it.isNotBlank() }
+                    ?: LauncherAppState.getIDP(context).dbFile
+                require(dbName.isNotBlank()) { "Restored grid has no workspace database name" }
+                val target = context.getDatabasePath(dbName)
+                target.parentFile?.mkdirs()
+                check(context.deleteDatabase(dbName) || !target.exists()) {
+                    "Unable to replace the restored grid workspace database"
+                }
+                stagedWorkspace.inputStream().use { source ->
+                    target.outputStream().use { output -> source.copyTo(output) }
+                }
+
+                // Perform profile remapping and widget validation on the next launcher
+                // startup, after its existing SQLite connections have been closed.
+                RestoreDbTask.setPending(context)
+            }
+        } finally {
+            stagedWorkspace.delete()
         }
     }
 
