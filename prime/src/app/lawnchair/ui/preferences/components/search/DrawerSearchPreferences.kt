@@ -317,64 +317,39 @@ private fun DrawerAdvancedSearchPreferences() {
         var drawerOrder by remember { mutableStateOf(drawerCategories) }
         var categorySettings by remember { mutableStateOf<PrimeSearchResultPreferences.Category?>(null) }
         Text("Afficher dans les résultats de recherche")
+        val sharedDrag = remember { CategoryDragState() }
+        fun moveDrawerCategory(from: Int, to: Int) {
+            if (from !in drawerOrder.indices || to !in drawerOrder.indices || from == to) return
+            val updated = drawerOrder.toMutableList()
+            updated.add(to, updated.removeAt(from))
+            drawerOrder = updated
+            PrimeSearchResultPreferences.saveOrder(context, updated, drawerSurface)
+        }
         drawerOrder.forEachIndexed { index, category ->
             val needsPermission = PrimeSearchPermissions.required(category) &&
                 !PrimeSearchPermissions.granted(context, category)
             val enabled = categoryStates[category] ?: false
-            PreferenceTemplate(
-                title = { Text(category.title) },
-                description = {
-                    Text(if (needsPermission) PrimeSearchPermissions.explanation(category) else category.description)
+            SharedCategoryCard(
+                category = category,
+                index = index,
+                lastIndex = drawerOrder.lastIndex,
+                enabled = enabled,
+                needsPermission = needsPermission,
+                onSettings = { categorySettings = category },
+                onMove = ::moveDrawerCategory,
+                onEnabled = { value ->
+                    PrimeSearchResultPreferences.setEnabled(context, category, value, drawerSurface)
+                    categoryStates = categoryStates + (category to PrimeSearchResultPreferences.enabled(context, category, drawerSurface))
+                    permissionRefresh++
                 },
-                endWidget = {
-                    Row {
-                        IconButton(onClick = { categorySettings = category }) {
-                            Icon(Icons.Default.Settings, contentDescription = "Paramètres de ${category.title}")
-                        }
-                        Icon(Icons.Default.DragHandle, contentDescription = "Ordre des résultats")
-                        IconButton(onClick = {
-                            if (index > 0) {
-                                val updated = drawerOrder.toMutableList()
-                                updated.add(index - 1, updated.removeAt(index))
-                                drawerOrder = updated
-                                PrimeSearchResultPreferences.saveOrder(context, updated, drawerSurface)
-                            }
-                        }, enabled = index > 0) {
-                            Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Monter")
-                        }
-                        IconButton(onClick = {
-                            if (index < drawerOrder.lastIndex) {
-                                val updated = drawerOrder.toMutableList()
-                                updated.add(index + 1, updated.removeAt(index))
-                                drawerOrder = updated
-                                PrimeSearchResultPreferences.saveOrder(context, updated, drawerSurface)
-                            }
-                        }, enabled = index < drawerOrder.lastIndex) {
-                            Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Descendre")
-                        }
-                        androidx.compose.material3.Switch(
-                            checked = enabled,
-                            onCheckedChange = { value ->
-                                if (value && needsPermission) requestCategory(category, drawerSurface)
-                                else {
-                                    PrimeSearchResultPreferences.setEnabled(context, category, value, drawerSurface)
-                                    categoryStates = categoryStates + (category to PrimeSearchResultPreferences.enabled(context, category, drawerSurface))
-                                    permissionRefresh++
-                                }
-                            },
-                        )
-                    }
-                },
-                onClick = {
-                    if (needsPermission) requestCategory(category, drawerSurface)
-                    else {
-                        PrimeSearchResultPreferences.setEnabled(context, category, !enabled, drawerSurface)
-                        categoryStates = categoryStates + (category to PrimeSearchResultPreferences.enabled(context, category, drawerSurface))
-                        permissionRefresh++
-                    }
-                },
+                onPermission = { requestCategory(category, drawerSurface) },
+                dragState = sharedDrag,
             )
         }
+        androidx.compose.material3.TextButton(onClick = {
+            PrimeSearchResultPreferences.resetOrder(context, drawerSurface)
+            drawerOrder = PrimeSearchResultPreferences.order(context, drawerSurface)
+        }) { Text("Réinitialiser l'ordre") }
         categorySettings?.let { selected ->
             androidx.compose.material3.AlertDialog(
                 onDismissRequest = { categorySettings = null },
