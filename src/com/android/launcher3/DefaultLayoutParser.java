@@ -312,6 +312,25 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
                         packageName = resolved.activityInfo.packageName;
                     }
                 }
+                // Contacts apps on Samsung may not advertise CATEGORY_APP_CONTACTS.
+                // LauncherApps can enumerate launchable apps even when this launcher
+                // is not the selected default home.
+                if (packageName == null && "contacts".equals(role)) {
+                    android.content.pm.LauncherApps apps =
+                            mContext.getSystemService(android.content.pm.LauncherApps.class);
+                    if (apps != null) {
+                        for (android.content.pm.LauncherActivityInfo activity :
+                                apps.getActivityList(null, android.os.Process.myUserHandle())) {
+                            String pkg = activity.getComponentName().getPackageName();
+                            if (pkg.equals("com.samsung.android.contacts")
+                                    || pkg.equals("com.google.android.contacts")
+                                    || pkg.equals("com.android.contacts")) {
+                                packageName = pkg;
+                                break;
+                            }
+                        }
+                    }
+                }
                 if (packageName == null) {
                     Log.w(TAG, "No default app found for dock role: " + role);
                     return -1;
@@ -370,9 +389,11 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
             // Persist the actual action icon in the shortcut row. A plain shortcut
             // otherwise falls back to the Android generic launcher icon.
             try {
-                int iconRes = "drawer".equals(action)
-                        ? R.drawable.ic_apps : R.drawable.ic_search;
-                Drawable drawable = mContext.getDrawable(iconRes);
+                app.lawnchair.gestures.config.GestureHandlerConfig config =
+                        "drawer".equals(action)
+                                ? app.lawnchair.gestures.config.GestureHandlerConfig.OpenAppDrawer.INSTANCE
+                                : app.lawnchair.gestures.config.GestureHandlerConfig.OpenPrimeSearch.INSTANCE;
+                Drawable drawable = config.getIcon(mContext).loadDrawable(mContext);
                 if (drawable != null) {
                     int size = (int) (48 * mContext.getResources().getDisplayMetrics().density);
                     size = Math.max(1, size);
