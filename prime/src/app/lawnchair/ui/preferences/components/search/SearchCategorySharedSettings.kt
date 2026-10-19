@@ -53,6 +53,16 @@ internal fun SharedCategoryOptions(category: Prefs.Category, surface: Prefs.Surf
                     Prefs.Category.REMINDERS -> "tasks"
                     else -> "contacts"
                 }
+                if (category == Prefs.Category.REMINDERS) {
+                    var showCompleted by remember(surface) { mutableStateOf(Prefs.showCompletedTasks(context, surface)) }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Afficher les tâches terminées", modifier = Modifier.weight(1f))
+                        Switch(checked = showCompleted, onCheckedChange = {
+                            showCompleted = it
+                            Prefs.setShowCompletedTasks(context, surface, it)
+                        })
+                    }
+                }
                 if (category == Prefs.Category.CALENDAR) {
                     var futureOnly by remember(surface) { mutableStateOf(PrimeCalendarSearch.futureOnly(context, surface)) }
                     Row {
