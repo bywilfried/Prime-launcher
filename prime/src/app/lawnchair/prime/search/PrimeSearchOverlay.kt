@@ -413,7 +413,7 @@ object PrimeSearchOverlay {
             val rows = PrimeSearchResultPreferences.zeroStateRows(launcher)
             // Derive row height from the actual icon dimension, font metrics
             // and vertical padding instead of a hard-coded 100dp.
-            val iconSize = (48 * density).toInt()
+            val iconSize = (48 * density * PrimeSearchResultPreferences.iconSizePercent(launcher) / 100f).toInt()
             val titleTextSizeSp = 11f
             val titlePaint = android.text.TextPaint().apply {
                 textSize = titleTextSizeSp * launcher.resources.displayMetrics.scaledDensity
@@ -952,6 +952,9 @@ object PrimeSearchOverlay {
                     if (isAppIcon) {
                         view.minimumHeight = 0
                         (view as? app.lawnchair.allapps.views.SearchResultIcon)?.let { icon ->
+                            val scaled = (icon.iconSize *
+                                PrimeSearchResultPreferences.iconSizePercent(launcher) / 100f).toInt()
+                            icon.setPrimeIconSize(scaled.coerceAtLeast(1))
                             enableNativeAppGestures(launcher, dialog, icon)
                         }
                     }
