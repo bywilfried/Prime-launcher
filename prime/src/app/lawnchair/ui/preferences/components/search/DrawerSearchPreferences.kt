@@ -388,33 +388,8 @@ private fun DrawerAdvancedSearchPreferences() {
                                 Text("Autoriser l'accès")
                             }
                         }
-                        SharedCategoryOptions(selected, drawerSurface)
-                        if (selected == PrimeSearchResultPreferences.Category.CALENDAR || selected == PrimeSearchResultPreferences.Category.CONTACTS || selected == PrimeSearchResultPreferences.Category.REMINDERS) {
-                            val kind = when (selected) {
-                                PrimeSearchResultPreferences.Category.CALENDAR -> "calendars"
-                                PrimeSearchResultPreferences.Category.REMINDERS -> "tasks"
-                                else -> "contacts"
-                            }
-                            val sources = remember(selected, permissionRefresh) {
-                                when (kind) {
-                                    "calendars" -> app.lawnchair.prime.search.PrimeSourceSelection.calendars(context)
-                                    "tasks" -> app.lawnchair.prime.search.PrimeTasksSearch.lists(context)
-                                    else -> app.lawnchair.prime.search.PrimeSourceSelection.contactAccounts(context)
-                                }
-                            }
-                            sources.forEach { source ->
-                                var active by remember(source.id) {
-                                    mutableStateOf(app.lawnchair.prime.search.PrimeSourceSelection.isSelected(context, kind, source.id, drawerSurface))
-                                }
-                                Row {
-                                    Text(source.label, modifier = Modifier.weight(1f))
-                                    androidx.compose.material3.Switch(checked = active, onCheckedChange = {
-                                        active = it
-                                        app.lawnchair.prime.search.PrimeSourceSelection.setSelected(context, kind, source.id, it, sources, drawerSurface)
-                                    })
-                                }
-                            }
-                        }
+                        SharedCategoryOptions(selected, drawerSurface, permissionRefresh)
+
                     }
                 },
                 confirmButton = {
