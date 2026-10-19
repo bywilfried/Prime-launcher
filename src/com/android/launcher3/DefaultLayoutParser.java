@@ -392,7 +392,16 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
                     size = Math.max(1, size);
                     Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
                     Canvas canvas = new Canvas(bitmap);
-                    drawable.setBounds(0, 0, size, size);
+                    // The initial workspace stores a raw bitmap rather than an
+                    // adaptive shortcut icon. Draw the same white rounded tile
+                    // seen around manually added Actions shortcuts.
+                    android.graphics.Paint background = new android.graphics.Paint(
+                            android.graphics.Paint.ANTI_ALIAS_FLAG);
+                    background.setColor(android.graphics.Color.WHITE);
+                    float radius = size * 0.25f;
+                    canvas.drawRoundRect(0, 0, size, size, radius, radius, background);
+                    int inset = Math.round(size * 0.22f);
+                    drawable.setBounds(inset, inset, size - inset, size - inset);
                     drawable.draw(canvas);
                     ByteArrayOutputStream output = new ByteArrayOutputStream();
                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, output);
