@@ -91,7 +91,9 @@ object PrimeSearchOverlay {
         dragLayer.getLocationOnScreen(layerPosition)
         dialog.dismiss()
         (icon.parent as? ViewGroup)?.removeView(icon)
-        val params = com.android.launcher3.dragndrop.DragLayer.LayoutParams(width, height)
+        val params = android.widget.FrameLayout.LayoutParams(width, height).apply {
+            gravity = Gravity.TOP or Gravity.START
+        }
         params.leftMargin = position[0] - layerPosition[0]
         params.topMargin = position[1] - layerPosition[1]
         dragLayer.addView(icon, params)
