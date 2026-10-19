@@ -101,7 +101,7 @@ class LawnchairShortcutActivity : ComponentActivity() {
 
         val shortcutInfo = ShortcutInfo.Builder(
             context,
-            "$GESTURE_SHORTCUT_ID_PREFIX:$selectedHandler",
+            "$GESTURE_SHORTCUT_ID_PREFIX:${GestureHandlerConfig.toString(selectedHandler)}",
         )
             .apply {
                 setShortLabel(selectedHandler.getDisplayLabel(context))
