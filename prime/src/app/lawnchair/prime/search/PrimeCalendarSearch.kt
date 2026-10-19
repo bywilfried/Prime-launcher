@@ -3,6 +3,8 @@ package app.lawnchair.prime.search
 import android.content.Context
 import android.net.Uri
 import android.provider.CalendarContract
+import java.text.Normalizer
+import java.util.Locale
 
 /** Search calendar events and their reminders from the Android calendar provider. */
 object PrimeCalendarSearch {
@@ -25,6 +27,9 @@ object PrimeCalendarSearch {
     fun events(context: Context, query: String): List<Result> =
         events(context, query, PrimeSearchResultPreferences.Surface.PRIME_SEARCH)
 
+    private fun fold(text: String): String = Normalizer.normalize(text, Normalizer.Form.NFD)
+        .replace(Regex("\\p{M}+"), "").lowercase(Locale.ROOT)
+
     fun events(context: Context, query: String, surface: PrimeSearchResultPreferences.Surface): List<Result> {
         if (query.isBlank() || !PrimeSearchPermissions.granted(context, PrimeSearchResultPreferences.Category.CALENDAR)) return emptyList()
         val results = mutableListOf<Result>()
@@ -34,13 +39,16 @@ object PrimeCalendarSearch {
         runCatching {
             context.contentResolver.query(
                 CalendarContract.Events.CONTENT_URI, columns,
-                "(${CalendarContract.Events.TITLE} LIKE ? OR ${CalendarContract.Events.DESCRIPTION} LIKE ? OR ${CalendarContract.Events.EVENT_LOCATION} LIKE ?)" +
-                    if (futureOnly(context, surface)) " AND ${CalendarContract.Events.DTSTART} >= ?" else "",
-                (Array(3) { "%${query.trim()}%" }.toList() +
-                    if (futureOnly(context, surface)) listOf(System.currentTimeMillis().toString()) else emptyList()).toTypedArray(),
+                if (futureOnly(context, surface)) "${CalendarContract.Events.DTSTART} >= ?" else null,
+                if (futureOnly(context, surface)) arrayOf(System.currentTimeMillis().toString()) else null,
                 "${CalendarContract.Events.DTSTART} DESC"
             )?.use { cursor ->
-                while (cursor.moveToNext() && results.size < 25) {
+                val words = fold(query.trim()).split(Regex("\\s+")).filter { it.isNotEmpty() }
+                var scanned = 0
+                while (cursor.moveToNext() && results.size < 25 && scanned++ < 5000) {
+                    val titleText = cursor.getString(1).orEmpty()
+                    val searchable = fold(titleText + " " + cursor.getString(2).orEmpty() + " " + cursor.getString(4).orEmpty())
+                    if (!words.all { it in searchable }) continue
                     val id = cursor.getLong(0)
                     if (!PrimeSourceSelection.isSelected(context, "calendars", cursor.getLong(5).toString(), surface)) continue
                     val title = cursor.getString(1).orEmpty()
