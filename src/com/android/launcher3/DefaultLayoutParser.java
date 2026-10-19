@@ -134,6 +134,10 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
                 }
                 resolved = systemApp;
             }
+            if (resolved == null || resolved.activityInfo == null) {
+                Log.w(TAG, "No installed application resolves " + metaIntent);
+                return -1;
+            }
             final ActivityInfo info = resolved.activityInfo;
             final Intent intent = mPackageManager.getLaunchIntentForPackage(info.packageName);
             if (intent == null) {
@@ -321,8 +325,8 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
                 try {
                     mPackageManager.getReceiverInfo(cn, 0);
                 } catch (Exception e1) {
-                    Log.d(TAG, "Can't find widget provider: " + cn.getClassName());
-                    return -1;
+                    Log.w(TAG, "Widget provider not ready; preserving placeholder: " + cn);
+                    return super.verifyAndInsert(cn, extras);
                 }
             }
 
