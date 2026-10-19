@@ -147,32 +147,39 @@ object PrimeSearchOverlay {
     ) {
         val slop = ViewConfiguration.get(launcher).scaledTouchSlop
         var pressed = false
+        var dragging = false
         var downX = 0f
         var downY = 0f
         icon.setOnLongClickListener {
             pressed = showNativeAppPopup(launcher, surface, icon)
+            if (pressed) {
+                // The search surface must keep ownership of the gesture. Otherwise
+                // vertical movement reaches the launcher's swipe gesture handlers.
+                icon.parent?.requestDisallowInterceptTouchEvent(true)
+                (launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                    .hideSoftInputFromWindow(icon.windowToken, 0)
+                icon.clearFocus()
+            }
             pressed
         }
         icon.setOnTouchListener { _, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     pressed = false
+                    dragging = false
                     downX = event.x
                     downY = event.y
+                    false
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    if (pressed && kotlin.math.hypot(
+                    if (pressed && !dragging && kotlin.math.hypot(
                             (event.x - downX).toDouble(),
                             (event.y - downY).toDouble(),
                         ) > slop * 2) {
                         pressed = false
+                        dragging = true
                         com.android.launcher3.popup.PopupContainerWithArrow.getOpen(launcher)?.close(true)
                         if (com.android.launcher3.touch.ItemLongClickListener.canStartDrag(launcher)) {
-                            launcher.workspace.beginDragShared(
-                                icon, launcher.appsView,
-                                com.android.launcher3.dragndrop.DragOptions(),
-                            )
-                            surface.hideForDrag()
                             val listener = object : com.android.launcher3.dragndrop.DragController.DragListener {
                                 override fun onDragStart(
                                     dragObject: com.android.launcher3.DropTarget.DragObject,
@@ -184,12 +191,26 @@ object PrimeSearchOverlay {
                                 }
                             }
                             launcher.dragController.addDragListener(listener)
+                            launcher.workspace.beginDragShared(
+                                icon, launcher.appsView,
+                                com.android.launcher3.dragndrop.DragOptions(),
+                            )
+                            surface.hideForDrag()
+                        } else {
+                            dragging = false
                         }
                     }
+                    // Consume movement after long press instead of triggering swipe actions.
+                    pressed || dragging
                 }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> pressed = false
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    val consumed = pressed || dragging
+                    pressed = false
+                    dragging = false
+                    consumed
+                }
+                else -> pressed || dragging
             }
-            false
         }
     }
 
