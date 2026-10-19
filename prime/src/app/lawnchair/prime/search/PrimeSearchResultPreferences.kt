@@ -364,6 +364,10 @@ object PrimeSearchResultPreferences {
         ).apply()
     }
 
+    fun resetOrder(context: Context, surface: Surface) {
+        surfacePrefs(context, surface).edit().remove("category_order").apply()
+    }
+
     fun resetOrder(context: Context) {
         prefs(context).edit().remove("category_order").apply()
     }
