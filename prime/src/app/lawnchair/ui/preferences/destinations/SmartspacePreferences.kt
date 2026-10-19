@@ -82,35 +82,22 @@ fun SmartspacePreferences(
             SmartspacePreview()
             LawnchairSmartspaceSettings(smartspaceProvider)
         } else {
-            MainSwitchPreference(
-                adapter = smartspaceAdapter,
-                label = stringResource(R.string.smartspace_widget_toggle_label),
-                description = stringResource(id = R.string.smartspace_widget_toggle_description).takeIf { modeIsLawnchair },
-            ) {
-                if (modeIsLawnchair) {
-                    SmartspacePreview()
-                }
-                PreferenceGroup {
-                    SmartspaceProviderPreference(
-                        adapter = smartspaceModeAdapter,
-                    )
-                }
-
-                Crossfade(
-                    targetState = selectedMode,
-                    label = "Smartspace setting transition",
-                ) { targetState ->
-                    when (targetState) {
-                        LawnchairSmartspace -> {
-                            LawnchairSmartspaceSettings(smartspaceProvider)
-                        }
-
-                        Smartspacer -> {
-                            SmartspacerSettings()
-                        }
-
-                        else -> {}
-                    }
+            // Smartspace is enabled by placing a movable widget, not by a
+            // global switch that injects a fixed view on the first page.
+            if (modeIsLawnchair) {
+                SmartspacePreview()
+            }
+            PreferenceGroup {
+                SmartspaceProviderPreference(adapter = smartspaceModeAdapter)
+            }
+            Crossfade(
+                targetState = selectedMode,
+                label = "Smartspace setting transition",
+            ) { targetState ->
+                when (targetState) {
+                    LawnchairSmartspace -> LawnchairSmartspaceSettings(smartspaceProvider)
+                    Smartspacer -> SmartspacerSettings()
+                    else -> {}
                 }
             }
         }

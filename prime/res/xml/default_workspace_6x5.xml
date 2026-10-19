@@ -15,65 +15,18 @@
 -->
 
 <favorites xmlns:launcher="http://schemas.android.com/apk/res-auto/com.android.launcher3">
-
-    <!-- Hotseat (We use the screen as the position of the item in the hotseat) -->
-    <!-- Mail Calendar Gallery Store Internet Camera -->
-    <resolve
-        launcher:container="-101"
-        launcher:screen="0"
-        launcher:x="0"
-        launcher:y="0" >
-        <favorite
-            launcher:className="com.android.contacts.activities.TwelveKeyDialer"
-            launcher:packageName="com.android.contacts" />
-        <favorite launcher:uri="#Intent;action=android.intent.action.MAIN;category=android.intent.category.APP_EMAIL;end" />
-        <favorite launcher:uri="mailto:" />
+    <!-- Minimal first-run layout. Other app shortcuts are intentionally omitted. -->
+    <resolve launcher:container="-101" launcher:screen="0" launcher:x="0" launcher:y="0">
+        <favorite launcher:uri="#Intent;action=android.intent.action.DIAL;end" />
     </resolve>
-
-    <resolve
-        launcher:container="-101"
-        launcher:screen="1"
-        launcher:x="1"
-        launcher:y="0" >
-        <favorite launcher:uri="#Intent;action=android.intent.action.MAIN;category=android.intent.category.APP_CALENDAR;end" />
+    <resolve launcher:container="-101" launcher:screen="1" launcher:x="1" launcher:y="0">
+        <favorite launcher:uri="#Intent;action=android.intent.action.MAIN;category=android.intent.category.APP_CONTACTS;end" />
     </resolve>
-
-    <resolve
-        launcher:container="-101"
-        launcher:screen="2"
-        launcher:x="2"
-        launcher:y="0" >
-        <favorite launcher:uri="#Intent;action=android.intent.action.MAIN;category=android.intent.category.APP_GALLERY;end" />
-        <favorite launcher:uri="#Intent;type=images/*;end" />
+    <resolve launcher:container="-101" launcher:screen="3" launcher:x="3" launcher:y="0">
+        <favorite launcher:uri="#Intent;action=android.intent.action.MAIN;category=android.intent.category.APP_MESSAGING;end" />
+        <favorite launcher:uri="sms:" />
     </resolve>
-
-    <resolve
-        launcher:container="-101"
-        launcher:screen="3"
-        launcher:x="3"
-        launcher:y="0" >
-        <favorite launcher:uri="#Intent;action=android.intent.action.MAIN;category=android.intent.category.APP_MARKET;end" />
-        <favorite launcher:uri="market://details?id=com.android.launcher" />
-    </resolve>
-
-    <resolve
-        launcher:container="-101"
-        launcher:screen="4"
-        launcher:x="4"
-        launcher:y="0" >
-        <favorite
-            launcher:uri="#Intent;action=android.intent.action.MAIN;category=android.intent.category.APP_BROWSER;end" />
-        <favorite launcher:uri="http://www.example.com/" />
-    </resolve>
-
-    <!-- Resolve camera intent if GoogleCamera is not available e.g. on emulator -->
-    <resolve
-        launcher:container="-101"
-        launcher:screen="5"
-        launcher:x="5"
-        launcher:y="0" >
-        <favorite launcher:uri="#Intent;action=android.media.action.STILL_IMAGE_CAMERA;end" />
-        <favorite launcher:uri="#Intent;action=android.intent.action.CAMERA_BUTTON;end" />
-    </resolve>
-
+    <prime-action launcher:container="-101" launcher:screen="2" launcher:x="2" launcher:y="0" launcher:action="drawer" />
+    <prime-action launcher:screen="0" launcher:x="3" launcher:y="-1" launcher:action="search" />
+    <appwidget launcher:packageName="self" launcher:className="app.lawnchair.smartspace.SmartspaceAppWidgetProvider" launcher:screen="0" launcher:x="0" launcher:y="0" launcher:spanX="3" launcher:spanY="2" />
 </favorites>

@@ -36,6 +36,7 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
     private static final String TAG_FAVORITES = "favorites";
     protected static final String TAG_FAVORITE = "favorite";
     private static final String TAG_APPWIDGET = "appwidget";
+    private static final String TAG_PRIME_ACTION = "prime-action";
     protected static final String TAG_SHORTCUT = "shortcut";
     private static final String TAG_FOLDER = "folder";
     private static final String TAG_PARTNER_FOLDER = "partner-folder";
@@ -73,6 +74,7 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
         parsers.put(TAG_SEARCH_WIDGET, new SearchWidgetParser());
         parsers.put(TAG_SHORTCUT, new ShortcutParser());
         parsers.put(TAG_RESOLVE, new ResolveParser());
+        parsers.put(TAG_PRIME_ACTION, new PrimeActionParser());
         parsers.put(TAG_FOLDER, new MyFolderParser());
         parsers.put(TAG_PARTNER_FOLDER, new PartnerFolderParser());
         return parsers;
@@ -250,10 +252,38 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
     }
 
 
+    /** Creates a built-in action shortcut without relying on a hard-coded application ID. */
+    protected class PrimeActionParser implements TagParser {
+        @Override
+        public int parseAndAdd(XmlPullParser parser) {
+            String action = getAttributeValue(parser, "action");
+            if (!"drawer".equals(action) && !"search".equals(action)) {
+                return -1;
+            }
+            String handler = "drawer".equals(action)
+                    ? "{\"type\":\"openAppDrawer\"}"
+                    : "{\"type\":\"openPrimeSearch\"}";
+            Intent intent = new Intent("app.lawnchair.START_ACTION")
+                    .setClassName(mContext, "app.lawnchair.gestures.ui.RunHandlerActivity")
+                    .putExtra("app.lawnchair.EXTRA_HANDLER", handler);
+            return addShortcut("drawer".equals(action) ? "Tiroir" : "Prime Search",
+                    intent, Favorites.ITEM_TYPE_SHORTCUT);
+        }
+    }
+
     /**
      * AppWidget parser which enforces that the app is already installed when the layout is parsed.
      */
     protected class AppWidgetParser extends PendingWidgetParser {
+
+        @Override
+        public ComponentName getComponentName(XmlPullParser parser) {
+            ComponentName component = super.getComponentName(parser);
+            if (component != null && "self".equals(component.getPackageName())) {
+                return new ComponentName(mContext.getPackageName(), component.getClassName());
+            }
+            return component;
+        }
 
         @Override
         protected int verifyAndInsert(ComponentName cn, Bundle extras) {

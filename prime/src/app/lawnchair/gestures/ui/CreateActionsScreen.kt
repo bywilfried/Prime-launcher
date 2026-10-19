@@ -29,6 +29,7 @@ fun CreateActionsScreen(
     val prefs2 = preferenceManager2()
     val newOptions =
         filterGestureHandlerOptions(deckLayoutEnabled = prefs2.deckLayout.getAdapter().state.value)
+            .filterNot { it == GestureHandlerOption.NoOp || it == GestureHandlerOption.OpenSearch }
 
     fun onClick(option: GestureHandlerOption) {
         scope.launch {

@@ -495,7 +495,7 @@
     <string name="smartspace_battery_low">Battery low</string>
     <string name="battery_charging_percentage_charging_time">"%1$d%% — Full in %2$s"</string>
 
-    <string name="smartspace_widget">At a Glance</string>
+    <string name="smartspace_widget">Aperçu</string>
     <string name="smartspace_widget_description">What to show</string>
 
     <!-- Data and time format settings -->
