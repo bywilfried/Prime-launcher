@@ -663,7 +663,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                 info.getTargetPackage(), PRIVATE_SPACE_PACKAGE);
         int flags = isPrivateSpaceIcon
                 ? info.bitmap.creationFlags : useTheme ? FLAG_THEMED : 0;
-        if (mHideBadge || mDisplay == DISPLAY_SEARCH_RESULT_SMALL) flags |= FLAG_NO_BADGE;
+        if (mHideBadge || mDisplay == DISPLAY_SEARCH_RESULT_SMALL || isPrimeAction(info)) flags |= FLAG_NO_BADGE;
         if (mSkipUserBadge) flags |= FLAG_SKIP_USER_BADGE;
         FastBitmapDrawable drawable = cached.newIcon(launcher, flags);
         if (isPrivateSpaceIcon) drawable.setAnimationEnabled(false);
@@ -709,13 +709,22 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                 || (oldIcon instanceof PreloadIconDrawable p && p.hasNotCompleted());
     }
 
+    /** Built-in Prime actions are launcher commands, not third-party shortcuts. */
+    private boolean isPrimeAction(ItemInfoWithIcon info) {
+        if (!(info instanceof WorkspaceItemInfo item) || item.intent == null) return false;
+        android.content.ComponentName component = item.intent.getComponent();
+        return component != null
+                && "app.lawnchair.gestures.ui.RunHandlerActivity".equals(component.getClassName())
+                && "app.lawnchair.START_ACTION".equals(item.intent.getAction());
+    }
+
     private void setNonPendingIcon(ItemInfoWithIcon info) {
         boolean isPrivateSpaceIcon = Objects.equals(info.getTargetPackage(), PRIVATE_SPACE_PACKAGE);
         // Set nonPendingIcon acts as a restart which should refresh the flag state when applicable.
         int flags = isPrivateSpaceIcon
                 ? info.bitmap.creationFlags : shouldUseTheme() ? FLAG_THEMED : 0;
         // Remove badge on icons smaller than 48dp.
-        if (mHideBadge || mDisplay == DISPLAY_SEARCH_RESULT_SMALL) {
+        if (mHideBadge || mDisplay == DISPLAY_SEARCH_RESULT_SMALL || isPrimeAction(info)) {
             flags |= FLAG_NO_BADGE;
         }
         if (mSkipUserBadge) {
@@ -1882,7 +1891,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                 info.getTargetPackage(), PRIVATE_SPACE_PACKAGE);
         int creationFlags = isPrivateSpaceIcon
                 ? info.bitmap.creationFlags : useTheme ? FLAG_THEMED : 0;
-        if (mHideBadge || mDisplay == DISPLAY_SEARCH_RESULT_SMALL) creationFlags |= FLAG_NO_BADGE;
+        if (mHideBadge || mDisplay == DISPLAY_SEARCH_RESULT_SMALL || isPrimeAction(info)) creationFlags |= FLAG_NO_BADGE;
         if (mSkipUserBadge) creationFlags |= FLAG_SKIP_USER_BADGE;
         final int flags = creationFlags;
 
