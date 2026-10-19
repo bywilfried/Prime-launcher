@@ -6,9 +6,8 @@
     android:targetCellHeight="2"
     android:updatePeriodMillis="0"
     android:description="@string/smartspace_widget"
-    android:configure="app.lawnchair.smartspace.SmartspacePreferencesShortcut"
     android:initialLayout="@layout/smartspace_widget_placeholder"
     android:previewLayout="@layout/smartspace_widget_placeholder"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
-    android:widgetFeatures="reconfigurable|configuration_optional" />
+    android:widgetFeatures="0" />
