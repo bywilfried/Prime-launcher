@@ -25,8 +25,10 @@ class LawnchairAppWidgetHostView @JvmOverloads constructor(
             "PrimeWidget",
             "setAppWidget id=$appWidgetId provider=${info.provider.flattenToShortString()} preview=$previewMode",
         )
-        inflateCustomView(info)
         super.setAppWidget(appWidgetId, info)
+        // AppWidgetHostView may replace its children during setAppWidget.
+        // Install the custom Smartspace content afterwards so it stays visible.
+        inflateCustomView(info)
     }
 
     fun disablePreviewMode() {
