@@ -392,13 +392,12 @@ fun PrimeSearchPreference() {
         }
         if (categorySettings != null) {
             val selected = categorySettings!!
-            androidx.compose.material3.AlertDialog(
-                onDismissRequest = { categorySettings = null },
-                title = { Text(selected.title) },
-                text = {
-                    Column {
-                        Text(selected.description)
-                        SharedCategoryOptions(selected, PrimeSearchResultPreferences.Surface.PRIME_SEARCH, permissionRefresh)
+            SharedCategorySettingsDialog(
+                category = selected,
+                surface = PrimeSearchResultPreferences.Surface.PRIME_SEARCH,
+                permissionRefresh = permissionRefresh,
+                onDismiss = { categorySettings = null },
+            ) {
                         if (selected == PrimeSearchResultPreferences.Category.NOTIFICATIONS) {
                             val granted = PrimeSearchPermissions.granted(context, selected)
                             Text(if (granted) "Accès aux notifications autorisé" else "Accès aux notifications non autorisé")
@@ -424,12 +423,8 @@ fun PrimeSearchPreference() {
                             }
                             Text("Les résultats dépendent des fournisseurs disponibles et des autorisations Android.")
                         }
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = { categorySettings = null }) { Text("Fermer") }
-                },
-            )
+
+            }
         }
         if (confirmNotificationClear) {
             androidx.compose.material3.AlertDialog(
