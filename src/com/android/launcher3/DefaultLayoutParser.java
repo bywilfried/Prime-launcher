@@ -261,8 +261,8 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
                 return -1;
             }
             String handler = "drawer".equals(action)
-                    ? "{\\"type\\":\\"openAppDrawer\\"}"
-                    : "{\\"type\\":\\"openPrimeSearch\\"}";
+                    ? "{\"type\":\"openAppDrawer\"}"
+                    : "{\"type\":\"openPrimeSearch\"}";
             Intent intent = new Intent("app.lawnchair.START_ACTION")
                     .setClassName(mContext, "app.lawnchair.gestures.ui.RunHandlerActivity")
                     .putExtra("app.lawnchair.EXTRA_HANDLER", handler);
