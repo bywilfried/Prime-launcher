@@ -835,7 +835,7 @@ class PreferenceManager2 @Inject constructor(
 
     val dockIconSizeFactor = preference(
         key = floatPreferencesKey(name = "dock_icon_size_factor"),
-        defaultValue = 1.0f,
+        defaultValue = 0.9f,
         onSet = { reloadHelper.reloadGrid() },
     )
 
