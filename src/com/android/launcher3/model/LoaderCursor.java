@@ -221,7 +221,8 @@ public class LoaderCursor extends CursorWrapper {
     @VisibleForTesting
     public WorkspaceItemInfo loadSimpleWorkspaceItem() {
         final WorkspaceItemInfo info = new WorkspaceItemInfo();
-        info.intent = new Intent();
+        Intent savedIntent = parseIntent();
+        info.intent = savedIntent != null ? savedIntent : new Intent();
         // Non-app shortcuts are only supported for current user.
         info.user = user;
         info.itemType = itemType;
