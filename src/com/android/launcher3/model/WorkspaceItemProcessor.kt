@@ -786,13 +786,16 @@ class WorkspaceItemProcessor(
                     .append(widgetProviderInfo.targetCellHeight)
                     .append("\n")
             }
-            widgetDimension
-                .append("maxResizeWidth: ")
-                .append(widgetProviderInfo.maxResizeWidth)
-                .append("\n")
-                .append("maxResizeHeight: ")
-                .append(widgetProviderInfo.maxResizeHeight)
-                .append("\n")
+            // Maximum resize dimensions are also available from Android 12 onward.
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                widgetDimension
+                    .append("maxResizeWidth: ")
+                    .append(widgetProviderInfo.maxResizeWidth)
+                    .append("\n")
+                    .append("maxResizeHeight: ")
+                    .append(widgetProviderInfo.maxResizeHeight)
+                    .append("\n")
+            }
             FileLog.d(TAG, widgetDimension.toString())
         }
     }
