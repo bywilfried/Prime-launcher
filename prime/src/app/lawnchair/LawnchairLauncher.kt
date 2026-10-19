@@ -317,6 +317,9 @@ class LawnchairLauncher : QuickstepLauncher() {
         }
 
         super.onNewIntent(intent)
+        // The Home callback runs synchronously from Launcher.onNewIntent.
+        // Do not suppress an unrelated Home press if that callback was skipped.
+        suppressNextPrimeSearchHomeTap = false
     }
 
     override fun collectStateHandlers(out: MutableList<StateHandler<LauncherState>>) {
