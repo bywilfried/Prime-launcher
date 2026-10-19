@@ -87,12 +87,12 @@ public class IconRequestInfo<T extends ItemInfoWithIcon> {
                     && "app.lawnchair.gestures.ui.RunHandlerActivity".equals(
                             intent.getComponent().getClassName())) {
                 String handler = intent.getStringExtra("app.lawnchair.EXTRA_HANDLER");
-                app.lawnchair.gestures.config.GestureHandlerConfig config = null;
-                if (handler != null && handler.contains("openAppDrawer")) {
-                    config = app.lawnchair.gestures.config.GestureHandlerConfig.OpenAppDrawer.INSTANCE;
-                } else if (handler != null && handler.contains("openPrimeSearch")) {
-                    config = app.lawnchair.gestures.config.GestureHandlerConfig.OpenPrimeSearch.INSTANCE;
-                }
+                // Decode every supported action, including parameterized OpenApp
+                // actions. The serialized handler remains the source of truth.
+                app.lawnchair.gestures.config.GestureHandlerConfig config =
+                        handler == null ? null
+                                : app.lawnchair.gestures.config.GestureHandlerConfig.Companion
+                                        .fromString(handler);
                 if (config != null) {
                     try (LauncherIcons icons = LauncherIcons.obtain(context)) {
                         android.graphics.drawable.Drawable glyph =
