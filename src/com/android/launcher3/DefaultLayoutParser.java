@@ -312,23 +312,16 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
                         packageName = resolved.activityInfo.packageName;
                     }
                 }
-                // Contacts apps on Samsung may not advertise CATEGORY_APP_CONTACTS.
-                // LauncherApps can enumerate launchable apps even when this launcher
-                // is not the selected default home.
                 if (packageName == null && "contacts".equals(role)) {
-                    android.content.pm.LauncherApps apps =
-                            mContext.getSystemService(android.content.pm.LauncherApps.class);
-                    if (apps != null) {
-                        for (android.content.pm.LauncherActivityInfo activity :
-                                apps.getActivityList(null, android.os.Process.myUserHandle())) {
-                            String pkg = activity.getComponentName().getPackageName();
-                            if (pkg.equals("com.samsung.android.contacts")
-                                    || pkg.equals("com.google.android.contacts")
-                                    || pkg.equals("com.android.contacts")) {
-                                packageName = pkg;
-                                break;
-                            }
-                        }
+                    // Prefer the user's resolved Contacts handler, not a vendor package.
+                    Intent contacts = new Intent(Intent.ACTION_VIEW,
+                            android.net.Uri.parse("content://com.android.contacts/contacts"));
+                    ResolveInfo preferred = mPackageManager.resolveActivity(contacts,
+                            PackageManager.MATCH_DEFAULT_ONLY);
+                    if (preferred != null && preferred.activityInfo != null
+                            && !"android".equals(preferred.activityInfo.packageName)
+                            && !preferred.activityInfo.packageName.equals(mContext.getPackageName())) {
+                        packageName = preferred.activityInfo.packageName;
                     }
                 }
                 if (packageName == null) {
