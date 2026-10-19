@@ -269,31 +269,58 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
             String role = getAttributeValue(parser, "role");
             Intent intent;
             if ("contacts".equals(role)) {
-                intent = new Intent(Intent.ACTION_VIEW,
-                        android.net.Uri.parse("content://com.android.contacts/contacts"));
+                intent = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_CONTACTS);
             } else if ("messages".equals(role)) {
-                intent = new Intent(Intent.ACTION_SENDTO,
-                        android.net.Uri.parse("smsto:"));
+                intent = new Intent(Intent.ACTION_SENDTO, android.net.Uri.parse("smsto:"));
             } else if ("phone".equals(role)) {
                 intent = new Intent(Intent.ACTION_DIAL);
             } else {
                 return -1;
             }
             try {
-                ResolveInfo resolved = mPackageManager.resolveActivity(intent,
-                        PackageManager.MATCH_DEFAULT_ONLY);
-                if (resolved == null || resolved.activityInfo == null) {
-                    Log.w(TAG, "No default application for dock role: " + role);
+                String packageName = null;
+                if (android.os.Build.VERSION.SDK_INT >= 29) {
+                    android.app.role.RoleManager roles =
+                            mContext.getSystemService(android.app.role.RoleManager.class);
+                    String androidRole = "messages".equals(role)
+                            ? android.app.role.RoleManager.ROLE_SMS
+                            : "phone".equals(role) ? android.app.role.RoleManager.ROLE_DIALER : null;
+                    if (roles != null && androidRole != null) {
+                        List<String> holders = roles.getRoleHolders(androidRole);
+                        if (!holders.isEmpty()) packageName = holders.get(0);
+                    }
+                }
+                if (packageName == null) {
+                    ResolveInfo resolved = mPackageManager.resolveActivity(intent,
+                            PackageManager.MATCH_DEFAULT_ONLY);
+                    if (resolved != null && resolved.activityInfo != null
+                            && !resolved.activityInfo.packageName.equals("android")) {
+                        packageName = resolved.activityInfo.packageName;
+                    }
+                }
+                if (packageName == null && "contacts".equals(role)) {
+                    // Some OEM contacts apps do not advertise CATEGORY_APP_CONTACTS.
+                    Intent view = new Intent(Intent.ACTION_VIEW,
+                            android.net.Uri.parse("content://com.android.contacts/contacts"));
+                    ResolveInfo resolved = mPackageManager.resolveActivity(view,
+                            PackageManager.MATCH_DEFAULT_ONLY);
+                    if (resolved != null && resolved.activityInfo != null) {
+                        packageName = resolved.activityInfo.packageName;
+                    }
+                }
+                if (packageName == null) {
+                    Log.w(TAG, "No default app found for dock role: " + role);
                     return -1;
                 }
-                ActivityInfo info = resolved.activityInfo;
-                Intent launch = mPackageManager.getLaunchIntentForPackage(info.packageName);
+                Intent launch = mPackageManager.getLaunchIntentForPackage(packageName);
                 if (launch == null) {
-                    launch = new Intent(intent).setClassName(info.packageName, info.name);
+                    Log.w(TAG, "Default dock app has no launch activity: " + packageName);
+                    return -1;
                 }
-                launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                return addShortcut(info.loadLabel(mPackageManager).toString(), launch,
-                        Favorites.ITEM_TYPE_APPLICATION);
+                ResolveInfo launchInfo = mPackageManager.resolveActivity(launch, 0);
+                String label = launchInfo != null ? launchInfo.loadLabel(mPackageManager).toString()
+                        : role;
+                return addShortcut(label, launch, Favorites.ITEM_TYPE_APPLICATION);
             } catch (RuntimeException e) {
                 Log.e(TAG, "Unable to add default dock app: " + role, e);
                 return -1;
