@@ -775,13 +775,18 @@ class WorkspaceItemProcessor(
                 .append("defaultHeight: ")
                 .append(widgetProviderInfo.minHeight)
                 .append("\n")
+            // Target cell dimensions were introduced in Android 12 (API 31).
+            // Avoid accessing these fields on older Android versions.
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                widgetDimension
+                    .append("targetCellWidth: ")
+                    .append(widgetProviderInfo.targetCellWidth)
+                    .append("\n")
+                    .append("targetCellHeight: ")
+                    .append(widgetProviderInfo.targetCellHeight)
+                    .append("\n")
+            }
             widgetDimension
-                .append("targetCellWidth: ")
-                .append(widgetProviderInfo.targetCellWidth)
-                .append("\n")
-                .append("targetCellHeight: ")
-                .append(widgetProviderInfo.targetCellHeight)
-                .append("\n")
                 .append("maxResizeWidth: ")
                 .append(widgetProviderInfo.maxResizeWidth)
                 .append("\n")
