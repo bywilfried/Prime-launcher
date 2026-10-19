@@ -13,6 +13,15 @@ object PrimeCalendarSearch {
         context.getSharedPreferences("prime_calendar_search", Context.MODE_PRIVATE)
             .edit().putBoolean("future_only", enabled).apply()
     }
+    fun futureOnly(context: Context, surface: PrimeSearchResultPreferences.Surface): Boolean =
+        if (surface == PrimeSearchResultPreferences.Surface.PRIME_SEARCH) futureOnly(context)
+        else context.getSharedPreferences(surface.store, Context.MODE_PRIVATE).getBoolean("calendar_future_only", true)
+
+    fun setFutureOnly(context: Context, enabled: Boolean, surface: PrimeSearchResultPreferences.Surface) {
+        if (surface == PrimeSearchResultPreferences.Surface.PRIME_SEARCH) setFutureOnly(context, enabled)
+        else context.getSharedPreferences(surface.store, Context.MODE_PRIVATE).edit().putBoolean("calendar_future_only", enabled).apply()
+    }
+
     fun events(context: Context, query: String): List<Result> =
         events(context, query, PrimeSearchResultPreferences.Surface.PRIME_SEARCH)
 
@@ -26,9 +35,9 @@ object PrimeCalendarSearch {
             context.contentResolver.query(
                 CalendarContract.Events.CONTENT_URI, columns,
                 "(${CalendarContract.Events.TITLE} LIKE ? OR ${CalendarContract.Events.DESCRIPTION} LIKE ? OR ${CalendarContract.Events.EVENT_LOCATION} LIKE ?)" +
-                    if (futureOnly(context)) " AND ${CalendarContract.Events.DTSTART} >= ?" else "",
+                    if (futureOnly(context, surface)) " AND ${CalendarContract.Events.DTSTART} >= ?" else "",
                 (Array(3) { "%${query.trim()}%" }.toList() +
-                    if (futureOnly(context)) listOf(System.currentTimeMillis().toString()) else emptyList()).toTypedArray(),
+                    if (futureOnly(context, surface)) listOf(System.currentTimeMillis().toString()) else emptyList()).toTypedArray(),
                 "${CalendarContract.Events.DTSTART} DESC"
             )?.use { cursor ->
                 while (cursor.moveToNext() && results.size < 25) {
