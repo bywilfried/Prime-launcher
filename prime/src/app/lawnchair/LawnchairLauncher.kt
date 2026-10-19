@@ -295,13 +295,18 @@ class LawnchairLauncher : QuickstepLauncher() {
         }
     }
 
+    private var suppressNextPrimeSearchHomeTap = false
+
     override fun onNewIntent(intent: Intent?) {
         // A second Home press should return to the workspace, not just hide
         // the keyboard while leaving the Prime Search dialog visible.
         if (intent?.action == Intent.ACTION_MAIN &&
             intent.hasCategory(Intent.CATEGORY_HOME)
         ) {
-            app.lawnchair.prime.search.PrimeSearchOverlay.dismiss()
+            if (app.lawnchair.prime.search.PrimeSearchOverlay.isShowing) {
+                suppressNextPrimeSearchHomeTap = true
+                app.lawnchair.prime.search.PrimeSearchOverlay.dismiss()
+            }
         }
         if (intent != null && intent.action == LawnchairShortcutActivity.START_ACTION) {
             val handlerString = intent.getStringExtra(LawnchairShortcutActivity.EXTRA_HANDLER)
@@ -363,7 +368,19 @@ class LawnchairLauncher : QuickstepLauncher() {
     }
 
     override fun handleHomeTap() {
+        if (suppressNextPrimeSearchHomeTap) {
+            suppressNextPrimeSearchHomeTap = false
+            return
+        }
         gestureController.onHomePressed()
+    }
+
+    override fun onBackPressed() {
+        if (app.lawnchair.prime.search.PrimeSearchOverlay.isShowing) {
+            app.lawnchair.prime.search.PrimeSearchOverlay.dismiss()
+            return
+        }
+        super.onBackPressed()
     }
 
     fun bindItems(items: List<ItemInfo>, forceAnimateIcons: Boolean) {
