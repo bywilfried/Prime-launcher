@@ -453,6 +453,14 @@ object PrimeSearchOverlay {
                     if (appInfo != null) {
                         val nativeIcon = com.android.launcher3.BubbleTextView(launcher).apply {
                             applyFromApplicationInfo(appInfo)
+                            // The default BubbleTextView uses the workspace icon size,
+                            // which exceeds this 48dp zero-state slot and gets clipped.
+                            // Match the slot and use the separate label below.
+                            setPrimeIconSize(iconSize)
+                            setTextVisibility(false)
+                            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                            setCompoundDrawablePadding(0)
+                            setPadding(0, 0, 0, 0)
                             setOnClickListener {
                                 dialog.dismiss()
                                 com.android.launcher3.touch.ItemClickHandler.INSTANCE.onClick(this)
