@@ -307,9 +307,9 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
                 int appWidgetId = mAppWidgetHolder.allocateAppWidgetId();
 
                 if (!appWidgetManager.bindAppWidgetIdIfAllowed(appWidgetId, cn)) {
-                    Log.e(TAG, "Unable to bind app widget id " + cn);
+                    Log.e(TAG, "Unable to bind app widget id " + cn + "; keeping pending widget");
                     mAppWidgetHolder.deleteAppWidgetId(appWidgetId);
-                    return -1;
+                    return super.verifyAndInsert(cn, extras);
                 }
 
                 mValues.put(Favorites.APPWIDGET_ID, appWidgetId);
