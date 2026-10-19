@@ -79,6 +79,7 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
         parsers.put(TAG_SHORTCUT, new ShortcutParser());
         parsers.put(TAG_RESOLVE, new ResolveParser());
         parsers.put(TAG_PRIME_ACTION, new PrimeActionParser());
+        parsers.put("prime-default-app", new PrimeDefaultAppParser());
         parsers.put(TAG_FOLDER, new MyFolderParser());
         parsers.put(TAG_PARTNER_FOLDER, new PartnerFolderParser());
         return parsers;
@@ -259,6 +260,46 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
         }
     }
 
+
+    /** Resolves the installed default app for a dock role, without requiring
+     * the user to choose a resolver or relying on OEM package names. */
+    protected class PrimeDefaultAppParser implements TagParser {
+        @Override
+        public int parseAndAdd(XmlPullParser parser) {
+            String role = getAttributeValue(parser, "role");
+            Intent intent;
+            if ("contacts".equals(role)) {
+                intent = new Intent(Intent.ACTION_VIEW,
+                        android.net.Uri.parse("content://com.android.contacts/contacts"));
+            } else if ("messages".equals(role)) {
+                intent = new Intent(Intent.ACTION_SENDTO,
+                        android.net.Uri.parse("smsto:"));
+            } else if ("phone".equals(role)) {
+                intent = new Intent(Intent.ACTION_DIAL);
+            } else {
+                return -1;
+            }
+            try {
+                ResolveInfo resolved = mPackageManager.resolveActivity(intent,
+                        PackageManager.MATCH_DEFAULT_ONLY);
+                if (resolved == null || resolved.activityInfo == null) {
+                    Log.w(TAG, "No default application for dock role: " + role);
+                    return -1;
+                }
+                ActivityInfo info = resolved.activityInfo;
+                Intent launch = mPackageManager.getLaunchIntentForPackage(info.packageName);
+                if (launch == null) {
+                    launch = new Intent(intent).setClassName(info.packageName, info.name);
+                }
+                launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                return addShortcut(info.loadLabel(mPackageManager).toString(), launch,
+                        Favorites.ITEM_TYPE_APPLICATION);
+            } catch (RuntimeException e) {
+                Log.e(TAG, "Unable to add default dock app: " + role, e);
+                return -1;
+            }
+        }
+    }
 
     /** Creates a built-in action shortcut without relying on a hard-coded application ID. */
     protected class PrimeActionParser implements TagParser {
