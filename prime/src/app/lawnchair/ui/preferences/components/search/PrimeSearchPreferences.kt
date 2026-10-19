@@ -471,7 +471,7 @@ fun PrimeSearchPreference() {
                 text = {
                     Column {
                         Text(selected.description)
-                        SharedCategoryOptions(selected, PrimeSearchResultPreferences.Surface.PRIME_SEARCH)
+                        SharedCategoryOptions(selected, PrimeSearchResultPreferences.Surface.PRIME_SEARCH, permissionRefresh)
                         if (selected == PrimeSearchResultPreferences.Category.NOTIFICATIONS) {
                             val granted = PrimeSearchPermissions.granted(context, selected)
                             Text(if (granted) "Accès aux notifications autorisé" else "Accès aux notifications non autorisé")
@@ -485,51 +485,9 @@ fun PrimeSearchPreference() {
                         } else if (selected == PrimeSearchResultPreferences.Category.CALENDAR ||
                             selected == PrimeSearchResultPreferences.Category.CONTACTS ||
                             selected == PrimeSearchResultPreferences.Category.REMINDERS) {
-                            val kind = when (selected) {
-                                PrimeSearchResultPreferences.Category.CALENDAR -> "calendars"
-                                PrimeSearchResultPreferences.Category.REMINDERS -> "tasks"
-                                else -> "contacts"
-                            }
-                            val granted = PrimeSearchPermissions.granted(context, selected)
-                            if (!granted) {
+                            if (!PrimeSearchPermissions.granted(context, selected)) {
                                 Text(PrimeSearchPermissions.explanation(selected))
                                 TextButton(onClick = { requestCategory(selected) }) { Text("Autoriser l'accès") }
-                            } else {
-                                val sources = remember(selected, permissionRefresh) {
-                                    when (kind) {
-                                        "calendars" -> app.lawnchair.prime.search.PrimeSourceSelection.calendars(context)
-                                        "tasks" -> app.lawnchair.prime.search.PrimeTasksSearch.lists(context)
-                                        else -> app.lawnchair.prime.search.PrimeSourceSelection.contactAccounts(context)
-                                    }
-                                }
-                                var selectedIds by remember(selected) {
-                                    mutableStateOf(app.lawnchair.prime.search.PrimeSourceSelection.selected(context, kind))
-                                }
-                                Text(when (kind) {
-                                    "calendars" -> "Agendas utilisés pour la recherche"
-                                    "tasks" -> "Listes Tasks.org utilisées pour la recherche"
-                                    else -> "Comptes de contacts utilisés pour la recherche"
-                                })
-                                if (sources.isEmpty()) Text("Aucune source disponible sur cet appareil.")
-                                androidx.compose.foundation.lazy.LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f, fill = false)) {
-                                    items(sources.size) { index ->
-                                        val source = sources[index]
-                                        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                                            androidx.compose.material3.Checkbox(
-                                                checked = selectedIds?.contains(source.id) ?: true,
-                                                onCheckedChange = { enabled ->
-                                                    app.lawnchair.prime.search.PrimeSourceSelection.setSelected(context, kind, source.id, enabled, sources)
-                                                    selectedIds = app.lawnchair.prime.search.PrimeSourceSelection.selected(context, kind)
-                                                },
-                                            )
-                                            Text(source.label)
-                                        }
-                                    }
-                                }
-                                TextButton(onClick = {
-                                    app.lawnchair.prime.search.PrimeSourceSelection.reset(context, kind)
-                                    selectedIds = null
-                                }) { Text("Tout sélectionner") }
                             }
                         } else {
                             if (PrimeSearchPermissions.required(selected)) {
