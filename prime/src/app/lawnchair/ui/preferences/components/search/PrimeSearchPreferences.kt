@@ -219,20 +219,6 @@ fun PrimeSearchPreference() {
                 },
             )
         }
-        var rows by remember { mutableStateOf(PrimeSearchResultPreferences.zeroStateRows(context)) }
-        PreferenceTemplate(
-            title = { Text("Lignes d'applications") },
-            description = { Text("$rows ligne(s) pour Fréquentes, Récentes et Nouvelles") },
-        )
-        androidx.compose.material3.Slider(
-            value = rows.toFloat(),
-            onValueChange = {
-                rows = it.roundToInt().coerceIn(1, 2)
-                PrimeSearchResultPreferences.setZeroStateRows(context, rows)
-            },
-            valueRange = 1f..2f,
-            steps = 0,
-        )
     }
     PreferenceGroup(heading = "Accès aux données d’utilisation") {
         val usageGranted = try {
@@ -271,11 +257,123 @@ fun PrimeSearchPreference() {
             },
         )
     }
-    PreferenceGroup(heading = "Affichage des applications") {
+    PreferenceGroup(heading = "Apparence de Prime Search") {
+        var rows by remember { mutableStateOf(PrimeSearchResultPreferences.zeroStateRows(context)) }
+        var columns by remember { mutableStateOf(PrimeSearchResultPreferences.appsPerRow(context)) }
+        var iconPercent by remember { mutableStateOf(PrimeSearchResultPreferences.iconSizePercent(context)) }
         var twoLines by remember { mutableStateOf(PrimeSearchResultPreferences.twoLineAppLabels(context)) }
+        var previewTab by remember { mutableStateOf(0) }
+        val sampleApps = listOf(
+            "Téléphone", "Messages", "Navigateur", "Photos", "Musique", "Agenda",
+            "Appareil photo", "Fichiers", "Paramètres", "Notes", "Horloge", "Cartes",
+        )
+        val sampleIcons = listOf("☎", "✉", "◎", "▧", "♫", "▦", "◉", "▤", "⚙", "✎", "◷", "⌖")
+        val previewBackground = androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant
+        val previewAccent = androidx.compose.material3.MaterialTheme.colorScheme.primary
+
+        androidx.compose.material3.Card(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+                androidx.compose.material3.Surface(
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.surface,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+                ) {
+                    Row(modifier = Modifier.fillMaxWidth().padding(14.dp)) {
+                        Icon(Icons.Default.Settings, contentDescription = null)
+                        Text("  Prime Search")
+                    }
+                }
+                androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(5.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    listOf("Fréquentes", "Récentes", "Nouvelles").forEachIndexed { index, name ->
+                        androidx.compose.material3.TextButton(onClick = { previewTab = index }) {
+                            Text(
+                                name,
+                                color = if (previewTab == index) previewAccent
+                                    else androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                            )
+                        }
+                    }
+                }
+                val baseIconDp = 48f * iconPercent / 100f
+                val cellIconDp = baseIconDp.coerceAtMost(64f)
+                val offset = previewTab * 2
+                repeat(rows) { rowIndex ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                    ) {
+                        repeat(columns) { colIndex ->
+                            val index = (rowIndex * columns + colIndex + offset) % sampleApps.size
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+                            ) {
+                                androidx.compose.material3.Surface(
+                                    modifier = Modifier
+                                        .padding(2.dp)
+                                        .then(Modifier),
+                                    color = previewBackground,
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                                ) {
+                                    androidx.compose.foundation.layout.Box(
+                                        modifier = Modifier
+                                            .padding(2.dp)
+                                            .then(Modifier),
+                                        contentAlignment = androidx.compose.ui.Alignment.Center,
+                                    ) {
+                                        Text(
+                                            sampleIcons[index],
+                                            modifier = Modifier.padding(
+                                                horizontal = (cellIconDp / 5).dp,
+                                                vertical = (cellIconDp / 7).dp,
+                                            ),
+                                            style = androidx.compose.material3.MaterialTheme.typography.titleLarge,
+                                        )
+                                    }
+                                }
+                                Text(
+                                    sampleApps[index],
+                                    maxLines = if (twoLines) 2 else 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                    style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Text("Applications par ligne : $columns")
+        androidx.compose.material3.Slider(
+            value = columns.toFloat(),
+            onValueChange = {
+                columns = it.roundToInt().coerceIn(3, 6)
+                PrimeSearchResultPreferences.setAppsPerRow(context, columns)
+            },
+            valueRange = 3f..6f,
+            steps = 2,
+        )
+        Text("Nombre de lignes : $rows")
+        androidx.compose.material3.Slider(
+            value = rows.toFloat(),
+            onValueChange = {
+                rows = it.roundToInt().coerceIn(1, 2)
+                PrimeSearchResultPreferences.setZeroStateRows(context, rows)
+            },
+            valueRange = 1f..2f,
+        )
+        Text("Taille des icônes : $iconPercent %")
+        androidx.compose.material3.Slider(
+            value = iconPercent.toFloat(),
+            onValueChange = {
+                iconPercent = (it.roundToInt() / 5 * 5).coerceIn(60, 150)
+                PrimeSearchResultPreferences.setIconSizePercent(context, iconPercent)
+            },
+            valueRange = 60f..150f,
+        )
         PreferenceTemplate(
             title = { Text("Noms des applications sur deux lignes") },
-            description = { Text("Afficher jusqu'à deux lignes pour les noms longs dans Prime Search.") },
             endWidget = {
                 androidx.compose.material3.Switch(
                     checked = twoLines,
@@ -290,20 +388,18 @@ fun PrimeSearchPreference() {
                 PrimeSearchResultPreferences.setTwoLineAppLabels(context, twoLines)
             },
         )
-        var appsPerRow by remember { mutableStateOf(PrimeSearchResultPreferences.appsPerRow(context)) }
-        PreferenceTemplate(
-            title = { Text("Applications par ligne") },
-            description = { Text("$appsPerRow applications par ligne (de 3 à 6)") },
-        )
-        androidx.compose.material3.Slider(
-            value = appsPerRow.toFloat(),
-            onValueChange = { value ->
-                appsPerRow = value.toInt().coerceIn(3, 6)
-                PrimeSearchResultPreferences.setAppsPerRow(context, appsPerRow)
-            },
-            valueRange = 3f..6f,
-            steps = 2,
-        )
+        androidx.compose.material3.TextButton(onClick = {
+            columns = 4
+            rows = 1
+            iconPercent = 100
+            twoLines = false
+            PrimeSearchResultPreferences.setAppsPerRow(context, columns)
+            PrimeSearchResultPreferences.setZeroStateRows(context, rows)
+            PrimeSearchResultPreferences.setIconSizePercent(context, iconPercent)
+            PrimeSearchResultPreferences.setTwoLineAppLabels(context, twoLines)
+        }) {
+            Text("Réinitialiser l'apparence")
+        }
     }
     var permissionRefresh by remember { mutableStateOf(0) }
     var pendingCategory by remember { mutableStateOf<Pair<PrimeSearchResultPreferences.Category, PrimeSearchResultPreferences.Surface>?>(null) }
