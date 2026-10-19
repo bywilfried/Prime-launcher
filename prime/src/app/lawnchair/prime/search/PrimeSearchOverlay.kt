@@ -344,8 +344,18 @@ object PrimeSearchOverlay {
                 row("Suggestions Web") {}
                 currentSuggestions.forEach { suggestion ->
                     row("⌕  $suggestion") {
-                        input.setText(suggestion)
-                        input.setSelection(suggestion.length)
+                        val provider = PrimeSearchResultPreferences.suggestionProvider(launcher)
+                        val engine = when (provider) {
+                            PrimeSearchResultPreferences.SuggestionProvider.GOOGLE -> PrimeSearchResultPreferences.WebEngine.GOOGLE
+                            PrimeSearchResultPreferences.SuggestionProvider.DUCKDUCKGO -> PrimeSearchResultPreferences.WebEngine.DUCKDUCKGO
+                            PrimeSearchResultPreferences.SuggestionProvider.BING -> PrimeSearchResultPreferences.WebEngine.BING
+                            PrimeSearchResultPreferences.SuggestionProvider.QWANT -> PrimeSearchResultPreferences.WebEngine.QWANT
+                            PrimeSearchResultPreferences.SuggestionProvider.STARTPAGE -> PrimeSearchResultPreferences.WebEngine.STARTPAGE
+                        }
+                        runCatching {
+                            launcher.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(engine.url + Uri.encode(suggestion))))
+                            dismiss()
+                        }
                     }
                 }
             }
@@ -455,7 +465,7 @@ object PrimeSearchOverlay {
             val engines = if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB_SHORTCUTS))
                 PrimeSearchResultPreferences.enabledWebEngines(launcher) else emptyList()
             if (engines.isNotEmpty()) {
-                row("Recherche sur :") {}
+                row("Moteurs de recherche") {}
                 val columns = 5
                 engines.chunked(columns).forEach { group ->
                     val icons = LinearLayout(launcher).apply {
