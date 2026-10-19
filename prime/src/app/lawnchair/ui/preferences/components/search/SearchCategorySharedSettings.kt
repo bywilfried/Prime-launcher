@@ -1,5 +1,21 @@
 package app.lawnchair.ui.preferences.components.search
 
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
+import androidx.compose.animation.core.animateFloatAsState
+import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -150,4 +166,107 @@ internal fun SharedCategoryOptions(category: Prefs.Category, surface: Prefs.Surf
             else -> Unit
         }
     }
+}
+
+/** One category card design for both surfaces, including reorder gestures and actions. */
+@Composable
+internal fun SharedCategoryCard(
+    category: Prefs.Category,
+    index: Int,
+    lastIndex: Int,
+    enabled: Boolean,
+    needsPermission: Boolean,
+    onSettings: () -> Unit,
+    onMove: (Int, Int) -> Unit,
+    onEnabled: (Boolean) -> Unit,
+    onPermission: () -> Unit,
+    dragState: CategoryDragState,
+) {
+    val dragging = dragState.active == category
+    val rowPixels = with(LocalDensity.current) { 112.dp.toPx() }
+    val targetIndex = (dragState.origin + (dragState.offset / rowPixels).roundToInt()).coerceIn(0, lastIndex)
+    val displacement = if (dragState.active != null && !dragging) {
+        when {
+            index > dragState.origin && index <= targetIndex -> -rowPixels
+            index < dragState.origin && index >= targetIndex -> rowPixels
+            else -> 0f
+        }
+    } else 0f
+    val shift by animateFloatAsState(displacement, label = "categoryShift")
+    val lift by animateFloatAsState(if (dragging) 1.06f else 1f, label = "categoryLift")
+    PreferenceTemplate(
+        modifier = Modifier.zIndex(if (dragging) 10f else 0f).graphicsLayer {
+            translationY = if (dragging) dragState.offset else shift
+            scaleX = lift
+            scaleY = lift
+            shadowElevation = if (dragging) 12.dp.toPx() else 0f
+        },
+        title = { Text(category.title) },
+        description = {
+            Text(
+                if (needsPermission) PrimeSearchPermissions.explanation(category) else category.description,
+                color = if (needsPermission) androidx.compose.ui.graphics.Color.Gray else androidx.compose.ui.graphics.Color.Unspecified,
+            )
+        },
+        endWidget = {
+            Row {
+                IconButton(onClick = onSettings) {
+                    Icon(Icons.Default.Settings, contentDescription = "Paramètres de ${category.title}")
+                }
+                Icon(
+                    Icons.Default.DragHandle,
+                    contentDescription = "Maintenir puis glisser pour réorganiser",
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp)
+                        .pointerInput(category, index, lastIndex) {
+                            var distance = 0f
+                            detectDragGesturesAfterLongPress(
+                                onDragStart = {
+                                    distance = 0f
+                                    dragState.origin = index
+                                    dragState.offset = 0f
+                                    dragState.active = category
+                                },
+                                onDragEnd = {
+                                    val destination = (dragState.origin + (dragState.offset / rowPixels).roundToInt()).coerceIn(0, lastIndex)
+                                    dragState.active = null
+                                    dragState.offset = 0f
+                                    onMove(index, destination)
+                                },
+                                onDragCancel = {
+                                    distance = 0f
+                                    dragState.offset = 0f
+                                    dragState.active = null
+                                },
+                                onDrag = { change, amount ->
+                                    change.consume()
+                                    distance += amount.y
+                                    dragState.offset = distance
+                                },
+                            )
+                        },
+                )
+                IconButton(onClick = { onMove(index, index - 1) }, enabled = index > 0) {
+                    Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Monter")
+                }
+                IconButton(onClick = { onMove(index, index + 1) }, enabled = index < lastIndex) {
+                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Descendre")
+                }
+                Switch(
+                    checked = enabled && !needsPermission,
+                    onCheckedChange = { value ->
+                        if (value && needsPermission) onPermission() else onEnabled(value)
+                    },
+                )
+            }
+        },
+        onClick = {
+            if (needsPermission) onPermission() else onEnabled(!enabled)
+        },
+    )
+}
+
+internal class CategoryDragState {
+    var active by mutableStateOf<Prefs.Category?>(null)
+    var origin by mutableStateOf(0)
+    var offset by mutableStateOf(0f)
 }
