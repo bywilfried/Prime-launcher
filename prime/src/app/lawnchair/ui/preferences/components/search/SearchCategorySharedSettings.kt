@@ -2,6 +2,15 @@ package app.lawnchair.ui.preferences.components.search
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.Alignment
+import app.lawnchair.prime.search.PrimeSearchPermissions
+import app.lawnchair.prime.search.PrimeSourceSelection
+import app.lawnchair.prime.search.PrimeTasksSearch
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
@@ -19,10 +28,63 @@ import kotlin.math.roundToInt
 
 /** Shared category controls; every read/write is scoped to the requested search surface. */
 @Composable
-internal fun SharedCategoryOptions(category: Prefs.Category, surface: Prefs.Surface) {
+internal fun SharedCategoryOptions(category: Prefs.Category, surface: Prefs.Surface, permissionRefresh: Int = 0) {
     val context = LocalContext.current
     Column {
         when (category) {
+            Prefs.Category.CALENDAR, Prefs.Category.CONTACTS, Prefs.Category.REMINDERS -> {
+                val kind = when (category) {
+                    Prefs.Category.CALENDAR -> "calendars"
+                    Prefs.Category.REMINDERS -> "tasks"
+                    else -> "contacts"
+                }
+                if (category == Prefs.Category.CALENDAR) {
+                    var futureOnly by remember(surface) { mutableStateOf(PrimeCalendarSearch.futureOnly(context, surface)) }
+                    Row {
+                        Text("Événements futurs uniquement", modifier = Modifier.weight(1f))
+                        Switch(checked = futureOnly, onCheckedChange = {
+                            futureOnly = it
+                            PrimeCalendarSearch.setFutureOnly(context, it, surface)
+                        })
+                    }
+                }
+                if (PrimeSearchPermissions.granted(context, category)) {
+                    val sources = remember(category, permissionRefresh) {
+                        when (kind) {
+                            "calendars" -> PrimeSourceSelection.calendars(context)
+                            "tasks" -> PrimeTasksSearch.lists(context)
+                            else -> PrimeSourceSelection.contactAccounts(context)
+                        }
+                    }
+                    var selectedIds by remember(surface, category, permissionRefresh) {
+                        mutableStateOf(PrimeSourceSelection.selected(context, kind, surface))
+                    }
+                    Text(when (kind) {
+                        "calendars" -> "Agendas utilisés pour la recherche"
+                        "tasks" -> "Listes Tasks.org utilisées pour la recherche"
+                        else -> "Comptes de contacts utilisés pour la recherche"
+                    })
+                    if (sources.isEmpty()) Text("Aucune source disponible sur cet appareil.")
+                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                        items(sources, key = { it.id }) { source ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(
+                                    checked = selectedIds?.contains(source.id) ?: true,
+                                    onCheckedChange = { enabled ->
+                                        PrimeSourceSelection.setSelected(context, kind, source.id, enabled, sources, surface)
+                                        selectedIds = PrimeSourceSelection.selected(context, kind, surface)
+                                    },
+                                )
+                                Text(source.label)
+                            }
+                        }
+                    }
+                    TextButton(onClick = {
+                        PrimeSourceSelection.reset(context, kind, surface)
+                        selectedIds = null
+                    }) { Text("Tout sélectionner") }
+                }
+            }
             Prefs.Category.FILES -> {
                 var limit by remember(surface) { mutableStateOf(Prefs.maxFileResults(context, surface)) }
                 Text("Nombre maximal de fichiers : $limit")
@@ -41,16 +103,6 @@ internal fun SharedCategoryOptions(category: Prefs.Category, surface: Prefs.Surf
                     }
                 }
                 Text("Les fichiers accessibles dépendent des autorisations Android.")
-            }
-            Prefs.Category.CALENDAR -> {
-                var futureOnly by remember(surface) { mutableStateOf(PrimeCalendarSearch.futureOnly(context, surface)) }
-                Row {
-                    Text("Événements futurs uniquement", modifier = Modifier.weight(1f))
-                    Switch(checked = futureOnly, onCheckedChange = {
-                        futureOnly = it
-                        PrimeCalendarSearch.setFutureOnly(context, it, surface)
-                    })
-                }
             }
             Prefs.Category.WEB -> {
                 var count by remember(surface) { mutableStateOf(Prefs.webSuggestionCount(context, surface)) }
