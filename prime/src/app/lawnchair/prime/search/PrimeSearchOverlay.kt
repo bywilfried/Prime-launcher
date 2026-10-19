@@ -94,6 +94,7 @@ object PrimeSearchOverlay {
         val isShowing get() = scrim.parent != null
         fun show() {
             if (isShowing) return
+            layer.setPrimeSearchOpen(true)
             layer.addView(scrim, FrameLayout.LayoutParams(-1, -1))
             val width = if (floating) {
                 (launcher.resources.displayMetrics.widthPixels - (24 * density).toInt())
@@ -109,12 +110,15 @@ object PrimeSearchOverlay {
             if (!isShowing) return
             (content.parent as? ViewGroup)?.removeView(content)
             layer.removeView(scrim)
+            layer.setPrimeSearchOpen(false)
             onDismiss()
         }
         fun hideForDrag() {
             scrim.visibility = View.INVISIBLE
+            layer.setPrimeSearchDrag(true)
         }
         fun restoreAfterDrag() {
+            layer.setPrimeSearchDrag(false)
             if (isShowing) scrim.visibility = View.VISIBLE
         }
         fun updateHeight(height: Int) {
@@ -187,15 +191,16 @@ object PrimeSearchOverlay {
                                 ) = Unit
                                 override fun onDragEnd() {
                                     launcher.dragController.removeDragListener(this)
+                                    surface.restoreAfterDrag()
                                     surface.dismiss()
                                 }
                             }
                             launcher.dragController.addDragListener(listener)
+                            surface.hideForDrag()
                             launcher.workspace.beginDragShared(
                                 icon, launcher.appsView,
                                 com.android.launcher3.dragndrop.DragOptions(),
                             )
-                            surface.hideForDrag()
                         } else {
                             dragging = false
                         }
