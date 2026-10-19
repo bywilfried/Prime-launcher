@@ -318,7 +318,28 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
                 }
                 Intent launch = mPackageManager.getLaunchIntentForPackage(packageName);
                 if (launch == null) {
-                    Log.w(TAG, "Default dock app has no launch activity: " + packageName);
+                    // Dialer, SMS and contacts apps can expose only a role-specific entry point.
+                    Intent roleIntent = new Intent(intent).setPackage(packageName);
+                    ResolveInfo roleActivity = mPackageManager.resolveActivity(roleIntent, 0);
+                    if (roleActivity != null && roleActivity.activityInfo != null) {
+                        launch = new Intent(intent).setComponent(new ComponentName(
+                                roleActivity.activityInfo.packageName,
+                                roleActivity.activityInfo.name));
+                    }
+                }
+                if (launch == null && "contacts".equals(role)) {
+                    Intent contactsIntent = new Intent(Intent.ACTION_VIEW,
+                            android.net.Uri.parse("content://com.android.contacts/contacts"))
+                            .setPackage(packageName);
+                    ResolveInfo contactsActivity = mPackageManager.resolveActivity(contactsIntent, 0);
+                    if (contactsActivity != null && contactsActivity.activityInfo != null) {
+                        launch = contactsIntent.setComponent(new ComponentName(
+                                contactsActivity.activityInfo.packageName,
+                                contactsActivity.activityInfo.name));
+                    }
+                }
+                if (launch == null) {
+                    Log.w(TAG, "Default dock app has no launchable entry point: " + packageName);
                     return -1;
                 }
                 ResolveInfo launchInfo = mPackageManager.resolveActivity(launch, 0);
