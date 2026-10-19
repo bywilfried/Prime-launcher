@@ -465,7 +465,7 @@ object PrimeSearchOverlay {
             val engines = if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB_SHORTCUTS))
                 PrimeSearchResultPreferences.enabledWebEngines(launcher) else emptyList()
             if (engines.isNotEmpty()) {
-                row("Moteurs de recherche") {}
+                row("Raccourcis Web") {}
                 val columns = 5
                 engines.chunked(columns).forEach { group ->
                     val icons = LinearLayout(launcher).apply {
