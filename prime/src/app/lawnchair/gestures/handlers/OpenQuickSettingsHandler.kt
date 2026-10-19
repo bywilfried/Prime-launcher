@@ -18,4 +18,19 @@ class OpenQuickSettingsHandler(
             AccessibilityService.GLOBAL_ACTION_QUICK_SETTINGS,
         )
     }
+}    override suspend fun onTrigger(launcher: LawnchairLauncher) {
+        // On Android 11, use the public accessibility action first. Reflection
+        // against StatusBarManager can fail silently on Samsung firmware.
+        val app = launcher.lawnchairApp
+        if (app.isAccessibilityServiceBound() &&
+            app.performGlobalAction(AccessibilityService.GLOBAL_ACTION_QUICK_SETTINGS)
+        ) {
+            return
+        }
+        GestureWithAccessibilityHandler.onTrigger(
+            launcher,
+            R.string.quick_settings_a11y_hint,
+            AccessibilityService.GLOBAL_ACTION_QUICK_SETTINGS,
+        )
+    }
 }
