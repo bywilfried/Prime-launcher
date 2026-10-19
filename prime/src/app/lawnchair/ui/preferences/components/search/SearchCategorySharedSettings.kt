@@ -19,6 +19,7 @@ import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.Alignment
@@ -269,4 +270,29 @@ internal class CategoryDragState {
     var active by mutableStateOf<Prefs.Category?>(null)
     var origin by mutableStateOf(0)
     var offset by mutableStateOf(0f)
+}
+
+/** Identical settings dialog shell on both search surfaces. */
+@Composable
+internal fun SharedCategorySettingsDialog(
+    category: Prefs.Category,
+    surface: Prefs.Surface,
+    permissionRefresh: Int,
+    onDismiss: () -> Unit,
+    extra: @Composable () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(category.title) },
+        text = {
+            Column {
+                Text(category.description)
+                SharedCategoryOptions(category, surface, permissionRefresh)
+                extra()
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Fermer") }
+        },
+    )
 }
