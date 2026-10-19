@@ -388,6 +388,21 @@ private fun DrawerAdvancedSearchPreferences() {
                                 Text("Autoriser l'accès")
                             }
                         }
+                        if (selected == PrimeSearchResultPreferences.Category.CALENDAR) {
+                            var futureOnly by remember(selected) {
+                                mutableStateOf(app.lawnchair.prime.search.PrimeCalendarSearch.futureOnly(context, drawerSurface))
+                            }
+                            Row {
+                                Text("Événements futurs uniquement", modifier = Modifier.weight(1f))
+                                androidx.compose.material3.Switch(
+                                    checked = futureOnly,
+                                    onCheckedChange = {
+                                        futureOnly = it
+                                        app.lawnchair.prime.search.PrimeCalendarSearch.setFutureOnly(context, it, drawerSurface)
+                                    },
+                                )
+                            }
+                        }
                         if (selected == PrimeSearchResultPreferences.Category.NOTIFICATIONS) {
                             var retention by remember {
                                 mutableStateOf(PrimeSearchResultPreferences.notificationRetention(context, drawerSurface))
