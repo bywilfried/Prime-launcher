@@ -360,107 +360,34 @@ fun PrimeSearchPreference() {
     }
     var categorySettings by remember { mutableStateOf<PrimeSearchResultPreferences.Category?>(null) }
     var confirmNotificationClear by remember { mutableStateOf(false) }
-    var activeDrag by remember { mutableStateOf<PrimeSearchResultPreferences.Category?>(null) }
-    var dragOrigin by remember { mutableStateOf(0) }
-    var dragOffset by remember { mutableStateOf(0f) }
+    val sharedDrag = remember { CategoryDragState() }
     PreferenceGroup(heading = "Afficher dans les résultats de recherche") {
         categories.forEachIndexed { index, category ->
             var checked by remember(category, permissionRefresh) {
                 mutableStateOf(PrimeSearchResultPreferences.enabled(context, category))
             }
-            val permissionGranted = remember(category, permissionRefresh) { PrimeSearchPermissions.granted(context, category) }
-            val needsPermission = PrimeSearchPermissions.required(category) && !permissionGranted
-            val displayedChecked = checked && !needsPermission
-            val dragging = activeDrag == category
-            val rowPixels = with(LocalDensity.current) { 112.dp.toPx() }
-            val targetIndex = (dragOrigin + (dragOffset / rowPixels).roundToInt()).coerceIn(0, categories.lastIndex)
-            val displacement = if (activeDrag != null && !dragging) {
-                when {
-                    index > dragOrigin && index <= targetIndex -> -rowPixels
-                    index < dragOrigin && index >= targetIndex -> rowPixels
-                    else -> 0f
-                }
-            } else 0f
-            val animatedDisplacement by animateFloatAsState(displacement, label = "primeCategoryShift")
-            val animatedLift by animateFloatAsState(if (dragging) 1.06f else 1f, label = "primeDragLift")
-            PreferenceTemplate(
-                modifier = Modifier
-                    .zIndex(if (dragging) 10f else 0f)
-                    .graphicsLayer {
-                        translationY = if (dragging) dragOffset else animatedDisplacement
-                        scaleX = animatedLift
-                        scaleY = animatedLift
-                        shadowElevation = if (dragging) 12.dp.toPx() else 0f
-                    },
-                title = { Text(category.title) },
-                description = { Text(if (needsPermission) PrimeSearchPermissions.explanation(category) else category.description, color = if (needsPermission) androidx.compose.ui.graphics.Color.Gray else androidx.compose.ui.graphics.Color.Unspecified) },
-                endWidget = {
-                    Row {
-                        IconButton(onClick = {
-                            when (category) {
-                                PrimeSearchResultPreferences.Category.WEB -> showSuggestionSettings = true
-                                PrimeSearchResultPreferences.Category.WEB_SHORTCUTS -> showSources = true
-                                else -> categorySettings = category
-                            }
-                        }) {
-                            Icon(Icons.Default.Settings, contentDescription = "Paramètres de ${category.title}")
-                        }
-                        Icon(
-                            Icons.Default.DragHandle,
-                            contentDescription = "Maintenir puis glisser pour réorganiser",
-                            modifier = Modifier
-                                .padding(horizontal = 8.dp, vertical = 12.dp)
-                                .pointerInput(category, index) {
-                                    var distance = 0f
-                                    detectDragGesturesAfterLongPress(
-                                        onDragStart = { distance = 0f; dragOrigin = index; dragOffset = 0f; activeDrag = category },
-                                        onDragEnd = {
-                                            val destination = (dragOrigin + (dragOffset / rowPixels).roundToInt()).coerceIn(0, categories.lastIndex)
-                                            activeDrag = null
-                                            dragOffset = 0f
-                                            moveCategory(index, destination)
-                                        },
-                                        onDragCancel = { distance = 0f; dragOffset = 0f; activeDrag = null },
-                                        onDrag = { change, dragAmount ->
-                                            change.consume()
-                                            distance += dragAmount.y
-                                            dragOffset = distance
-                                        },
-                                    )
-                                },
-                        )
-                        IconButton(
-                            onClick = { moveCategory(index, index - 1) },
-                            enabled = index > 0,
-                        ) {
-                            Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Monter")
-                        }
-                        IconButton(
-                            onClick = { moveCategory(index, index + 1) },
-                            enabled = index < categories.lastIndex,
-                        ) {
-                            Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Descendre")
-                        }
-                        androidx.compose.material3.Switch(
-                            checked = displayedChecked,
-                            onCheckedChange = { enabled ->
-                                if (enabled && needsPermission) {
-                                    requestCategory(category)
-                                } else {
-                                checked = enabled
-                                PrimeSearchResultPreferences.setEnabled(context, category, enabled)
-                                }
-                            },
-                        )
+            val needsPermission = PrimeSearchPermissions.required(category) &&
+                !PrimeSearchPermissions.granted(context, category)
+            SharedCategoryCard(
+                category = category,
+                index = index,
+                lastIndex = categories.lastIndex,
+                enabled = checked,
+                needsPermission = needsPermission,
+                onSettings = {
+                    when (category) {
+                        PrimeSearchResultPreferences.Category.WEB -> showSuggestionSettings = true
+                        PrimeSearchResultPreferences.Category.WEB_SHORTCUTS -> showSources = true
+                        else -> categorySettings = category
                     }
                 },
-                onClick = {
-                    if (needsPermission) requestCategory(category)
-                    else {
-                        checked = !checked
-                        PrimeSearchResultPreferences.setEnabled(context, category, checked)
-                    }
+                onMove = ::moveCategory,
+                onEnabled = {
+                    checked = it
+                    PrimeSearchResultPreferences.setEnabled(context, category, it)
                 },
+                onPermission = { requestCategory(category) },
+                dragState = sharedDrag,
             )
         }
         if (categorySettings != null) {
