@@ -195,6 +195,14 @@ object PrimeSearchOverlay {
                                     surface.dismiss()
                                 }
                             }
+                            // MotionEvent coordinates here are relative to the icon,
+                            // not DragLayer. Seed the native drag at the actual finger
+                            // location before creating its preview and registration offset.
+                            val layerPosition = IntArray(2)
+                            launcher.dragLayer.getLocationOnScreen(layerPosition)
+                            val pointerX = (event.rawX - layerPosition[0]).toInt()
+                            val pointerY = (event.rawY - layerPosition[1]).toInt()
+                            launcher.dragController.setPrimeSearchDragStart(pointerX, pointerY)
                             launcher.dragController.addDragListener(listener)
                             surface.hideForDrag()
                             launcher.workspace.beginDragShared(
