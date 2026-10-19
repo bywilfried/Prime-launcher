@@ -153,8 +153,7 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                                 is SearchResult.WebSuggestion -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB
                                 else -> null
                             }
-                            category == null || !prefs.hasCategorySetting(context, category, surface) ||
-                                prefs.enabled(context, category, surface)
+                            category == null || prefs.enabled(context, category, surface)
                         }
                     }
                     val searchTargets = translateToSearchTargets(visibleResults + drawerEntries)
