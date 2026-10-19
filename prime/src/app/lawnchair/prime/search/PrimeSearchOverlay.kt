@@ -79,7 +79,7 @@ object PrimeSearchOverlay {
     private fun showNativeAppPopup(
         launcher: LawnchairLauncher,
         dialog: Dialog,
-        icon: app.lawnchair.allapps.views.SearchResultIcon,
+        icon: com.android.launcher3.BubbleTextView,
     ): Boolean {
         if (icon.tag !is com.android.launcher3.model.data.ItemInfo) return false
         val position = IntArray(2)
@@ -102,6 +102,8 @@ object PrimeSearchOverlay {
             dragLayer.removeView(icon)
             return false
         }
+        // Keep the temporary icon alive while its popup is visible or dragging.
+        // An arbitrary short delay would remove the drag source too early.
         val cleanup = object : com.android.launcher3.dragndrop.DragController.DragListener {
             override fun onDragStart(
                 dragObject: com.android.launcher3.DropTarget.DragObject,
@@ -114,14 +116,18 @@ object PrimeSearchOverlay {
             }
         }
         launcher.dragController.addDragListener(cleanup)
-        icon.postDelayed({
-            if (!launcher.dragController.isDragging &&
-                com.android.launcher3.popup.PopupContainerWithArrow.getOpen(launcher) == null
-            ) {
-                dragLayer.removeView(icon)
-                launcher.dragController.removeDragListener(cleanup)
-            }
-        }, 500L)
+        fun scheduleCleanup() {
+            icon.postDelayed({
+                if (launcher.dragController.isDragging) return@postDelayed
+                if (com.android.launcher3.popup.PopupContainerWithArrow.getOpen(launcher) != null) {
+                    scheduleCleanup()
+                } else {
+                    dragLayer.removeView(icon)
+                    launcher.dragController.removeDragListener(cleanup)
+                }
+            }, 300L)
+        }
+        scheduleCleanup()
         return true
     }
 
@@ -354,12 +360,33 @@ object PrimeSearchOverlay {
                             }
                         }
                     }
-                    val icon = ImageView(launcher).apply {
-                        setImageDrawable(packageManager.getApplicationIcon(app))
+                    val component = packageManager.getLaunchIntentForPackage(app.packageName)?.component
+                    val appInfo = component?.let { componentName ->
+                        launcher.appsView.appsStore.getApp(
+                            com.android.launcher3.util.ComponentKey(componentName, android.os.Process.myUserHandle())
+                        )
                     }
-                    cell.addView(icon, LinearLayout.LayoutParams(
-                        iconSize, iconSize,
-                    ))
+                    if (appInfo != null) {
+                        val nativeIcon = com.android.launcher3.BubbleTextView(launcher).apply {
+                            applyFromApplicationInfo(appInfo)
+                            setOnClickListener {
+                                dialog.dismiss()
+                                com.android.launcher3.touch.ItemClickHandler.INSTANCE.onClick(this)
+                            }
+                            setOnLongClickListener {
+                                showNativeAppPopup(launcher, dialog, this)
+                            }
+                        }
+                        cell.addView(nativeIcon, LinearLayout.LayoutParams(iconSize, iconSize))
+                        cell.setOnLongClickListener {
+                            showNativeAppPopup(launcher, dialog, nativeIcon)
+                        }
+                    } else {
+                        val fallbackIcon = ImageView(launcher).apply {
+                            setImageDrawable(packageManager.getApplicationIcon(app))
+                        }
+                        cell.addView(fallbackIcon, LinearLayout.LayoutParams(iconSize, iconSize))
+                    }
                     val title = TextView(launcher).apply {
                         text = packageManager.getApplicationLabel(app)
                         textSize = titleTextSizeSp
