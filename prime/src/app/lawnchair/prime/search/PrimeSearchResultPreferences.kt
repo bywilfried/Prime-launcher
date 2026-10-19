@@ -338,6 +338,13 @@ object PrimeSearchResultPreferences {
         prefs(context).edit().putBoolean("two_line_app_labels", enabled).apply()
     }
 
+    fun iconSizePercent(context: Context): Int =
+        prefs(context).getInt("icon_size_percent", 100).coerceIn(60, 150)
+
+    fun setIconSizePercent(context: Context, percent: Int) {
+        prefs(context).edit().putInt("icon_size_percent", percent.coerceIn(60, 150)).apply()
+    }
+
     fun appsPerRow(context: Context): Int =
         prefs(context).getInt("apps_per_row", 4).coerceIn(3, 6)
 
