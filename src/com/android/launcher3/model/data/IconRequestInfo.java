@@ -88,9 +88,9 @@ public class IconRequestInfo<T extends ItemInfoWithIcon> {
                             intent.getComponent().getClassName())) {
                 String handler = intent.getStringExtra("app.lawnchair.EXTRA_HANDLER");
                 app.lawnchair.gestures.config.GestureHandlerConfig config = null;
-                if ("{\\"type\\":\\"openAppDrawer\\"}".equals(handler)) {
+                if (handler != null && handler.contains("openAppDrawer")) {
                     config = app.lawnchair.gestures.config.GestureHandlerConfig.OpenAppDrawer.INSTANCE;
-                } else if ("{\\"type\\":\\"openPrimeSearch\\"}".equals(handler)) {
+                } else if (handler != null && handler.contains("openPrimeSearch")) {
                     config = app.lawnchair.gestures.config.GestureHandlerConfig.OpenPrimeSearch.INSTANCE;
                 }
                 if (config != null) {
