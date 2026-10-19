@@ -13,7 +13,7 @@ sealed class HotseatMode(
     companion object {
         fun fromString(value: String): HotseatMode = when (value) {
             "disabled" -> DisabledHotseat
-            "google_search" -> GoogleSearchHotseat
+            "google_search" -> LawnchairHotseat
             else -> LawnchairHotseat
         }
 
@@ -23,7 +23,6 @@ sealed class HotseatMode(
         fun values() = listOf(
             DisabledHotseat,
             LawnchairHotseat,
-            GoogleSearchHotseat,
         )
     }
 
