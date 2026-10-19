@@ -351,26 +351,19 @@ private fun DrawerAdvancedSearchPreferences() {
             drawerOrder = PrimeSearchResultPreferences.order(context, drawerSurface)
         }) { Text("Réinitialiser l'ordre") }
         categorySettings?.let { selected ->
-            androidx.compose.material3.AlertDialog(
-                onDismissRequest = { categorySettings = null },
-                title = { Text(selected.title) },
-                text = {
-                    androidx.compose.foundation.layout.Column {
-                        Text(selected.description)
-                        if (PrimeSearchPermissions.required(selected) && !PrimeSearchPermissions.granted(context, selected)) {
-                            Text(PrimeSearchPermissions.explanation(selected))
-                            androidx.compose.material3.TextButton(onClick = { requestCategory(selected, drawerSurface) }) {
-                                Text("Autoriser l'accès")
-                            }
-                        }
-                        SharedCategoryOptions(selected, drawerSurface, permissionRefresh)
-
+            SharedCategorySettingsDialog(
+                category = selected,
+                surface = drawerSurface,
+                permissionRefresh = permissionRefresh,
+                onDismiss = { categorySettings = null },
+            ) {
+                if (PrimeSearchPermissions.required(selected) && !PrimeSearchPermissions.granted(context, selected)) {
+                    Text(PrimeSearchPermissions.explanation(selected))
+                    androidx.compose.material3.TextButton(onClick = { requestCategory(selected, drawerSurface) }) {
+                        Text("Autoriser l'accès")
                     }
-                },
-                confirmButton = {
-                    androidx.compose.material3.TextButton(onClick = { categorySettings = null }) { Text("Terminé") }
-                },
-            )
+                }
+            }
         }
 
     }
