@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.ui.unit.dp
 import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
 import app.lawnchair.prime.search.PrimeSearchResultPreferences
@@ -221,6 +223,7 @@ private fun DrawerAdvancedSearchPreferences() {
                 pendingCategory?.let { category ->
                     if (PrimeSearchPermissions.granted(context, category)) {
                         PrimeSearchResultPreferences.setEnabled(context, category, true, PrimeSearchResultPreferences.Surface.DRAWER)
+                        categoryStates = categoryStates + (category to true)
                         pendingCategory = null
                     }
                 }
@@ -256,7 +259,8 @@ private fun DrawerAdvancedSearchPreferences() {
         var drawerWebCount by remember {
             mutableStateOf(PrimeSearchResultPreferences.webSuggestionCount(context, drawerSurface))
         }
-        Text("Suggestions Web du tiroir : $drawerWebCount")
+        /* Les suggestions Web se règlent depuis la carte de leur catégorie. */
+        /* Text("Suggestions Web du tiroir : $drawerWebCount")
         androidx.compose.material3.Slider(
             value = drawerWebCount.toFloat(),
             onValueChange = {
@@ -307,14 +311,16 @@ private fun DrawerAdvancedSearchPreferences() {
                 },
             )
         }
+        */
         val drawerCategories = PrimeSearchResultPreferences.order(context, drawerSurface)
         var drawerOrder by remember { mutableStateOf(drawerCategories) }
         var categorySettings by remember { mutableStateOf<PrimeSearchResultPreferences.Category?>(null) }
+        var categoryStates by remember { mutableStateOf(drawerOrder.associateWith { PrimeSearchResultPreferences.enabled(context, it, drawerSurface) }) }
         Text("Afficher dans les résultats de recherche")
         drawerOrder.forEachIndexed { index, category ->
             val needsPermission = PrimeSearchPermissions.required(category) &&
                 !PrimeSearchPermissions.granted(context, category)
-            val enabled = PrimeSearchResultPreferences.enabled(context, category, drawerSurface)
+            val enabled = categoryStates[category] ?: false
             PreferenceTemplate(
                 title = { Text(category.title) },
                 description = {
@@ -323,8 +329,9 @@ private fun DrawerAdvancedSearchPreferences() {
                 endWidget = {
                     Row {
                         IconButton(onClick = { categorySettings = category }) {
-                            Text("⚙")
+                            Icon(Icons.Default.Settings, contentDescription = "Paramètres de ${category.title}")
                         }
+                        Icon(Icons.Default.DragHandle, contentDescription = "Ordre des résultats")
                         IconButton(onClick = {
                             if (index > 0) {
                                 val updated = drawerOrder.toMutableList()
@@ -351,6 +358,7 @@ private fun DrawerAdvancedSearchPreferences() {
                                 if (value && needsPermission) requestCategory(category, drawerSurface)
                                 else {
                                     PrimeSearchResultPreferences.setEnabled(context, category, value, drawerSurface)
+                                    categoryStates = categoryStates + (category to PrimeSearchResultPreferences.enabled(context, category, drawerSurface))
                                     permissionRefresh++
                                 }
                             },
@@ -361,6 +369,7 @@ private fun DrawerAdvancedSearchPreferences() {
                     if (needsPermission) requestCategory(category, drawerSurface)
                     else {
                         PrimeSearchResultPreferences.setEnabled(context, category, !enabled, drawerSurface)
+                        categoryStates = categoryStates + (category to PrimeSearchResultPreferences.enabled(context, category, drawerSurface))
                         permissionRefresh++
                     }
                 },
