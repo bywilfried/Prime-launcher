@@ -148,18 +148,6 @@ public class DragLayer extends BaseDragLayer<Launcher> implements LauncherOverla
         return !mPrimeSearchOpen && super.canFindActiveController();
     }
 
-    @Override
-    public boolean dispatchTouchEvent(MotionEvent ev) {
-        if (mPrimeSearchDrag) {
-            // The original icon remains under the search overlay; the drag
-            // controller needs MOVE and UP in DragLayer coordinates to drop
-            // at the actual finger location rather than at drag start.
-            mDragController.onControllerTouchEvent(ev);
-            return true;
-        }
-        return super.dispatchTouchEvent(ev);
-    }
-
     public ViewGroupFocusHelper getFocusIndicatorHelper() {
         return mFocusIndicatorHelper;
     }
@@ -262,6 +250,11 @@ public class DragLayer extends BaseDragLayer<Launcher> implements LauncherOverla
     public boolean dispatchTouchEvent(MotionEvent ev) {
         ev.offsetLocation(getTranslationX(), 0);
         try {
+            if (mPrimeSearchDrag) {
+                // Forward the same pointer stream used by the native drag to
+                // update the preview and finish the drop at the finger location.
+                return mDragController.onControllerTouchEvent(ev);
+            }
             return super.dispatchTouchEvent(ev);
         } finally {
             ev.offsetLocation(-getTranslationX(), 0);
