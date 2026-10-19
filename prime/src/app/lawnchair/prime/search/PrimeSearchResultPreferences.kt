@@ -122,7 +122,7 @@ object PrimeSearchResultPreferences {
         APPS("apps", "Applications", "Applications installées"),
         APP_SHORTCUTS("app_shortcuts", "Raccourcis d’app", "Raccourcis des applications"),
         WEB("web", "Suggestions Web", "Suggestions Internet pendant la saisie"),
-        WEB_SHORTCUTS("web_shortcuts", "Recherche sur :", "Raccourcis vers les moteurs de recherche"),
+        WEB_SHORTCUTS("web_shortcuts", "Moteurs de recherche", "Raccourcis vers les moteurs de recherche"),
         CONTACTS("contacts", "Contacts", "Contacts et autres"),
         CALENDAR("calendar", "Événements de l’agenda", "Événements du calendrier"),
         REMINDERS("reminders", "Tâches", "Tâches locales et synchronisées"),
