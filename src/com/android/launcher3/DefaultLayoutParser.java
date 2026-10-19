@@ -123,6 +123,10 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
 
             // Verify that the result is an app and not just the resolver dialog asking which
             // app to use.
+            if (resolved == null || resolved.activityInfo == null) {
+                Log.w(TAG, "No matching activity for default favorite: " + metaIntent);
+                return -1;
+            }
             if (wouldLaunchResolverActivity(resolved, appList)) {
                 // If only one of the results is a system app then choose that as the default.
                 final ResolveInfo systemApp = getSingleSystemActivity(appList);
