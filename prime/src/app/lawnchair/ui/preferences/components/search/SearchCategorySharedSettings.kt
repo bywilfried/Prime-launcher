@@ -3,8 +3,6 @@ package app.lawnchair.ui.preferences.components.search
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.Alignment
@@ -65,8 +63,8 @@ internal fun SharedCategoryOptions(category: Prefs.Category, surface: Prefs.Surf
                         else -> "Comptes de contacts utilisés pour la recherche"
                     })
                     if (sources.isEmpty()) Text("Aucune source disponible sur cet appareil.")
-                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                        items(sources, key = { it.id }) { source ->
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        sources.forEach { source ->
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Checkbox(
                                     checked = selectedIds?.contains(source.id) ?: true,
