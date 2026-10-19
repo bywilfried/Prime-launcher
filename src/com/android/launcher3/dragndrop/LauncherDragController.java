@@ -115,8 +115,16 @@ public class LauncherDragController extends DragController<Launcher> {
             mLastTouch.y = mMotionDown.y = mOptions.simulatedDndStartPoint.y;
         }
 
-        final int registrationX = mMotionDown.x - dragLayerX;
-        final int registrationY = mMotionDown.y - dragLayerY;
+        // Keep application/folder previews centered beneath the finger. The source
+        // preview may be offset inside its cell (label, padding, scaled workspace),
+        // so using the original touch-to-cell offset makes the dragged icon appear
+        // displaced from the finger. Widgets retain their original grab offset.
+        final boolean centerIconOnTouch = originalView.getViewType()
+                != DraggableView.DRAGGABLE_WIDGET && drawable != null;
+        final int registrationX = centerIconOnTouch
+                ? drawable.getIntrinsicWidth() / 2 : mMotionDown.x - dragLayerX;
+        final int registrationY = centerIconOnTouch
+                ? drawable.getIntrinsicHeight() / 2 : mMotionDown.y - dragLayerY;
 
         final int dragRegionLeft = dragRegion == null ? 0 : dragRegion.left;
         final int dragRegionTop = dragRegion == null ? 0 : dragRegion.top;
