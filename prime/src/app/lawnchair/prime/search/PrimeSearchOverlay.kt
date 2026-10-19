@@ -72,6 +72,57 @@ object PrimeSearchOverlay {
     @Volatile private var cachedUsage: Map<String, android.app.usage.UsageStats>? = null
     @Volatile private var cachedUsageGranted = false
 
+    /**
+     * Native shortcut popup requires an icon attached to Launcher's DragLayer.
+     * Transfer it out of the dialog before opening the popup.
+     */
+    private fun showNativeAppPopup(
+        launcher: LawnchairLauncher,
+        dialog: Dialog,
+        icon: app.lawnchair.allapps.views.SearchResultIcon,
+    ): Boolean {
+        if (icon.tag !is com.android.launcher3.model.data.ItemInfo) return false
+        val position = IntArray(2)
+        icon.getLocationOnScreen(position)
+        val width = icon.width.coerceAtLeast(1)
+        val height = icon.height.coerceAtLeast(1)
+        val dragLayer = launcher.dragLayer
+        val layerPosition = IntArray(2)
+        dragLayer.getLocationOnScreen(layerPosition)
+        dialog.dismiss()
+        (icon.parent as? ViewGroup)?.removeView(icon)
+        val params = com.android.launcher3.dragndrop.DragLayer.LayoutParams(width, height)
+        params.leftMargin = position[0] - layerPosition[0]
+        params.topMargin = position[1] - layerPosition[1]
+        dragLayer.addView(icon, params)
+        val popup = com.android.launcher3.popup.PopupContainerWithArrow.showForIcon(icon)
+        if (popup == null) {
+            dragLayer.removeView(icon)
+            return false
+        }
+        val cleanup = object : com.android.launcher3.dragndrop.DragController.DragListener {
+            override fun onDragStart(
+                dragObject: com.android.launcher3.DropTarget.DragObject,
+                options: com.android.launcher3.dragndrop.DragOptions,
+            ) = Unit
+
+            override fun onDragEnd() {
+                dragLayer.removeView(icon)
+                launcher.dragController.removeDragListener(this)
+            }
+        }
+        launcher.dragController.addDragListener(cleanup)
+        icon.postDelayed({
+            if (!launcher.dragController.isDragging &&
+                com.android.launcher3.popup.PopupContainerWithArrow.getOpen(launcher) == null
+            ) {
+                dragLayer.removeView(icon)
+                launcher.dragController.removeDragListener(cleanup)
+            }
+        }, 500L)
+        return true
+    }
+
     fun show(launcher: LawnchairLauncher) {
         if (activeDialog?.isShowing == true && activeDialog?.window?.decorView?.isAttachedToWindow == true) return
         if (activeDialog != null) dismiss()
@@ -783,6 +834,11 @@ object PrimeSearchOverlay {
                     applyPrimeTextColors(view)
                     if (isAppIcon) {
                         view.minimumHeight = 0
+                        (view as? app.lawnchair.allapps.views.SearchResultIcon)?.let { icon ->
+                            icon.setOnLongClickListener {
+                                showNativeAppPopup(launcher, dialog, icon)
+                            }
+                        }
                     }
                 }
                 results.addView(webPanel)
