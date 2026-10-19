@@ -90,7 +90,7 @@ object PrimeSearchOverlay {
         private val layer = launcher.dragLayer
         private val scrim = FrameLayout(launcher).apply {
             isClickable = true
-            setBackgroundColor(if (floating) 0x30000000 else android.graphics.Color.TRANSPARENT)
+            setBackgroundColor(android.graphics.Color.TRANSPARENT)
             setOnClickListener { dismiss() }
         }
         val isShowing get() = scrim.parent != null
