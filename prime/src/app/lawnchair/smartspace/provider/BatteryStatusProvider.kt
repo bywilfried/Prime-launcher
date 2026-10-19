@@ -47,7 +47,7 @@ class BatteryStatusProvider(context: Context) :
             charging && (wattage <= ChargingPower.SLOW) -> context.getString(R.string.smartspace_battery_slow_charging)
             charging -> context.getString(R.string.smartspace_battery_charging)
             level <= 15 -> context.getString(R.string.smartspace_battery_low)
-            else -> return null
+            else -> context.getString(R.string.smartspace_battery_status)
         }
         val score = if (level <= 15) {
             SmartspaceScores.SCORE_LOW_BATTERY
