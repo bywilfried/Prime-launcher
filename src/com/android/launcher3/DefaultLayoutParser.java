@@ -1,6 +1,10 @@
 package com.android.launcher3;
 
 import android.appwidget.AppWidgetManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
+import java.io.ByteArrayOutputStream;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -266,6 +270,27 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
             Intent intent = new Intent("app.lawnchair.START_ACTION")
                     .setClassName(mContext, "app.lawnchair.gestures.ui.RunHandlerActivity")
                     .putExtra("app.lawnchair.EXTRA_HANDLER", handler);
+            // Persist the actual action icon in the shortcut row. A plain shortcut
+            // otherwise falls back to the Android generic launcher icon.
+            try {
+                int iconRes = "drawer".equals(action)
+                        ? R.drawable.ic_apps : R.drawable.ic_search;
+                Drawable drawable = mContext.getDrawable(iconRes);
+                if (drawable != null) {
+                    int size = (int) (48 * mContext.getResources().getDisplayMetrics().density);
+                    size = Math.max(1, size);
+                    Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+                    Canvas canvas = new Canvas(bitmap);
+                    drawable.setBounds(0, 0, size, size);
+                    drawable.draw(canvas);
+                    ByteArrayOutputStream output = new ByteArrayOutputStream();
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, output);
+                    mValues.put(Favorites.ICON, output.toByteArray());
+                    bitmap.recycle();
+                }
+            } catch (RuntimeException e) {
+                Log.w(TAG, "Unable to render Prime action shortcut icon", e);
+            }
             return addShortcut("drawer".equals(action) ? "Tiroir" : "Prime Search",
                     intent, Favorites.ITEM_TYPE_SHORTCUT);
         }
