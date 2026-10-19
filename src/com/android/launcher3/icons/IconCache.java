@@ -311,6 +311,37 @@ public class IconCache extends BaseIconCache {
      */
     public <T extends ItemInfoWithIcon> void getShortcutIcon(T info, CacheableShortcutInfo si,
             @NonNull Predicate<T> fallbackIconCheck) {
+        // Prime-owned pinned Actions created with a serialized handler ID can be
+        // redrawn using the current theme instead of ShortcutManager's frozen icon.
+        ShortcutInfo shortcut = si.getShortcutInfo();
+        String prefix = LawnchairShortcutActivity.GESTURE_SHORTCUT_ID_PREFIX + ":";
+        if (context.getPackageName().equals(shortcut.getPackage())
+                && shortcut.getId().startsWith(prefix)) {
+            String serialized = shortcut.getId().substring(prefix.length());
+            if (serialized.startsWith("{")) {
+                try {
+                    app.lawnchair.gestures.config.GestureHandlerConfig config =
+                            app.lawnchair.gestures.config.GestureHandlerConfig.Companion
+                                    .fromString(serialized);
+                    android.graphics.drawable.Drawable glyph =
+                            config.getIcon(context).loadDrawable(context);
+                    if (glyph != null) {
+                        android.graphics.drawable.AdaptiveIconDrawable adaptive =
+                                new android.graphics.drawable.AdaptiveIconDrawable(
+                                        new android.graphics.drawable.ColorDrawable(
+                                                android.graphics.Color.WHITE),
+                                        new android.graphics.drawable.InsetDrawable(glyph, 0.20f));
+                        try (LauncherIcons icons = LauncherIcons.obtain(context)) {
+                            info.bitmap = icons.createBadgedIconBitmap(adaptive,
+                                    new BaseIconFactory.IconOptions());
+                            return;
+                        }
+                    }
+                } catch (RuntimeException e) {
+                    Log.w(TAG, "Unable to refresh Prime pinned Action icon", e);
+                }
+            }
+        }
         UserHandle user = CacheableShortcutCachingLogic.INSTANCE.getUser(si);
         BitmapInfo bitmapInfo = cacheLocked(
                 CacheableShortcutCachingLogic.INSTANCE.getComponent(si),
