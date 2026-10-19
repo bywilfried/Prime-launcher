@@ -471,68 +471,13 @@ fun PrimeSearchPreference() {
                 text = {
                     Column {
                         Text(selected.description)
-                        if (selected == PrimeSearchResultPreferences.Category.FILES) {
-                            var maxFiles by remember {
-                                mutableStateOf(PrimeSearchResultPreferences.maxFileResults(context))
-                            }
-                            Text("Nombre maximal de fichiers : $maxFiles")
-                            androidx.compose.material3.Slider(
-                                value = maxFiles.toFloat(),
-                                onValueChange = {
-                                    maxFiles = it.roundToInt().coerceIn(3, 100)
-                                    PrimeSearchResultPreferences.setMaxFileResults(context, maxFiles)
-                                },
-                                valueRange = 3f..100f,
-                            )
-                            PrimeSearchResultPreferences.FileOption.entries.forEach { option ->
-                                var enabled by remember(option) {
-                                    mutableStateOf(PrimeSearchResultPreferences.fileOptionEnabled(context, option))
-                                }
-                                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                                    Text(option.label, modifier = Modifier.weight(1f))
-                                    androidx.compose.material3.Switch(
-                                        checked = enabled,
-                                        onCheckedChange = {
-                                            enabled = it
-                                            PrimeSearchResultPreferences.setFileOptionEnabled(context, option, it)
-                                        },
-                                    )
-                                }
-                            }
-                            Text("Les fichiers accessibles dépendent des autorisations Android.")
-                        }
-                        if (selected == PrimeSearchResultPreferences.Category.CALENDAR) {
-                            var futureOnly by remember { mutableStateOf(app.lawnchair.prime.search.PrimeCalendarSearch.futureOnly(context)) }
-                            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                                Text("Événements futurs uniquement", modifier = Modifier.weight(1f))
-                                androidx.compose.material3.Switch(checked = futureOnly, onCheckedChange = {
-                                    futureOnly = it
-                                    app.lawnchair.prime.search.PrimeCalendarSearch.setFutureOnly(context, it)
-                                })
-                            }
-                        }
+                        SharedCategoryOptions(selected, PrimeSearchResultPreferences.Surface.PRIME_SEARCH)
                         if (selected == PrimeSearchResultPreferences.Category.NOTIFICATIONS) {
-                            var retention by remember {
-                                mutableStateOf(PrimeSearchResultPreferences.notificationRetention(context))
-                            }
                             val granted = PrimeSearchPermissions.granted(context, selected)
                             Text(if (granted) "Accès aux notifications autorisé" else "Accès aux notifications non autorisé")
                             TextButton(onClick = {
                                 requestCategory(selected)
                             }) { Text(if (granted) "Gérer l'autorisation Android" else "Autoriser l'accès aux notifications") }
-                            Text("Conserver les notifications pendant :")
-                            PrimeSearchResultPreferences.NotificationRetention.entries.forEach { option ->
-                                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                                    androidx.compose.material3.RadioButton(
-                                        selected = retention == option,
-                                        onClick = {
-                                            retention = option
-                                            PrimeSearchResultPreferences.setNotificationRetention(context, option)
-                                        },
-                                    )
-                                    Text(option.label)
-                                }
-                            }
                             TextButton(onClick = { confirmNotificationClear = true }) {
                                 Text("Effacer l'historique des notifications")
                             }
