@@ -256,6 +256,15 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
     protected class AppWidgetParser extends PendingWidgetParser {
 
         @Override
+        public ComponentName getComponentName(XmlPullParser parser) {
+            ComponentName component = super.getComponentName(parser);
+            if (component != null && "self".equals(component.getPackageName())) {
+                return new ComponentName(mContext.getPackageName(), component.getClassName());
+            }
+            return component;
+        }
+
+        @Override
         protected int verifyAndInsert(ComponentName cn, Bundle extras) {
             try {
                 mPackageManager.getReceiverInfo(cn, 0);
