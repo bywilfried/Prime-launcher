@@ -68,6 +68,8 @@ import com.android.launcher3.search.SearchCallback
  * TODO: replace simple result rows with the full Lawnchair result view holders.
  */
 object PrimeSearchOverlay {
+    val isShowing: Boolean get() = activeDialog?.isShowing == true
+
     private var activeDialog: PrimeSearchSurface? = null
     private var activeAlgorithm: LawnchairSearchAlgorithm? = null
     @Volatile private var cachedApps: List<android.content.pm.ApplicationInfo>? = null
