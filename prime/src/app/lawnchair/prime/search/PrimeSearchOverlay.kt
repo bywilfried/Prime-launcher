@@ -470,8 +470,10 @@ object PrimeSearchOverlay {
                             setCompoundDrawablePadding(0)
                             setPadding(0, 0, 0, 0)
                             setOnClickListener {
-                                dialog.dismiss()
+                                // ItemClickHandler ignores detached views. Dispatch while
+                                // this icon is still attached to Prime Search, then close.
                                 com.android.launcher3.touch.ItemClickHandler.INSTANCE.onClick(this)
+                                dialog.dismiss()
                             }
                             
                         }
