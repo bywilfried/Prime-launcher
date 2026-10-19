@@ -47,7 +47,27 @@ object ContactsSearchProvider : SearchProvider, SearchPermission {
         // Call the newly encapsulated, private function.
         val contactInfoList = findContactsByName(context, query, maxResults)
 
-        val searchResults = contactInfoList.map { contactInfo ->
+        val surface = if (primeSearch)
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.PRIME_SEARCH
+        else app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
+        val selected = app.lawnchair.prime.search.PrimeSourceSelection.selected(context, "contacts", surface)
+        val allowedIds = selected?.let { accounts ->
+            val ids = mutableSetOf<String>()
+            runCatching {
+                context.contentResolver.query(
+                    ContactsContract.RawContacts.CONTENT_URI,
+                    arrayOf(ContactsContract.RawContacts.CONTACT_ID, ContactsContract.RawContacts.ACCOUNT_TYPE, ContactsContract.RawContacts.ACCOUNT_NAME),
+                    ContactsContract.RawContacts.DELETED + "=0", null, null,
+                )?.use { cursor ->
+                    while (cursor.moveToNext()) {
+                        val account = cursor.getString(1).orEmpty() + "|" + cursor.getString(2).orEmpty()
+                        if (account in accounts) ids.add(cursor.getLong(0).toString())
+                    }
+                }
+            }
+            ids
+        }
+        val searchResults = contactInfoList.filter { allowedIds == null || it.contactId in allowedIds }.map { contactInfo ->
             SearchResult.Contact(data = contactInfo)
         }
         emit(searchResults)
