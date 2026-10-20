@@ -111,7 +111,8 @@ internal constructor(
                 // BaseIconFactory rasterizes adaptive layers itself, so overriding
                 // AdaptiveIconDrawable.draw() does not affect the resulting bitmap.
                 // Inset the actual foreground layer before handing it to the factory.
-                val scale = foregroundScale(shape)
+                // TEMPORARY DIAGNOSTIC: exaggerate foreground scaling to verify rendering.
+                val scale = 0.60f
                 AdaptiveIconDrawable(
                     isolated.background,
                     if (scale < 0.999f) ScaledForegroundDrawable(isolated.foreground, scale) else isolated.foreground,
