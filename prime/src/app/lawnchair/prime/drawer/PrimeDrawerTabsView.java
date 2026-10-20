@@ -2,6 +2,7 @@ package app.lawnchair.prime.drawer;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Looper;
 import android.graphics.drawable.GradientDrawable;
 import android.util.AttributeSet;
 import android.content.DialogInterface;
@@ -138,7 +139,8 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         if ((!PrimeDrawerTabsRepository.PREF_CONFIGURATION.equals(key)
                 && !PrimeDrawerTabsRepository.PREF_SELECTED_TAB.equals(key))
                 || mHeaderParent == null) return;
-        post(() -> {
+        Runnable update = () -> {
+            if (mHeaderParent == null) return;
             if (mSwipeCommitInProgress
                     && PrimeDrawerTabsRepository.PREF_SELECTED_TAB.equals(key)) {
                 // The persistent destination page is already live. A swipe selection change must
@@ -154,7 +156,14 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
             }
             refresh(mHeaderParent);
             mHeaderParent.onPrimeDrawerTabSelected();
-        });
+        };
+        // Configuration changes made in the settings screen should refresh the
+        // active category in the same UI turn, not wait for a queued redraw.
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            update.run();
+        } else {
+            post(update);
+        }
     }
 
     private void refresh(FloatingHeaderView parent) {
