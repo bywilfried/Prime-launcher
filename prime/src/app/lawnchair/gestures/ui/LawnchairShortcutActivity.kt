@@ -90,7 +90,11 @@ class LawnchairShortcutActivity : ComponentActivity() {
                                         }
                                         resultReceiver.send(RESULT_OK, bundle)
                                     } else {
-                                        if (isPrimeDefaultLauncher(context)) {
+                                        // A shortcut configuration started for result by Prime's drag/drop
+                                        // flow must return its result to the caller so the
+                                        // launcher can honor the exact drop coordinates.
+                                        // HOME role is not required for this contract.
+                                        if (callingActivity != null || isPrimeDefaultLauncher(context)) {
                                             saveChanges(context, it)
                                         } else {
                                             addDirectlyToPrime(context, it)
