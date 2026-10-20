@@ -118,6 +118,39 @@ public class ModelUtils {
             }
         }
 
+        // Prime Actions returned by ACTION_CREATE_SHORTCUT carry a plain glyph
+        // bitmap. Rebuild their adaptive icon just as IconRequestInfo does when
+        // loading a persisted action, so the initial drop and reload agree.
+        if ("app.lawnchair.START_ACTION".equals(launchIntent.getAction())
+                && launchIntent.getComponent() != null
+                && context.getPackageName().equals(
+                        launchIntent.getComponent().getPackageName())
+                && "app.lawnchair.gestures.ui.RunHandlerActivity".equals(
+                        launchIntent.getComponent().getClassName())) {
+            String handler = launchIntent.getStringExtra("app.lawnchair.EXTRA_HANDLER");
+            app.lawnchair.gestures.config.GestureHandlerConfig config =
+                    handler == null ? null
+                            : app.lawnchair.gestures.config.GestureHandlerConfig.Companion
+                                    .fromString(handler);
+            if (config != null) {
+                try (LauncherIcons icons = LauncherIcons.obtain(context)) {
+                    android.graphics.drawable.Drawable glyph =
+                            config.getIcon(context).loadDrawable(context);
+                    if (glyph != null) {
+                        android.graphics.drawable.AdaptiveIconDrawable adaptive =
+                                new android.graphics.drawable.AdaptiveIconDrawable(
+                                        new android.graphics.drawable.ColorDrawable(
+                                                android.graphics.Color.WHITE),
+                                        new android.graphics.drawable.InsetDrawable(glyph, 0.20f));
+                        iconInfo = icons.createBadgedIconBitmap(adaptive,
+                                new com.android.launcher3.icons.BaseIconFactory.IconOptions());
+                    }
+                } catch (RuntimeException e) {
+                    Log.w(TAG, "Unable to generate Prime Action icon at drop", e);
+                }
+            }
+        }
+
         if (iconInfo == null) {
             Log.e(TAG, "Invalid icon by the app");
             return null;
