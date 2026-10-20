@@ -96,7 +96,7 @@ public class IconRequestInfo<T extends ItemInfoWithIcon> {
                 if (config != null) {
                     try (LauncherIcons icons = LauncherIcons.obtain(context)) {
                         android.graphics.drawable.Drawable glyph =
-                                config.getIcon(context).loadDrawable(context);
+                                config.getWorkspaceIcon(context).loadDrawable(context);
                         if (glyph != null) {
                             android.graphics.drawable.AdaptiveIconDrawable adaptive =
                                     new android.graphics.drawable.AdaptiveIconDrawable(
