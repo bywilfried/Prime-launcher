@@ -114,15 +114,15 @@ internal constructor(
                 // AdaptiveIconDrawable.draw() does not affect the resulting bitmap.
                 // Keep the adaptive background full-size; fit the foreground artwork
                 // to the mask's centered safe area using its actual alpha bounds.
-                val scale = foregroundScale(shape)
+                val safeArea = foregroundSafeArea(shape)
                 AdaptiveIconDrawable(
                     isolated.background,
-                    FittedForegroundDrawable(isolated.foreground, scale),
+                    FittedForegroundDrawable(isolated.foreground, safeArea),
                 )
             } else {
                 drawable.constantState?.newDrawable()?.mutate() ?: drawable
             }
-            PrimeDebugLog.d("PrimeIconSizing", "bitmap shape=${shape.key}, input=${drawable.javaClass.simpleName}, adaptive=${drawable is AdaptiveIconDrawable}, scale=${foregroundScale(shape)}")
+            PrimeDebugLog.d("PrimeIconSizing", "bitmap shape=${shape.key}, input=${drawable.javaClass.simpleName}, adaptive=${drawable is AdaptiveIconDrawable}, safeArea=${safeArea.width()}x${safeArea.height()}")
             createBadgedIconBitmap(
                 source,
                 BaseIconFactory.IconOptions().setUser(getUserInfo(user)),
@@ -136,7 +136,7 @@ internal constructor(
                         return createBadgedIconBitmap(
                             AdaptiveIconDrawable(
                                 copy.background,
-                                FittedForegroundDrawable(copy.foreground, foregroundScale(shape), factor),
+                                FittedForegroundDrawable(copy.foreground, safeArea, factor),
                             ),
                             BaseIconFactory.IconOptions().setUser(getUserInfo(user)),
                         )
@@ -182,7 +182,7 @@ internal constructor(
      */
     private class FittedForegroundDrawable(
         private val delegate: Drawable,
-        private val safeScale: Float,
+        private val safeArea: RectF,
         private val diagnosticFactor: Float? = null,
     ) : Drawable() {
         private var raster: Bitmap? = null
@@ -218,20 +218,16 @@ internal constructor(
                 }
             val contentWidth = contentBounds.width().toFloat()
             val contentHeight = contentBounds.height().toFloat()
-            // AdaptiveIconDrawable expands each layer to 150% of the visible icon.
-            // The previous 72% of that expanded layer was far too generous:
-            // most foregrounds ended up with factor=1 even for a diamond.
-            // Convert the safe square (relative to the visible icon) back into
-            // layer coordinates, then fit only the foreground's visible pixels.
+            // The safe area is measured in the actual 100x100 shape mask.
+            // Convert it to the 150%-sized adaptive foreground layer. Fit
+            // according to the artwork's own aspect ratio, not a fixed square.
             val visibleIconSize = minOf(rect.width(), rect.height()) / 1.5f
-            val targetSize = visibleIconSize * 0.62f * safeScale
-            // Keep the adaptive background and the outer mask at their original size.
-            // The fit must apply to the *visible foreground pixels*, not the
-            // oversized 150% adaptive layer. A factor of 1 for small artwork
-            // previously made the shape adjustment imperceptible on most apps.
-            // Cap the foreground at 60% of its original visible size while also
-            // respecting the mask-specific safe area for larger artwork.
-            val factor = diagnosticFactor ?: minOf(0.60f, targetSize / maxOf(contentWidth, contentHeight))
+            val maxWidth = visibleIconSize * safeArea.width() / 100f
+            val maxHeight = visibleIconSize * safeArea.height() / 100f
+            val fit = minOf(maxWidth / contentWidth, maxHeight / contentHeight)
+            // Never enlarge tiny source artwork; remove the former universal
+            // 60% cap which needlessly shrank artwork in roomy masks.
+            val factor = diagnosticFactor ?: minOf(1f, fit)
             val cx = rect.exactCenterX()
             val cy = rect.exactCenterY()
             val dest = RectF(
@@ -241,7 +237,7 @@ internal constructor(
                 cy + contentHeight * factor / 2f,
             )
             canvas.drawBitmap(bitmap, contentBounds, dest, paint)
-            PrimeDebugLog.d("PrimeIconSizing", "foreground fitted factor=$factor safeScale=$safeScale target=$targetSize content=${contentWidth}x$contentHeight bounds=$contentBounds")
+            PrimeDebugLog.d("PrimeIconSizing", "foreground fitted factor=$factor safeArea=$safeArea max=${maxWidth}x${maxHeight} content=${contentWidth}x$contentHeight bounds=$contentBounds")
         }
 
         override fun setAlpha(alpha: Int) { paint.alpha = alpha }
@@ -251,30 +247,50 @@ internal constructor(
     }
 
     /**
-     * Measure the centered safe square in the actual mask. Adaptive icon artwork
-     * is commonly designed around a 72%-wide safe zone, but angular masks need
-     * a smaller square so the logo stays away from their corners.
+     * Find the largest centered axis-aligned rectangle wholly inside the
+     * selected mask. Unlike checking only four corners, sample each edge:
+     * concave/star masks can cut into a rectangle between its corners.
+     * Use a conservative inset to allow for antialiased mask boundaries.
      */
-    private fun foregroundScale(shape: IconShape): Float {
+    private fun foregroundSafeArea(shape: IconShape): RectF {
         val region = android.graphics.Region().apply {
             setPath(shape.getMaskPath(), android.graphics.Region(0, 0, 100, 100))
         }
-        fun fits(halfSide: Float): Boolean {
-            val edge = halfSide.toInt()
-            return region.contains(50 - edge, 50 - edge) &&
-                region.contains(50 + edge, 50 - edge) &&
-                region.contains(50 - edge, 50 + edge) &&
-                region.contains(50 + edge, 50 + edge)
+        fun fits(halfWidth: Float, halfHeight: Float): Boolean {
+            for (i in 0..20) {
+                val t = i / 20f
+                val x = 50f - halfWidth + 2f * halfWidth * t
+                val y = 50f - halfHeight + 2f * halfHeight * t
+                if (!region.contains(x.toInt(), (50f - halfHeight).toInt()) ||
+                    !region.contains(x.toInt(), (50f + halfHeight).toInt()) ||
+                    !region.contains((50f - halfWidth).toInt(), y.toInt()) ||
+                    !region.contains((50f + halfWidth).toInt(), y.toInt())) return false
+            }
+            return true
         }
-        var low = 0f
-        var high = 50f
-        repeat(10) {
-            val mid = (low + high) / 2f
-            if (fits(mid)) low = mid else high = mid
+        // Maximize usable area across possible rectangle aspect ratios.
+        var bestWidth = 0f
+        var bestHeight = 0f
+        var bestArea = 0f
+        for (ratioStep in 1..40) {
+            val ratio = ratioStep / 20f
+            var low = 0f
+            var high = minOf(49f, 49f / ratio)
+            repeat(10) {
+                val mid = (low + high) / 2f
+                if (fits(mid * ratio, mid)) low = mid else high = mid
+            }
+            val width = low * ratio
+            val height = low
+            val area = width * height
+            if (area > bestArea) {
+                bestArea = area
+                bestWidth = width
+                bestHeight = height
+            }
         }
-        // Leave a small safety margin for antialiasing and icon artwork.
-        // A full 72%-wide safe square needs no scaling; narrower masks do.
-        return ((low - 2f) / 36f).coerceIn(0.65f, 1f)
+        return RectF(50f - bestWidth, 50f - bestHeight,
+            50f + bestWidth, 50f + bestHeight)
     }
 
     override fun close() {
