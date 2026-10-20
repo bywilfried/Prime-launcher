@@ -20,6 +20,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.ColorFilter
 import android.graphics.PixelFormat
+import android.util.Log
 import android.graphics.Matrix
 import android.graphics.Path
 import android.graphics.Rect
@@ -118,6 +119,7 @@ internal constructor(
             } else {
                 drawable.constantState?.newDrawable()?.mutate() ?: drawable
             }
+            Log.d("PrimeIconSizing", "bitmap shape=${shape.key}, input=${drawable.javaClass.simpleName}, adaptive=${drawable is AdaptiveIconDrawable}, scale=${foregroundScale(shape)}")
             createBadgedIconBitmap(
                 source,
                 BaseIconFactory.IconOptions().setUser(getUserInfo(user)),
@@ -140,6 +142,7 @@ internal constructor(
             canvas.scale(scale, scale, rect.exactCenterX(), rect.exactCenterY())
             delegate.draw(canvas)
             canvas.restoreToCount(saved)
+            Log.d("PrimeIconSizing", "foreground drawn scale=$scale bounds=$rect")
         }
 
         override fun setAlpha(alpha: Int) { delegate.alpha = alpha }
