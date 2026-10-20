@@ -187,8 +187,6 @@ internal constructor(
     ) : Drawable() {
         private var raster: Bitmap? = null
         private var contentBounds = Rect()
-        private var visualCenterX = 0f
-        private var visualCenterY = 0f
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
 
         override fun draw(canvas: Canvas) {
@@ -201,31 +199,39 @@ internal constructor(
                     delegate.draw(layerCanvas)
                     val pixels = IntArray(bmp.width * bmp.height)
                     bmp.getPixels(pixels, 0, bmp.width, 0, 0, bmp.width, bmp.height)
-                    var left = bmp.width
-                    var top = bmp.height
-                    var right = 0
-                    var bottom = 0
-                    var alphaSum = 0.0
-                    var weightedX = 0.0
-                    var weightedY = 0.0
+                    // Trim sparse edge artifacts (shadows and stray pixels) before
+                    // measuring the logo. A weighted centroid alone can move
+                    // asymmetric logos away from the actual mask center.
+                    val columns = DoubleArray(bmp.width)
+                    val rows = DoubleArray(bmp.height)
+                    var totalWeight = 0.0
                     for (y in 0 until bmp.height) for (x in 0 until bmp.width) {
                         val alpha = pixels[y * bmp.width + x] ushr 24
-                        if (alpha > 16) {
-                            alphaSum += alpha
-                            weightedX += (x + 0.5) * alpha
-                            weightedY += (y + 0.5) * alpha
-                            left = minOf(left, x)
-                            top = minOf(top, y)
-                            right = maxOf(right, x + 1)
-                            bottom = maxOf(bottom, y + 1)
+                        if (alpha > 32) {
+                            val weight = alpha.toDouble()
+                            columns[x] += weight
+                            rows[y] += weight
+                            totalWeight += weight
                         }
                     }
-                    contentBounds = if (right > left && bottom > top) Rect(left, top, right, bottom)
-                        else Rect(0, 0, bmp.width, bmp.height)
-                    visualCenterX = if (alphaSum > 0.0) (weightedX / alphaSum).toFloat()
-                        else contentBounds.exactCenterX()
-                    visualCenterY = if (alphaSum > 0.0) (weightedY / alphaSum).toFloat()
-                        else contentBounds.exactCenterY()
+                    fun percentile(weights: DoubleArray, target: Double): Int {
+                        var cumulative = 0.0
+                        for (i in weights.indices) {
+                            cumulative += weights[i]
+                            if (cumulative >= target) return i
+                        }
+                        return weights.lastIndex
+                    }
+                    if (totalWeight > 0.0) {
+                        // Discard the outer 1% of alpha mass on each axis.
+                        val left = percentile(columns, totalWeight * 0.01)
+                        val right = percentile(columns, totalWeight * 0.99) + 1
+                        val top = percentile(rows, totalWeight * 0.01)
+                        val bottom = percentile(rows, totalWeight * 0.99) + 1
+                        contentBounds = Rect(left, top, right, bottom)
+                    } else {
+                        contentBounds = Rect(0, 0, bmp.width, bmp.height)
+                    }
                     raster?.recycle()
                     raster = bmp
                 }
@@ -271,14 +277,11 @@ internal constructor(
             val maxHeight = visibleIconSize * safeHeight / 100f
             val fit = minOf(maxWidth / contentWidth, maxHeight / contentHeight)
             val factor = diagnosticFactor ?: minOf(1f, fit)
-            // Center the visible alpha mass, not just its bounding box. Clamp
-            // the correction to preserve intentional asymmetric artwork.
-            val shiftX = ((contentBounds.exactCenterX() - visualCenterX) * factor)
-                .coerceIn(-contentWidth * factor * 0.10f, contentWidth * factor * 0.10f)
-            val shiftY = ((contentBounds.exactCenterY() - visualCenterY) * factor)
-                .coerceIn(-contentHeight * factor * 0.10f, contentHeight * factor * 0.10f)
-            val cx = rect.exactCenterX() + shiftX
-            val cy = rect.exactCenterY() + shiftY
+            // The robust foreground bounds are centered on the mask.
+            // Avoid an additional centroid shift: asymmetric artwork such as
+            // shields can otherwise look off-center even when bounds are correct.
+            val cx = rect.exactCenterX()
+            val cy = rect.exactCenterY()
             val dest = RectF(
                 cx - contentWidth * factor / 2f,
                 cy - contentHeight * factor / 2f,
