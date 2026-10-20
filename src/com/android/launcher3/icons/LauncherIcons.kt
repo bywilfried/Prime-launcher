@@ -187,6 +187,8 @@ internal constructor(
     ) : Drawable() {
         private var raster: Bitmap? = null
         private var contentBounds = Rect()
+        private var visualCenterX = 0f
+        private var visualCenterY = 0f
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
 
         override fun draw(canvas: Canvas) {
@@ -203,8 +205,15 @@ internal constructor(
                     var top = bmp.height
                     var right = 0
                     var bottom = 0
+                    var alphaSum = 0.0
+                    var weightedX = 0.0
+                    var weightedY = 0.0
                     for (y in 0 until bmp.height) for (x in 0 until bmp.width) {
-                        if ((pixels[y * bmp.width + x] ushr 24) > 16) {
+                        val alpha = pixels[y * bmp.width + x] ushr 24
+                        if (alpha > 16) {
+                            alphaSum += alpha
+                            weightedX += (x + 0.5) * alpha
+                            weightedY += (y + 0.5) * alpha
                             left = minOf(left, x)
                             top = minOf(top, y)
                             right = maxOf(right, x + 1)
@@ -213,6 +222,10 @@ internal constructor(
                     }
                     contentBounds = if (right > left && bottom > top) Rect(left, top, right, bottom)
                         else Rect(0, 0, bmp.width, bmp.height)
+                    visualCenterX = if (alphaSum > 0.0) (weightedX / alphaSum).toFloat()
+                        else contentBounds.exactCenterX()
+                    visualCenterY = if (alphaSum > 0.0) (weightedY / alphaSum).toFloat()
+                        else contentBounds.exactCenterY()
                     raster?.recycle()
                     raster = bmp
                 }
@@ -258,8 +271,14 @@ internal constructor(
             val maxHeight = visibleIconSize * safeHeight / 100f
             val fit = minOf(maxWidth / contentWidth, maxHeight / contentHeight)
             val factor = diagnosticFactor ?: minOf(1f, fit)
-            val cx = rect.exactCenterX()
-            val cy = rect.exactCenterY()
+            // Center the visible alpha mass, not just its bounding box. Clamp
+            // the correction to preserve intentional asymmetric artwork.
+            val shiftX = ((contentBounds.exactCenterX() - visualCenterX) * factor)
+                .coerceIn(-contentWidth * factor * 0.10f, contentWidth * factor * 0.10f)
+            val shiftY = ((contentBounds.exactCenterY() - visualCenterY) * factor)
+                .coerceIn(-contentHeight * factor * 0.10f, contentHeight * factor * 0.10f)
+            val cx = rect.exactCenterX() + shiftX
+            val cy = rect.exactCenterY() + shiftY
             val dest = RectF(
                 cx - contentWidth * factor / 2f,
                 cy - contentHeight * factor / 2f,
