@@ -104,6 +104,7 @@ internal constructor(
     /** Rasterizes an adaptive icon with the Prime mask replacing the system/Lawnchair mask. */
     fun createPrimeIconBitmap(drawable: Drawable, user: UserHandle, shape: IconShape): BitmapInfo =
         withPrimeIconShape(shape) {
+            val safeArea = foregroundSafeArea(shape)
             val source = if (drawable is AdaptiveIconDrawable) {
                 // Never rasterize with the child Drawable instances owned by IconCache. Icon
                 // creation changes bounds/state while drawing; sharing those instances makes the
@@ -114,7 +115,6 @@ internal constructor(
                 // AdaptiveIconDrawable.draw() does not affect the resulting bitmap.
                 // Keep the adaptive background full-size; fit the foreground artwork
                 // to the mask's centered safe area using its actual alpha bounds.
-                val safeArea = foregroundSafeArea(shape)
                 AdaptiveIconDrawable(
                     isolated.background,
                     FittedForegroundDrawable(isolated.foreground, safeArea),
