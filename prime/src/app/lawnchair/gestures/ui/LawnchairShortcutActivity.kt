@@ -140,6 +140,7 @@ class LawnchairShortcutActivity : ComponentActivity() {
                     ),
                     LauncherSettings.Favorites.CONTAINER + "=?",
                     arrayOf(LauncherSettings.Favorites.CONTAINER_DESKTOP.toString()),
+                    LauncherSettings.Favorites.SCREEN + " ASC",
                 ).use { cursor ->
                     while (cursor.moveToNext()) {
                         val screen = cursor.getInt(0)
