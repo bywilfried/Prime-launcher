@@ -1,5 +1,6 @@
 package app.lawnchair.ui.preferences.destinations
 
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -30,13 +31,18 @@ fun PrimeDiagnosticLogsPreference() {
                 .fillMaxWidth()
                 .padding(16.dp),
         ) {
-            Button(
+            Row {
+                Button(onClick = { logs.value = PrimeDebugLog.getText() }) {
+                    Text("Actualiser")
+                }
+                Button(
                 onClick = {
                     PrimeDebugLog.clear()
                     logs.value = PrimeDebugLog.getText()
                 },
             ) {
                 Text(stringResource(R.string.prime_diagnostic_logs_clear))
+                }
             }
             SelectionContainer {
                 Text(
