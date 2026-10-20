@@ -510,9 +510,13 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
 
     @UiThread
     public void applyFromWorkspaceItem(WorkspaceItemInfo info) {
+        if (mDisplay == DISPLAY_WORKSPACE) {
+            mPrimeIconShape = PreferenceCacheExtensionsKt.firstCached(pref2.getIconShape());
+        }
         applyIconAndLabel(info);
         setItemInfo(info);
         applyPrimeDockSizing(info);
+        if (mDisplay == DISPLAY_WORKSPACE) setPrimeIconShape(mPrimeIconShape);
 
         applyDotState(info, false /* animate */);
         setDownloadStateContentDescription(info, info.getProgressLevel());
@@ -649,7 +653,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     private boolean applyCachedPrimeIcon(ItemInfoWithIcon info) {
         if (mPrimeIconShape == null
                 || (mDisplay != DISPLAY_ALL_APPS && mDisplay != DISPLAY_FOLDER
-                        && mDisplay != DISPLAY_DRAWER_FOLDER)) {
+                        && mDisplay != DISPLAY_DRAWER_FOLDER && mDisplay != DISPLAY_WORKSPACE)) {
             return false;
         }
         boolean useTheme = shouldUseTheme();
@@ -1896,7 +1900,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         final String shapeKey = shape == null ? "null" : shape.toString();
 
         if (shape == null || (mDisplay != DISPLAY_ALL_APPS && mDisplay != DISPLAY_FOLDER
-                && mDisplay != DISPLAY_DRAWER_FOLDER)
+                && mDisplay != DISPLAY_DRAWER_FOLDER && mDisplay != DISPLAY_WORKSPACE)
                 || !(getTag() instanceof ItemInfoWithIcon info)) {
             return;
         }
