@@ -136,17 +136,44 @@ internal constructor(
             canvas.clipPath(mask)
             // Keep the background filling the mask while adapting only the artwork.
             background.draw(canvas)
-            val inset = when (shape.key) {
-                "diamond" -> 0.82f
-                "octagon", "hexagon" -> 0.92f
-                else -> 1f
-            }
+            // Estimate how much of a centered foreground can fit inside the selected
+            // silhouette. This works for user-defined masks, not only named presets.
+            val inset = foregroundInset(mask, currentBounds)
             val foregroundSave = canvas.save()
             canvas.scale(inset, inset, currentBounds.exactCenterX(), currentBounds.exactCenterY())
             foreground.draw(canvas)
             canvas.restoreToCount(foregroundSave)
             canvas.restoreToCount(save)
         }
+
+    private fun foregroundInset(mask: Path, bounds: Rect): Float {
+        // A typical adaptive foreground's important artwork lies in its central
+        // ~72% square. Check the four corners against the actual Prime mask.
+        val region = android.graphics.Region().apply {
+            setPath(mask, android.graphics.Region(bounds))
+        }
+        val cx = bounds.exactCenterX()
+        val cy = bounds.exactCenterY()
+        val dx = bounds.width() * 0.36f
+        val dy = bounds.height() * 0.36f
+        fun fits(scale: Float): Boolean {
+            val x = dx * scale
+            val y = dy * scale
+            return region.contains((cx - x).toInt(), (cy - y).toInt()) &&
+                region.contains((cx + x).toInt(), (cy - y).toInt()) &&
+                region.contains((cx - x).toInt(), (cy + y).toInt()) &&
+                region.contains((cx + x).toInt(), (cy + y).toInt())
+        }
+        if (fits(1f)) return 1f
+        var low = 0.72f
+        var high = 1f
+        repeat(8) {
+            val mid = (low + high) / 2f
+            if (fits(mid)) low = mid else high = mid
+        }
+        return low
+    }
+
     }
 
     override fun close() {
