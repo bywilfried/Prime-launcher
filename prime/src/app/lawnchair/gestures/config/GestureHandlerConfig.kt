@@ -41,6 +41,13 @@ sealed class GestureHandlerConfig {
     open val iconRes: Int = R.drawable.ic_launcher_home
 
     abstract fun getIcon(context: Context): Icon
+    /**
+     * Workspace actions use a white icon surface even when Prime is in dark mode.
+     * Resolve a palette-derived dark accent for that surface rather than the
+     * light-on-dark ColorAccent token used by other UI controls.
+     */
+    open fun getWorkspaceIcon(context: Context): Icon = getIcon(context)
+
     abstract fun getLabel(context: Context): String
     abstract fun createHandler(context: Context): GestureHandler
 
@@ -63,6 +70,19 @@ sealed class GestureHandlerConfig {
             drawable.setBounds(0, 0, canvas.width, canvas.height)
             drawable.draw(canvas)
 
+            return Icon.createWithBitmap(bitmap)
+        }
+
+        override fun getWorkspaceIcon(context: Context): Icon {
+            val drawable = AppCompatResources.getDrawable(context, iconRes)!!.mutate()
+            drawable.setTint(ColorTokens.Accent1_600.resolveColor(context))
+            val bitmap = createBitmap(
+                drawable.intrinsicWidth.coerceAtLeast(1),
+                drawable.intrinsicHeight.coerceAtLeast(1),
+            )
+            val canvas = Canvas(bitmap)
+            drawable.setBounds(0, 0, canvas.width, canvas.height)
+            drawable.draw(canvas)
             return Icon.createWithBitmap(bitmap)
         }
 
