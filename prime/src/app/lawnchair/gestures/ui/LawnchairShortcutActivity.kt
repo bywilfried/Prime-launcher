@@ -209,7 +209,7 @@ class LawnchairShortcutActivity : ComponentActivity() {
             action = START_ACTION
             putExtra(EXTRA_HANDLER, GestureHandlerConfig.toString(selectedHandler))
         }
-        val icon = selectedHandler.getIcon(context).loadDrawable(context)
+        val icon = selectedHandler.getWorkspaceIcon(context).loadDrawable(context)
         val size = (context.resources.displayMetrics.density * 96).toInt().coerceAtLeast(1)
         val bitmap = android.graphics.Bitmap.createBitmap(
             size, size, android.graphics.Bitmap.Config.ARGB_8888,
@@ -241,7 +241,7 @@ class LawnchairShortcutActivity : ComponentActivity() {
         )
             .apply {
                 setShortLabel(selectedHandler.getDisplayLabel(context))
-                setIcon(selectedHandler.getIcon(context))
+                setIcon(selectedHandler.getWorkspaceIcon(context))
                 setIntent(
                     Intent(context, RunHandlerActivity::class.java).apply {
                         action = START_ACTION
