@@ -224,14 +224,14 @@ internal constructor(
             // Convert the safe square (relative to the visible icon) back into
             // layer coordinates, then fit only the foreground's visible pixels.
             val visibleIconSize = minOf(rect.width(), rect.height()) / 1.5f
-            val targetSize = visibleIconSize * 0.72f * safeScale
+            val targetSize = visibleIconSize * 0.62f * safeScale
             // Keep the adaptive background and the outer mask at their original size.
             // The fit must apply to the *visible foreground pixels*, not the
             // oversized 150% adaptive layer. A factor of 1 for small artwork
             // previously made the shape adjustment imperceptible on most apps.
-            // Cap the foreground at 75% of its original visible size while also
+            // Cap the foreground at 60% of its original visible size while also
             // respecting the mask-specific safe area for larger artwork.
-            val factor = diagnosticFactor ?: minOf(0.75f, targetSize / maxOf(contentWidth, contentHeight))
+            val factor = diagnosticFactor ?: minOf(0.60f, targetSize / maxOf(contentWidth, contentHeight))
             val cx = rect.exactCenterX()
             val cy = rect.exactCenterY()
             val dest = RectF(
