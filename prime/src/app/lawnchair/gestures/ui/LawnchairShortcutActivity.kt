@@ -22,6 +22,15 @@ import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
 import android.os.Bundle
 import android.os.ResultReceiver
+import android.app.role.RoleManager
+import android.os.Process
+import com.android.launcher3.LauncherAppState
+import com.android.launcher3.LauncherSettings
+import com.android.launcher3.celllayout.CellPosMapper
+import com.android.launcher3.model.data.WorkspaceItemInfo
+import com.android.launcher3.icons.LauncherIcons
+import com.android.launcher3.icons.BaseIconFactory
+import com.android.launcher3.util.Executors
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -81,7 +90,11 @@ class LawnchairShortcutActivity : ComponentActivity() {
                                         }
                                         resultReceiver.send(RESULT_OK, bundle)
                                     } else {
-                                        saveChanges(context, it)
+                                        if (isPrimeDefaultLauncher(context)) {
+                                            saveChanges(context, it)
+                                        } else {
+                                            addDirectlyToPrime(context, it)
+                                        }
                                     }
                                     finish()
                                 },
@@ -89,6 +102,93 @@ class LawnchairShortcutActivity : ComponentActivity() {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private fun isPrimeDefaultLauncher(context: Context): Boolean {
+        val roles = context.getSystemService(RoleManager::class.java)
+        return roles?.isRoleHeld(RoleManager.ROLE_HOME) == true
+    }
+
+    // The Android shortcut-result contract belongs to the current HOME app.
+    // When another HOME app is selected, write only to Prime's own workspace.
+    private fun addDirectlyToPrime(context: Context, config: GestureHandlerConfig) {
+        val appContext = context.applicationContext
+        Executors.MODEL_EXECUTOR.execute {
+            try {
+                val app = LauncherAppState.getInstance(appContext)
+                val model = app.model
+                val idp = app.invariantDeviceProfile
+                val columns = idp.numColumns
+                val rows = idp.numRows
+                if (columns <= 0 || rows <= 0) return@execute
+
+                val occupied = HashSet<String>()
+                val screens = sortedSetOf<Int>()
+                model.modelDbController.query(
+                    arrayOf(
+                        LauncherSettings.Favorites.SCREEN,
+                        LauncherSettings.Favorites.CELLX,
+                        LauncherSettings.Favorites.CELLY,
+                        LauncherSettings.Favorites.SPANX,
+                        LauncherSettings.Favorites.SPANY,
+                    ),
+                    LauncherSettings.Favorites.CONTAINER + "=?",
+                    arrayOf(LauncherSettings.Favorites.CONTAINER_DESKTOP.toString()),
+                ).use { cursor ->
+                    while (cursor.moveToNext()) {
+                        val screen = cursor.getInt(0)
+                        screens.add(screen)
+                        val x = cursor.getInt(1)
+                        val y = cursor.getInt(2)
+                        val spanX = cursor.getInt(3).coerceAtLeast(1)
+                        val spanY = cursor.getInt(4).coerceAtLeast(1)
+                        for (dx in 0 until spanX) for (dy in 0 until spanY) {
+                            occupied.add("$screen:${x + dx}:${y + dy}")
+                        }
+                    }
+                }
+                if (screens.isEmpty()) screens.add(0)
+                var chosen: Triple<Int, Int, Int>? = null
+                for (screen in screens) {
+                    for (y in 0 until rows) for (x in 0 until columns) {
+                        if ("$screen:$x:$y" !in occupied && chosen == null) {
+                            chosen = Triple(screen, x, y)
+                        }
+                    }
+                    if (chosen != null) break
+                }
+                // Do not overwrite occupied cells or fabricate a new workspace page.
+                val (screen, x, y) = chosen ?: return@execute
+                val actionIntent = Intent(appContext, RunHandlerActivity::class.java).apply {
+                    action = START_ACTION
+                    putExtra(EXTRA_HANDLER, GestureHandlerConfig.toString(config))
+                }
+                val info = WorkspaceItemInfo().apply {
+                    itemType = LauncherSettings.Favorites.ITEM_TYPE_SHORTCUT
+                    title = config.getDisplayLabel(appContext)
+                    intent = actionIntent
+                    user = Process.myUserHandle()
+                }
+                LauncherIcons.obtain(appContext).use { icons ->
+                    val glyph = config.getIcon(appContext).loadDrawable(appContext)
+                    if (glyph != null) {
+                        val adaptive = android.graphics.drawable.AdaptiveIconDrawable(
+                            android.graphics.drawable.ColorDrawable(android.graphics.Color.WHITE),
+                            android.graphics.drawable.InsetDrawable(glyph, 0.20f),
+                        )
+                        info.bitmap = icons.createBadgedIconBitmap(
+                            adaptive, BaseIconFactory.IconOptions(),
+                        )
+                    }
+                }
+                model.getWriter(false, CellPosMapper.DEFAULT, null).addItemToDatabase(
+                    info, LauncherSettings.Favorites.CONTAINER_DESKTOP, screen, x, y,
+                )
+                model.forceReload()
+            } catch (e: Exception) {
+                android.util.Log.e("PrimeActions", "Failed to add action to Prime workspace", e)
             }
         }
     }
