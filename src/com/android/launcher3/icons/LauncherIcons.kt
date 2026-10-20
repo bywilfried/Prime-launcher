@@ -153,27 +153,31 @@ internal constructor(
         override fun getIntrinsicHeight(): Int = delegate.intrinsicHeight
     }
 
-    /** Fits a centered foreground safe area inside the actual selected mask. */
+    /**
+     * Measure the centered safe square in the actual mask. Adaptive icon artwork
+     * is commonly designed around a 72%-wide safe zone, but angular masks need
+     * a smaller square so the logo stays away from their corners.
+     */
     private fun foregroundScale(shape: IconShape): Float {
         val region = android.graphics.Region().apply {
             setPath(shape.getMaskPath(), android.graphics.Region(0, 0, 100, 100))
         }
-        // The adaptive icon artwork's central 72% is its nominal safe area.
-        fun fits(scale: Float): Boolean {
-            val edge = (36f * scale).toInt()
+        fun fits(halfSide: Float): Boolean {
+            val edge = halfSide.toInt()
             return region.contains(50 - edge, 50 - edge) &&
                 region.contains(50 + edge, 50 - edge) &&
                 region.contains(50 - edge, 50 + edge) &&
                 region.contains(50 + edge, 50 + edge)
         }
-        if (fits(1f)) return 1f
-        var low = 0.65f
-        var high = 1f
-        repeat(8) {
+        var low = 0f
+        var high = 50f
+        repeat(10) {
             val mid = (low + high) / 2f
             if (fits(mid)) low = mid else high = mid
         }
-        return low
+        // Leave a small safety margin for antialiasing and icon artwork.
+        // A full 72%-wide safe square needs no scaling; narrower masks do.
+        return ((low - 2f) / 36f).coerceIn(0.65f, 1f)
     }
 
     override fun close() {
