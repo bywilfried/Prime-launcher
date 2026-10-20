@@ -94,7 +94,9 @@ class LawnchairShortcutActivity : ComponentActivity() {
                                         // flow must return its result to the caller so the
                                         // launcher can honor the exact drop coordinates.
                                         // HOME role is not required for this contract.
-                                        if (callingActivity != null || isPrimeDefaultLauncher(context)) {
+                                        if (callingActivity != null) {
+                                            returnShortcutToPrime(context, it)
+                                        } else if (isPrimeDefaultLauncher(context)) {
                                             saveChanges(context, it)
                                         } else {
                                             addDirectlyToPrime(context, it)
@@ -196,6 +198,35 @@ class LawnchairShortcutActivity : ComponentActivity() {
                 android.util.Log.e("PrimeActions", "Failed to add action to Prime workspace", e)
             }
         }
+    }
+
+    // ACTION_CREATE_SHORTCUT expects the legacy result extras. Android's
+    // ShortcutManager.createShortcutResultIntent() can return null when a
+    // different package (Prime Release) holds the HOME role.
+    // Return the action directly to the calling Prime Debug launcher instead.
+    private fun returnShortcutToPrime(context: Context, selectedHandler: GestureHandlerConfig) {
+        val launchIntent = Intent(context, RunHandlerActivity::class.java).apply {
+            action = START_ACTION
+            putExtra(EXTRA_HANDLER, GestureHandlerConfig.toString(selectedHandler))
+        }
+        val icon = selectedHandler.getIcon(context).loadDrawable(context)
+        val size = (context.resources.displayMetrics.density * 96).toInt().coerceAtLeast(1)
+        val bitmap = android.graphics.Bitmap.createBitmap(
+            size, size, android.graphics.Bitmap.Config.ARGB_8888,
+        )
+        if (icon != null) {
+            val canvas = android.graphics.Canvas(bitmap)
+            icon.setBounds(0, 0, size, size)
+            icon.draw(canvas)
+        }
+        setResult(
+            RESULT_OK,
+            Intent().apply {
+                putExtra(Intent.EXTRA_SHORTCUT_INTENT, launchIntent)
+                putExtra(Intent.EXTRA_SHORTCUT_NAME, selectedHandler.getDisplayLabel(context).toString())
+                putExtra(Intent.EXTRA_SHORTCUT_ICON, bitmap)
+            },
+        )
     }
 
     @Suppress("DEPRECATION")
