@@ -170,7 +170,13 @@ internal constructor(
                 }
             val contentWidth = contentBounds.width().toFloat()
             val contentHeight = contentBounds.height().toFloat()
-            val targetSize = minOf(rect.width(), rect.height()) * 0.72f * safeScale
+            // AdaptiveIconDrawable expands each layer to 150% of the visible icon.
+            // The previous 72% of that expanded layer was far too generous:
+            // most foregrounds ended up with factor=1 even for a diamond.
+            // Convert the safe square (relative to the visible icon) back into
+            // layer coordinates, then fit only the foreground's visible pixels.
+            val visibleIconSize = minOf(rect.width(), rect.height()) / 1.5f
+            val targetSize = visibleIconSize * 0.72f * safeScale
             val factor = minOf(1f, targetSize / maxOf(contentWidth, contentHeight))
             val cx = rect.exactCenterX()
             val cy = rect.exactCenterY()
@@ -181,7 +187,7 @@ internal constructor(
                 cy + contentHeight * factor / 2f,
             )
             canvas.drawBitmap(bitmap, contentBounds, dest, paint)
-            PrimeDebugLog.d("PrimeIconSizing", "foreground fitted factor=$factor safeScale=$safeScale bounds=$contentBounds")
+            PrimeDebugLog.d("PrimeIconSizing", "foreground fitted factor=$factor safeScale=$safeScale target=$targetSize content=${contentWidth}x$contentHeight bounds=$contentBounds")
         }
 
         override fun setAlpha(alpha: Int) { paint.alpha = alpha }
