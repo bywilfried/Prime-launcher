@@ -324,7 +324,7 @@ public class IconCache extends BaseIconCache {
                             app.lawnchair.gestures.config.GestureHandlerConfig.Companion
                                     .fromString(serialized);
                     android.graphics.drawable.Drawable glyph =
-                            config.getIcon(context).loadDrawable(context);
+                            config.getWorkspaceIcon(context).loadDrawable(context);
                     if (glyph != null) {
                         android.graphics.drawable.AdaptiveIconDrawable adaptive =
                                 new android.graphics.drawable.AdaptiveIconDrawable(
