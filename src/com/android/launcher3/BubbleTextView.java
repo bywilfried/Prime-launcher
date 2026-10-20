@@ -719,6 +719,10 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     }
 
     private void setNonPendingIcon(ItemInfoWithIcon info) {
+        // A global icon refresh may call this path after a category-specific
+        // variant was already bound. Preserve the effective local shape whenever
+        // its bitmap is ready, rather than flashing the global icon over it.
+        if (applyCachedPrimeIcon(info)) return;
         boolean isPrivateSpaceIcon = Objects.equals(info.getTargetPackage(), PRIVATE_SPACE_PACKAGE);
         // Set nonPendingIcon acts as a restart which should refresh the flag state when applicable.
         int flags = isPrivateSpaceIcon
