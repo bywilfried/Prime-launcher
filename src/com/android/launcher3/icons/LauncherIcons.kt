@@ -41,6 +41,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import app.lawnchair.icons.shape.IconShape
 
@@ -126,6 +127,31 @@ internal constructor(
                 source,
                 BaseIconFactory.IconOptions().setUser(getUserInfo(user)),
             ).also { info ->
+                // Diagnostic only: render the same adaptive icon twice without
+                // changing the actual bitmap used by the launcher.
+                if (drawable is AdaptiveIconDrawable && comparisonCount.getAndIncrement() < 3) {
+                    fun renderDiagnostic(factor: Float): BitmapInfo {
+                        val copy = (drawable.constantState?.newDrawable()?.mutate()
+                            as? AdaptiveIconDrawable) ?: drawable
+                        return createBadgedIconBitmap(
+                            AdaptiveIconDrawable(
+                                copy.background,
+                                FittedForegroundDrawable(copy.foreground, foregroundScale(shape), factor),
+                            ),
+                            BaseIconFactory.IconOptions().setUser(getUserInfo(user)),
+                        )
+                    }
+                    val full = renderDiagnostic(1f)
+                    val half = renderDiagnostic(0.5f)
+                    val fullHash = bitmapFingerprint(full.icon)
+                    val halfHash = bitmapFingerprint(half.icon)
+                    PrimeDebugLog.d(
+                        "PrimeIconSizing",
+                        "COMPARE shape=${shape.key} source=${drawable.javaClass.simpleName} " +
+                            "full100=$fullHash half50=$halfHash different=${fullHash != halfHash} " +
+                            "normal=${bitmapFingerprint(info.icon)}",
+                    )
+                }
                 // Check the actual bitmap returned by BaseIconFactory, rather than
                 // assuming the foreground draw logs describe the final output.
                 // A per-icon bitmap fingerprint lets us compare before/after
@@ -157,6 +183,7 @@ internal constructor(
     private class FittedForegroundDrawable(
         private val delegate: Drawable,
         private val safeScale: Float,
+        private val diagnosticFactor: Float? = null,
     ) : Drawable() {
         private var raster: Bitmap? = null
         private var contentBounds = Rect()
@@ -204,7 +231,7 @@ internal constructor(
             // previously made the shape adjustment imperceptible on most apps.
             // Cap the foreground at 75% of its original visible size while also
             // respecting the mask-specific safe area for larger artwork.
-            val factor = minOf(0.75f, targetSize / maxOf(contentWidth, contentHeight))
+            val factor = diagnosticFactor ?: minOf(0.75f, targetSize / maxOf(contentWidth, contentHeight))
             val cx = rect.exactCenterX()
             val cy = rect.exactCenterY()
             val dest = RectF(
@@ -271,6 +298,19 @@ internal constructor(
     }
 
     companion object {
+        private val comparisonCount = AtomicInteger(0)
+
+        private fun bitmapFingerprint(output: Bitmap): String {
+            val step = maxOf(1, output.width / 16)
+            var fingerprint = 17
+            for (y in 0 until output.height step step) {
+                for (x in 0 until output.width step step) {
+                    fingerprint = 31 * fingerprint + output.getPixel(x, y)
+                }
+            }
+            return fingerprint.toUInt().toString(16)
+        }
+
 
         /**
          * Return a new LauncherIcons instance from the global pool. Allows us to avoid allocating
