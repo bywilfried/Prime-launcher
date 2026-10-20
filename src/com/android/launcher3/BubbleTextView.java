@@ -1693,6 +1693,18 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             applyCompoundDrawables(icon);
         }
         mIcon = icon;
+        // Trace the drawable actually installed on each view, including paths
+        // that bypass PrimeIconRenderCache (notably DISPLAY_WORKSPACE).
+        if (getTag() instanceof ItemInfoWithIcon item) {
+            PrimeDebugLog.d("PrimeIconDisplay",
+                    "bind display=" + mDisplay
+                            + " reason=" + mPrimeLastIconSetReason
+                            + " shape=" + (mPrimeIconShape == null ? "none" : mPrimeIconShape)
+                            + " item=" + item.getStableId()
+                            + " drawable=" + (icon == null ? "null" : icon.getClass().getSimpleName())
+                            + " drawableId=" + System.identityHashCode(icon)
+                            + " sourceBitmapId=" + System.identityHashCode(item.bitmap.icon));
+        }
         if (mIcon != null) {
             mIcon.setVisible(getWindowVisibility() == VISIBLE && isShown(), false);
             mIcon.setHoverScaleEnabledForDisplay(mDisplay != DISPLAY_TASKBAR);
