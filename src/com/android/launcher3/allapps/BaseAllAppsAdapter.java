@@ -56,6 +56,8 @@ import app.lawnchair.prime.drawer.PrimeDrawerFolderVisualOverrides;
 import app.lawnchair.prime.drawer.PrimeFolderLongPressHelper;
 import app.lawnchair.prime.drawer.PrimeDrawerVisualOverrides;
 import app.lawnchair.icons.shape.IconShape;
+import app.lawnchair.preferences2.PreferenceManager2;
+import app.lawnchair.preferences2.PreferenceCacheExtensionsKt;
 
 /**
  * Adapter for all the apps.
@@ -449,24 +451,31 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
         icon.invalidate();
     }
 
-    private void applyPrimeTabIconShape(BubbleTextView icon) {
-        IconShape shape = null;
+    /** Category override takes precedence; otherwise use the global app icon shape. */
+    private IconShape resolvePrimeTabIconShape(BubbleTextView icon) {
         if (PreferenceManager.getInstance(mActivityContext).getDrawerTabsEnabled().get()) {
-            PrimeDrawerVisualOverrides overrides =
-                    getPrimeTabVisualOverrides();
+            PrimeDrawerVisualOverrides overrides = getPrimeTabVisualOverrides();
             if (overrides != null && overrides.getDrawerIconShape() != null) {
-                shape = IconShape.Companion.fromString(
+                return IconShape.Companion.fromString(
                         overrides.getDrawerIconShape(), icon.getContext());
             }
         }
-        icon.setPrimeIconShapeForNextBind(shape);
+        return PreferenceCacheExtensionsKt.firstCached(
+                PreferenceManager2.getInstance(icon.getContext()).getIconShape());
+    }
+
+    private void applyPrimeTabIconShape(BubbleTextView icon) {
+        icon.setPrimeIconShapeForNextBind(resolvePrimeTabIconShape(icon));
     }
 
     private void applyPrimeTabIconOverrides(BubbleTextView icon) {
-        if (!PreferenceManager.getInstance(mActivityContext).getDrawerTabsEnabled().get()) return;
         PrimeDrawerVisualOverrides overrides =
-                getPrimeTabVisualOverrides();
-        if (overrides == null) return;
+                PreferenceManager.getInstance(mActivityContext).getDrawerTabsEnabled().get()
+                        ? getPrimeTabVisualOverrides() : null;
+        if (overrides == null) {
+            icon.setPrimeIconShape(resolvePrimeTabIconShape(icon));
+            return;
+        }
 
         if (overrides.getShowLabels() != null) {
             icon.setTextVisibility(overrides.getShowLabels());
@@ -486,17 +495,12 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
             icon.setSingleLine(!overrides.getTwoLineLabels());
             icon.setMaxLines(overrides.getTwoLineLabels() ? 2 : 1);
         }
-        if (overrides.getDrawerIconShape() != null) {
-            IconShape shape = IconShape.Companion.fromString(
-                    overrides.getDrawerIconShape(), icon.getContext());
-            if (mApps instanceof LawnchairAlphabeticalAppsList
-                    && ((LawnchairAlphabeticalAppsList<?>) mApps).isPrimePreview()) {
-                // Keep swipe previews stable: use a Prime variant only when it is already cached,
-                // never schedule an asynchronous drawable replacement while the page is moving.
-                icon.setPrimeIconShapeFromCacheOnly(shape);
-            } else {
-                icon.setPrimeIconShape(shape);
-            }
+        IconShape shape = resolvePrimeTabIconShape(icon);
+        if (mApps instanceof LawnchairAlphabeticalAppsList
+                && ((LawnchairAlphabeticalAppsList<?>) mApps).isPrimePreview()) {
+            icon.setPrimeIconShapeFromCacheOnly(shape);
+        } else {
+            icon.setPrimeIconShape(shape);
         }
     }
 
