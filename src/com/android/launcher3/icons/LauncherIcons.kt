@@ -17,14 +17,13 @@ package com.android.launcher3.icons
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.graphics.Matrix
-import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.InsetDrawable
 import android.os.UserHandle
 import com.android.launcher3.Flags
 import com.android.launcher3.InvariantDeviceProfile
@@ -106,7 +105,15 @@ internal constructor(
                 // next live shape change start from a source already touched by the previous one.
                 val isolated = (drawable.constantState?.newDrawable()?.mutate()
                     as? AdaptiveIconDrawable) ?: drawable
-                PrimeAdaptiveIconDrawable(isolated, shape)
+                // BaseIconFactory rasterizes adaptive layers itself, so overriding
+                // AdaptiveIconDrawable.draw() does not affect the resulting bitmap.
+                // Inset the actual foreground layer before handing it to the factory.
+                val scale = foregroundScale(shape)
+                val inset = (1f - scale) / 2f
+                AdaptiveIconDrawable(
+                    isolated.background,
+                    if (inset > 0f) InsetDrawable(isolated.foreground, inset) else isolated.foreground,
+                )
             } else {
                 drawable.constantState?.newDrawable()?.mutate() ?: drawable
             }
@@ -116,64 +123,27 @@ internal constructor(
             )
         }
 
-    private class PrimeAdaptiveIconDrawable(
-        source: AdaptiveIconDrawable,
-        private val shape: IconShape,
-    ) : AdaptiveIconDrawable(source.background, source.foreground) {
-        override fun draw(canvas: Canvas) {
-            val currentBounds = bounds
-            if (currentBounds.isEmpty) return
-            val mask = Path(shape.getMaskPath()).apply {
-                transform(Matrix().apply {
-                    setRectToRect(
-                        RectF(0f, 0f, 100f, 100f),
-                        RectF(currentBounds),
-                        Matrix.ScaleToFit.FILL,
-                    )
-                })
-            }
-            val save = canvas.save()
-            canvas.clipPath(mask)
-            // Keep the background filling the mask while adapting only the artwork.
-            background.draw(canvas)
-            // Estimate how much of a centered foreground can fit inside the selected
-            // silhouette. This works for user-defined masks, not only named presets.
-            val inset = foregroundInset(mask, currentBounds)
-            val foregroundSave = canvas.save()
-            canvas.scale(inset, inset, currentBounds.exactCenterX(), currentBounds.exactCenterY())
-            foreground.draw(canvas)
-            canvas.restoreToCount(foregroundSave)
-            canvas.restoreToCount(save)
-        }
-
-    private fun foregroundInset(mask: Path, bounds: Rect): Float {
-        // A typical adaptive foreground's important artwork lies in its central
-        // ~72% square. Check the four corners against the actual Prime mask.
+    /** Fits a centered foreground safe area inside the actual selected mask. */
+    private fun foregroundScale(shape: IconShape): Float {
         val region = android.graphics.Region().apply {
-            setPath(mask, android.graphics.Region(bounds))
+            setPath(shape.getMaskPath(), android.graphics.Region(0, 0, 100, 100))
         }
-        val cx = bounds.exactCenterX()
-        val cy = bounds.exactCenterY()
-        val dx = bounds.width() * 0.36f
-        val dy = bounds.height() * 0.36f
+        // The adaptive icon artwork's central 72% is its nominal safe area.
         fun fits(scale: Float): Boolean {
-            val x = dx * scale
-            val y = dy * scale
-            return region.contains((cx - x).toInt(), (cy - y).toInt()) &&
-                region.contains((cx + x).toInt(), (cy - y).toInt()) &&
-                region.contains((cx - x).toInt(), (cy + y).toInt()) &&
-                region.contains((cx + x).toInt(), (cy + y).toInt())
+            val edge = (36f * scale).toInt()
+            return region.contains(50 - edge, 50 - edge) &&
+                region.contains(50 + edge, 50 - edge) &&
+                region.contains(50 - edge, 50 + edge) &&
+                region.contains(50 + edge, 50 + edge)
         }
         if (fits(1f)) return 1f
-        var low = 0.72f
+        var low = 0.65f
         var high = 1f
         repeat(8) {
             val mid = (low + high) / 2f
             if (fits(mid)) low = mid else high = mid
         }
         return low
-    }
-
     }
 
     override fun close() {
