@@ -19,6 +19,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.ColorFilter
+import android.graphics.Paint
 import android.graphics.PixelFormat
 import com.android.launcher3.PrimeDebugLog
 import android.graphics.Matrix
@@ -110,12 +111,12 @@ internal constructor(
                     as? AdaptiveIconDrawable) ?: drawable
                 // BaseIconFactory rasterizes adaptive layers itself, so overriding
                 // AdaptiveIconDrawable.draw() does not affect the resulting bitmap.
-                // Inset the actual foreground layer before handing it to the factory.
-                // TEMPORARY DIAGNOSTIC: exaggerate foreground scaling to verify rendering.
-                val scale = 0.60f
+                // Keep the adaptive background full-size; fit the foreground artwork
+                // to the mask's centered safe area using its actual alpha bounds.
+                val scale = foregroundScale(shape)
                 AdaptiveIconDrawable(
                     isolated.background,
-                    if (scale < 0.999f) ScaledForegroundDrawable(isolated.foreground, scale) else isolated.foreground,
+                    FittedForegroundDrawable(isolated.foreground, scale),
                 )
             } else {
                 drawable.constantState?.newDrawable()?.mutate() ?: drawable
@@ -128,30 +129,65 @@ internal constructor(
         }
 
     /**
-     * Scale the pixels drawn by the foreground, not merely its layout bounds.
-     * AdaptiveIconDrawable may assign expanded bounds to its layers, making a
-     * fractional InsetDrawable ineffective or inconsistent between apps.
+     * Adaptive foreground layers use oversized bounds (often 150% of the icon).
+     * Rasterize once, measure visible alpha, and fit those pixels to the safe
+     * area instead of scaling the oversized drawable bounds blindly.
      */
-    private class ScaledForegroundDrawable(
+    private class FittedForegroundDrawable(
         private val delegate: Drawable,
-        private val scale: Float,
+        private val safeScale: Float,
     ) : Drawable() {
+        private var raster: Bitmap? = null
+        private var contentBounds = Rect()
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+
         override fun draw(canvas: Canvas) {
             val rect = bounds
-            delegate.bounds = rect
-            val saved = canvas.save()
-            canvas.scale(scale, scale, rect.exactCenterX(), rect.exactCenterY())
-            delegate.draw(canvas)
-            canvas.restoreToCount(saved)
-            PrimeDebugLog.d("PrimeIconSizing", "foreground drawn scale=$scale bounds=$rect")
+            if (rect.isEmpty) return
+            val bitmap = raster?.takeIf { it.width == rect.width() && it.height == rect.height() }
+                ?: Bitmap.createBitmap(rect.width(), rect.height(), Bitmap.Config.ARGB_8888).also { bmp ->
+                    val layerCanvas = Canvas(bmp)
+                    delegate.bounds = Rect(0, 0, bmp.width, bmp.height)
+                    delegate.draw(layerCanvas)
+                    val pixels = IntArray(bmp.width * bmp.height)
+                    bmp.getPixels(pixels, 0, bmp.width, 0, 0, bmp.width, bmp.height)
+                    var left = bmp.width
+                    var top = bmp.height
+                    var right = 0
+                    var bottom = 0
+                    for (y in 0 until bmp.height) for (x in 0 until bmp.width) {
+                        if ((pixels[y * bmp.width + x] ushr 24) > 16) {
+                            left = minOf(left, x)
+                            top = minOf(top, y)
+                            right = maxOf(right, x + 1)
+                            bottom = maxOf(bottom, y + 1)
+                        }
+                    }
+                    contentBounds = if (right > left && bottom > top) Rect(left, top, right, bottom)
+                        else Rect(0, 0, bmp.width, bmp.height)
+                    raster?.recycle()
+                    raster = bmp
+                }
+            val contentWidth = contentBounds.width().toFloat()
+            val contentHeight = contentBounds.height().toFloat()
+            val targetSize = minOf(rect.width(), rect.height()) * 0.72f * safeScale
+            val factor = minOf(1f, targetSize / maxOf(contentWidth, contentHeight))
+            val cx = rect.exactCenterX()
+            val cy = rect.exactCenterY()
+            val dest = RectF(
+                cx - contentWidth * factor / 2f,
+                cy - contentHeight * factor / 2f,
+                cx + contentWidth * factor / 2f,
+                cy + contentHeight * factor / 2f,
+            )
+            canvas.drawBitmap(bitmap, contentBounds, dest, paint)
+            PrimeDebugLog.d("PrimeIconSizing", "foreground fitted factor=$factor safeScale=$safeScale bounds=$contentBounds")
         }
 
-        override fun setAlpha(alpha: Int) { delegate.alpha = alpha }
-        override fun setColorFilter(colorFilter: ColorFilter?) { delegate.colorFilter = colorFilter }
+        override fun setAlpha(alpha: Int) { paint.alpha = alpha }
+        override fun setColorFilter(colorFilter: ColorFilter?) { paint.colorFilter = colorFilter }
         @Deprecated("Deprecated in Android")
         override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
-        override fun getIntrinsicWidth(): Int = delegate.intrinsicWidth
-        override fun getIntrinsicHeight(): Int = delegate.intrinsicHeight
     }
 
     /**
