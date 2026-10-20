@@ -125,7 +125,28 @@ internal constructor(
             createBadgedIconBitmap(
                 source,
                 BaseIconFactory.IconOptions().setUser(getUserInfo(user)),
-            )
+            ).also { info ->
+                // Check the actual bitmap returned by BaseIconFactory, rather than
+                // assuming the foreground draw logs describe the final output.
+                // A per-icon bitmap fingerprint lets us compare before/after
+                // builds and identify a stale downstream cache.
+                val output = info.icon
+                val sampleStep = maxOf(1, output.width / 16)
+                var fingerprint = 17
+                var nonTransparent = 0
+                for (y in 0 until output.height step sampleStep) {
+                    for (x in 0 until output.width step sampleStep) {
+                        val pixel = output.getPixel(x, y)
+                        fingerprint = 31 * fingerprint + pixel
+                        if ((pixel ushr 24) != 0) nonTransparent++
+                    }
+                }
+                PrimeDebugLog.d(
+                    "PrimeIconSizing",
+                    "output shape=${shape.key} size=${output.width}x${output.height} " +
+                        "fingerprint=${fingerprint.toUInt().toString(16)} sampledOpaque=$nonTransparent",
+                )
+            }
         }
 
     /**
