@@ -17,13 +17,15 @@ package com.android.launcher3.icons
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.ColorFilter
+import android.graphics.PixelFormat
 import android.graphics.Matrix
 import android.graphics.Path
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.Drawable
-import android.graphics.drawable.InsetDrawable
 import android.os.UserHandle
 import com.android.launcher3.Flags
 import com.android.launcher3.InvariantDeviceProfile
@@ -109,10 +111,9 @@ internal constructor(
                 // AdaptiveIconDrawable.draw() does not affect the resulting bitmap.
                 // Inset the actual foreground layer before handing it to the factory.
                 val scale = foregroundScale(shape)
-                val inset = (1f - scale) / 2f
                 AdaptiveIconDrawable(
                     isolated.background,
-                    if (inset > 0f) InsetDrawable(isolated.foreground, inset) else isolated.foreground,
+                    if (scale < 0.999f) ScaledForegroundDrawable(isolated.foreground, scale) else isolated.foreground,
                 )
             } else {
                 drawable.constantState?.newDrawable()?.mutate() ?: drawable
@@ -122,6 +123,32 @@ internal constructor(
                 BaseIconFactory.IconOptions().setUser(getUserInfo(user)),
             )
         }
+
+    /**
+     * Scale the pixels drawn by the foreground, not merely its layout bounds.
+     * AdaptiveIconDrawable may assign expanded bounds to its layers, making a
+     * fractional InsetDrawable ineffective or inconsistent between apps.
+     */
+    private class ScaledForegroundDrawable(
+        private val delegate: Drawable,
+        private val scale: Float,
+    ) : Drawable() {
+        override fun draw(canvas: Canvas) {
+            val rect = bounds
+            delegate.bounds = rect
+            val saved = canvas.save()
+            canvas.scale(scale, scale, rect.exactCenterX(), rect.exactCenterY())
+            delegate.draw(canvas)
+            canvas.restoreToCount(saved)
+        }
+
+        override fun setAlpha(alpha: Int) { delegate.alpha = alpha }
+        override fun setColorFilter(colorFilter: ColorFilter?) { delegate.colorFilter = colorFilter }
+        @Deprecated("Deprecated in Android")
+        override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+        override fun getIntrinsicWidth(): Int = delegate.intrinsicWidth
+        override fun getIntrinsicHeight(): Int = delegate.intrinsicHeight
+    }
 
     /** Fits a centered foreground safe area inside the actual selected mask. */
     private fun foregroundScale(shape: IconShape): Float {
