@@ -117,7 +117,7 @@ internal constructor(
                 // to the mask's centered safe area using its actual alpha bounds.
                 AdaptiveIconDrawable(
                     isolated.background,
-                    FittedForegroundDrawable(isolated.foreground, safeArea),
+                    FittedForegroundDrawable(isolated.foreground, shape),
                 )
             } else {
                 drawable.constantState?.newDrawable()?.mutate() ?: drawable
@@ -136,7 +136,7 @@ internal constructor(
                         return createBadgedIconBitmap(
                             AdaptiveIconDrawable(
                                 copy.background,
-                                FittedForegroundDrawable(copy.foreground, safeArea, factor),
+                                FittedForegroundDrawable(copy.foreground, shape, factor),
                             ),
                             BaseIconFactory.IconOptions().setUser(getUserInfo(user)),
                         )
@@ -182,7 +182,7 @@ internal constructor(
      */
     private class FittedForegroundDrawable(
         private val delegate: Drawable,
-        private val safeArea: RectF,
+        private val shape: IconShape,
         private val diagnosticFactor: Float? = null,
     ) : Drawable() {
         private var raster: Bitmap? = null
@@ -222,11 +222,41 @@ internal constructor(
             // Convert it to the 150%-sized adaptive foreground layer. Fit
             // according to the artwork's own aspect ratio, not a fixed square.
             val visibleIconSize = minOf(rect.width(), rect.height()) / 1.5f
-            val maxWidth = visibleIconSize * safeArea.width() / 100f
-            val maxHeight = visibleIconSize * safeArea.height() / 100f
+            // Fit each artwork's own aspect ratio into the actual shape, not
+            // the single maximum-area rectangle (which can be wrong for a
+            // wide logo in a diamond, or a tall logo in a narrow mask).
+            val mask = android.graphics.Region().apply {
+                setPath(shape.getMaskPath(), android.graphics.Region(0, 0, 100, 100))
+            }
+            val aspect = contentWidth / contentHeight
+            fun fits(halfHeight: Float): Boolean {
+                val halfWidth = halfHeight * aspect
+                if (halfWidth >= 50f || halfHeight >= 50f) return false
+                // Sample all four edges: corners alone miss concave masks.
+                for (i in 0..40) {
+                    val t = i / 40f
+                    val x = 50f - halfWidth + 2f * halfWidth * t
+                    val y = 50f - halfHeight + 2f * halfHeight * t
+                    if (!mask.contains(x.toInt(), (50f - halfHeight).toInt()) ||
+                        !mask.contains(x.toInt(), (50f + halfHeight).toInt()) ||
+                        !mask.contains((50f - halfWidth).toInt(), y.toInt()) ||
+                        !mask.contains((50f + halfWidth).toInt(), y.toInt())) return false
+                }
+                return true
+            }
+            var low = 0f
+            var high = minOf(49f, 49f / aspect)
+            repeat(12) {
+                val mid = (low + high) / 2f
+                if (fits(mid)) low = mid else high = mid
+            }
+            // Ten percent clearance from the shape boundary keeps artwork
+            // visually separated from sharp tips and antialiased edges.
+            val safeHeight = 2f * low * 0.90f
+            val safeWidth = safeHeight * aspect
+            val maxWidth = visibleIconSize * safeWidth / 100f
+            val maxHeight = visibleIconSize * safeHeight / 100f
             val fit = minOf(maxWidth / contentWidth, maxHeight / contentHeight)
-            // Never enlarge tiny source artwork; remove the former universal
-            // 60% cap which needlessly shrank artwork in roomy masks.
             val factor = diagnosticFactor ?: minOf(1f, fit)
             val cx = rect.exactCenterX()
             val cy = rect.exactCenterY()
@@ -237,7 +267,7 @@ internal constructor(
                 cy + contentHeight * factor / 2f,
             )
             canvas.drawBitmap(bitmap, contentBounds, dest, paint)
-            PrimeDebugLog.d("PrimeIconSizing", "foreground fitted factor=$factor safeArea=$safeArea max=${maxWidth}x${maxHeight} content=${contentWidth}x$contentHeight bounds=$contentBounds")
+            PrimeDebugLog.d("PrimeIconSizing", "foreground fitted factor=$factor shape=${shape.key} safe=${safeWidth}x${safeHeight} max=${maxWidth}x${maxHeight} content=${contentWidth}x$contentHeight bounds=$contentBounds")
         }
 
         override fun setAlpha(alpha: Int) { paint.alpha = alpha }
