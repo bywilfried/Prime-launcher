@@ -134,8 +134,17 @@ internal constructor(
             }
             val save = canvas.save()
             canvas.clipPath(mask)
+            // Keep the background filling the mask while adapting only the artwork.
             background.draw(canvas)
+            val inset = when (shape.key) {
+                "diamond" -> 0.82f
+                "octagon", "hexagon" -> 0.92f
+                else -> 1f
+            }
+            val foregroundSave = canvas.save()
+            canvas.scale(inset, inset, currentBounds.exactCenterX(), currentBounds.exactCenterY())
             foreground.draw(canvas)
+            canvas.restoreToCount(foregroundSave)
             canvas.restoreToCount(save)
         }
     }
