@@ -653,7 +653,9 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     private boolean applyCachedPrimeIcon(ItemInfoWithIcon info) {
         if (mPrimeIconShape == null
                 || (mDisplay != DISPLAY_ALL_APPS && mDisplay != DISPLAY_FOLDER
-                        && mDisplay != DISPLAY_DRAWER_FOLDER && mDisplay != DISPLAY_WORKSPACE)) {
+                        && mDisplay != DISPLAY_DRAWER_FOLDER && mDisplay != DISPLAY_WORKSPACE
+                        && mDisplay != DISPLAY_SEARCH_RESULT
+                        && mDisplay != DISPLAY_SEARCH_RESULT_SMALL)) {
             return false;
         }
         boolean useTheme = shouldUseTheme();
@@ -1901,7 +1903,9 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         final String shapeKey = shape == null ? "null" : shape.toString();
 
         if (shape == null || (mDisplay != DISPLAY_ALL_APPS && mDisplay != DISPLAY_FOLDER
-                && mDisplay != DISPLAY_DRAWER_FOLDER && mDisplay != DISPLAY_WORKSPACE)
+                && mDisplay != DISPLAY_DRAWER_FOLDER && mDisplay != DISPLAY_WORKSPACE
+                        && mDisplay != DISPLAY_SEARCH_RESULT
+                        && mDisplay != DISPLAY_SEARCH_RESULT_SMALL)
                 || !(getTag() instanceof ItemInfoWithIcon info)) {
             return;
         }
