@@ -29,6 +29,8 @@ import com.android.launcher3.LauncherSettings
 import com.android.launcher3.celllayout.CellPosMapper
 import com.android.launcher3.model.data.WorkspaceItemInfo
 import com.android.launcher3.icons.LauncherIcons
+import app.lawnchair.preferences2.PreferenceManager2
+import app.lawnchair.preferences2.firstCached
 import com.android.launcher3.icons.BaseIconFactory
 import com.android.launcher3.util.Executors
 import androidx.activity.ComponentActivity
@@ -185,9 +187,18 @@ class LawnchairShortcutActivity : ComponentActivity() {
                             android.graphics.drawable.ColorDrawable(android.graphics.Color.WHITE),
                             android.graphics.drawable.InsetDrawable(glyph, 0.20f),
                         )
-                        info.bitmap = icons.createBadgedIconBitmap(
-                            adaptive, BaseIconFactory.IconOptions(),
-                        )
+                        // Only Prime-generated action shortcuts use icon-shape
+                        // foreground fitting. Never modify AppWidgetHostView or
+                        // third-party RemoteViews, even for 1x1 widgets.
+                        val shape = PreferenceManager2.getInstance(appContext)
+                            .iconShape.firstCached()
+                        info.bitmap = if (shape != null) {
+                            icons.createPrimeIconBitmap(adaptive, info.user, shape)
+                        } else {
+                            icons.createBadgedIconBitmap(
+                                adaptive, BaseIconFactory.IconOptions(),
+                            )
+                        }
                     }
                 }
                 model.getWriter(false, CellPosMapper.DEFAULT, null).addItemToDatabase(
@@ -211,13 +222,27 @@ class LawnchairShortcutActivity : ComponentActivity() {
         }
         val icon = selectedHandler.getWorkspaceIcon(context).loadDrawable(context)
         val size = (context.resources.displayMetrics.density * 96).toInt().coerceAtLeast(1)
-        val bitmap = android.graphics.Bitmap.createBitmap(
-            size, size, android.graphics.Bitmap.Config.ARGB_8888,
-        )
-        if (icon != null) {
-            val canvas = android.graphics.Canvas(bitmap)
-            icon.setBounds(0, 0, size, size)
-            icon.draw(canvas)
+        val shape = PreferenceManager2.getInstance(context).iconShape.firstCached()
+        val bitmap = if (icon != null && shape != null) {
+            // Legacy ACTION_CREATE_SHORTCUT results also need the same fitted
+            // foreground as directly added Prime actions.
+            LauncherIcons.obtain(context).use { icons ->
+                val adaptive = android.graphics.drawable.AdaptiveIconDrawable(
+                    android.graphics.drawable.ColorDrawable(android.graphics.Color.WHITE),
+                    android.graphics.drawable.InsetDrawable(icon, 0.20f),
+                )
+                icons.createPrimeIconBitmap(adaptive, Process.myUserHandle(), shape).icon
+            }
+        } else {
+            android.graphics.Bitmap.createBitmap(
+                size, size, android.graphics.Bitmap.Config.ARGB_8888,
+            ).also { result ->
+                if (icon != null) {
+                    val canvas = android.graphics.Canvas(result)
+                    icon.setBounds(0, 0, size, size)
+                    icon.draw(canvas)
+                }
+            }
         }
         setResult(
             RESULT_OK,

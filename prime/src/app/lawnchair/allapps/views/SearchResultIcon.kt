@@ -10,6 +10,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
+import app.lawnchair.preferences2.PreferenceManager2
+import app.lawnchair.preferences2.firstCached
 import app.lawnchair.launcher
 import app.lawnchair.search.adapter.SearchTargetCompat
 import app.lawnchair.util.runOnMainThread
@@ -101,6 +103,7 @@ class SearchResultIcon(context: Context, attrs: AttributeSet?) :
         boundId = target.id
         flags = getFlags(target.extras)
         reset()
+        setPrimeIconShapeForNextBind(PreferenceManager2.getInstance(context).iconShape.firstCached())
         setForceHideDot(true)
 
         val extras = target.extras
@@ -127,6 +130,8 @@ class SearchResultIcon(context: Context, attrs: AttributeSet?) :
         if (iconComponentKey != null) {
             bindIconComponentKey(iconComponentKey)
         }
+        // Bind may replace the drawable synchronously; reapply the fitted variant.
+        setPrimeIconShape(PreferenceManager2.getInstance(context).iconShape.firstCached())
     }
 
     fun bind(target: SearchTargetCompat, callback: (info: ItemInfoWithIcon) -> Unit) {
@@ -187,6 +192,7 @@ class SearchResultIcon(context: Context, attrs: AttributeSet?) :
                 runOnMainThread {
                     if (boundId == targetId) {
                         applyFromItemInfoWithIcon(info)
+                        setPrimeIconShape(PreferenceManager2.getInstance(context).iconShape.firstCached())
                     }
                 }
             }
@@ -200,6 +206,10 @@ class SearchResultIcon(context: Context, attrs: AttributeSet?) :
             return
         }
         icon = appInfo.newIcon(context, 0)
+        // Component-key results use a direct drawable, so bind the app info
+        // through BubbleTextView to enable the same fitted adaptive rendering.
+        applyFromApplicationInfo(appInfo)
+        setPrimeIconShape(PreferenceManager2.getInstance(context).iconShape.firstCached())
     }
 
     private fun bindFromApp(componentName: ComponentName, user: UserHandle) {
@@ -209,6 +219,7 @@ class SearchResultIcon(context: Context, attrs: AttributeSet?) :
             return
         }
         applyFromApplicationInfo(appInfo)
+        setPrimeIconShape(PreferenceManager2.getInstance(context).iconShape.firstCached())
         notifyApplied(appInfo)
     }
 
@@ -216,6 +227,7 @@ class SearchResultIcon(context: Context, attrs: AttributeSet?) :
         val si = WorkspaceItemInfo(shortcutInfo, launcher)
         si.container = LauncherSettings.Favorites.CONTAINER_ALL_APPS
         applyFromWorkspaceItem(si)
+        setPrimeIconShape(PreferenceManager2.getInstance(context).iconShape.firstCached())
         notifyApplied(si)
         val cache = LauncherAppState.getInstance(launcher).iconCache
         Executors.MODEL_EXECUTOR.handler.postAtFrontOfQueue {
@@ -223,6 +235,7 @@ class SearchResultIcon(context: Context, attrs: AttributeSet?) :
             runOnMainThread {
                 if (boundId == targetId) {
                     applyFromWorkspaceItem(si)
+                    setPrimeIconShape(PreferenceManager2.getInstance(context).iconShape.firstCached())
                 }
             }
         }

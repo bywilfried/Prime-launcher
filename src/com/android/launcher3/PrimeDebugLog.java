@@ -11,7 +11,7 @@ import java.util.Locale;
 /** Small in-process diagnostic journal for Prime features. */
 public final class PrimeDebugLog {
 
-    private static final int MAX_ENTRIES = 300;
+    private static final int MAX_ENTRIES = 1500;
     private static final Deque<String> ENTRIES = new ArrayDeque<>();
 
     private PrimeDebugLog() {}

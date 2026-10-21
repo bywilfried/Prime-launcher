@@ -161,6 +161,30 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     // Prime render variants are separate from IconCache so Home/global icons are never replaced.
     // The key is stable across RecyclerView/AppInfo recreation; the source bitmap identity
     // invalidates an entry when Lawnchair refreshes the underlying app icon.
+    /**
+     * Shared fitted icon renderer for non-BubbleTextView surfaces (widget headers).
+     * Call from a worker thread; preserves the original icon on failure.
+     */
+    @Nullable
+    public static FastBitmapDrawable renderPrimeIconForExternalView(
+            Context context, ItemInfoWithIcon info, int iconSize) {
+        IconShape shape = PreferenceCacheExtensionsKt.firstCached(
+                PreferenceManager2.getInstance(context).getIconShape());
+        return renderPrimeIconForExternalView(context, info, iconSize, shape);
+    }
+
+    /** Render an icon for a surface with its own effective shape (e.g. folder previews). */
+    @Nullable
+    public static FastBitmapDrawable renderPrimeIconForExternalView(
+            Context context, ItemInfoWithIcon info, int iconSize, IconShape shape) {
+        if (shape == null) return null;
+        ActivityContext activity = ActivityContext.lookupContextNoThrow(context);
+        if (!(activity instanceof Launcher launcher)) return null;
+        BitmapInfo fitted = PrimeIconRenderCache.renderAndCache(
+                launcher, info, shape, iconSize, false);
+        return fitted == null ? null : fitted.newIcon(context, 0);
+    }
+
     private static final class PrimeIconRenderCache {
         private static final HashMap<String, PrimeIconCacheEntry> CACHE = new HashMap<>();
 
@@ -201,12 +225,48 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
 
             Pair<AdaptiveIconDrawable, Drawable> fullDrawable = Utilities.getFullDrawable(
                     launcher, info, iconSize, iconSize, useTheme);
-            if (fullDrawable == null || fullDrawable.first == null) return null;
+            // PackageItemInfo is used by the widget-picker app headers. It is not
+            // an application ItemInfo and Utilities.getFullDrawable() cannot
+            // resolve it, so the old fitting path silently returned null.
+            Drawable source = fullDrawable == null ? null : fullDrawable.first;
+            if (source == null && info instanceof com.android.launcher3.model.data.PackageItemInfo pkg) {
+                try {
+                    source = launcher.getPackageManager().getApplicationIcon(pkg.packageName);
+                } catch (android.content.pm.PackageManager.NameNotFoundException ignored) {
+                    return null;
+                }
+            }
+            // Prime action shortcuts have ITEM_TYPE_SHORTCUT, which is also
+            // unsupported by Utilities.getFullDrawable(). Recreate the original
+            // glyph from the stored action configuration rather than fitting
+            // the already-masked bitmap (which would shrink its white background).
+            if (source == null && info instanceof WorkspaceItemInfo action
+                    && action.intent != null && action.intent.getComponent() != null
+                    && "app.lawnchair.gestures.ui.RunHandlerActivity".equals(
+                            action.intent.getComponent().getClassName())
+                    && "app.lawnchair.START_ACTION".equals(action.intent.getAction())) {
+                String encoded = action.intent.getStringExtra(
+                        "app.lawnchair.EXTRA_HANDLER");
+                if (encoded != null) {
+                    Drawable glyph = app.lawnchair.gestures.config.GestureHandlerConfig.Companion
+                            .fromString(encoded).getWorkspaceIcon(launcher).loadDrawable(launcher);
+                    if (glyph != null) {
+                        source = new AdaptiveIconDrawable(
+                                new ColorDrawable(android.graphics.Color.WHITE),
+                                new android.graphics.drawable.InsetDrawable(glyph, 0.20f));
+                    }
+                }
+            }
+            if (source == null) return null;
 
             final BitmapInfo primeBitmap;
             try (LauncherIcons launcherIcons = LauncherIcons.obtain(launcher)) {
+                if (!(source instanceof AdaptiveIconDrawable)) {
+                    source = launcherIcons.wrapToAdaptiveIcon(source);
+                }
+                if (source == null) return null;
                 primeBitmap = launcherIcons.createPrimeIconBitmap(
-                        fullDrawable.first, info.user, shape);
+                        source, info.user, shape);
             }
             String key = key(info, shape, iconSize, useTheme);
             if (key != null) {
@@ -510,9 +570,13 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
 
     @UiThread
     public void applyFromWorkspaceItem(WorkspaceItemInfo info) {
+        if (mDisplay == DISPLAY_WORKSPACE) {
+            mPrimeIconShape = PreferenceCacheExtensionsKt.firstCached(pref2.getIconShape());
+        }
         applyIconAndLabel(info);
         setItemInfo(info);
         applyPrimeDockSizing(info);
+        if (mDisplay == DISPLAY_WORKSPACE) setPrimeIconShape(mPrimeIconShape);
 
         applyDotState(info, false /* animate */);
         setDownloadStateContentDescription(info, info.getProgressLevel());
@@ -649,7 +713,9 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     private boolean applyCachedPrimeIcon(ItemInfoWithIcon info) {
         if (mPrimeIconShape == null
                 || (mDisplay != DISPLAY_ALL_APPS && mDisplay != DISPLAY_FOLDER
-                        && mDisplay != DISPLAY_DRAWER_FOLDER)) {
+                        && mDisplay != DISPLAY_DRAWER_FOLDER && mDisplay != DISPLAY_WORKSPACE
+                        && mDisplay != DISPLAY_SEARCH_RESULT
+                        && mDisplay != DISPLAY_SEARCH_RESULT_SMALL)) {
             return false;
         }
         boolean useTheme = shouldUseTheme();
@@ -719,6 +785,10 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     }
 
     private void setNonPendingIcon(ItemInfoWithIcon info) {
+        // A global icon refresh may call this path after a category-specific
+        // variant was already bound. Preserve the effective local shape whenever
+        // its bitmap is ready, rather than flashing the global icon over it.
+        if (applyCachedPrimeIcon(info)) return;
         boolean isPrivateSpaceIcon = Objects.equals(info.getTargetPackage(), PRIVATE_SPACE_PACKAGE);
         // Set nonPendingIcon acts as a restart which should refresh the flag state when applicable.
         int flags = isPrivateSpaceIcon
@@ -1689,6 +1759,20 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             applyCompoundDrawables(icon);
         }
         mIcon = icon;
+        // Trace the drawable actually installed on each view, including paths
+        // that bypass PrimeIconRenderCache (notably DISPLAY_WORKSPACE).
+        Object boundTag = getTag();
+        ItemInfoWithIcon item = boundTag instanceof ItemInfoWithIcon
+                ? (ItemInfoWithIcon) boundTag : null;
+        PrimeDebugLog.d("PrimeIconDisplay",
+                "bind display=" + mDisplay
+                        + " reason=" + mPrimeLastIconSetReason
+                        + " shape=" + (mPrimeIconShape == null ? "none" : mPrimeIconShape)
+                        + " item=" + (item == null ? "not-bound" : item.getStableId())
+                        + " drawable=" + (icon == null ? "null" : icon.getClass().getSimpleName())
+                        + " drawableId=" + System.identityHashCode(icon)
+                        + " sourceBitmapId=" + (item == null ? "none"
+                                : System.identityHashCode(item.bitmap.icon)));
         if (mIcon != null) {
             mIcon.setVisible(getWindowVisibility() == VISIBLE && isShown(), false);
             mIcon.setHoverScaleEnabledForDisplay(mDisplay != DISPLAY_TASKBAR);
@@ -1780,7 +1864,8 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             // shape cannot disappear when the asynchronous high-res icon arrives.
             if (mPrimeIconShape != null
                     && (mDisplay == DISPLAY_ALL_APPS || mDisplay == DISPLAY_FOLDER
-                            || mDisplay == DISPLAY_DRAWER_FOLDER)) {
+                            || mDisplay == DISPLAY_DRAWER_FOLDER
+                            || mDisplay == DISPLAY_WORKSPACE)) {
                 setPrimeIconShape(mPrimeIconShape);
             }
         }
@@ -1878,7 +1963,9 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         final String shapeKey = shape == null ? "null" : shape.toString();
 
         if (shape == null || (mDisplay != DISPLAY_ALL_APPS && mDisplay != DISPLAY_FOLDER
-                && mDisplay != DISPLAY_DRAWER_FOLDER)
+                && mDisplay != DISPLAY_DRAWER_FOLDER && mDisplay != DISPLAY_WORKSPACE
+                        && mDisplay != DISPLAY_SEARCH_RESULT
+                        && mDisplay != DISPLAY_SEARCH_RESULT_SMALL)
                 || !(getTag() instanceof ItemInfoWithIcon info)) {
             return;
         }
