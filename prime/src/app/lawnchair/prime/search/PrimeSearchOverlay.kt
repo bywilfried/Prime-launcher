@@ -854,8 +854,11 @@ object PrimeSearchOverlay {
                 }
                 val searchLabelHeight = ((searchLabelPaint.fontMetrics.bottom -
                     searchLabelPaint.fontMetrics.top).toInt().coerceAtLeast(1)) * searchLabelLines
-                val searchRowHeight = searchIconSize + searchLabelHeight +
-                    (14 * density).toInt()
+                // BubbleTextView draws its icon below its internal top padding.
+                // Reserve that space rather than forcing it into iconSize pixels.
+                val iconViewHeight = searchIconSize + (24 * density).toInt()
+                val searchRowHeight = iconViewHeight + searchLabelHeight +
+                    (8 * density).toInt()
                 var appRow: LinearLayout? = null
                 var appsInRow = 0
                 PrimeSearchResultPreferences.filter(
@@ -990,21 +993,23 @@ object PrimeSearchOverlay {
                             // independent views inside the same Prime-only cell.
                             val appTitle = icon.text.toString()
                             icon.setTextVisibility(false)
+                            icon.setPadding(0, 0, 0, 0)
                             icon.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
                             icon.setCompoundDrawablePadding(0)
                             parent.removeView(icon)
                             val cell = LinearLayout(launcher).apply {
                                 orientation = LinearLayout.VERTICAL
                                 gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-                                setPadding(2, (6 * density).toInt(), 2, (8 * density).toInt())
+                                setPadding(0, 0, 0, (4 * density).toInt())
                             }
-                            cell.addView(icon, LinearLayout.LayoutParams(searchIconSize, searchIconSize))
+                            cell.addView(icon, LinearLayout.LayoutParams(cellWidth, iconViewHeight))
                             val title = TextView(launcher).apply {
                                 text = appTitle
                                 textSize = 11f
                                 gravity = Gravity.CENTER
                                 setSingleLine(false)
                                 maxLines = searchLabelLines
+                                includeFontPadding = false
                                 ellipsize = android.text.TextUtils.TruncateAt.END
                                 setTextColor(themed(ThemeColorRole.PRIME_SEARCH_APP_LABEL))
                             }
