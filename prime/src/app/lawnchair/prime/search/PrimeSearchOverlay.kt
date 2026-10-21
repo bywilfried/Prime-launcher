@@ -864,18 +864,13 @@ object PrimeSearchOverlay {
                 val searchLabelHeight = kotlin.math.ceil(
                     (searchLabelPaint.fontMetrics.descent - searchLabelPaint.fontMetrics.ascent).toDouble()
                 ).toInt().coerceAtLeast(1) * searchLabelLines
-                val searchIconLabelGap = (2 * density).toInt()
+                // Use the same geometry as the working Fréquentes/Récentes/Nouvelles grid.
+                val searchCellTopPadding = (4 * density).toInt()
+                val searchIconLabelGap = (4 * density).toInt()
                 val searchRowBottomPadding = (10 * density).toInt()
-                // Search icons use the same compact geometry as zero-state icons.
-                // The former 24dp surplus inside the icon view separated labels
-                // from their icons even when the visible drawable was correctly sized.
-                // SearchResultIcon is a BubbleTextView: its compound drawable
-                // needs a small top inset and enough view height to avoid
-                // clipping the icon at the top of each result row.
-                val searchIconTopInset = (10 * density).toInt()
-                val iconViewHeight = searchIconSize + searchIconTopInset
-                val searchRowHeight = iconViewHeight + searchIconLabelGap +
-                    searchLabelHeight + searchRowBottomPadding
+                val iconViewHeight = searchIconSize
+                val searchRowHeight = searchCellTopPadding + iconViewHeight +
+                    searchIconLabelGap + searchLabelHeight + searchRowBottomPadding
                 var appRow: LinearLayout? = null
                 var appsInRow = 0
                 PrimeSearchResultPreferences.filter(
@@ -1010,14 +1005,15 @@ object PrimeSearchOverlay {
                             // independent views inside the same Prime-only cell.
                             val appTitle = icon.text.toString()
                             icon.setTextVisibility(false)
-                            icon.setPadding(0, searchIconTopInset, 0, 0)
+                            icon.setPrimeSearchLabelLayout(true)
+                            icon.setPadding(0, 0, 0, 0)
                             icon.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
                             icon.setCompoundDrawablePadding(0)
                             parent.removeView(icon)
                             val cell = LinearLayout(launcher).apply {
                                 orientation = LinearLayout.VERTICAL
                                 gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-                                setPadding(0, 0, 0, 0)
+                                setPadding(0, searchCellTopPadding, 0, searchRowBottomPadding)
                             }
                             cell.addView(icon, LinearLayout.LayoutParams(cellWidth, iconViewHeight))
                             val title = TextView(launcher).apply {
