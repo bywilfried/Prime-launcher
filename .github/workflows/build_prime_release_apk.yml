@@ -39,6 +39,8 @@ jobs:
           } > keystore.properties
 
       - name: Build Release APK
+        env:
+          PRIME_RELEASE_09: 'true'
         shell: bash
         run: |
           set -o pipefail
