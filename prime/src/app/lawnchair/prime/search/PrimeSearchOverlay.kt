@@ -431,11 +431,14 @@ object PrimeSearchOverlay {
                 textSize = titleTextSizeSp * launcher.resources.displayMetrics.scaledDensity
             }
             val labelLines = if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
-            val titleHeight = ((titlePaint.fontMetrics.bottom - titlePaint.fontMetrics.top)
-                .toInt().coerceAtLeast(1)) * labelLines
-            val cellTopPadding = (6 * density).toInt()
-            val cellBottomPadding = (8 * density).toInt()
-            val rowHeight = iconSize + titleHeight + cellTopPadding + cellBottomPadding
+            val titleHeight = kotlin.math.ceil(
+                (titlePaint.fontMetrics.descent - titlePaint.fontMetrics.ascent).toDouble()
+            ).toInt().coerceAtLeast(1) * labelLines
+            val cellTopPadding = (4 * density).toInt()
+            val iconLabelGap = (4 * density).toInt()
+            val cellBottomPadding = (10 * density).toInt()
+            val rowHeight = iconSize + iconLabelGap + titleHeight +
+                cellTopPadding + cellBottomPadding
             val displayedApps = ranked.take(maxCount)
             repeat(rows) { rowIndex ->
                 val apps = displayedApps.drop(rowIndex * columns).take(columns)
@@ -447,7 +450,7 @@ object PrimeSearchOverlay {
                 apps.forEach { app ->
                     val cell = LinearLayout(launcher).apply {
                         orientation = LinearLayout.VERTICAL
-                        gravity = Gravity.CENTER
+                        gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
                         setPadding(2, cellTopPadding, 2, cellBottomPadding)
                         setOnClickListener {
                             packageManager.getLaunchIntentForPackage(app.packageName)?.let { intent ->
@@ -497,12 +500,15 @@ object PrimeSearchOverlay {
                     val title = TextView(launcher).apply {
                         text = packageManager.getApplicationLabel(app)
                         textSize = titleTextSizeSp
-                        gravity = Gravity.CENTER
+                        gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                        includeFontPadding = false
                         maxLines = labelLines
                         ellipsize = android.text.TextUtils.TruncateAt.END
                         setTextColor(themed(ThemeColorRole.PRIME_SEARCH_APP_LABEL))
                     }
-                    cell.addView(title, LinearLayout.LayoutParams(-1, -2))
+                    cell.addView(title, LinearLayout.LayoutParams(-1, titleHeight).apply {
+                        topMargin = iconLabelGap
+                    })
                     row.addView(cell, LinearLayout.LayoutParams(cellWidth, rowHeight))
                 }
             }
