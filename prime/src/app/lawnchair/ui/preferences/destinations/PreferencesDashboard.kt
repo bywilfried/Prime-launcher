@@ -128,15 +128,6 @@ fun PreferencesDashboard(
                 isSelected = currentRoute is HomeScreen,
             )
 
-            val isSmartspaceEnabled = prefs2.enableSmartspace.firstCached()
-            PreferenceCategory(
-                label = stringResource(id = R.string.smartspace_widget),
-                description = stringResource(R.string.smartspace_widget_description),
-                iconResource = if (isSmartspaceEnabled) R.drawable.ic_smartspace else R.drawable.ic_smartspace_off,
-                onNavigate = { onNavigate(Smartspace) },
-                isSelected = currentRoute is Smartspace,
-            )
-
             PreferenceCategory(
                 label = stringResource(R.string.dock_label),
                 description = stringResource(R.string.dock_description),
@@ -192,6 +183,14 @@ fun PreferencesDashboard(
                     isSelected = currentRoute is Quickstep,
                 )
             }
+
+            PreferenceCategory(
+                label = "Widget Aperçu",
+                description = stringResource(R.string.smartspace_widget_description),
+                iconResource = R.drawable.ic_smartspace,
+                onNavigate = { onNavigate(Smartspace) },
+                isSelected = currentRoute is Smartspace,
+            )
 
             PreferenceCategory(
                 label = stringResource(R.string.backup_and_restore_label),
