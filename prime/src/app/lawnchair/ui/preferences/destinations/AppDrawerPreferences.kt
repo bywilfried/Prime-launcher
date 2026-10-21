@@ -42,7 +42,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.foundation.Image
+import androidx.compose.material3.Card
+import androidx.compose.material3.Text
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import app.lawnchair.preferences2.firstCached
+import app.lawnchair.preferences2.PreferenceManager2
 import app.lawnchair.preferences.PreferenceAdapter
 import app.lawnchair.preferences.PrefEntry
 import app.lawnchair.preferences.getAdapter
@@ -273,6 +282,16 @@ fun AppDrawerPreferences(
                 adapter = prefs2.appDrawerSearchBarBackground.getAdapter(),
             )
         }
+        // Live preview of the active drawer mode's grid and icon settings.
+        DrawerIconsLivePreview(
+            columns = nativeDrawerColumns.state.value,
+            iconFactor = nativeDrawerIconSize.state.value,
+            showLabels = nativeShowLabels.state.value,
+            labelFactor = nativeLabelSize.state.value,
+            twoLineLabels = nativeTwoLineLabels.state.value,
+            rowFactor = nativeRowHeight.state.value,
+            horizontalMargin = nativeHorizontalMargin.state.value,
+        )
         PreferenceGroup(heading = stringResource(id = R.string.grid)) {
             val drawerColumnsAdapter = modeBackedAdapter(modePreference("drawerColumns", { it.drawerColumns }, { profile, value -> profile.copy(drawerColumns = value) }, { }), nativeDrawerColumns)
             val drawerColumnsUnfoldedAdapter = modeBackedAdapter(modePreference("drawerColumnsUnfolded", { it.drawerColumnsUnfolded }, { profile, value -> profile.copy(drawerColumnsUnfolded = value) }, { }), nativeDrawerColumnsUnfolded)
@@ -406,6 +425,89 @@ fun AppDrawerPreferences(
                     ReloadHelper(context).reloadGrid()
                 },
             )
+        }
+    }
+}
+
+@Composable
+private fun DrawerIconsLivePreview(
+    columns: Int,
+    iconFactor: Float,
+    showLabels: Boolean,
+    labelFactor: Float,
+    twoLineLabels: Boolean,
+    rowFactor: Float,
+    horizontalMargin: Float,
+) {
+    val context = LocalContext.current
+    val shape = PreferenceManager2.getInstance(context).iconShape.firstCached()
+    val apps = remember(context) {
+        val pm = context.packageManager
+        pm.getInstalledApplications(0).asSequence()
+            .filter { pm.getLaunchIntentForPackage(it.packageName) != null }
+            .sortedBy { pm.getApplicationLabel(it).toString().lowercase() }
+            .take(30)
+            .map { it.packageName to pm.getApplicationLabel(it).toString() }
+            .toList()
+    }
+    val icons = remember(apps, shape.key) {
+        val pm = context.packageManager
+        com.android.launcher3.icons.LauncherIcons.obtain(context).use { factory ->
+            apps.mapNotNull { (pkg, label) ->
+                runCatching {
+                    label to factory.createPrimeIconBitmap(
+                        pm.getApplicationIcon(pkg),
+                        android.os.Process.myUserHandle(),
+                        shape,
+                    ).icon.asImageBitmap()
+                }.getOrNull()
+            }
+        }
+    }
+    val safeColumns = columns.coerceIn(3, 10)
+    val iconSize = (48f * iconFactor).dp
+    val labelSize = 11f * labelFactor
+    PreferenceGroup(heading = "Aperçu du tiroir en direct") {
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(
+                    horizontal = (8f + 8f * horizontalMargin).dp,
+                    vertical = 12.dp,
+                ),
+            ) {
+                repeat(3) { rowIndex ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                            .height((92f * rowFactor).coerceAtLeast(44f).dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                    ) {
+                        repeat(safeColumns) { column ->
+                            val app = icons.getOrNull(rowIndex * safeColumns + column)
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                if (app != null) {
+                                    Image(
+                                        bitmap = app.second,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(iconSize),
+                                    )
+                                    if (showLabels) {
+                                        Text(
+                                            text = app.first,
+                                            fontSize = labelSize.sp,
+                                            textAlign = TextAlign.Center,
+                                            maxLines = if (twoLineLabels) 2 else 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
