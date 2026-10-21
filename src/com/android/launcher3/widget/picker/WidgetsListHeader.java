@@ -251,7 +251,9 @@ public final class WidgetsListHeader extends LinearLayout implements ItemInfoUpd
             info.bitmap.icon.prepareToDraw();
 
             setIcon(info.newIcon(getContext()));
-            fitPrimeHeaderIcon(info);
+            if (info instanceof PackageItemInfo) {
+                fitPrimeHeaderIcon((PackageItemInfo) info);
+            }
 
             mEnableIconUpdateAnimation = false;
         }
