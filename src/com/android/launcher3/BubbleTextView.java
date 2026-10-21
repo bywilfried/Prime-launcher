@@ -321,6 +321,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     private long mPrimeLastIconSetUptime;
     private DeviceProfile mDeviceProfile;
     private boolean mCenterVertically;
+    private boolean mPrimeOriginalCenterVertically;
 
     protected int mDisplay;
 
@@ -418,6 +419,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                 == View.LAYOUT_DIRECTION_RTL);
         mDeviceProfile = mActivity.getDeviceProfile();
         mCenterVertically = a.getBoolean(R.styleable.BubbleTextView_centerVertically, false);
+        mPrimeOriginalCenterVertically = mCenterVertically;
 
         mDisplay = a.getInteger(R.styleable.BubbleTextView_iconDisplay, DISPLAY_WORKSPACE);
         final int defaultIconSize;
@@ -2020,6 +2022,17 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     }
 
     /** Prime: updates the rendered icon bounds for per-category drawer overrides. */
+    /** Prime Search uses a separate label view and must not center the icon
+     * using the drawer's icon-plus-text cell height (which can create negative
+     * top padding and clip the drawable in an icon-only slot). */
+    public void setPrimeIconOnlyLayout(boolean enabled) {
+        mCenterVertically = !enabled && mPrimeOriginalCenterVertically;
+        if (enabled) {
+            setPadding(getPaddingLeft(), 0, getPaddingRight(), getPaddingBottom());
+        }
+        requestLayout();
+    }
+
     public void setPrimeIconSize(int iconSize) {
         if (iconSize <= 0 || mIconSize == iconSize) return;
         mIconSize = iconSize;
