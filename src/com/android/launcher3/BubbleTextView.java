@@ -225,12 +225,27 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
 
             Pair<AdaptiveIconDrawable, Drawable> fullDrawable = Utilities.getFullDrawable(
                     launcher, info, iconSize, iconSize, useTheme);
-            if (fullDrawable == null || fullDrawable.first == null) return null;
+            // PackageItemInfo is used by the widget-picker app headers. It is not
+            // an application ItemInfo and Utilities.getFullDrawable() cannot
+            // resolve it, so the old fitting path silently returned null.
+            Drawable source = fullDrawable == null ? null : fullDrawable.first;
+            if (source == null && info instanceof com.android.launcher3.model.data.PackageItemInfo pkg) {
+                try {
+                    source = launcher.getPackageManager().getApplicationIcon(pkg.packageName);
+                } catch (android.content.pm.PackageManager.NameNotFoundException ignored) {
+                    return null;
+                }
+            }
+            if (source == null) return null;
 
             final BitmapInfo primeBitmap;
             try (LauncherIcons launcherIcons = LauncherIcons.obtain(launcher)) {
+                if (!(source instanceof AdaptiveIconDrawable)) {
+                    source = launcherIcons.wrapToAdaptiveIcon(source);
+                }
+                if (source == null) return null;
                 primeBitmap = launcherIcons.createPrimeIconBitmap(
-                        fullDrawable.first, info.user, shape);
+                        source, info.user, shape);
             }
             String key = key(info, shape, iconSize, useTheme);
             if (key != null) {
