@@ -258,6 +258,9 @@ object PrimeSearchOverlay {
         }
         val results = LinearLayout(launcher).apply {
             orientation = LinearLayout.VERTICAL
+            // Search results must not start flush against the search field.
+            // This padding belongs only to typed results, not the zero-state tabs.
+            setPadding(0, (12 * density).toInt(), 0, (8 * density).toInt())
             setBackgroundColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND))
         }
         val zeroState = LinearLayout(launcher).apply {
@@ -861,7 +864,7 @@ object PrimeSearchOverlay {
                 val searchLabelHeight = kotlin.math.ceil(
                     (searchLabelPaint.fontMetrics.descent - searchLabelPaint.fontMetrics.ascent).toDouble()
                 ).toInt().coerceAtLeast(1) * searchLabelLines
-                val searchIconLabelGap = (4 * density).toInt()
+                val searchIconLabelGap = (2 * density).toInt()
                 val searchRowBottomPadding = (10 * density).toInt()
                 // Search icons use the same compact geometry as zero-state icons.
                 // The former 24dp surplus inside the icon view separated labels
