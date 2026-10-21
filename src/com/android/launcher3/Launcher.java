@@ -1638,7 +1638,10 @@ public class Launcher extends StatefulActivity<LauncherState>
                 != Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
 
         // Check this condition before handling isActionMain, as this will get reset.
-        boolean shouldMoveToDefaultScreen = alreadyOnHome && isInState(NORMAL)
+        boolean returnToMainHomePage = app.lawnchair.preferences.PreferenceManager
+                .getInstance(this).getReturnToMainHomePage().get();
+        boolean shouldMoveToDefaultScreen = (returnToMainHomePage
+                || (alreadyOnHome && isInState(NORMAL)))
                 && AbstractFloatingView.getTopOpenView(this) == null;
         boolean isActionMain = Intent.ACTION_MAIN.equals(intent.getAction());
         boolean internalStateHandled = ACTIVITY_TRACKER.handleNewIntent(this);
@@ -1674,7 +1677,9 @@ public class Launcher extends StatefulActivity<LauncherState>
                 if (shouldMoveToDefaultScreen && !mWorkspace.isHandlingTouch()) {
                     if (mWorkspace.getNextPage() != mWorkspace.getDefaultPage()) {
                         mWorkspace.post(mWorkspace::moveToDefaultScreen);
-                    } else {
+                    } else if (alreadyOnHome && isInState(NORMAL)) {
+                        // A Home press from an app or the drawer must not trigger the
+                        // Home-tap gesture merely because the default page is selected.
                         handleHomeTap();
                     }
                 }
@@ -2287,6 +2292,12 @@ public class Launcher extends StatefulActivity<LauncherState>
         int index = 0;
         for (Pair<ItemInfo, View> e : shortcuts) {
             final ItemInfo item = e.first;
+            if (item instanceof LauncherAppWidgetInfo widget) {
+                PrimeWidgetTrace.d(this, "BIND_ENTER appWidgetId=" + widget.appWidgetId
+                        + " screen=" + item.screenId + " cell=" + item.cellX + "," + item.cellY
+                        + " span=" + item.spanX + "x" + item.spanY
+                        + " view=" + (e.second == null ? "null" : e.second.getClass().getName()));
+            }
 
             // Remove colliding items.
             CellPos presenterPos = getCellPosMapper().mapModelToPresenter(item);
@@ -2301,6 +2312,10 @@ public class Launcher extends StatefulActivity<LauncherState>
                         throw (new RuntimeException(desc));
                     } else {
                         // b/417021465 - Avoid mutating the model in the UI layer.
+                        if (item instanceof LauncherAppWidgetInfo widget) {
+                            PrimeWidgetTrace.e(this, "BIND_COLLISION appWidgetId="
+                                    + widget.appWidgetId + " " + desc);
+                        }
                         Log.e(TAG, desc, new Exception());
                         continue;
                     }
@@ -2309,12 +2324,40 @@ public class Launcher extends StatefulActivity<LauncherState>
 
             View view = e.second;
             if (view == null) {
+                if (item instanceof LauncherAppWidgetInfo widget) {
+                    PrimeWidgetTrace.e(this, "BIND_NULL_VIEW appWidgetId=" + widget.appWidgetId);
+                }
                 continue;
             }
             if (enableWorkspaceInflation() && view instanceof LauncherAppWidgetHostView lv) {
+                if (item instanceof LauncherAppWidgetInfo widget) {
+                    PrimeWidgetTrace.d(this, "BIND_ATTACH_BEGIN appWidgetId=" + widget.appWidgetId);
+                }
                 view = getAppWidgetHolder().attachViewToHostAndGetAttachedView(lv);
+                // Attaching may replace the inflated view with a pending host view.
+                // The replacement does not inherit the model tag or focus callbacks.
+                // Re-prepare it before inserting it into the workspace.
+                if (item instanceof LauncherAppWidgetInfo widget) {
+                    getItemInflater().prepareAppWidget(
+                            (android.appwidget.AppWidgetHostView) view, widget);
+                    PrimeWidgetTrace.d(this, "BIND_ATTACH_RESULT appWidgetId="
+                            + widget.appWidgetId + " view=" + view.getClass().getName()
+                            + " tagRestored=" + (view.getTag() == widget));
+                }
+            }
+            if (item instanceof LauncherAppWidgetInfo widget) {
+                PrimeWidgetTrace.d(this, "BIND_ADD_BEGIN appWidgetId=" + widget.appWidgetId
+                        + " presenterScreen=" + presenterPos.screenId
+                        + " view=" + (view == null ? "null" : view.getClass().getName()));
+            }
+            if (view == null) {
+                PrimeWidgetTrace.e(this, "BIND_ATTACH_NULL_VIEW item=" + item);
+                continue;
             }
             workspace.addInScreenFromBind(view, item);
+            if (item instanceof LauncherAppWidgetInfo widget) {
+                PrimeWidgetTrace.d(this, "BIND_ADD_RETURN appWidgetId=" + widget.appWidgetId);
+            }
             if (boundAnim != null) {
                 // Animate all the applications up now
                 view.setAlpha(0f);

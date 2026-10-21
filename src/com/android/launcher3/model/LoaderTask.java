@@ -249,7 +249,8 @@ public class LoaderTask implements Runnable {
                     FirstScreenBroadcastHelper.createModelsForFirstScreenBroadcast(
                             mPmHelper,
                             firstScreenItems,
-                            mInstallingPkgsCached,
+                            mInstallingPkgsCached != null
+                                    ? mInstallingPkgsCached : java.util.Collections.emptyMap(),
                             mBgDataModel.itemsIdMap.stream().filter(WIDGET_FILTER).toList()
                     );
             logASplit("Sending first screen broadcast with additional archiving Extras");

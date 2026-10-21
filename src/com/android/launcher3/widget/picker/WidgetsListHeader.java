@@ -36,6 +36,8 @@ import androidx.annotation.UiThread;
 import androidx.core.view.ViewCompat;
 
 import com.android.launcher3.DeviceProfile;
+import com.android.launcher3.BubbleTextView;
+import com.android.launcher3.util.Executors;
 import com.android.launcher3.LauncherAppState;
 import com.android.launcher3.R;
 import com.android.launcher3.icons.IconCache.ItemInfoUpdateReceiver;
@@ -73,6 +75,7 @@ public final class WidgetsListHeader extends LinearLayout implements ItemInfoUpd
     private TextView mSubtitle;
     private boolean mEnableIconUpdateAnimation = false;
     private boolean mIsExpanded = false;
+    private int mPrimeIconGeneration = 0;
 
     public WidgetsListHeader(Context context) {
         this(context, /* attrs= */ null);
@@ -173,12 +176,29 @@ public final class WidgetsListHeader extends LinearLayout implements ItemInfoUpd
     public void applyFromItemInfoWithIcon(WidgetsListHeaderEntry entry) {
         PackageItemInfo info = entry.mPkgItem;
         setIcon(info.newIcon(getContext()));
+        fitPrimeHeaderIcon(info);
         setTitles(entry);
         setExpanded(entry.isWidgetListShown());
 
         super.setTag(info);
 
         verifyHighRes();
+    }
+
+    /** Fit widget provider logos without changing widget previews or row dimensions. */
+    private void fitPrimeHeaderIcon(PackageItemInfo info) {
+        final int generation = ++mPrimeIconGeneration;
+        final Object sourceBitmap = info.bitmap.icon;
+        Executors.MODEL_EXECUTOR.execute(() -> {
+            Drawable fitted = BubbleTextView.renderPrimeIconForExternalView(
+                    getContext(), info, mIconSize);
+            if (fitted == null) return;
+            Executors.MAIN_EXECUTOR.execute(() -> {
+                if (generation != mPrimeIconGeneration || getTag() != info
+                        || info.bitmap.icon != sourceBitmap) return;
+                setIcon(fitted);
+            });
+        });
     }
 
     void setIcon(Drawable icon) {
@@ -231,6 +251,9 @@ public final class WidgetsListHeader extends LinearLayout implements ItemInfoUpd
             info.bitmap.icon.prepareToDraw();
 
             setIcon(info.newIcon(getContext()));
+            if (info instanceof PackageItemInfo) {
+                fitPrimeHeaderIcon((PackageItemInfo) info);
+            }
 
             mEnableIconUpdateAnimation = false;
         }

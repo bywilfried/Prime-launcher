@@ -25,6 +25,7 @@ import com.android.launcher3.celllayout.CellPosMapper.CellPos;
 import com.android.launcher3.folder.Folder;
 import com.android.launcher3.folder.FolderIcon;
 import com.android.launcher3.model.data.ItemInfo;
+import com.android.launcher3.model.data.LauncherAppWidgetInfo;
 import com.android.launcher3.touch.ItemLongClickListener;
 
 import app.lawnchair.preferences2.PreferenceManager2;
@@ -92,8 +93,20 @@ public interface WorkspaceLayoutManager {
      */
     default void addInScreen(View child, int container, int screenId, int x, int y,
             int spanX, int spanY) {
+        ItemInfo traceInfo = child != null && child.getTag() instanceof ItemInfo
+                ? (ItemInfo) child.getTag() : null;
+        if (traceInfo instanceof LauncherAppWidgetInfo widget) {
+            PrimeWidgetTrace.d(child.getContext(), "ADD_ENTER appWidgetId=" + widget.appWidgetId
+                    + " screen=" + screenId + " cell=" + x + "," + y
+                    + " span=" + spanX + "x" + spanY
+                    + " screenExists=" + (getScreenWithId(screenId) != null));
+        }
         if (container == LauncherSettings.Favorites.CONTAINER_DESKTOP) {
             if (getScreenWithId(screenId) == null) {
+                if (traceInfo instanceof LauncherAppWidgetInfo widget) {
+                    PrimeWidgetTrace.e(child.getContext(), "ADD_MISSING_SCREEN appWidgetId="
+                            + widget.appWidgetId + " screen=" + screenId);
+                }
                 Log.e(TAG, "Skipping child, screenId " + screenId + " not found");
                 // DEBUGGING - Print out the stack trace to see where we are adding from
                 new Throwable().printStackTrace();
@@ -158,7 +171,14 @@ public interface WorkspaceLayoutManager {
         int childId = info.getViewId();
 
         boolean markCellsAsOccupied = !(child instanceof Folder);
-        if (!layout.addViewToCellLayout(child, -1, childId, lp, markCellsAsOccupied)) {
+        boolean addedToCell = layout.addViewToCellLayout(child, -1, childId, lp, markCellsAsOccupied);
+        if (info instanceof LauncherAppWidgetInfo widget) {
+            PrimeWidgetTrace.d(child.getContext(), "ADD_RESULT appWidgetId=" + widget.appWidgetId
+                    + " screen=" + screenId + " success=" + addedToCell
+                    + " parent=" + (child.getParent() == null ? "null"
+                            : child.getParent().getClass().getName()));
+        }
+        if (!addedToCell) {
             // TODO: This branch occurs when the workspace is adding views
             // outside of the defined grid
             // maybe we should be deleting these items from the LauncherModel?

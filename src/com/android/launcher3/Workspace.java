@@ -669,33 +669,9 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
     public void bindAndInitFirstWorkspaceScreen() {
         // Add the first page
         CellLayout firstPage = insertNewWorkspaceScreen(Workspace.FIRST_SCREEN_ID, getChildCount());
-        if (!PreferenceCacheExtensionsKt.firstCached(mPreferenceManager2.getEnableSmartspace())) {
-            mFirstPagePinnedItem = null;
-            return;
-        }
-        if (mFirstPagePinnedItem == null) {
-            SmartspaceMode smartspaceMode = PreferenceCacheExtensionsKt
-                .firstCached(mPreferenceManager2.getSmartspaceMode());
-            if (!smartspaceMode.isAvailable(this.mLauncher)) {
-                // The current smartspace mode is not available,
-                // setting the smartspace mode to one that is always available
-                smartspaceMode = LawnchairSmartspace.INSTANCE;
-                com.patrykmichalik.opto.core.PreferenceExtensionsKt.setBlocking(mPreferenceManager2.getSmartspaceMode(), smartspaceMode);
-            }
-            // In transposed layout, we add the first page pinned widget in the Grid.
-            // As workspace does not touch the edges, we do not need a full
-            // width first page pinned item.
-            mFirstPagePinnedItem = LayoutInflater.from(getContext())
-                    .inflate(smartspaceMode.getLayoutResourceId(), firstPage, false);
-        }
-
-        int cellHSpan = mLauncher.getDeviceProfile().inv.numColumns;
-        CellLayoutLayoutParams lp = new CellLayoutLayoutParams(0, 0, cellHSpan, 1);
-        lp.canReorder = false;
-        if (!firstPage.addViewToCellLayout(
-                mFirstPagePinnedItem, 0, R.id.search_container_workspace, lp, true)) {
-            Log.e(TAG, "Failed to add to item at (0, 0) to CellLayout");
-        }
+        // Smartspace is now placed exclusively through movable Android widgets.
+        // Keep the first workspace page, but do not inject a pinned Smartspace view.
+        mFirstPagePinnedItem = null;
     }
 
     public void removeAllWorkspaceScreens() {

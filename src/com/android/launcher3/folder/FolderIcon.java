@@ -279,6 +279,10 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
         post(this::refreshPrimeVisualOverrides);
     }
 
+    FolderInfo getFolderInfo() {
+        return mInfo;
+    }
+
     public void refreshPrimeVisualOverrides() {
         if (mInfo == null) return;
         PrimeDrawerFolderVisualOverrides overrides =
@@ -334,6 +338,7 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
             }
             mFolderName.setTextVisibility(showFolderLabel);
         }
+        mPreviewItemManager.updatePreviewItems(false);
         invalidate();
     }
 

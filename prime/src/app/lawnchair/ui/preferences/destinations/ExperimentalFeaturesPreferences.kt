@@ -1,0 +1,175 @@
+package app.lawnchair.ui.preferences.destinations
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.lawnchair.preferences.getAdapter
+import app.lawnchair.preferences.preferenceManager
+import app.lawnchair.preferences2.preferenceManager2
+import app.lawnchair.ui.preferences.LocalIsExpandedScreen
+import app.lawnchair.ui.preferences.components.WallpaperAccessPermissionDialog
+import app.lawnchair.ui.preferences.components.controls.ListPreference
+import app.lawnchair.ui.preferences.components.controls.ListPreferenceEntry
+import app.lawnchair.ui.preferences.components.controls.SliderPreference
+import app.lawnchair.ui.preferences.components.controls.SwitchPreference
+import app.lawnchair.ui.preferences.components.controls.WarningPreference
+import app.lawnchair.ui.preferences.components.layout.ExpandAndShrink
+import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
+import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
+import app.lawnchair.util.FileAccessManager
+import app.lawnchair.util.FileAccessState
+import app.lawnchair.util.isGestureNavContractCompatible
+import com.android.launcher3.R
+import com.android.launcher3.Utilities
+import app.lawnchair.ui.preferences.LocalNavController
+import app.lawnchair.ui.preferences.navigation.PrimeHapticTuning
+import app.lawnchair.ui.preferences.components.controls.ClickablePreference
+
+@Composable
+fun ExperimentalFeaturesPreferences(
+    modifier: Modifier = Modifier,
+) {
+    val prefs = preferenceManager()
+    val prefs2 = preferenceManager2()
+
+    PreferenceLayout(
+        label = stringResource(id = R.string.experimental_features_label),
+        backArrowVisible = !LocalIsExpandedScreen.current,
+        modifier = modifier,
+    ) {
+        val enableWallpaperBlur = prefs.enableWallpaperBlur.getAdapter()
+        val context = LocalContext.current
+        val fileAccessManager = remember { FileAccessManager.getInstance(context) }
+        val allFilesAccessState by fileAccessManager.allFilesAccessState.collectAsStateWithLifecycle()
+        val wallpaperAccessState by fileAccessManager.wallpaperAccessState.collectAsStateWithLifecycle()
+        val hasPermission = wallpaperAccessState != FileAccessState.Denied
+        var showPermissionDialog by remember { mutableStateOf(false) }
+
+        val folderIconShapeAdapter = prefs2.folderShape.getAdapter()
+        val folderIconShapeSubtitle = iconShapeEntries(context)
+            .firstOrNull { it.value == folderIconShapeAdapter.state.value }
+            ?.label?.invoke()
+            ?: stringResource(id = R.string.custom)
+
+        PreferenceGroup(
+            modifier = Modifier,
+            heading = stringResource(R.string.workspace_label),
+        ) {
+            SwitchPreference(
+                adapter = prefs2.enableFontSelection.getAdapter(),
+                label = stringResource(id = R.string.font_picker_label),
+                description = stringResource(id = R.string.font_picker_description),
+            )
+            val extendedGrid = prefs.workspaceIncreaseMaxGridSize.getAdapter()
+            val gridExceedsDefault = prefs.workspaceColumns.get() > 10 || prefs.workspaceRows.get() > 10
+            SwitchPreference(
+                checked = extendedGrid.state.value,
+                onCheckedChange = { enabled ->
+                    if (enabled || !gridExceedsDefault) extendedGrid.onChange(enabled)
+                },
+                label = stringResource(id = R.string.workspace_increase_max_grid_size_label),
+                description = if (gridExceedsDefault) {
+                    stringResource(R.string.prime_extended_grid_active_description)
+                } else {
+                    stringResource(id = R.string.workspace_increase_max_grid_size_description)
+                },
+                enabled = !gridExceedsDefault || !extendedGrid.state.value,
+            )
+            SwitchPreference(
+                adapter = prefs.primeShowEmptyFolders.getAdapter(),
+                label = stringResource(R.string.prime_show_empty_folders),
+                description = stringResource(R.string.prime_show_empty_folders_description),
+            )
+            SwitchPreference(
+                adapter = prefs2.showDeckLayout.getAdapter(),
+                label = stringResource(R.string.show_deck_layout),
+                description = stringResource(R.string.show_deck_layout_description),
+            )
+            SwitchPreference(
+                checked = hasPermission && enableWallpaperBlur.state.value,
+                onCheckedChange = {
+                    if (!hasPermission) {
+                        showPermissionDialog = true
+                    } else {
+                        enableWallpaperBlur.onChange(it)
+                    }
+                },
+                label = stringResource(id = R.string.wallpaper_blur),
+            )
+
+            val canBlur = hasPermission && enableWallpaperBlur.state.value
+            ExpandAndShrink(visible = canBlur) {
+                SliderPreference(
+                    label = stringResource(id = R.string.wallpaper_background_blur),
+                    adapter = prefs.wallpaperBlur.getAdapter(),
+                    step = 5,
+                    valueRange = 0..100,
+                    showUnit = "%",
+                )
+            }
+            ExpandAndShrink(visible = canBlur) {
+                SliderPreference(
+                    label = stringResource(id = R.string.wallpaper_background_blur_factor),
+                    adapter = prefs.wallpaperBlurFactorThreshold.getAdapter(),
+                    step = 1F,
+                    valueRange = 0F..10F,
+                )
+            }
+        }
+        if (showPermissionDialog) {
+            WallpaperAccessPermissionDialog(
+                managedFilesChecked = allFilesAccessState != FileAccessState.Denied,
+                onDismiss = {
+                    showPermissionDialog = false
+                },
+                onPermissionRequest = { fileAccessManager.refresh() },
+            )
+        }
+        LifecycleResumeEffect(Unit) {
+            showPermissionDialog = false
+            fileAccessManager.refresh()
+            onPauseOrDispose { }
+        }
+
+        val alwaysReloadIconsAdapter = prefs2.alwaysReloadIcons.getAdapter()
+        val enableGncAdapter = prefs.enableGnc.getAdapter()
+        val navController = LocalNavController.current
+
+        PreferenceGroup(
+            modifier = Modifier,
+            heading = stringResource(R.string.internal_label),
+            description = stringResource(R.string.internal_description),
+        ) {
+            SwitchPreference(
+                adapter = alwaysReloadIconsAdapter,
+                label = stringResource(id = R.string.always_reload_icons_label),
+                description = stringResource(id = R.string.always_reload_icons_description),
+            )
+            ExpandAndShrink(visible = alwaysReloadIconsAdapter.state.value) {
+                WarningPreference(stringResource(R.string.always_reload_icons_warning))
+            }
+
+            SwitchPreference(
+                adapter = enableGncAdapter,
+                label = stringResource(id = R.string.gesturenavcontract_label),
+                description = stringResource(id = R.string.gesturenavcontract_description),
+                enabled = Utilities.ATLEAST_Q,
+            )
+            ExpandAndShrink(visible = enableGncAdapter.state.value && !isGestureNavContractCompatible) {
+                WarningPreference(stringResource(R.string.gesturenavcontract_warning_incompatibility))
+            }
+            ClickablePreference(
+                label = stringResource(R.string.prime_haptic_tuning),
+                subtitle = stringResource(R.string.prime_haptic_tuning_description),
+                onClick = { navController.navigate(PrimeHapticTuning) },
+            )
+        }
+    }
+}

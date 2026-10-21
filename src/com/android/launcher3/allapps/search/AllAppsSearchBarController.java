@@ -15,6 +15,8 @@
  */
 package com.android.launcher3.allapps.search;
 
+import android.os.Build;
+import android.view.WindowInsets;
 import android.text.Editable;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
@@ -133,6 +135,15 @@ public class AllAppsSearchBarController
 
     @Override
     public boolean onBackKey() {
+        // First Back dismisses the IME without clearing the query or its results.
+        // Keep focus so tapping the search field can bring the keyboard back.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+                && mInput.getRootWindowInsets() != null
+                && mInput.getRootWindowInsets().isVisible(WindowInsets.Type.ime())) {
+            mInput.hideKeyboard(false);
+            return true;
+        }
+        // Once the keyboard is hidden, Back can leave the search state.
         // Only hide the search field if there is no query
         String query = Utilities.trim(mInput.getEditableText().toString());
         if (!query.isEmpty()) {

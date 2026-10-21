@@ -67,12 +67,20 @@ public class MSDLPlayerWrapper {
 
     /** Perform MSDL feedback for a token with interaction properties */
     public void playToken(MSDLToken token, InteractionProperties properties) {
+        // Slider previews supply their own dynamic scale; preserve that scale and
+        // let the dedicated slider preference control whether feedback is enabled.
         mMSDLPlayer.playToken(token, properties);
     }
 
     /** Perform MSDL feedback for a token without properties */
     public void playToken(MSDLToken token) {
         playPrimeScaledToken(token, getPrimeHapticPercent(token));
+    }
+
+    /** Slider interaction feedback, independent of icon dragging. */
+    public void playPrimeSliderToken(MSDLToken token) {
+        int percent = PreferenceManager.getInstance(mContext).getPrimeHapticSlider().get();
+        playPrimeScaledToken(token, percent);
     }
 
     /** Plays the settings reorder movement token with its independent Prime intensity. */
@@ -115,7 +123,7 @@ public class MSDLPlayerWrapper {
         } else if (token == MSDLToken.CANCEL) {
             return prefs.getPrimeHapticReorderCancel().get();
         }
-        return 100;
+        return prefs.getPrimeHapticOtherEvents().get();
     }
 
     public List<MSDLEvent> getHistory() {

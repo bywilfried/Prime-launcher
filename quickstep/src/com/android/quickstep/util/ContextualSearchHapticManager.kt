@@ -19,6 +19,7 @@ package com.android.quickstep.util
 import android.content.Context
 import android.os.VibrationEffect
 import android.os.VibrationEffect.Composition
+import app.lawnchair.preferences.PreferenceManager
 import android.os.Vibrator
 import com.android.launcher3.dagger.ApplicationContext
 import com.android.launcher3.dagger.LauncherAppSingleton
@@ -57,7 +58,11 @@ internal constructor(
 
     /** Indicates that search has been invoked. */
     fun vibrateForSearch() {
-        searchEffect.let { vibratorWrapper.vibrate(it) }
+        val scale = PreferenceManager.getInstance(context).primeHapticContextualSearch.get() / 100f
+        if (scale <= 0f) return
+        if (!vibratorWrapper.vibrateScaled(Composition.PRIMITIVE_TICK, scale, 12L)) {
+            vibratorWrapper.vibrate(searchEffect)
+        }
     }
 
     /** Indicates that search will be invoked if the current gesture is maintained. */
@@ -79,7 +84,8 @@ internal constructor(
                 false
             }
 
-        if (shouldVibrate) {
+        val intensity = PreferenceManager.getInstance(context).primeHapticContextualSearch.get() / 100f
+        if (shouldVibrate && intensity > 0f) {
             val startScale = navbarConfig.lpnhHapticHintStartScalePercent / 100f
             val endScale = navbarConfig.lpnhHapticHintEndScalePercent / 100f
             val scaleExponent = navbarConfig.lpnhHapticHintScaleExponent
@@ -95,9 +101,9 @@ internal constructor(
                         .toFloat()
                 if (i == 0) {
                     // Adds a delay before the ramp starts
-                    composition.addPrimitive(Composition.PRIMITIVE_LOW_TICK, scale, delayMs)
+                    composition.addPrimitive(Composition.PRIMITIVE_LOW_TICK, scale * intensity, delayMs)
                 } else {
-                    composition.addPrimitive(Composition.PRIMITIVE_LOW_TICK, scale)
+                    composition.addPrimitive(Composition.PRIMITIVE_LOW_TICK, scale * intensity)
                 }
             }
             vibratorWrapper.vibrate(composition.compose())

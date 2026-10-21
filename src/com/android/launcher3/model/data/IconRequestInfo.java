@@ -76,6 +76,44 @@ public class IconRequestInfo<T extends ItemInfoWithIcon> {
                             + itemInfo);
         }
 
+        // Built-in Prime Actions are identified by their persisted intent,
+        // never by a frozen icon blob. This also upgrades older workspace rows.
+        if (itemInfo instanceof WorkspaceItemInfo) {
+            android.content.Intent intent = ((WorkspaceItemInfo) itemInfo).getIntent();
+            if (intent != null
+                    && "app.lawnchair.START_ACTION".equals(intent.getAction())
+                    && intent.getComponent() != null
+                    && context.getPackageName().equals(intent.getComponent().getPackageName())
+                    && "app.lawnchair.gestures.ui.RunHandlerActivity".equals(
+                            intent.getComponent().getClassName())) {
+                String handler = intent.getStringExtra("app.lawnchair.EXTRA_HANDLER");
+                // Decode every supported action, including parameterized OpenApp
+                // actions. The serialized handler remains the source of truth.
+                app.lawnchair.gestures.config.GestureHandlerConfig config =
+                        handler == null ? null
+                                : app.lawnchair.gestures.config.GestureHandlerConfig.Companion
+                                        .fromString(handler);
+                if (config != null) {
+                    try (LauncherIcons icons = LauncherIcons.obtain(context)) {
+                        android.graphics.drawable.Drawable glyph =
+                                config.getWorkspaceIcon(context).loadDrawable(context);
+                        if (glyph != null) {
+                            android.graphics.drawable.AdaptiveIconDrawable adaptive =
+                                    new android.graphics.drawable.AdaptiveIconDrawable(
+                                            new android.graphics.drawable.ColorDrawable(
+                                                    android.graphics.Color.WHITE),
+                                            new android.graphics.drawable.InsetDrawable(glyph, 0.20f));
+                            itemInfo.bitmap = icons.createBadgedIconBitmap(adaptive,
+                                    new com.android.launcher3.icons.BaseIconFactory.IconOptions());
+                            return true;
+                        }
+                    } catch (RuntimeException e) {
+                        Log.w(TAG, "Unable to generate live Prime Action icon", e);
+                    }
+                }
+            }
+        }
+
         try (LauncherIcons li = LauncherIcons.obtain(context)) {
             ItemInfoWithIcon info = itemInfo;
             if (iconBlob == null) {

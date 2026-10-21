@@ -128,6 +128,26 @@ public class DragLayer extends BaseDragLayer<Launcher> implements LauncherOverla
         mControllers = mContainer.createTouchControllers();
     }
 
+    // Prime Search lives in this DragLayer. While visible, its touches must not
+    // activate workspace swipe controllers. During an app drag, forward the
+    // uninterrupted pointer stream directly to the native DragController.
+    private boolean mPrimeSearchOpen = false;
+    private boolean mPrimeSearchDrag = false;
+
+    public void setPrimeSearchOpen(boolean open) {
+        mPrimeSearchOpen = open;
+        if (!open) mPrimeSearchDrag = false;
+    }
+
+    public void setPrimeSearchDrag(boolean dragging) {
+        mPrimeSearchDrag = dragging;
+    }
+
+    @Override
+    protected boolean canFindActiveController() {
+        return !mPrimeSearchOpen && super.canFindActiveController();
+    }
+
     public ViewGroupFocusHelper getFocusIndicatorHelper() {
         return mFocusIndicatorHelper;
     }
@@ -230,6 +250,11 @@ public class DragLayer extends BaseDragLayer<Launcher> implements LauncherOverla
     public boolean dispatchTouchEvent(MotionEvent ev) {
         ev.offsetLocation(getTranslationX(), 0);
         try {
+            if (mPrimeSearchDrag) {
+                // Forward the same pointer stream used by the native drag to
+                // update the preview and finish the drop at the finger location.
+                return mDragController.onControllerTouchEvent(ev);
+            }
             return super.dispatchTouchEvent(ev);
         } finally {
             ev.offsetLocation(-getTranslationX(), 0);

@@ -1,6 +1,10 @@
 package com.android.launcher3;
 
 import android.appwidget.AppWidgetManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
+import java.io.ByteArrayOutputStream;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -36,6 +40,7 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
     private static final String TAG_FAVORITES = "favorites";
     protected static final String TAG_FAVORITE = "favorite";
     private static final String TAG_APPWIDGET = "appwidget";
+    private static final String TAG_PRIME_ACTION = "prime-action";
     protected static final String TAG_SHORTCUT = "shortcut";
     private static final String TAG_FOLDER = "folder";
     private static final String TAG_PARTNER_FOLDER = "partner-folder";
@@ -73,6 +78,8 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
         parsers.put(TAG_SEARCH_WIDGET, new SearchWidgetParser());
         parsers.put(TAG_SHORTCUT, new ShortcutParser());
         parsers.put(TAG_RESOLVE, new ResolveParser());
+        parsers.put(TAG_PRIME_ACTION, new PrimeActionParser());
+        parsers.put("prime-default-app", new PrimeDefaultAppParser());
         parsers.put(TAG_FOLDER, new MyFolderParser());
         parsers.put(TAG_PARTNER_FOLDER, new PartnerFolderParser());
         return parsers;
@@ -116,6 +123,10 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
 
             // Verify that the result is an app and not just the resolver dialog asking which
             // app to use.
+            if (resolved == null || resolved.activityInfo == null) {
+                Log.w(TAG, "No matching activity for default favorite: " + metaIntent);
+                return -1;
+            }
             if (wouldLaunchResolverActivity(resolved, appList)) {
                 // If only one of the results is a system app then choose that as the default.
                 final ResolveInfo systemApp = getSingleSystemActivity(appList);
@@ -127,6 +138,10 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
                     return -1;
                 }
                 resolved = systemApp;
+            }
+            if (resolved == null || resolved.activityInfo == null) {
+                Log.w(TAG, "No installed application resolves " + metaIntent);
+                return -1;
             }
             final ActivityInfo info = resolved.activityInfo;
             final Intent intent = mPackageManager.getLaunchIntentForPackage(info.packageName);
@@ -250,10 +265,140 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
     }
 
 
+    /** Resolves the installed default app for a dock role, without requiring
+     * the user to choose a resolver or relying on OEM package names. */
+    protected class PrimeDefaultAppParser implements TagParser {
+        @Override
+        public int parseAndAdd(XmlPullParser parser) {
+            String role = getAttributeValue(parser, "role");
+            Intent intent;
+            if ("contacts".equals(role)) {
+                intent = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_CONTACTS);
+            } else if ("messages".equals(role)) {
+                intent = new Intent(Intent.ACTION_SENDTO, android.net.Uri.parse("smsto:"));
+            } else if ("phone".equals(role)) {
+                intent = new Intent(Intent.ACTION_DIAL);
+            } else {
+                return -1;
+            }
+            try {
+                String packageName = null;
+                if (android.os.Build.VERSION.SDK_INT >= 29) {
+                    android.app.role.RoleManager roles =
+                            mContext.getSystemService(android.app.role.RoleManager.class);
+                    String androidRole = "messages".equals(role)
+                            ? android.app.role.RoleManager.ROLE_SMS
+                            : "phone".equals(role) ? android.app.role.RoleManager.ROLE_DIALER : null;
+                    if (roles != null && androidRole != null) {
+                        List<String> holders = roles.getRoleHolders(androidRole);
+                        if (!holders.isEmpty()) packageName = holders.get(0);
+                    }
+                }
+                if (packageName == null) {
+                    ResolveInfo resolved = mPackageManager.resolveActivity(intent,
+                            PackageManager.MATCH_DEFAULT_ONLY);
+                    if (resolved != null && resolved.activityInfo != null
+                            && !resolved.activityInfo.packageName.equals("android")) {
+                        packageName = resolved.activityInfo.packageName;
+                    }
+                }
+                if (packageName == null && "contacts".equals(role)) {
+                    // Some OEM contacts apps do not advertise CATEGORY_APP_CONTACTS.
+                    Intent view = new Intent(Intent.ACTION_VIEW,
+                            android.net.Uri.parse("content://com.android.contacts/contacts"));
+                    ResolveInfo resolved = mPackageManager.resolveActivity(view,
+                            PackageManager.MATCH_DEFAULT_ONLY);
+                    if (resolved != null && resolved.activityInfo != null) {
+                        packageName = resolved.activityInfo.packageName;
+                    }
+                }
+                if (packageName == null && "contacts".equals(role)) {
+                    // Prefer the user's resolved Contacts handler, not a vendor package.
+                    Intent contacts = new Intent(Intent.ACTION_VIEW,
+                            android.net.Uri.parse("content://com.android.contacts/contacts"));
+                    ResolveInfo preferred = mPackageManager.resolveActivity(contacts,
+                            PackageManager.MATCH_DEFAULT_ONLY);
+                    if (preferred != null && preferred.activityInfo != null
+                            && !"android".equals(preferred.activityInfo.packageName)
+                            && !preferred.activityInfo.packageName.equals(mContext.getPackageName())) {
+                        packageName = preferred.activityInfo.packageName;
+                    }
+                }
+                if (packageName == null) {
+                    Log.w(TAG, "No default app found for dock role: " + role);
+                    return -1;
+                }
+                Intent launch = mPackageManager.getLaunchIntentForPackage(packageName);
+                if (launch == null) {
+                    // Dialer, SMS and contacts apps can expose only a role-specific entry point.
+                    Intent roleIntent = new Intent(intent).setPackage(packageName);
+                    ResolveInfo roleActivity = mPackageManager.resolveActivity(roleIntent, 0);
+                    if (roleActivity != null && roleActivity.activityInfo != null) {
+                        launch = new Intent(intent).setComponent(new ComponentName(
+                                roleActivity.activityInfo.packageName,
+                                roleActivity.activityInfo.name));
+                    }
+                }
+                if (launch == null && "contacts".equals(role)) {
+                    Intent contactsIntent = new Intent(Intent.ACTION_VIEW,
+                            android.net.Uri.parse("content://com.android.contacts/contacts"))
+                            .setPackage(packageName);
+                    ResolveInfo contactsActivity = mPackageManager.resolveActivity(contactsIntent, 0);
+                    if (contactsActivity != null && contactsActivity.activityInfo != null) {
+                        launch = contactsIntent.setComponent(new ComponentName(
+                                contactsActivity.activityInfo.packageName,
+                                contactsActivity.activityInfo.name));
+                    }
+                }
+                if (launch == null) {
+                    Log.w(TAG, "Default dock app has no launchable entry point: " + packageName);
+                    return -1;
+                }
+                ResolveInfo launchInfo = mPackageManager.resolveActivity(launch, 0);
+                String label = launchInfo != null ? launchInfo.loadLabel(mPackageManager).toString()
+                        : role;
+                return addShortcut(label, launch, Favorites.ITEM_TYPE_APPLICATION);
+            } catch (RuntimeException e) {
+                Log.e(TAG, "Unable to add default dock app: " + role, e);
+                return -1;
+            }
+        }
+    }
+
+    /** Creates a built-in action shortcut without relying on a hard-coded application ID. */
+    protected class PrimeActionParser implements TagParser {
+        @Override
+        public int parseAndAdd(XmlPullParser parser) {
+            String action = getAttributeValue(parser, "action");
+            if (!"drawer".equals(action) && !"search".equals(action)) {
+                return -1;
+            }
+            String handler = "drawer".equals(action)
+                    ? "{\"type\":\"openAppDrawer\"}"
+                    : "{\"type\":\"openPrimeSearch\"}";
+            Intent intent = new Intent("app.lawnchair.START_ACTION")
+                    .setClassName(mContext, "app.lawnchair.gestures.ui.RunHandlerActivity")
+                    .putExtra("app.lawnchair.EXTRA_HANDLER", handler);
+            // IconRequestInfo generates the icon from the persisted action intent.
+            // Never freeze the theme or shape into a database PNG.
+            return addShortcut("drawer".equals(action) ? "Tiroir" : "Prime Search",
+                    intent, Favorites.ITEM_TYPE_SHORTCUT);
+        }
+    }
+
     /**
      * AppWidget parser which enforces that the app is already installed when the layout is parsed.
      */
     protected class AppWidgetParser extends PendingWidgetParser {
+
+        @Override
+        public ComponentName getComponentName(XmlPullParser parser) {
+            ComponentName component = super.getComponentName(parser);
+            if (component != null && "self".equals(component.getPackageName())) {
+                return new ComponentName(mContext.getPackageName(), component.getClassName());
+            }
+            return component;
+        }
 
         @Override
         protected int verifyAndInsert(ComponentName cn, Bundle extras) {
@@ -266,8 +411,8 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
                 try {
                     mPackageManager.getReceiverInfo(cn, 0);
                 } catch (Exception e1) {
-                    Log.d(TAG, "Can't find widget provider: " + cn.getClassName());
-                    return -1;
+                    Log.w(TAG, "Widget provider not ready; preserving placeholder: " + cn);
+                    return super.verifyAndInsert(cn, extras);
                 }
             }
 
@@ -277,9 +422,9 @@ public class DefaultLayoutParser extends AutoInstallsLayout {
                 int appWidgetId = mAppWidgetHolder.allocateAppWidgetId();
 
                 if (!appWidgetManager.bindAppWidgetIdIfAllowed(appWidgetId, cn)) {
-                    Log.e(TAG, "Unable to bind app widget id " + cn);
+                    Log.e(TAG, "Unable to bind app widget id " + cn + "; keeping pending widget");
                     mAppWidgetHolder.deleteAppWidgetId(appWidgetId);
-                    return -1;
+                    return super.verifyAndInsert(cn, extras);
                 }
 
                 mValues.put(Favorites.APPWIDGET_ID, appWidgetId);

@@ -131,17 +131,21 @@ final def buildCommit = providers.exec {
 
 // Prime's public minor version is changed deliberately (e.g. 0.9).
 // The final component identifies the CI build, for both debug and release.
+// Release 0.9 numbering starts at GitHub Actions release run #69.
+// Dev builds deliberately keep the existing 0.8 / run-number scheme.
+final def isPrime09Release = System.getenv("PRIME_RELEASE_09") == "true"
 final def primeMajor = 0
-final def primeMinor = 8
+final def primeMinor = isPrime09Release ? 9 : 8
 final def ciRunNumber = (System.getenv("GITHUB_RUN_NUMBER") ?: "").trim()
-final def primeBuildNumber = (providers.gradleProperty("primeBuildNumber").orNull
-        ?: (ciRunNumber ? ciRunNumber : "0")).toInteger()
+final def ciBuildNumber = (providers.gradleProperty("primeBuildNumber").orNull
+        ?: (ciRunNumber ? ciRunNumber : (isPrime09Release ? "69" : "0"))).toInteger()
+final def primeBuildNumber = isPrime09Release ? ciBuildNumber - 69 : ciBuildNumber
 if (primeBuildNumber < 0 || primeBuildNumber > 999999) {
     throw new GradleException("primeBuildNumber must be between 0 and 999999")
 }
 final def primeBaseVersion = "${primeMajor}.${primeMinor}.${primeBuildNumber}"
 final def primeDebugVersion = "${primeBaseVersion}-debug"
-final def primeVersionCode = 8000000 + primeBuildNumber
+final def primeVersionCode = (isPrime09Release ? 9000000 : 8000000) + primeBuildNumber
 final def majorVersion = "${primeMajor}"
 
 final def quickstepMinSdk = "35"
@@ -300,16 +304,16 @@ android {
         }
 
         lawn {
-            java.srcDirs = ['src_flags', 'src_shortcuts_overrides', 'lawnchair/src', 'tests/shared']
-            kotlin.directories.addAll('src_flags', 'src_shortcuts_overrides', 'lawnchair/src', 'tests/shared')
-            aidl.srcDirs = ['lawnchair/aidl']
-            res.srcDirs = ['lawnchair/res', 'platform_frameworks_libs_systemui/animationlib/res']
-            manifest.srcFile "lawnchair/AndroidManifest.xml"
+            java.srcDirs = ['src_flags', 'src_shortcuts_overrides', 'prime/src', 'tests/shared']
+            kotlin.directories.addAll('src_flags', 'src_shortcuts_overrides', 'prime/src', 'tests/shared')
+            aidl.srcDirs = ['prime/aidl']
+            res.srcDirs = ['prime/res', 'platform_frameworks_libs_systemui/animationlib/res']
+            manifest.srcFile "prime/AndroidManifest.xml"
             assets {
-                srcDirs 'lawnchair/assets'
+                srcDirs 'prime/assets'
             }
             proto {
-                srcDirs = ['lawnchair/protos/']
+                srcDirs = ['prime/protos/']
             }
         }
 
@@ -512,7 +516,7 @@ spotless {
         removeUnusedImports()
     }
     kotlin {
-        target("lawnchair/src/**/*.kt")
+        target("prime/src/**/*.kt")
         ktlint(libs.ktlint.get().version).customRuleSets([
             libs.composeRules.get().toString()
         ]).editorConfigOverride([

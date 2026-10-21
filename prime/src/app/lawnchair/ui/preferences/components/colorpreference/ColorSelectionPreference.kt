@@ -1,0 +1,466 @@
+package app.lawnchair.ui.preferences.components.colorpreference
+
+import android.content.Context
+import android.graphics.Color
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.toArgb
+import app.lawnchair.preferences.getAdapter
+import app.lawnchair.theme.color.ColorOption
+import app.lawnchair.theme.effectiveThemeVariant
+import app.lawnchair.ui.preferences.LocalNavController
+import app.lawnchair.ui.preferences.components.colorpreference.pickers.CustomColorPicker
+import app.lawnchair.ui.preferences.components.colorpreference.pickers.PresetsList
+import app.lawnchair.ui.preferences.components.colorpreference.pickers.SwatchGrid
+import app.lawnchair.ui.preferences.components.layout.BottomSpacer
+import app.lawnchair.ui.preferences.components.layout.Chip
+import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
+import com.android.launcher3.R
+import com.android.launcher3.util.MSDLPlayerWrapper
+import com.google.android.msdl.data.model.MSDLToken
+import com.patrykmichalik.opto.domain.Preference
+import kotlinx.coroutines.launch
+
+@Composable
+fun ColorSelection(
+    label: String,
+    preference: Preference<ColorOption, String, *>,
+    modifier: Modifier = Modifier,
+    dynamicEntries: List<ColorPreferenceEntry<ColorOption>> = dynamicColors,
+    staticEntries: List<ColorPreferenceEntry<ColorOption>> = staticColors,
+) {
+    val adapter = preference.getAdapter()
+    val appliedColor = adapter.state.value
+    val context = LocalContext.current
+    val mMSDLPlayerWrapper = MSDLPlayerWrapper.INSTANCE.get(context)
+    val navController = LocalNavController.current
+    val selectedColor = remember { mutableIntStateOf(appliedColor.forCustomPicker(context)) }
+    val selectedColorApplied = remember {
+        derivedStateOf {
+            appliedColor is ColorOption.CustomColor && appliedColor.color == selectedColor.intValue
+        }
+    }
+    val defaultTabIndex = when {
+        dynamicEntries.any { it.value == appliedColor } -> 0
+        staticEntries.any { it.value == appliedColor } -> 0
+        else -> 1
+    }
+
+    val onPresetClick = { option: ColorOption ->
+        selectedColor.intValue = option.forCustomPicker(context)
+        adapter.onChange(newValue = option)
+    }
+
+    val pagerState = rememberPagerState(
+        initialPage = defaultTabIndex,
+        pageCount = { 2 },
+    )
+    PreferenceLayout(
+        label = label,
+        modifier = modifier,
+        bottomBar = {
+            if (pagerState.currentPage == 0) {
+                BottomSpacer()
+                return@PreferenceLayout
+            }
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.End,
+            ) {
+                Button(
+                    enabled = !selectedColorApplied.value,
+                    onClick = {
+                        adapter.onChange(newValue = ColorOption.CustomColor(selectedColor.intValue))
+                        navController.popBackStack()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(all = 16.dp),
+                    shapes = ButtonDefaults.shapes(),
+                ) {
+                    Text(text = stringResource(id = R.string.action_apply))
+                }
+                BottomSpacer()
+            }
+        },
+    ) {
+        val scope = rememberCoroutineScope()
+        val scrollToPage =
+            { page: Int -> scope.launch { pagerState.animateScrollToPage(page) } }
+
+        Column {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(space = 8.dp),
+                modifier = Modifier.padding(horizontal = 16.dp),
+            ) {
+                Chip(
+                    label = stringResource(id = R.string.presets),
+                    onClick = {
+                        mMSDLPlayerWrapper.playToken(MSDLToken.TAP_LOW_EMPHASIS)
+                        scrollToPage(0)
+                    },
+                    currentOffset = pagerState.currentPage + pagerState.currentPageOffsetFraction,
+                    page = 0,
+                )
+                Chip(
+                    label = stringResource(id = R.string.custom),
+                    onClick = {
+                        mMSDLPlayerWrapper.playToken(MSDLToken.TAP_LOW_EMPHASIS)
+                        scrollToPage(1)
+                    },
+                    currentOffset = pagerState.currentPage + pagerState.currentPageOffsetFraction,
+                    page = 1,
+                )
+            }
+            HorizontalPager(
+                state = pagerState,
+                verticalAlignment = Alignment.Top,
+                modifier = Modifier.animateContentSize(),
+            ) { page ->
+                when (page) {
+                    0 -> {
+                        Column {
+                            PresetsList(
+                                dynamicEntries = dynamicEntries,
+                                onPresetClick = onPresetClick,
+                                isPresetSelected = { it == appliedColor },
+                            )
+                            SwatchGrid(
+                                modifier = Modifier.padding(top = 12.dp),
+                                contentModifier = Modifier.padding(
+                                    start = 16.dp,
+                                    top = 20.dp,
+                                    end = 16.dp,
+                                    bottom = 16.dp,
+                                ),
+                                entries = staticEntries,
+                                onSwatchClick = onPresetClick,
+                                isSwatchSelected = { it == appliedColor },
+                            )
+                        }
+                    }
+
+                    1 -> {
+                        CustomColorPicker(
+                            selectedColor = selectedColor.intValue,
+                            onSelect = { selectedColor.intValue = it },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PrimeColorSelection(
+    label: String,
+    appliedColor: ColorOption,
+    onApply: (ColorOption) -> Unit,
+    modifier: Modifier = Modifier,
+    dynamicEntries: List<ColorPreferenceEntry<ColorOption>> = dynamicColorsWithDefault,
+    staticEntries: List<ColorPreferenceEntry<ColorOption>> = staticColors,
+    defaultPreviewColor: Int? = null,
+    defaultDynamicColor: ColorOption.DynamicColor? = null,
+    themeDefaultDescription: String = "Couleur du thème",
+    automaticContrastDefaultLabel: Boolean = false,
+    perIconDotOption: Boolean = false,
+    adaptiveFolderDefault: Boolean = false,
+    perIconDefault: Boolean = false,
+    notificationDotBackground: Boolean = false,
+    iconLabelText: Boolean = false,
+    categoryTabText: Boolean = false,
+    workspacePagination: Boolean = false,
+) {
+    val context = LocalContext.current
+    val themeFallbackColor = defaultPreviewColor ?: MaterialTheme.colorScheme.surfaceVariant.toArgb()
+    // A theme default is inherited; an explicit dynamic recipe is persisted.
+    // Offer the latter for every role that actually has a supported recipe,
+    // without inventing a palette recipe for contrast-based or multicolor roles.
+    val explicitThemeRecipe = defaultDynamicColor?.let { recipe ->
+        ColorPreferenceEntry<ColorOption>(
+            value = recipe,
+            label = { "Couleur dynamique du thème" },
+            lightColor = { ctx -> recipe.colorPreferenceEntry.lightColor(ctx) },
+            darkColor = { ctx -> recipe.colorPreferenceEntry.darkColor(ctx) },
+        )
+    }
+    val explicitLegacyPreset = ColorPreferenceEntry<ColorOption>(
+        value = ColorOption.LegacyBehavior,
+        label = { "Valeur d’origine Legacy" },
+        lightColor = { themeFallbackColor },
+        darkColor = { themeFallbackColor },
+    )
+    val adaptiveTextPreset = if (iconLabelText) ColorPreferenceEntry<ColorOption>(
+        value = ColorOption.AdaptiveThemeText,
+        label = { "Contraste automatique" },
+        lightColor = { themeFallbackColor },
+        darkColor = { themeFallbackColor },
+    ) else null
+    // Keep the inherited theme default separate from explicit color behaviours.
+    // Both remain selectable even when a future theme changes its official default.
+    val blackWhiteTabPreset = if (categoryTabText || iconLabelText || workspacePagination)
+        ColorOption.AutomaticBlackWhite.colorPreferenceEntry else null
+    val themedTabPreset = if (categoryTabText) adaptiveTextPreset ?: ColorOption.AdaptiveThemeText.colorPreferenceEntry else null
+    val workspaceThemePreset = if (workspacePagination) ColorOption.ThemePalette.colorPreferenceEntry else null
+    val explicitFolderContrast = if (adaptiveFolderDefault)
+        ColorPreferenceEntry<ColorOption>(
+            value = ColorOption.AdaptiveThemeText,
+            label = { "Selon le fond du dossier" },
+            lightColor = { themeFallbackColor },
+            darkColor = { themeFallbackColor },
+        ) else null
+    val explicitDotTextContrast = if (automaticContrastDefaultLabel)
+        ColorOption.AutomaticBlackWhite.colorPreferenceEntry else null
+    // Only suppress the Legacy fallback when an independently selectable option reproduces
+    // the actual semantic behavior. A similar-looking dynamic swatch is not proof of equivalence.
+    val hasExactExplicitEquivalent = notificationDotBackground || iconLabelText ||
+        workspacePagination || automaticContrastDefaultLabel || adaptiveFolderDefault
+    val legacyEntries = if (!hasExactExplicitEquivalent || appliedColor == ColorOption.LegacyBehavior)
+        listOf(explicitLegacyPreset) else emptyList()
+    val displayedDynamicEntries: List<ColorPreferenceEntry<ColorOption>> =
+        (dynamicEntries + listOfNotNull(
+            if (notificationDotBackground || perIconDotOption) ColorOption.IconColor.colorPreferenceEntry else null,
+            workspaceThemePreset, adaptiveTextPreset, blackWhiteTabPreset, themedTabPreset,
+            explicitDotTextContrast, explicitFolderContrast, explicitThemeRecipe,
+        ) + legacyEntries).distinctBy { it.value }.map { entry ->
+        if (entry.value == ColorOption.Default) {
+            ColorPreferenceEntry<ColorOption>(
+                value = ColorOption.Default,
+                label = { "Par défaut · $themeDefaultDescription" },
+                lightColor = { themeFallbackColor },
+                darkColor = { themeFallbackColor },
+            )
+        } else {
+            entry
+        }
+    }
+    val mMSDLPlayerWrapper = MSDLPlayerWrapper.INSTANCE.get(context)
+    val navController = LocalNavController.current
+    var currentAppliedColor by remember(appliedColor) { mutableStateOf(appliedColor) }
+    val selectedColor = remember(appliedColor, defaultPreviewColor) {
+        mutableIntStateOf(
+            if ((appliedColor == ColorOption.Default || appliedColor == ColorOption.LegacyBehavior) && defaultPreviewColor != null) {
+                defaultPreviewColor
+            } else {
+                appliedColor.forCustomPicker(context)
+            },
+        )
+    }
+    val selectedColorApplied = remember {
+        derivedStateOf {
+            currentAppliedColor is ColorOption.CustomColor &&
+                (currentAppliedColor as ColorOption.CustomColor).color == selectedColor.intValue
+        }
+    }
+    val defaultTabIndex = when (currentAppliedColor) {
+        is ColorOption.CustomColor -> 1
+        is ColorOption.DynamicColor -> 2
+        else -> 0
+    }
+    val pagerState = rememberPagerState(initialPage = if (defaultTabIndex == 0) 0 else 1, pageCount = { 2 })
+    val customMode = remember(appliedColor) { mutableIntStateOf(if (appliedColor is ColorOption.DynamicColor) 1 else 0) }
+    // Keep the dynamic editor anchored to the semantic theme recipe until the user actually
+    // applies a dynamic override. This avoids the generic Accent1/500 fallback when Default or
+    // a fixed custom color is currently active.
+    val dynamicEditorInitial = remember(currentAppliedColor, selectedColor.intValue, defaultDynamicColor) {
+        (currentAppliedColor as? ColorOption.DynamicColor)
+            ?: nearestDynamicColorRecipe(context, selectedColor.intValue)
+    }
+    val onPresetClick = { option: ColorOption ->
+        selectedColor.intValue = if (option == ColorOption.Default || option == ColorOption.LegacyBehavior) {
+            themeFallbackColor
+        } else {
+            option.forCustomPicker(context)
+        }
+        currentAppliedColor = option
+        onApply(option)
+    }
+
+    PreferenceLayout(
+        label = label,
+        modifier = modifier,
+        bottomBar = {
+            if (pagerState.currentPage != 1 || customMode.intValue != 0) {
+                BottomSpacer()
+                return@PreferenceLayout
+            }
+            Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
+                Button(
+                    // Allow explicitly reapplying a color even when it matches the
+                    // currently selected swatch. This also gives users a clear way
+                    // to confirm a custom hex value after choosing a preset.
+                    enabled = true,
+                    onClick = {
+                        val option = ColorOption.CustomColor(selectedColor.intValue)
+                        currentAppliedColor = option
+                        onApply(option)
+                        navController.popBackStack()
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(all = 16.dp),
+                    shapes = ButtonDefaults.shapes(),
+                ) { Text(text = stringResource(id = R.string.action_apply)) }
+                BottomSpacer()
+            }
+        },
+    ) {
+        val scope = rememberCoroutineScope()
+        val scrollToPage = { page: Int -> scope.launch { pagerState.animateScrollToPage(page) } }
+        Column {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(space = 8.dp),
+                modifier = Modifier.padding(horizontal = 16.dp),
+            ) {
+                Chip(
+                    label = stringResource(id = R.string.presets),
+                    onClick = {
+                        mMSDLPlayerWrapper.playToken(MSDLToken.TAP_LOW_EMPHASIS)
+                        scrollToPage(0)
+                    },
+                    currentOffset = pagerState.currentPage + pagerState.currentPageOffsetFraction,
+                    page = 0,
+                )
+                Chip(
+                    label = stringResource(id = R.string.custom),
+                    onClick = {
+                        mMSDLPlayerWrapper.playToken(MSDLToken.TAP_LOW_EMPHASIS)
+                        scrollToPage(1)
+                    },
+                    currentOffset = pagerState.currentPage + pagerState.currentPageOffsetFraction,
+                    page = 1,
+                )
+            }
+            HorizontalPager(
+                state = pagerState,
+                verticalAlignment = Alignment.Top,
+                modifier = Modifier.animateContentSize(),
+            ) { page ->
+                when (page) {
+                    0 -> Column {
+                        PresetsList(
+                            dynamicEntries = displayedDynamicEntries,
+                            onPresetClick = onPresetClick,
+                            isPresetSelected = { it == currentAppliedColor },
+                            automaticContrastDefault = automaticContrastDefaultLabel || workspacePagination,
+                            adaptiveFolderDefault = adaptiveFolderDefault,
+                            perIconDefault = perIconDefault,
+                            blackWhiteDefault = iconLabelText || categoryTabText,
+                        )
+                        SwatchGrid(
+                            modifier = Modifier.padding(top = 12.dp),
+                            contentModifier = Modifier.padding(
+                                start = 16.dp, top = 20.dp, end = 16.dp, bottom = 16.dp,
+                            ),
+                            entries = staticEntries,
+                            onSwatchClick = onPresetClick,
+                            isSwatchSelected = { it == currentAppliedColor },
+                        )
+                    }
+                    1 -> Column {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(space = 8.dp),
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        ) {
+                            Chip(
+                                label = "Fixe",
+                                onClick = { customMode.intValue = 0 },
+                                currentOffset = customMode.intValue.toFloat(),
+                                page = 0,
+                            )
+                            Chip(
+                                label = "Dynamique",
+                                onClick = { customMode.intValue = 1 },
+                                currentOffset = customMode.intValue.toFloat(),
+                                page = 1,
+                            )
+                        }
+                        if (customMode.intValue == 0) {
+                            androidx.compose.material3.TextButton(
+                                onClick = {
+                                    selectedColor.intValue = if (currentAppliedColor == ColorOption.Default ||
+                                        currentAppliedColor == ColorOption.LegacyBehavior) themeFallbackColor
+                                    else currentAppliedColor.forCustomPicker(context)
+                                },
+                                modifier = Modifier.align(Alignment.End).padding(end = 16.dp),
+                            ) { Text("Réinitialiser à la couleur active") }
+                            CustomColorPicker(
+                                selectedColor = selectedColor.intValue,
+                                onSelect = { selectedColor.intValue = it },
+                            )
+                        } else {
+                            PrimeDynamicColorPicker(
+                                // When no dynamic override exists yet, start from the semantic
+                                // theme recipe instead of the generic Accent1/500 fallback.
+                                // Seed from the persisted dynamic override when there is one; otherwise
+                                // always open on the semantic theme recipe supplied by the caller.
+                                // Use appliedColor (the route snapshot), not the mutable preset state:
+                                // visiting Presets must not silently replace the editor's baseline.
+                                initial = dynamicEditorInitial,
+                                onApply = { option ->
+                                    currentAppliedColor = option
+                                    onApply(option)
+                                    navController.popBackStack()
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun ColorOption.forCustomPicker(context: Context): Int {
+    val color = if (context.effectiveThemeVariant() == app.lawnchair.theme.ThemeVariant.DARK)
+        colorPreferenceEntry.darkColor(context) else colorPreferenceEntry.lightColor(context)
+    if (color == 0) {
+        return Color.BLACK
+    }
+    return color
+}
+
+/** Find the closest current Monet swatch/shade to the color the user is editing. */
+private fun nearestDynamicColorRecipe(context: Context, target: Int): ColorOption.DynamicColor {
+    val swatches = listOf("Neutral1", "Neutral2", "Accent1", "Accent2", "Accent3")
+    val shades = listOf(0, 10, 20, 50, 100, 200, 300, 400, 500, 600, 650, 700, 800, 900, 950, 1000)
+    val dark = context.effectiveThemeVariant() == app.lawnchair.theme.ThemeVariant.DARK
+    val targetLab = DoubleArray(3)
+    androidx.core.graphics.ColorUtils.colorToLAB(target, targetLab)
+    var best = ColorOption.DynamicColor("Accent1", 500, null)
+    var bestDistance = Double.POSITIVE_INFINITY
+    for (swatch in swatches) for (shade in shades) {
+        val option = ColorOption.DynamicColor(swatch, shade, null)
+        val color = if (dark) option.colorPreferenceEntry.darkColor(context) else option.colorPreferenceEntry.lightColor(context)
+        val lab = DoubleArray(3)
+        androidx.core.graphics.ColorUtils.colorToLAB(color, lab)
+        val distance = androidx.core.graphics.ColorUtils.distanceEuclidean(targetLab, lab)
+        if (distance < bestDistance) {
+            bestDistance = distance
+            best = option
+        }
+    }
+    return best
+}

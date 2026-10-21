@@ -85,6 +85,17 @@ public abstract class DragController<T extends ActivityContext>
 
     /** Coordinate for motion down event */
     protected final Point mMotionDown = new Point();
+    
+    /**
+     * Prime Search starts a native drag from a child inside its own overlay.
+     * Its touch DOWN never reaches DragLayer's controller interception, so seed
+     * the native registration point with the current pointer in DragLayer space.
+     */
+    public void setPrimeSearchDragStart(int x, int y) {
+        mMotionDown.set(x, y);
+        mLastTouch.set(x, y);
+    }
+
     /** Coordinate for last touch event **/
     protected final Point mLastTouch = new Point();
 

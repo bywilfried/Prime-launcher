@@ -57,6 +57,11 @@ import java.util.List;
 import java.util.function.Predicate;
 
 import app.lawnchair.preferences.PreferenceManager;
+import app.lawnchair.preferences2.PreferenceManager2;
+import app.lawnchair.preferences2.PreferenceCacheExtensionsKt;
+import app.lawnchair.icons.shape.IconShape;
+import app.lawnchair.prime.drawer.PrimeFolderLongPressHelper;
+import app.lawnchair.prime.drawer.PrimeDrawerFolderVisualOverrides;
 
 /**
  * Manages the drawing and animations of {@link PreviewItemDrawingParams} for a
@@ -414,6 +419,25 @@ public class PreviewItemManager {
             var isThemed = PreferenceManager.getInstance(mContext).getDrawerThemedIcons().get() ? FLAG_THEMED : 0;
             p.drawable = withIcon.newIcon(mContext, isThemed);
             p.drawable.setBounds(0, 0, iconSize, iconSize);
+        }
+
+        // Closed folder previews do not use BubbleTextView. Fit only app/shortcut
+        // icons using the same effective child shape as the opened folder.
+        if (item instanceof ItemInfoWithIcon info && !(item instanceof WorkspaceItemInfo wii && isActivePendingIcon(wii))) {
+            IconShape childShape = PreferenceCacheExtensionsKt.firstCached(
+                    PreferenceManager2.getInstance(mContext).getIconShape());
+            PrimeDrawerFolderVisualOverrides overrides =
+                    PrimeFolderLongPressHelper.getVisualOverrides(mContext, mIcon.getFolderInfo());
+            if (overrides != null && overrides.getChildIconShape() != null) {
+                childShape = IconShape.Companion.fromString(
+                        overrides.getChildIconShape(), mContext);
+            }
+            Drawable fitted = BubbleTextView.renderPrimeIconForExternalView(
+                    mContext, info, iconSize, childShape);
+            if (fitted != null) {
+                p.drawable = fitted;
+                p.drawable.setBounds(0, 0, iconSize, iconSize);
+            }
         }
 
         p.item = item;

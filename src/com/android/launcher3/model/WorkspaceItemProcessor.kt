@@ -775,19 +775,27 @@ class WorkspaceItemProcessor(
                 .append("defaultHeight: ")
                 .append(widgetProviderInfo.minHeight)
                 .append("\n")
-            widgetDimension
-                .append("targetCellWidth: ")
-                .append(widgetProviderInfo.targetCellWidth)
-                .append("\n")
-                .append("targetCellHeight: ")
-                .append(widgetProviderInfo.targetCellHeight)
-                .append("\n")
-                .append("maxResizeWidth: ")
-                .append(widgetProviderInfo.maxResizeWidth)
-                .append("\n")
-                .append("maxResizeHeight: ")
-                .append(widgetProviderInfo.maxResizeHeight)
-                .append("\n")
+            // Target cell dimensions were introduced in Android 12 (API 31).
+            // Avoid accessing these fields on older Android versions.
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                widgetDimension
+                    .append("targetCellWidth: ")
+                    .append(widgetProviderInfo.targetCellWidth)
+                    .append("\n")
+                    .append("targetCellHeight: ")
+                    .append(widgetProviderInfo.targetCellHeight)
+                    .append("\n")
+            }
+            // Maximum resize dimensions are also available from Android 12 onward.
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                widgetDimension
+                    .append("maxResizeWidth: ")
+                    .append(widgetProviderInfo.maxResizeWidth)
+                    .append("\n")
+                    .append("maxResizeHeight: ")
+                    .append(widgetProviderInfo.maxResizeHeight)
+                    .append("\n")
+            }
             FileLog.d(TAG, widgetDimension.toString())
         }
     }
