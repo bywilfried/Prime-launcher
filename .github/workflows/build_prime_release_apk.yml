@@ -13,6 +13,28 @@ jobs:
         with:
           submodules: true
 
+      - name: Display Prime Release version
+        shell: bash
+        run: |
+          set -euo pipefail
+          build_number=$((GITHUB_RUN_NUMBER - 69))
+          if (( build_number < 0 )); then
+            echo "::error::Release run number must be at least 69"
+            exit 1
+          fi
+          version="0.9.${build_number}"
+          echo "PRIME_RELEASE_VERSION=$version" >> "$GITHUB_ENV"
+          echo "::notice title=Prime Launcher Release::Version $version (GitHub Run #$GITHUB_RUN_NUMBER)"
+          {
+            echo "## Prime Launcher Release — $version"
+            echo ""
+            echo "| Information | Valeur |"
+            echo "| --- | --- |"
+            echo "| Version | **$version** |"
+            echo "| GitHub Actions | Run #$GITHUB_RUN_NUMBER |"
+            echo "| APK | Prime-Launcher-Release.apk |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Setup Java
         uses: actions/setup-java@v6
         with:
@@ -38,7 +60,7 @@ jobs:
             echo "storeFile=$GITHUB_WORKSPACE/key.jks"
           } > keystore.properties
 
-      - name: Build Release APK
+      - name: Build Release APK (${{ env.PRIME_RELEASE_VERSION }})
         env:
           PRIME_RELEASE_09: 'true'
         shell: bash
