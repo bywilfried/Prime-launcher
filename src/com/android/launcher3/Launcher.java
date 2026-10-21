@@ -2334,6 +2334,16 @@ public class Launcher extends StatefulActivity<LauncherState>
                     PrimeWidgetTrace.d(this, "BIND_ATTACH_BEGIN appWidgetId=" + widget.appWidgetId);
                 }
                 view = getAppWidgetHolder().attachViewToHostAndGetAttachedView(lv);
+                // Attaching may replace the inflated view with a pending host view.
+                // The replacement does not inherit the model tag or focus callbacks.
+                // Re-prepare it before inserting it into the workspace.
+                if (item instanceof LauncherAppWidgetInfo widget) {
+                    getItemInflater().prepareAppWidget(
+                            (android.appwidget.AppWidgetHostView) view, widget);
+                    PrimeWidgetTrace.d(this, "BIND_ATTACH_RESULT appWidgetId="
+                            + widget.appWidgetId + " view=" + view.getClass().getName()
+                            + " tagRestored=" + (view.getTag() == widget));
+                }
             }
             if (item instanceof LauncherAppWidgetInfo widget) {
                 PrimeWidgetTrace.d(this, "BIND_ADD_BEGIN appWidgetId=" + widget.appWidgetId
