@@ -269,7 +269,7 @@ fun PrimeSearchPreference() {
         // Use installed, launchable applications rather than symbolic placeholder
         // glyphs. Render them with the same Prime mask and icon factory as the
         // real zero-state rows so icon packs, backgrounds and diamond sizing match.
-        val shape = app.lawnchair.preferences.PreferenceManager2.getInstance(context).iconShape.firstCached()
+        val shape = app.lawnchair.preferences2.PreferenceManager2.getInstance(context).iconShape.firstCached()
         val previewApps = remember(context) {
             val pm = context.packageManager
             pm.getInstalledApplications(0)
