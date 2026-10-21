@@ -105,64 +105,16 @@ internal constructor(
     fun createPrimeIconBitmap(drawable: Drawable, user: UserHandle, shape: IconShape): BitmapInfo =
         withPrimeIconShape(shape) {
             val safeArea = foregroundSafeArea(shape)
-            val source = if (drawable is AdaptiveIconDrawable) {
-                // Never rasterize with the child Drawable instances owned by IconCache. Icon
-                // creation changes bounds/state while drawing; sharing those instances makes the
-                // next live shape change start from a source already touched by the previous one.
-                val isolated = (drawable.constantState?.newDrawable()?.mutate()
-                    as? AdaptiveIconDrawable) ?: drawable
-                // BaseIconFactory rasterizes adaptive layers itself, so overriding
-                // AdaptiveIconDrawable.draw() does not affect the resulting bitmap.
-                // Keep the adaptive background full-size; fit the foreground artwork
-                // to the mask's centered safe area using its actual alpha bounds.
-                val foreground = isolated.foreground
-                if (foreground != null) {
-                    AdaptiveIconDrawable(
-                        isolated.background,
-                        FittedForegroundDrawable(foreground, shape),
-                    )
-                } else {
-                    // Some restored/legacy adaptive icons have no foreground layer.
-                    // Keep the original icon instead of crashing workspace binding.
-                    isolated
-                }
-            } else {
-                drawable.constantState?.newDrawable()?.mutate() ?: drawable
-            }
+            // Preserve the complete adaptive foreground artwork and its original
+            // geometry. Cropping to measured alpha percentiles clipped circular
+            // logos and changed the composition of ordinary app icons.
+            // The Prime mask is applied independently by getShapePath().
+            val source = drawable.constantState?.newDrawable()?.mutate() ?: drawable
             PrimeDebugLog.d("PrimeIconSizing", "bitmap shape=${shape.key}, input=${drawable.javaClass.simpleName}, adaptive=${drawable is AdaptiveIconDrawable}, safeArea=${safeArea.width()}x${safeArea.height()}")
             createBadgedIconBitmap(
                 source,
                 BaseIconFactory.IconOptions().setUser(getUserInfo(user)),
             ).also { info ->
-                // Diagnostic only: render the same adaptive icon twice without
-                // changing the actual bitmap used by the launcher.
-                if (drawable is AdaptiveIconDrawable && drawable.foreground != null &&
-                    comparisonCount.getAndIncrement() < 3) {
-                    fun renderDiagnostic(factor: Float): BitmapInfo {
-                        val copy = (drawable.constantState?.newDrawable()?.mutate()
-                            as? AdaptiveIconDrawable) ?: drawable
-                        val diagnosticSource = copy.foreground?.let { foreground ->
-                            AdaptiveIconDrawable(
-                                copy.background,
-                                FittedForegroundDrawable(foreground, shape, factor),
-                            )
-                        } ?: copy
-                        return createBadgedIconBitmap(
-                            diagnosticSource,
-                            BaseIconFactory.IconOptions().setUser(getUserInfo(user)),
-                        )
-                    }
-                    val full = renderDiagnostic(1f)
-                    val half = renderDiagnostic(0.5f)
-                    val fullHash = bitmapFingerprint(full.icon)
-                    val halfHash = bitmapFingerprint(half.icon)
-                    PrimeDebugLog.d(
-                        "PrimeIconSizing",
-                        "COMPARE shape=${shape.key} source=${drawable.javaClass.simpleName} " +
-                            "full100=$fullHash half50=$halfHash different=${fullHash != halfHash} " +
-                            "normal=${bitmapFingerprint(info.icon)}",
-                    )
-                }
                 // Check the actual bitmap returned by BaseIconFactory, rather than
                 // assuming the foreground draw logs describe the final output.
                 // A per-icon bitmap fingerprint lets us compare before/after
