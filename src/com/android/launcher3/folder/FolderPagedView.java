@@ -394,10 +394,13 @@ public class FolderPagedView extends PagedView<PageIndicatorDots> implements Cli
                             mFolder.mActivityContext.getDeviceProfile().folderChildTextSizePx
                                     * primeOverrides.getLabelSize());
                 }
-                if (primeOverrides.getChildIconShape() != null) {
-                    bubble.setPrimeIconShape(IconShape.Companion.fromString(
-                            primeOverrides.getChildIconShape(), getContext()));
-                }
+                IconShape effectiveShape = primeOverrides.getChildIconShape() != null
+                        ? IconShape.Companion.fromString(
+                                primeOverrides.getChildIconShape(), getContext())
+                        : app.lawnchair.preferences2.PreferenceCacheExtensionsKt.firstCached(
+                                app.lawnchair.preferences2.PreferenceManager2
+                                        .getInstance(getContext()).getIconShape());
+                bubble.setPrimeIconShape(effectiveShape);
             }
         }
 
