@@ -168,11 +168,18 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     @Nullable
     public static FastBitmapDrawable renderPrimeIconForExternalView(
             Context context, ItemInfoWithIcon info, int iconSize) {
-        ActivityContext activity = ActivityContext.lookupContextNoThrow(context);
-        if (!(activity instanceof Launcher launcher)) return null;
         IconShape shape = PreferenceCacheExtensionsKt.firstCached(
                 PreferenceManager2.getInstance(context).getIconShape());
+        return renderPrimeIconForExternalView(context, info, iconSize, shape);
+    }
+
+    /** Render an icon for a surface with its own effective shape (e.g. folder previews). */
+    @Nullable
+    public static FastBitmapDrawable renderPrimeIconForExternalView(
+            Context context, ItemInfoWithIcon info, int iconSize, IconShape shape) {
         if (shape == null) return null;
+        ActivityContext activity = ActivityContext.lookupContextNoThrow(context);
+        if (!(activity instanceof Launcher launcher)) return null;
         BitmapInfo fitted = PrimeIconRenderCache.renderAndCache(
                 launcher, info, shape, iconSize, false);
         return fitted == null ? null : fitted.newIcon(context, 0);
