@@ -131,17 +131,21 @@ final def buildCommit = providers.exec {
 
 // Prime's public minor version is changed deliberately (e.g. 0.9).
 // The final component identifies the CI build, for both debug and release.
+// Release 0.9 numbering starts at GitHub Actions release run #69.
+// Dev builds deliberately keep the existing 0.8 / run-number scheme.
+final def isPrime09Release = System.getenv("PRIME_RELEASE_09") == "true"
 final def primeMajor = 0
-final def primeMinor = 8
+final def primeMinor = isPrime09Release ? 9 : 8
 final def ciRunNumber = (System.getenv("GITHUB_RUN_NUMBER") ?: "").trim()
-final def primeBuildNumber = (providers.gradleProperty("primeBuildNumber").orNull
-        ?: (ciRunNumber ? ciRunNumber : "0")).toInteger()
+final def ciBuildNumber = (providers.gradleProperty("primeBuildNumber").orNull
+        ?: (ciRunNumber ? ciRunNumber : (isPrime09Release ? "69" : "0"))).toInteger()
+final def primeBuildNumber = isPrime09Release ? ciBuildNumber - 69 : ciBuildNumber
 if (primeBuildNumber < 0 || primeBuildNumber > 999999) {
     throw new GradleException("primeBuildNumber must be between 0 and 999999")
 }
 final def primeBaseVersion = "${primeMajor}.${primeMinor}.${primeBuildNumber}"
 final def primeDebugVersion = "${primeBaseVersion}-debug"
-final def primeVersionCode = 8000000 + primeBuildNumber
+final def primeVersionCode = (isPrime09Release ? 9000000 : 8000000) + primeBuildNumber
 final def majorVersion = "${primeMajor}"
 
 final def quickstepMinSdk = "35"
