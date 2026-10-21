@@ -869,7 +869,11 @@ object PrimeSearchOverlay {
                 // Search icons use the same compact geometry as zero-state icons.
                 // The former 24dp surplus inside the icon view separated labels
                 // from their icons even when the visible drawable was correctly sized.
-                val iconViewHeight = searchIconSize
+                // SearchResultIcon is a BubbleTextView: its compound drawable
+                // needs a small top inset and enough view height to avoid
+                // clipping the icon at the top of each result row.
+                val searchIconTopInset = (10 * density).toInt()
+                val iconViewHeight = searchIconSize + searchIconTopInset
                 val searchRowHeight = iconViewHeight + searchIconLabelGap +
                     searchLabelHeight + searchRowBottomPadding
                 var appRow: LinearLayout? = null
@@ -1006,7 +1010,7 @@ object PrimeSearchOverlay {
                             // independent views inside the same Prime-only cell.
                             val appTitle = icon.text.toString()
                             icon.setTextVisibility(false)
-                            icon.setPadding(0, 0, 0, 0)
+                            icon.setPadding(0, searchIconTopInset, 0, 0)
                             icon.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
                             icon.setCompoundDrawablePadding(0)
                             parent.removeView(icon)
