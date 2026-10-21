@@ -115,10 +115,17 @@ internal constructor(
                 // AdaptiveIconDrawable.draw() does not affect the resulting bitmap.
                 // Keep the adaptive background full-size; fit the foreground artwork
                 // to the mask's centered safe area using its actual alpha bounds.
-                AdaptiveIconDrawable(
-                    isolated.background,
-                    FittedForegroundDrawable(isolated.foreground, shape),
-                )
+                val foreground = isolated.foreground
+                if (foreground != null) {
+                    AdaptiveIconDrawable(
+                        isolated.background,
+                        FittedForegroundDrawable(foreground, shape),
+                    )
+                } else {
+                    // Some restored/legacy adaptive icons have no foreground layer.
+                    // Keep the original icon instead of crashing workspace binding.
+                    isolated
+                }
             } else {
                 drawable.constantState?.newDrawable()?.mutate() ?: drawable
             }
@@ -129,15 +136,19 @@ internal constructor(
             ).also { info ->
                 // Diagnostic only: render the same adaptive icon twice without
                 // changing the actual bitmap used by the launcher.
-                if (drawable is AdaptiveIconDrawable && comparisonCount.getAndIncrement() < 3) {
+                if (drawable is AdaptiveIconDrawable && drawable.foreground != null &&
+                    comparisonCount.getAndIncrement() < 3) {
                     fun renderDiagnostic(factor: Float): BitmapInfo {
                         val copy = (drawable.constantState?.newDrawable()?.mutate()
                             as? AdaptiveIconDrawable) ?: drawable
-                        return createBadgedIconBitmap(
+                        val diagnosticSource = copy.foreground?.let { foreground ->
                             AdaptiveIconDrawable(
                                 copy.background,
-                                FittedForegroundDrawable(copy.foreground, shape, factor),
-                            ),
+                                FittedForegroundDrawable(foreground, shape, factor),
+                            )
+                        } ?: copy
+                        return createBadgedIconBitmap(
+                            diagnosticSource,
                             BaseIconFactory.IconOptions().setUser(getUserInfo(user)),
                         )
                     }
