@@ -56,6 +56,8 @@ import kotlin.math.sin
 import app.lawnchair.allapps.views.SearchResultView
 import app.lawnchair.search.LawnchairSearchAdapterProvider
 import app.lawnchair.LawnchairLauncher
+import app.lawnchair.preferences2.PreferenceManager2
+import app.lawnchair.preferences2.firstCached
 import app.lawnchair.search.adapter.SearchAdapterItem
 import app.lawnchair.search.adapter.SearchTargetCompat
 import app.lawnchair.search.algorithms.LawnchairSearchAlgorithm
@@ -467,6 +469,11 @@ object PrimeSearchOverlay {
                             // which exceeds this 48dp zero-state slot and gets clipped.
                             // Match the slot and use the separate label below.
                             setPrimeIconSize(iconSize)
+                            // These zero-state app rows bypass SearchResultIcon.bind().
+                            // Trigger the same geometric fit after binding and sizing.
+                            setPrimeIconShape(
+                                PreferenceManager2.getInstance(launcher).iconShape.firstCached()
+                            )
                             setTextVisibility(false)
                             gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
                             setCompoundDrawablePadding(0)
