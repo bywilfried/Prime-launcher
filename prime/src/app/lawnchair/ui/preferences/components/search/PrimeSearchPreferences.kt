@@ -31,6 +31,9 @@ import androidx.compose.ui.platform.LocalDensity
 import kotlin.math.roundToInt
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.material.icons.Icons
@@ -263,12 +266,35 @@ fun PrimeSearchPreference() {
         var iconPercent by remember { mutableStateOf(PrimeSearchResultPreferences.iconSizePercent(context)) }
         var twoLines by remember { mutableStateOf(PrimeSearchResultPreferences.twoLineAppLabels(context)) }
         var previewTab by remember { mutableStateOf(0) }
-        val sampleApps = listOf(
-            "Téléphone", "Messages", "Navigateur", "Photos", "Musique", "Agenda",
-            "Appareil photo", "Fichiers", "Paramètres", "Notes", "Horloge", "Cartes",
-        )
-        val sampleIcons = listOf("☎", "✉", "◎", "▧", "♫", "▦", "◉", "▤", "⚙", "✎", "◷", "⌖")
-        val previewBackground = androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant
+        // Use installed, launchable applications rather than symbolic placeholder
+        // glyphs. Render them with the same Prime mask and icon factory as the
+        // real zero-state rows so icon packs, backgrounds and diamond sizing match.
+        val shape = app.lawnchair.preferences.PreferenceManager2.getInstance(context).iconShape.firstCached()
+        val previewApps = remember(context) {
+            val pm = context.packageManager
+            pm.getInstalledApplications(0)
+                .asSequence()
+                .filter { pm.getLaunchIntentForPackage(it.packageName) != null }
+                .sortedBy { pm.getApplicationLabel(it).toString().lowercase() }
+                .take(24)
+                .map { it.packageName to pm.getApplicationLabel(it).toString() }
+                .toList()
+        }
+        val previewIcons = remember(previewApps, shape.key) {
+            val pm = context.packageManager
+            com.android.launcher3.icons.LauncherIcons.obtain(context).use { factory ->
+                previewApps.mapNotNull { (pkg, label) ->
+                    runCatching {
+                        val icon = factory.createPrimeIconBitmap(
+                            pm.getApplicationIcon(pkg),
+                            android.os.Process.myUserHandle(),
+                            shape,
+                        ).icon
+                        label to icon.asImageBitmap()
+                    }.getOrNull()
+                }
+            }
+        }
         val previewAccent = androidx.compose.material3.MaterialTheme.colorScheme.primary
 
         androidx.compose.material3.Card(modifier = Modifier.fillMaxWidth()) {
@@ -295,8 +321,8 @@ fun PrimeSearchPreference() {
                         }
                     }
                 }
-                val baseIconDp = 48f * iconPercent / 100f
-                val cellIconDp = baseIconDp.coerceAtMost(64f)
+                // PrimeSearchOverlay uses 48dp * percentage, with no 64dp cap.
+                val iconDp = (48f * iconPercent / 100f).dp
                 val offset = previewTab * 2
                 repeat(rows) { rowIndex ->
                     Row(
@@ -304,39 +330,32 @@ fun PrimeSearchPreference() {
                         horizontalArrangement = Arrangement.SpaceEvenly,
                     ) {
                         repeat(columns) { colIndex ->
-                            val index = (rowIndex * columns + colIndex + offset) % sampleApps.size
+                            val index = rowIndex * columns + colIndex + offset
+                            val sample = previewIcons.getOrNull(index % previewIcons.size.coerceAtLeast(1))
                             Column(
                                 modifier = Modifier.weight(1f),
                                 horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
                             ) {
-                                androidx.compose.material3.Surface(
+                                androidx.compose.foundation.layout.Box(
                                     modifier = Modifier
-                                        .padding(2.dp)
-                                        .then(Modifier),
-                                    color = previewBackground,
-                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                                        .fillMaxWidth()
+                                        .height(iconDp),
+                                    contentAlignment = androidx.compose.ui.Alignment.Center,
                                 ) {
-                                    androidx.compose.foundation.layout.Box(
-                                        modifier = Modifier
-                                            .padding(2.dp)
-                                            .then(Modifier),
-                                        contentAlignment = androidx.compose.ui.Alignment.Center,
-                                    ) {
-                                        Text(
-                                            sampleIcons[index],
-                                            modifier = Modifier.padding(
-                                                horizontal = (cellIconDp / 5).dp,
-                                                vertical = (cellIconDp / 7).dp,
-                                            ),
-                                            style = androidx.compose.material3.MaterialTheme.typography.titleLarge,
+                                    if (sample != null) {
+                                        androidx.compose.foundation.Image(
+                                            bitmap = sample.second,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(iconDp),
                                         )
                                     }
                                 }
                                 Text(
-                                    sampleApps[index],
+                                    sample?.first.orEmpty(),
                                     maxLines = if (twoLines) 2 else 1,
                                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                                     style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                 )
                             }
                         }
