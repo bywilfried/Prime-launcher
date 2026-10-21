@@ -29,6 +29,8 @@ import com.android.launcher3.LauncherSettings
 import com.android.launcher3.celllayout.CellPosMapper
 import com.android.launcher3.model.data.WorkspaceItemInfo
 import com.android.launcher3.icons.LauncherIcons
+import app.lawnchair.preferences2.PreferenceManager2
+import app.lawnchair.preferences2.firstCached
 import com.android.launcher3.icons.BaseIconFactory
 import com.android.launcher3.util.Executors
 import androidx.activity.ComponentActivity
@@ -185,9 +187,18 @@ class LawnchairShortcutActivity : ComponentActivity() {
                             android.graphics.drawable.ColorDrawable(android.graphics.Color.WHITE),
                             android.graphics.drawable.InsetDrawable(glyph, 0.20f),
                         )
-                        info.bitmap = icons.createBadgedIconBitmap(
-                            adaptive, BaseIconFactory.IconOptions(),
-                        )
+                        // Only Prime-generated action shortcuts use icon-shape
+                        // foreground fitting. Never modify AppWidgetHostView or
+                        // third-party RemoteViews, even for 1x1 widgets.
+                        val shape = PreferenceManager2.getInstance(appContext)
+                            .iconShape.firstCached()
+                        info.bitmap = if (shape != null) {
+                            icons.createPrimeIconBitmap(adaptive, info.user, shape)
+                        } else {
+                            icons.createBadgedIconBitmap(
+                                adaptive, BaseIconFactory.IconOptions(),
+                            )
+                        }
                     }
                 }
                 model.getWriter(false, CellPosMapper.DEFAULT, null).addItemToDatabase(
