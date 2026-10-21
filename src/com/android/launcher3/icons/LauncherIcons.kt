@@ -28,6 +28,7 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.InsetDrawable
 import android.os.UserHandle
 import com.android.launcher3.Flags
 import com.android.launcher3.InvariantDeviceProfile
@@ -109,7 +110,20 @@ internal constructor(
             // geometry. Cropping to measured alpha percentiles clipped circular
             // logos and changed the composition of ordinary app icons.
             // The Prime mask is applied independently by getShapePath().
-            val source = drawable.constantState?.newDrawable()?.mutate() ?: drawable
+            val isolated = drawable.constantState?.newDrawable()?.mutate() ?: drawable
+            // Only the diamond needs extra foreground clearance. Inset the
+            // *entire* foreground layer uniformly (80% width/height), never
+            // crop its alpha bounds or scale the adaptive background.
+            // Other shapes retain the original Android rendering unchanged.
+            val source = if (shape.key == "diamond" && isolated is AdaptiveIconDrawable &&
+                isolated.foreground != null) {
+                AdaptiveIconDrawable(
+                    isolated.background,
+                    InsetDrawable(isolated.foreground, 0.10f),
+                )
+            } else {
+                isolated
+            }
             PrimeDebugLog.d("PrimeIconSizing", "bitmap shape=${shape.key}, input=${drawable.javaClass.simpleName}, adaptive=${drawable is AdaptiveIconDrawable}, safeArea=${safeArea.width()}x${safeArea.height()}")
             createBadgedIconBitmap(
                 source,
