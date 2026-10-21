@@ -1006,6 +1006,7 @@ object PrimeSearchOverlay {
                             val appTitle = icon.text.toString()
                             icon.setTextVisibility(false)
                             icon.setPrimeSearchLabelLayout(true)
+                            icon.setPrimeIconOnlyLayout(true)
                             icon.setPadding(0, 0, 0, 0)
                             icon.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
                             icon.setCompoundDrawablePadding(0)
