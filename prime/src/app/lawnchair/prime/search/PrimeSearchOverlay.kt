@@ -985,12 +985,31 @@ object PrimeSearchOverlay {
                         (view as? app.lawnchair.allapps.views.SearchResultIcon)?.let { icon ->
                             icon.setPrimeIconSize(searchIconSize)
                             icon.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11f)
-                            icon.setSingleLine(false)
-                            icon.maxLines = searchLabelLines
-                            icon.ellipsize = android.text.TextUtils.TruncateAt.END
-                            icon.setPrimeSearchLabelLayout(true)
+                            // The drawer's BubbleTextView text layout still truncates
+                            // at one line. Match zero-state: icon and label are two
+                            // independent views inside the same Prime-only cell.
+                            val appTitle = icon.text.toString()
+                            icon.setTextVisibility(false)
                             icon.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
                             icon.setCompoundDrawablePadding(0)
+                            parent.removeView(icon)
+                            val cell = LinearLayout(launcher).apply {
+                                orientation = LinearLayout.VERTICAL
+                                gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                                setPadding(2, (6 * density).toInt(), 2, (8 * density).toInt())
+                            }
+                            cell.addView(icon, LinearLayout.LayoutParams(searchIconSize, searchIconSize))
+                            val title = TextView(launcher).apply {
+                                text = appTitle
+                                textSize = 11f
+                                gravity = Gravity.CENTER
+                                setSingleLine(false)
+                                maxLines = searchLabelLines
+                                ellipsize = android.text.TextUtils.TruncateAt.END
+                                setTextColor(themed(ThemeColorRole.PRIME_SEARCH_APP_LABEL))
+                            }
+                            cell.addView(title, LinearLayout.LayoutParams(-1, -2))
+                            parent.addView(cell, LinearLayout.LayoutParams(cellWidth, searchRowHeight))
                             enableNativeAppGestures(launcher, dialog, icon)
                         }
                     }
