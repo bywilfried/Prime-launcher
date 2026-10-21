@@ -236,6 +236,27 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                     return null;
                 }
             }
+            // Prime action shortcuts have ITEM_TYPE_SHORTCUT, which is also
+            // unsupported by Utilities.getFullDrawable(). Recreate the original
+            // glyph from the stored action configuration rather than fitting
+            // the already-masked bitmap (which would shrink its white background).
+            if (source == null && info instanceof WorkspaceItemInfo action
+                    && action.intent != null && action.intent.getComponent() != null
+                    && "app.lawnchair.gestures.ui.RunHandlerActivity".equals(
+                            action.intent.getComponent().getClassName())
+                    && "app.lawnchair.START_ACTION".equals(action.intent.getAction())) {
+                String encoded = action.intent.getStringExtra(
+                        "app.lawnchair.EXTRA_HANDLER");
+                if (encoded != null) {
+                    Drawable glyph = app.lawnchair.gestures.config.GestureHandlerConfig.Companion
+                            .fromString(encoded).getWorkspaceIcon(launcher).loadDrawable(launcher);
+                    if (glyph != null) {
+                        source = new AdaptiveIconDrawable(
+                                new ColorDrawable(android.graphics.Color.WHITE),
+                                new android.graphics.drawable.InsetDrawable(glyph, 0.20f));
+                    }
+                }
+            }
             if (source == null) return null;
 
             final BitmapInfo primeBitmap;
