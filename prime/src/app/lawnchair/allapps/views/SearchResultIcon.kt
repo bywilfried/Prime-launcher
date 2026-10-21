@@ -47,6 +47,7 @@ class SearchResultIcon(context: Context, attrs: AttributeSet?) :
     private var callback: ((info: ItemInfoWithIcon) -> Unit)? = null
 
     private val searchResultMargin = resources.getDimensionPixelSize(R.dimen.search_result_margin)
+    private var primeSearchLabelLayout = false
     private var defaultPaddingLeft = -1
     private var defaultPaddingRight = -1
 
@@ -64,6 +65,12 @@ class SearchResultIcon(context: Context, attrs: AttributeSet?) :
         defaultPaddingRight = paddingRight
     }
 
+    /** Only Prime Search's overlay uses full cell width for wrapping app names. */
+    fun setPrimeSearchLabelLayout(enabled: Boolean) {
+        primeSearchLabelLayout = enabled
+        requestLayout()
+    }
+
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val width = MeasureSpec.getSize(widthMeasureSpec)
         if (defaultPaddingLeft == -1) {
@@ -76,7 +83,7 @@ class SearchResultIcon(context: Context, attrs: AttributeSet?) :
                 setPadding(defaultPaddingLeft, paddingTop, defaultPaddingRight, paddingBottom)
             }
         } else if (width > 0) {
-            val desiredWidth = iconSize + 48.dpToPx(resources)
+            val desiredWidth = if (primeSearchLabelLayout) width - 4.dpToPx(resources) else iconSize + 48.dpToPx(resources)
             if (desiredWidth < width) {
                 val inset = ((width - desiredWidth) / 2).toInt()
                 if (paddingLeft != inset || paddingRight != inset) {
