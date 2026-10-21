@@ -858,13 +858,17 @@ object PrimeSearchOverlay {
                 val searchLabelPaint = android.text.TextPaint().apply {
                     textSize = 11f * launcher.resources.displayMetrics.scaledDensity
                 }
-                val searchLabelHeight = ((searchLabelPaint.fontMetrics.bottom -
-                    searchLabelPaint.fontMetrics.top).toInt().coerceAtLeast(1)) * searchLabelLines
-                // BubbleTextView draws its icon below its internal top padding.
-                // Reserve that space rather than forcing it into iconSize pixels.
-                val iconViewHeight = searchIconSize + (24 * density).toInt()
-                val searchRowHeight = iconViewHeight + searchLabelHeight +
-                    (8 * density).toInt()
+                val searchLabelHeight = kotlin.math.ceil(
+                    (searchLabelPaint.fontMetrics.descent - searchLabelPaint.fontMetrics.ascent).toDouble()
+                ).toInt().coerceAtLeast(1) * searchLabelLines
+                val searchIconLabelGap = (4 * density).toInt()
+                val searchRowBottomPadding = (10 * density).toInt()
+                // Search icons use the same compact geometry as zero-state icons.
+                // The former 24dp surplus inside the icon view separated labels
+                // from their icons even when the visible drawable was correctly sized.
+                val iconViewHeight = searchIconSize
+                val searchRowHeight = iconViewHeight + searchIconLabelGap +
+                    searchLabelHeight + searchRowBottomPadding
                 var appRow: LinearLayout? = null
                 var appsInRow = 0
                 PrimeSearchResultPreferences.filter(
@@ -1006,20 +1010,22 @@ object PrimeSearchOverlay {
                             val cell = LinearLayout(launcher).apply {
                                 orientation = LinearLayout.VERTICAL
                                 gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-                                setPadding(0, 0, 0, (4 * density).toInt())
+                                setPadding(0, 0, 0, 0)
                             }
                             cell.addView(icon, LinearLayout.LayoutParams(cellWidth, iconViewHeight))
                             val title = TextView(launcher).apply {
                                 text = appTitle
                                 textSize = 11f
-                                gravity = Gravity.CENTER
+                                gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
                                 setSingleLine(false)
                                 maxLines = searchLabelLines
                                 includeFontPadding = false
                                 ellipsize = android.text.TextUtils.TruncateAt.END
                                 setTextColor(themed(ThemeColorRole.PRIME_SEARCH_APP_LABEL))
                             }
-                            cell.addView(title, LinearLayout.LayoutParams(-1, -2))
+                            cell.addView(title, LinearLayout.LayoutParams(-1, searchLabelHeight).apply {
+                                topMargin = searchIconLabelGap
+                            })
                             parent.addView(cell, LinearLayout.LayoutParams(cellWidth, searchRowHeight))
                             enableNativeAppGestures(launcher, dialog, icon)
                         }
