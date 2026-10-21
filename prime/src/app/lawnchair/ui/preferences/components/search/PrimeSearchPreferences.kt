@@ -7,6 +7,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.lawnchair.preferences.getAdapter
+import app.lawnchair.preferences2.firstCached
 import app.lawnchair.prime.search.PrimeSearchPermissions
 import android.app.AppOpsManager
 import android.content.Context
