@@ -778,7 +778,10 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
                 if (primeOverrides != null && primeOverrides.getTextColor() != null) {
                     bubble.setTextColor(primeOverrides.getTextColor());
                 }
-                IconShape childShape = null;
+                // Folder children inherit the global app icon shape unless a
+                // folder-specific child shape explicitly overrides it.
+                IconShape childShape = app.lawnchair.preferences2.PreferenceCacheExtensionsKt
+                        .firstCached(preferenceManager2.getIconShape());
                 if (primeOverrides != null && primeOverrides.getChildIconShape() != null) {
                     childShape = IconShape.Companion.fromString(
                             primeOverrides.getChildIconShape(), getContext());
