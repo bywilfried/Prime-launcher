@@ -844,6 +844,18 @@ object PrimeSearchOverlay {
                     if (floating) (600 * density).toInt() - inset * 2 else availableWidth,
                 )
                 val cellWidth = (gridWidth / columns).coerceAtLeast(1)
+                // Match the zero-state Prime Search icon and label settings.
+                // This is local to the Prime overlay; drawer search is untouched.
+                val searchIconSize = (48 * density *
+                    PrimeSearchResultPreferences.iconSizePercent(launcher) / 100f).toInt().coerceAtLeast(1)
+                val searchLabelLines = if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
+                val searchLabelPaint = android.text.TextPaint().apply {
+                    textSize = 11f * launcher.resources.displayMetrics.scaledDensity
+                }
+                val searchLabelHeight = ((searchLabelPaint.fontMetrics.bottom -
+                    searchLabelPaint.fontMetrics.top).toInt().coerceAtLeast(1)) * searchLabelLines
+                val searchRowHeight = searchIconSize + searchLabelHeight +
+                    (14 * density).toInt()
                 var appRow: LinearLayout? = null
                 var appsInRow = 0
                 PrimeSearchResultPreferences.filter(
@@ -870,7 +882,7 @@ object PrimeSearchOverlay {
                     val resultView = view as? SearchResultView ?: return@forEach
                     if (isAppIcon) {
                         parent.addView(view, LinearLayout.LayoutParams(
-                            cellWidth, (112 * density).toInt(),
+                            cellWidth, searchRowHeight,
                         ))
                         appsInRow++
                     } else {
@@ -971,9 +983,13 @@ object PrimeSearchOverlay {
                     if (isAppIcon) {
                         view.minimumHeight = 0
                         (view as? app.lawnchair.allapps.views.SearchResultIcon)?.let { icon ->
-                            val scaled = (icon.iconSize *
-                                PrimeSearchResultPreferences.iconSizePercent(launcher) / 100f).toInt()
-                            icon.setPrimeIconSize(scaled.coerceAtLeast(1))
+                            icon.setPrimeIconSize(searchIconSize)
+                            icon.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11f)
+                            icon.maxLines = searchLabelLines
+                            icon.ellipsize = android.text.TextUtils.TruncateAt.END
+                            icon.setSingleLine(false)
+                            icon.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                            icon.setCompoundDrawablePadding(0)
                             enableNativeAppGestures(launcher, dialog, icon)
                         }
                     }
