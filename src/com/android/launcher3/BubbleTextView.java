@@ -161,6 +161,23 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     // Prime render variants are separate from IconCache so Home/global icons are never replaced.
     // The key is stable across RecyclerView/AppInfo recreation; the source bitmap identity
     // invalidates an entry when Lawnchair refreshes the underlying app icon.
+    /**
+     * Shared fitted icon renderer for non-BubbleTextView surfaces (widget headers).
+     * Call from a worker thread; preserves the original icon on failure.
+     */
+    @Nullable
+    public static FastBitmapDrawable renderPrimeIconForExternalView(
+            Context context, ItemInfoWithIcon info, int iconSize) {
+        ActivityContext activity = ActivityContext.lookupContextNoThrow(context);
+        if (!(activity instanceof Launcher launcher)) return null;
+        IconShape shape = PreferenceCacheExtensionsKt.firstCached(
+                PreferenceManager2.getInstance(context).getIconShape());
+        if (shape == null) return null;
+        BitmapInfo fitted = PrimeIconRenderCache.renderAndCache(
+                launcher, info, shape, iconSize, false);
+        return fitted == null ? null : fitted.newIcon(context, 0);
+    }
+
     private static final class PrimeIconRenderCache {
         private static final HashMap<String, PrimeIconCacheEntry> CACHE = new HashMap<>();
 
