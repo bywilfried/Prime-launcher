@@ -1802,7 +1802,8 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             // shape cannot disappear when the asynchronous high-res icon arrives.
             if (mPrimeIconShape != null
                     && (mDisplay == DISPLAY_ALL_APPS || mDisplay == DISPLAY_FOLDER
-                            || mDisplay == DISPLAY_DRAWER_FOLDER)) {
+                            || mDisplay == DISPLAY_DRAWER_FOLDER
+                            || mDisplay == DISPLAY_WORKSPACE)) {
                 setPrimeIconShape(mPrimeIconShape);
             }
         }
