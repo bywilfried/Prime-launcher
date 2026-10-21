@@ -222,13 +222,27 @@ class LawnchairShortcutActivity : ComponentActivity() {
         }
         val icon = selectedHandler.getWorkspaceIcon(context).loadDrawable(context)
         val size = (context.resources.displayMetrics.density * 96).toInt().coerceAtLeast(1)
-        val bitmap = android.graphics.Bitmap.createBitmap(
-            size, size, android.graphics.Bitmap.Config.ARGB_8888,
-        )
-        if (icon != null) {
-            val canvas = android.graphics.Canvas(bitmap)
-            icon.setBounds(0, 0, size, size)
-            icon.draw(canvas)
+        val shape = PreferenceManager2.getInstance(context).iconShape.firstCached()
+        val bitmap = if (icon != null && shape != null) {
+            // Legacy ACTION_CREATE_SHORTCUT results also need the same fitted
+            // foreground as directly added Prime actions.
+            LauncherIcons.obtain(context).use { icons ->
+                val adaptive = android.graphics.drawable.AdaptiveIconDrawable(
+                    android.graphics.drawable.ColorDrawable(android.graphics.Color.WHITE),
+                    android.graphics.drawable.InsetDrawable(icon, 0.20f),
+                )
+                icons.createPrimeIconBitmap(adaptive, Process.myUserHandle(), shape).icon
+            }
+        } else {
+            android.graphics.Bitmap.createBitmap(
+                size, size, android.graphics.Bitmap.Config.ARGB_8888,
+            ).also { result ->
+                if (icon != null) {
+                    val canvas = android.graphics.Canvas(result)
+                    icon.setBounds(0, 0, size, size)
+                    icon.draw(canvas)
+                }
+            }
         }
         setResult(
             RESULT_OK,
