@@ -985,9 +985,10 @@ object PrimeSearchOverlay {
                         (view as? app.lawnchair.allapps.views.SearchResultIcon)?.let { icon ->
                             icon.setPrimeIconSize(searchIconSize)
                             icon.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11f)
+                            icon.setSingleLine(false)
                             icon.maxLines = searchLabelLines
                             icon.ellipsize = android.text.TextUtils.TruncateAt.END
-                            icon.setSingleLine(false)
+                            icon.setPrimeSearchLabelLayout(true)
                             icon.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
                             icon.setCompoundDrawablePadding(0)
                             enableNativeAppGestures(launcher, dialog, icon)
