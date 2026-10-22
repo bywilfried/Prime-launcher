@@ -828,6 +828,11 @@ class PreferenceManager2 @Inject constructor(
         onSet = { reloadHelper.reloadIcons() },
     )
 
+    val primeDevelopmentOptionsEnabled = preference(
+        key = booleanPreferencesKey(name = "prime_development_options_enabled"),
+        defaultValue = false,
+    )
+
     val showDeckLayout = preference(
         key = booleanPreferencesKey(name = "show_deck_layout"),
         defaultValue = false,
