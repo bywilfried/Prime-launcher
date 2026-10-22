@@ -300,35 +300,6 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                     if (activityIcon != null) source = activityIcon;
                 }
             }
-            // Experimental: the resolved ItemInfo bitmap is the icon actually
-            // selected by the launcher (including user overrides and provider
-            // variants). The independently fetched activity/package drawable can
-            // disagree with it. Use that resolved artwork for application items.
-            // Keep non-application sources (shortcuts, folders, Prime actions)
-            // on their existing adaptive rendering paths.
-            if (info.itemType == LauncherSettings.Favorites.ITEM_TYPE_APPLICATION
-                    && info.bitmap != null && info.bitmap.icon != null
-                    && !info.bitmap.icon.isRecycled()) {
-                android.graphics.Bitmap resolvedBitmap = info.bitmap.icon;
-                // Palette inside wrapToAdaptiveIcon reads pixels. Hardware
-                // bitmaps are not CPU-readable, so supply a software copy.
-                if (resolvedBitmap.getConfig() == android.graphics.Bitmap.Config.HARDWARE) {
-                    try {
-                        resolvedBitmap = resolvedBitmap.copy(
-                                android.graphics.Bitmap.Config.ARGB_8888, false);
-                    } catch (RuntimeException e) {
-                        resolvedBitmap = null;
-                        PrimeDebugLog.d("PrimeIconCompare",
-                                info.getTargetPackage() + " stage=software-copy-failed");
-                    }
-                }
-                if (resolvedBitmap != null) {
-                    source = new android.graphics.drawable.BitmapDrawable(
-                            launcher.getResources(), resolvedBitmap);
-                    PrimeDebugLog.d("PrimeIconCompare",
-                            info.getTargetPackage() + " stage=resolved-bitmap-source");
-                }
-            }
             if (source == null && info instanceof com.android.launcher3.model.data.PackageItemInfo pkg) {
                 try {
                     source = launcher.getPackageManager().getApplicationIcon(pkg.packageName);
