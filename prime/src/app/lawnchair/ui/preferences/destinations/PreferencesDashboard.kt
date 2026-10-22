@@ -176,7 +176,7 @@ fun PreferencesDashboard(
             PreferenceCategory(
                 label = stringResource(R.string.prime_haptic_tuning),
                 description = stringResource(R.string.prime_haptic_tuning_description),
-                iconResource = R.drawable.ic_gestures,
+                iconResource = R.drawable.ic_haptic_vibration,
                 onNavigate = { onNavigate(PrimeHapticTuning) },
                 isSelected = currentRoute is PrimeHapticTuning,
             )
