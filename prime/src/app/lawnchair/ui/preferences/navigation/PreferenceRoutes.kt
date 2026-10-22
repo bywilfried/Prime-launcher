@@ -96,7 +96,7 @@ data object Smartspace : PreferenceRootRoute, PreferenceDeepLink {
 data object PrimeDevelopmentOptions : PreferenceRootRoute
 
 @Serializable
-data object PrimeHapticTuning : PreferenceRoute
+data object PrimeHapticTuning : PreferenceRootRoute
 
 @Serializable
 data object PrimeDiagnosticLogs : PreferenceRoute
