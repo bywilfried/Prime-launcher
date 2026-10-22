@@ -272,6 +272,36 @@ public abstract class DragView<T extends Context & ActivityContext> extends Fram
                     themeManager.isIconThemeEnabled());
             if (fullDrawable != null) {
                 AdaptiveIconDrawable adaptiveIcon = fullDrawable.first;
+                // Keep the drag preview consistent with the normal Prime icon
+                // source, including Lawnchair user overrides and activity aliases.
+                if (info.itemType == com.android.launcher3.LauncherSettings.Favorites.ITEM_TYPE_APPLICATION
+                        && info.getIntent() != null) {
+                    android.content.pm.LauncherActivityInfo launchActivity =
+                            mActivity.getSystemService(android.content.pm.LauncherApps.class)
+                                    .resolveActivity(info.getIntent(), info.user);
+                    if (launchActivity != null) {
+                        try {
+                            android.content.pm.ActivityInfo activityInfo =
+                                    mActivity.getPackageManager().getActivityInfo(
+                                            launchActivity.getComponentName(), 0);
+                            Drawable providerIcon = com.android.launcher3.LauncherAppState
+                                    .getInstance(mActivity).getIconCache().getIconProvider()
+                                    .getIcon(activityInfo,
+                                            mActivity.getResources().getDisplayMetrics().densityDpi);
+                            if (providerIcon instanceof AdaptiveIconDrawable providerAdaptive) {
+                                adaptiveIcon = providerAdaptive;
+                            } else if (providerIcon != null) {
+                                try (com.android.launcher3.icons.LauncherIcons icons =
+                                        com.android.launcher3.icons.LauncherIcons.obtain(mActivity)) {
+                                    AdaptiveIconDrawable wrapped = icons.wrapToAdaptiveIcon(providerIcon);
+                                    if (wrapped != null) adaptiveIcon = wrapped;
+                                }
+                            }
+                        } catch (android.content.pm.PackageManager.NameNotFoundException ignored) {
+                            // Retain the original drag drawable when the activity disappears.
+                        }
+                    }
+                }
                 int blurMargin = (int) mActivity.getResources()
                         .getDimension(R.dimen.blur_size_medium_outline) / 2;
 
