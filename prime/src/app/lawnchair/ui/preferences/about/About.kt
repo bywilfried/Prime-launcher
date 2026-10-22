@@ -25,6 +25,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.lawnchair.ui.preferences.LocalIsExpandedScreen
+import app.lawnchair.preferences.getAdapter
+import app.lawnchair.preferences2.preferenceManager2
+import app.lawnchair.ui.preferences.components.controls.SwitchPreference
 import app.lawnchair.ui.preferences.components.NavigationActionPreference
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroupHeading
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroupItem
@@ -93,6 +96,22 @@ fun About(
             )
         }
         item { Spacer(modifier = Modifier.height(24.dp)) }
+        item {
+            PreferenceGroupHeading(stringResource(R.string.prime_development_options))
+        }
+        item {
+            PreferenceGroupItem(
+                cutTop = false,
+                cutBottom = false,
+            ) {
+                SwitchPreference(
+                    adapter = preferenceManager2().primeDevelopmentOptionsEnabled.getAdapter(),
+                    label = stringResource(R.string.prime_development_options_enable),
+                    description = stringResource(R.string.prime_development_options_enable_description),
+                )
+            }
+        }
+        item { Spacer(modifier = Modifier.height(16.dp)) }
         item {
             PreferenceGroupHeading(stringResource(R.string.legal))
         }

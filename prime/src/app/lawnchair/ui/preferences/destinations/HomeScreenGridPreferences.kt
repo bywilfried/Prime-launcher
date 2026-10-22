@@ -39,6 +39,7 @@ import app.lawnchair.ui.preferences.LocalIsExpandedScreen
 import app.lawnchair.ui.preferences.LocalNavController
 import app.lawnchair.ui.preferences.components.GridOverridesPreview
 import app.lawnchair.ui.preferences.components.controls.SliderPreference
+import app.lawnchair.ui.preferences.components.controls.SwitchPreference
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
 import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
@@ -82,6 +83,24 @@ fun HomeScreenGridPreferences(
             if (hotseatColumnsUnfolded.intValue < hotseatColumns.intValue) {
                 hotseatColumnsUnfolded.intValue = hotseatColumns.intValue
             }
+        }
+
+        val gridExceedsDefault = columns.intValue > 10 || rows.intValue > 10 ||
+            hotseatColumns.intValue > 10 || hotseatColumnsUnfolded.intValue > 10
+        val extendedGridSwitch: @Composable () -> Unit = {
+            SwitchPreference(
+                checked = increaseMaxGridSize.state.value,
+                onCheckedChange = { enabled ->
+                    if (enabled || !gridExceedsDefault) increaseMaxGridSize.onChange(enabled)
+                },
+                label = stringResource(R.string.prime_grid_extended_experimental_label),
+                description = if (gridExceedsDefault) {
+                    stringResource(R.string.prime_extended_grid_active_description)
+                } else {
+                    stringResource(R.string.workspace_increase_max_grid_size_description)
+                },
+                enabled = !gridExceedsDefault || !increaseMaxGridSize.state.value,
+            )
         }
 
         val maxGridSize = if (increaseMaxGridSize.state.value) 20 else 10
@@ -150,6 +169,7 @@ fun HomeScreenGridPreferences(
                                 maxItemsInEachRow = if (isExpandedScreen) Int.MAX_VALUE else 1,
                             ) {
                                 PreferenceGroup(heading = stringResource(id = R.string.when_folded_label)) {
+                                    extendedGridSwitch()
                                     SliderPreference(
                                         label = stringResource(id = R.string.columns),
                                         adapter = columns.asPreferenceAdapter(),
@@ -188,6 +208,7 @@ fun HomeScreenGridPreferences(
                             }
                         } else {
                             PreferenceGroup {
+                                extendedGridSwitch()
                                 SliderPreference(
                                     label = stringResource(id = R.string.columns),
                                     adapter = columns.asPreferenceAdapter(),

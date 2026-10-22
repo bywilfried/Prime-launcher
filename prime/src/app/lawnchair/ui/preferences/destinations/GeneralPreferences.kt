@@ -57,7 +57,6 @@ import app.lawnchair.ui.preferences.components.notificationServiceEnabled
 import app.lawnchair.ui.preferences.navigation.GeneralIconPack
 import app.lawnchair.ui.preferences.navigation.GeneralIconShape
 import app.lawnchair.ui.preferences.navigation.ThemeCustomization
-import com.android.launcher3.BuildConfig
 import com.android.launcher3.R
 import com.android.launcher3.Utilities
 
@@ -105,17 +104,16 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
                 description = stringResource(id = R.string.home_screen_rotation_description),
             )
         }
-        PreferenceGroup(heading = stringResource(id = R.string.updater)) {
-            if (BuildConfig.APPLICATION_ID.contains("nightly")) {
-                SwitchPreference(
-                    adapter = prefs2.autoUpdaterNightly.getAdapter(),
-                    label = stringResource(id = R.string.auto_updater_label),
-                    description = stringResource(id = R.string.auto_updater_description),
-                )
-            }
-        }
-        ExpandAndShrink(visible = prefs2.enableFontSelection.asState().value) {
-            PreferenceGroup(heading = stringResource(id = R.string.font_label)) {
+        // Keep the font section visible even when experimental font selection is off.
+        // This switch shares the exact preference with Experimental Features.
+        PreferenceGroup(heading = stringResource(R.string.prime_font_experimental_section)) {
+            SwitchPreference(
+                adapter = prefs2.enableFontSelection.getAdapter(),
+                label = stringResource(R.string.font_picker_label),
+                description = stringResource(R.string.font_picker_description),
+            )
+            ExpandAndShrink(visible = prefs2.enableFontSelection.asState().value) {
+                androidx.compose.foundation.layout.Column {
                 FontPreference(
                     fontPref = prefs.fontWorkspace,
                     label = stringResource(R.string.fontWorkspace),
@@ -136,6 +134,7 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
                     fontPref = prefs.fontBodyMedium,
                     label = stringResource(R.string.fontBodyMedium),
                 )
+                }
             }
         }
         val wrapAdaptiveIcons = prefs.wrapAdaptiveIcons.getAdapter()

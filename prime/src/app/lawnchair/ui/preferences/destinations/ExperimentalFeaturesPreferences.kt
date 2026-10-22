@@ -28,9 +28,6 @@ import app.lawnchair.util.FileAccessState
 import app.lawnchair.util.isGestureNavContractCompatible
 import com.android.launcher3.R
 import com.android.launcher3.Utilities
-import app.lawnchair.ui.preferences.LocalNavController
-import app.lawnchair.ui.preferences.navigation.PrimeHapticTuning
-import app.lawnchair.ui.preferences.components.controls.ClickablePreference
 
 @Composable
 fun ExperimentalFeaturesPreferences(
@@ -140,7 +137,6 @@ fun ExperimentalFeaturesPreferences(
 
         val alwaysReloadIconsAdapter = prefs2.alwaysReloadIcons.getAdapter()
         val enableGncAdapter = prefs.enableGnc.getAdapter()
-        val navController = LocalNavController.current
 
         PreferenceGroup(
             modifier = Modifier,
@@ -165,11 +161,6 @@ fun ExperimentalFeaturesPreferences(
             ExpandAndShrink(visible = enableGncAdapter.state.value && !isGestureNavContractCompatible) {
                 WarningPreference(stringResource(R.string.gesturenavcontract_warning_incompatibility))
             }
-            ClickablePreference(
-                label = stringResource(R.string.prime_haptic_tuning),
-                subtitle = stringResource(R.string.prime_haptic_tuning_description),
-                onClick = { navController.navigate(PrimeHapticTuning) },
-            )
         }
     }
 }

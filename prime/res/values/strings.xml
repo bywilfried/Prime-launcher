@@ -1178,4 +1178,8 @@
     <string name="prime_haptic_notifications_group">Notifications</string>
     <string name="prime_haptic_notification_gesture">Open notifications by gesture</string>
     <string name="prime_haptic_override_android">Allow Prime vibrations when Android touch feedback is off</string>
+    <string name="prime_grid_extended_experimental_label">Increase maximum grid size (experimental)</string>
+    <string name="prime_font_experimental_section">Fonts (experimental)</string>
+    <string name="prime_development_options_enable">Enable developer options</string>
+    <string name="prime_development_options_enable_description">Show or hide developer options in the main settings menu.</string>
 </resources>

@@ -73,6 +73,7 @@ import app.lawnchair.ui.preferences.navigation.HomeScreen
 import app.lawnchair.ui.preferences.navigation.PreferenceRootRoute
 import app.lawnchair.ui.preferences.navigation.Quickstep
 import app.lawnchair.ui.preferences.navigation.PrimeDevelopmentOptions
+import app.lawnchair.ui.preferences.navigation.PrimeHapticTuning
 import app.lawnchair.ui.preferences.navigation.Search
 import app.lawnchair.ui.preferences.navigation.Smartspace
 import app.lawnchair.ui.util.addIf
@@ -172,6 +173,14 @@ fun PreferencesDashboard(
                 isSelected = currentRoute is Gestures,
             )
 
+            PreferenceCategory(
+                label = stringResource(R.string.prime_haptic_tuning),
+                description = stringResource(R.string.prime_haptic_tuning_description),
+                iconResource = R.drawable.ic_haptic_vibration,
+                onNavigate = { onNavigate(PrimeHapticTuning) },
+                isSelected = currentRoute is PrimeHapticTuning,
+            )
+
             ExpandAndShrink(
                 visible = LawnchairApp.isRecentsEnabled || BuildConfig.DEBUG,
             ) {
@@ -208,6 +217,7 @@ fun PreferencesDashboard(
                 isSelected = currentRoute is ExperimentalFeatures,
             )
 
+            ExpandAndShrink(visible = prefs2.primeDevelopmentOptionsEnabled.getAdapter().state.value) {
             PreferenceCategory(
                 label = stringResource(R.string.prime_development_options),
                 description = stringResource(R.string.prime_development_options_description),
@@ -215,6 +225,7 @@ fun PreferencesDashboard(
                 onNavigate = { onNavigate(PrimeDevelopmentOptions) },
                 isSelected = currentRoute is PrimeDevelopmentOptions,
             )
+            }
 
             PreferenceCategory(
                 label = stringResource(R.string.about_label),
