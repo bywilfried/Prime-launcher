@@ -20,17 +20,25 @@ Prime takes that foundation in its own direction: a distinctive visual identity,
 
 ## Features
 
+### 🔎 Prime Search
+
+Search across **apps, contacts, files, calendar events, tasks, and notifications** from a unified, customisable interface. Prime Search supports a floating search mode, typo-tolerant matching, and configurable search categories.
+
+Choose and reorder **web search sources** and use suggestions or shortcuts to continue searches with your preferred providers. Prime Search and app drawer search have independent settings, and Prime Search can also be launched through a gesture.
+
 ### 🎨 Make every colour yours
 
 Choose the colours of your home screen, dock, app drawer, folders, and interface elements. Prime supports theme-level customisation as well as **individual app drawer category colours**.
 
-Automatic text colour options help maintain readability:
+Automatic text colour options help maintain readability, including an option to let text adapt to its background instead of using a fixed colour. Custom themes can also be **exported, imported, and backed up**.
+
+Available contrast options include:
 - **Automatic black/white** chooses whichever of black or white contrasts best with the background.
 - **Adaptive contrast** derives a readable text colour from the background's hue, targeting a 7:1 contrast ratio where achievable.
 
 ### 🗂️ An app drawer that fits your routine
 
-Organise apps into **categories** and move between them using customisable tabs. Give categories their own colours and distinguish active and inactive tab states.
+Organise apps into **categories** and move between them using customisable tabs. Give categories their own colours and distinguish active and inactive tab states. Customise the appearance of individual categories and folders independently from the overall theme.
 
 ### 🧩 Fine-tune widgets
 
@@ -39,6 +47,14 @@ Adjust widget margins globally or per widget, with separate controls for each si
 ### 📱 Personalise your layout
 
 Refine the appearance of icons, labels, folders, the home screen, dock, and drawer. Prime offers granular sizing and colour options rather than a single fixed look.
+
+### 📳 Tailor haptic feedback
+
+Adjust Prime Launcher's **haptic feedback** with vibration presets and individual intensity settings for supported interactions.
+
+### 🏠 Control home screen navigation
+
+Optionally **always return to the main home screen page**, including when coming back from another app. Customise how gestures interact with the home screen and app drawer.
 
 ### 🛠️ Built with iteration in mind
 
@@ -56,7 +72,7 @@ Screenshots of the home screen, category drawer, and customisation settings will
 
 Browse [GitHub Releases](https://github.com/bywilfried/Prime-launcher/releases) for published builds. The [main branch](https://github.com/bywilfried/Prime-launcher/tree/main) contains the current Prime Launcher source code.
 
-**Current release series: 0.8.x.** Development builds may contain experimental changes.
+**The 0.9.0 update introduces Prime Search and expanded customisation features.** Check GitHub Releases for the latest published version; development builds may contain experimental changes.
 
 ## Verify an APK
 
