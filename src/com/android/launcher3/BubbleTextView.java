@@ -309,10 +309,25 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             if (info.itemType == LauncherSettings.Favorites.ITEM_TYPE_APPLICATION
                     && info.bitmap != null && info.bitmap.icon != null
                     && !info.bitmap.icon.isRecycled()) {
-                source = new android.graphics.drawable.BitmapDrawable(
-                        launcher.getResources(), info.bitmap.icon);
-                PrimeDebugLog.d("PrimeIconCompare",
-                        info.getTargetPackage() + " stage=resolved-bitmap-source");
+                android.graphics.Bitmap resolvedBitmap = info.bitmap.icon;
+                // Palette inside wrapToAdaptiveIcon reads pixels. Hardware
+                // bitmaps are not CPU-readable, so supply a software copy.
+                if (resolvedBitmap.getConfig() == android.graphics.Bitmap.Config.HARDWARE) {
+                    try {
+                        resolvedBitmap = resolvedBitmap.copy(
+                                android.graphics.Bitmap.Config.ARGB_8888, false);
+                    } catch (RuntimeException e) {
+                        resolvedBitmap = null;
+                        PrimeDebugLog.d("PrimeIconCompare",
+                                info.getTargetPackage() + " stage=software-copy-failed");
+                    }
+                }
+                if (resolvedBitmap != null) {
+                    source = new android.graphics.drawable.BitmapDrawable(
+                            launcher.getResources(), resolvedBitmap);
+                    PrimeDebugLog.d("PrimeIconCompare",
+                            info.getTargetPackage() + " stage=resolved-bitmap-source");
+                }
             }
             if (source == null && info instanceof com.android.launcher3.model.data.PackageItemInfo pkg) {
                 try {
