@@ -217,6 +217,7 @@ fun PreferencesDashboard(
                 isSelected = currentRoute is ExperimentalFeatures,
             )
 
+            ExpandAndShrink(visible = prefs2.primeDevelopmentOptionsEnabled.getAdapter().state.value) {
             PreferenceCategory(
                 label = stringResource(R.string.prime_development_options),
                 description = stringResource(R.string.prime_development_options_description),
@@ -224,6 +225,7 @@ fun PreferencesDashboard(
                 onNavigate = { onNavigate(PrimeDevelopmentOptions) },
                 isSelected = currentRoute is PrimeDevelopmentOptions,
             )
+            }
 
             PreferenceCategory(
                 label = stringResource(R.string.about_label),
