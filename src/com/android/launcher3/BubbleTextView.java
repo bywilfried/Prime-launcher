@@ -223,16 +223,31 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             if (bitmap == null || bitmap.isRecycled()) return "unavailable";
             int width = bitmap.getWidth();
             int height = bitmap.getHeight();
-            long hash = 0xcbf29ce484222325L;
-            for (int y = 0; y < 8; y++) {
-                for (int x = 0; x < 8; x++) {
-                    int pixel = bitmap.getPixel(
-                            Math.min(width - 1, (x * width + width / 2) / 8),
-                            Math.min(height - 1, (y * height + height / 2) / 8));
-                    hash = (hash ^ pixel) * 0x100000001b3L;
+            // Android hardware bitmaps cannot be read with getPixel().
+            // Copy only for diagnostics; never alter the actual icon bitmap.
+            android.graphics.Bitmap readable = bitmap;
+            boolean copied = false;
+            try {
+                if (bitmap.getConfig() == android.graphics.Bitmap.Config.HARDWARE) {
+                    readable = bitmap.copy(android.graphics.Bitmap.Config.ARGB_8888, false);
+                    if (readable == null) return width + "x" + height + ":copy-failed";
+                    copied = true;
                 }
+                long hash = 0xcbf29ce484222325L;
+                for (int y = 0; y < 8; y++) {
+                    for (int x = 0; x < 8; x++) {
+                        int pixel = readable.getPixel(
+                                Math.min(width - 1, (x * width + width / 2) / 8),
+                                Math.min(height - 1, (y * height + height / 2) / 8));
+                        hash = (hash ^ pixel) * 0x100000001b3L;
+                    }
+                }
+                return width + "x" + height + ":" + Long.toHexString(hash);
+            } catch (RuntimeException e) {
+                return width + "x" + height + ":unreadable-" + e.getClass().getSimpleName();
+            } finally {
+                if (copied) readable.recycle();
             }
-            return width + "x" + height + ":" + Long.toHexString(hash);
         }
 
         private static boolean shouldTraceIcon(ItemInfoWithIcon info) {
