@@ -58,4 +58,5 @@
     <string name="workspace_increase_max_grid_size_label">Augmenter la taille maximale de la grille de l’écran d’accueil</string>
     <string name="workspace_increase_max_grid_size_description">Permet de passer de 10 × 10 à 20 × 20 cases au maximum sur la grille de l’écran d’accueil. Activez cette option pour pouvoir choisir davantage de lignes et de colonnes.</string>
     <string name="prime_grid_extended_experimental_label">Augmentation de la taille maximale de la grille (expérimental)</string>
+    <string name="prime_extended_grid_active_description">Réduisez d’abord la grille de l’écran d’accueil à 10 × 10 cases ou moins avant de désactiver cette option.</string>
 </resources>
