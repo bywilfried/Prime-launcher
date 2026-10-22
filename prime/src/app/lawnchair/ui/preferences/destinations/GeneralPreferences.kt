@@ -104,8 +104,15 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
                 description = stringResource(id = R.string.home_screen_rotation_description),
             )
         }
-        ExpandAndShrink(visible = prefs2.enableFontSelection.asState().value) {
-            PreferenceGroup(heading = stringResource(id = R.string.font_label)) {
+        // Keep the font section visible even when experimental font selection is off.
+        // This switch shares the exact preference with Experimental Features.
+        PreferenceGroup(heading = stringResource(R.string.prime_font_experimental_section)) {
+            SwitchPreference(
+                adapter = prefs2.enableFontSelection.getAdapter(),
+                label = stringResource(R.string.font_picker_label),
+                description = stringResource(R.string.font_picker_description),
+            )
+            ExpandAndShrink(visible = prefs2.enableFontSelection.asState().value) {
                 FontPreference(
                     fontPref = prefs.fontWorkspace,
                     label = stringResource(R.string.fontWorkspace),
