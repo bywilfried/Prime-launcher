@@ -217,11 +217,50 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                     ? cached.primeBitmap : null;
         }
 
+        // Temporary in-app diagnostics: compare the cached app bitmap with the
+        // bitmap generated for Prime shapes, without changing either rendering path.
+        private static String iconFingerprint(android.graphics.Bitmap bitmap) {
+            if (bitmap == null || bitmap.isRecycled()) return "unavailable";
+            int width = bitmap.getWidth();
+            int height = bitmap.getHeight();
+            long hash = 0xcbf29ce484222325L;
+            for (int y = 0; y < 8; y++) {
+                for (int x = 0; x < 8; x++) {
+                    int pixel = bitmap.getPixel(
+                            Math.min(width - 1, (x * width + width / 2) / 8),
+                            Math.min(height - 1, (y * height + height / 2) / 8));
+                    hash = (hash ^ pixel) * 0x100000001b3L;
+                }
+            }
+            return width + "x" + height + ":" + Long.toHexString(hash);
+        }
+
+        private static boolean shouldTraceIcon(ItemInfoWithIcon info) {
+            if (info.getIntent() == null || info.getIntent().getComponent() == null) return false;
+            String pkg = info.getIntent().getComponent().getPackageName().toLowerCase(Locale.ROOT);
+            return pkg.contains("calendar") || pkg.contains("dialer")
+                    || pkg.contains("phone") || pkg.contains("fossify");
+        }
+
+        private static void traceIcon(ItemInfoWithIcon info, IconShape shape,
+                String stage, BitmapInfo rendered, Drawable source) {
+            if (!shouldTraceIcon(info)) return;
+            PrimeDebugLog.d("PrimeIconCompare",
+                    info.getIntent().getComponent().flattenToShortString()
+                    + " stage=" + stage + " shape=" + shape
+                    + " original=" + iconFingerprint(info.bitmap.icon)
+                    + " prime=" + (rendered == null ? "none" : iconFingerprint(rendered.icon))
+                    + " drawable=" + (source == null ? "none" : source.getClass().getSimpleName()));
+        }
+
         @Nullable
         static BitmapInfo renderAndCache(Launcher launcher, ItemInfoWithIcon info,
                 IconShape shape, int iconSize, boolean useTheme) {
             BitmapInfo cached = get(info, shape, iconSize, useTheme);
-            if (cached != null) return cached;
+            if (cached != null) {
+                traceIcon(info, shape, "cache-hit", cached, null);
+                return cached;
+            }
 
             Pair<AdaptiveIconDrawable, Drawable> fullDrawable = Utilities.getFullDrawable(
                     launcher, info, iconSize, iconSize, useTheme);
@@ -274,7 +313,10 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                     }
                 }
             }
-            if (source == null) return null;
+            if (source == null) {
+                traceIcon(info, shape, "no-source", null, null);
+                return null;
+            }
 
             final BitmapInfo primeBitmap;
             try (LauncherIcons launcherIcons = LauncherIcons.obtain(launcher)) {
@@ -291,6 +333,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                     CACHE.put(key, new PrimeIconCacheEntry(info.bitmap.icon, primeBitmap));
                 }
             }
+            traceIcon(info, shape, "rendered", primeBitmap, source);
             return primeBitmap;
         }
     }
