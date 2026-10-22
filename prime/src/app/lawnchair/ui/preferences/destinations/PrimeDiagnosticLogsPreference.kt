@@ -21,6 +21,13 @@ import com.android.launcher3.R
 @Composable
 fun PrimeDiagnosticLogsPreference() {
     val logs = remember { mutableStateOf(PrimeDebugLog.getText()) }
+    val iconsOnly = remember { mutableStateOf(false) }
+    val visibleLogs = if (iconsOnly.value) {
+        logs.value.lineSequence().filter { it.contains("PrimeIconCompare") }.joinToString("\n")
+            .ifEmpty { "Aucun diagnostic d’icône pour le moment. Ouvrez le tiroir ou la recherche, puis appuyez sur Actualiser." }
+    } else {
+        logs.value
+    }
 
     PreferenceLayout(
         label = stringResource(R.string.prime_diagnostic_logs),
@@ -44,9 +51,13 @@ fun PrimeDiagnosticLogsPreference() {
                 Text(stringResource(R.string.prime_diagnostic_logs_clear))
                 }
             }
+            Row {
+                Button(onClick = { iconsOnly.value = true }) { Text("Icônes") }
+                Button(onClick = { iconsOnly.value = false }) { Text("Tous les journaux") }
+            }
             SelectionContainer {
                 Text(
-                    text = logs.value,
+                    text = visibleLogs,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier
                         .fillMaxWidth()

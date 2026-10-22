@@ -217,11 +217,65 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                     ? cached.primeBitmap : null;
         }
 
+        // Temporary in-app diagnostics: compare the cached app bitmap with the
+        // bitmap generated for Prime shapes, without changing either rendering path.
+        private static String iconFingerprint(android.graphics.Bitmap bitmap) {
+            if (bitmap == null || bitmap.isRecycled()) return "unavailable";
+            int width = bitmap.getWidth();
+            int height = bitmap.getHeight();
+            // Android hardware bitmaps cannot be read with getPixel().
+            // Copy only for diagnostics; never alter the actual icon bitmap.
+            android.graphics.Bitmap readable = bitmap;
+            boolean copied = false;
+            try {
+                if (bitmap.getConfig() == android.graphics.Bitmap.Config.HARDWARE) {
+                    readable = bitmap.copy(android.graphics.Bitmap.Config.ARGB_8888, false);
+                    if (readable == null) return width + "x" + height + ":copy-failed";
+                    copied = true;
+                }
+                long hash = 0xcbf29ce484222325L;
+                for (int y = 0; y < 8; y++) {
+                    for (int x = 0; x < 8; x++) {
+                        int pixel = readable.getPixel(
+                                Math.min(width - 1, (x * width + width / 2) / 8),
+                                Math.min(height - 1, (y * height + height / 2) / 8));
+                        hash = (hash ^ pixel) * 0x100000001b3L;
+                    }
+                }
+                return width + "x" + height + ":" + Long.toHexString(hash);
+            } catch (RuntimeException e) {
+                return width + "x" + height + ":unreadable-" + e.getClass().getSimpleName();
+            } finally {
+                if (copied) readable.recycle();
+            }
+        }
+
+        private static boolean shouldTraceIcon(ItemInfoWithIcon info) {
+            if (info.getIntent() == null || info.getIntent().getComponent() == null) return false;
+            String pkg = info.getIntent().getComponent().getPackageName().toLowerCase(Locale.ROOT);
+            return pkg.contains("calendar") || pkg.contains("dialer")
+                    || pkg.contains("phone") || pkg.contains("fossify");
+        }
+
+        private static void traceIcon(ItemInfoWithIcon info, IconShape shape,
+                String stage, BitmapInfo rendered, Drawable source) {
+            if (!shouldTraceIcon(info)) return;
+            PrimeDebugLog.d("PrimeIconCompare",
+                    info.getIntent().getComponent().flattenToShortString()
+                    + " stage=" + stage + " shape=" + shape
+                    + " original=" + iconFingerprint(info.bitmap.icon)
+                    + " prime=" + (rendered == null ? "none" : iconFingerprint(rendered.icon))
+                    + " drawable=" + (source == null ? "none" : source.getClass().getSimpleName()));
+        }
+
         @Nullable
         static BitmapInfo renderAndCache(Launcher launcher, ItemInfoWithIcon info,
                 IconShape shape, int iconSize, boolean useTheme) {
             BitmapInfo cached = get(info, shape, iconSize, useTheme);
-            if (cached != null) return cached;
+            if (cached != null) {
+                traceIcon(info, shape, "cache-hit", cached, null);
+                return cached;
+            }
 
             Pair<AdaptiveIconDrawable, Drawable> fullDrawable = Utilities.getFullDrawable(
                     launcher, info, iconSize, iconSize, useTheme);
@@ -229,21 +283,35 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             // an application ItemInfo and Utilities.getFullDrawable() cannot
             // resolve it, so the old fitting path silently returned null.
             Drawable source = fullDrawable == null ? null : fullDrawable.first;
-            // On Android 11 and earlier Utilities.getFullDrawable() retrieves
-            // the package icon, ignoring the launcher activity (or enabled
-            // activity-alias) icon. Apps which let users choose their launcher
-            // icon therefore revert to the package's default artwork.
-            // Resolve the actual launch component for Prime's shaped render.
-            if (!Utilities.ATLEAST_S
-                    && info.itemType == LauncherSettings.Favorites.ITEM_TYPE_APPLICATION
+            // Use the same icon provider as LawnchairActivityCachingLogic:
+            // it resolves user icon overrides, dynamic icons and component icons
+            // before Prime applies the requested shape. Unlike info.bitmap,
+            // this is an unmasked Drawable and avoids double-fitting artwork.
+            if (info.itemType == LauncherSettings.Favorites.ITEM_TYPE_APPLICATION
                     && info.getIntent() != null) {
                 android.content.pm.LauncherActivityInfo launchActivity =
                         launcher.getSystemService(android.content.pm.LauncherApps.class)
                                 .resolveActivity(info.getIntent(), info.user);
                 if (launchActivity != null) {
-                    Drawable activityIcon = launchActivity.getIcon(
-                            launcher.getResources().getDisplayMetrics().densityDpi);
-                    if (activityIcon != null) source = activityIcon;
+                    try {
+                        android.content.pm.ActivityInfo activityInfo =
+                                launcher.getPackageManager().getActivityInfo(
+                                        launchActivity.getComponentName(), 0);
+                        Drawable providerIcon = LauncherAppState.getInstance(launcher)
+                                .getIconCache().getIconProvider().getIcon(
+                                        activityInfo,
+                                        launcher.getResources().getDisplayMetrics().densityDpi);
+                        if (providerIcon != null) {
+                            source = providerIcon;
+                            PrimeDebugLog.d("PrimeIconCompare",
+                                    launchActivity.getComponentName().flattenToShortString()
+                                            + " stage=provider-source");
+                        }
+                    } catch (android.content.pm.PackageManager.NameNotFoundException e) {
+                        PrimeDebugLog.d("PrimeIconCompare",
+                                launchActivity.getComponentName().flattenToShortString()
+                                        + " stage=provider-activity-missing");
+                    }
                 }
             }
             if (source == null && info instanceof com.android.launcher3.model.data.PackageItemInfo pkg) {
@@ -274,7 +342,10 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                     }
                 }
             }
-            if (source == null) return null;
+            if (source == null) {
+                traceIcon(info, shape, "no-source", null, null);
+                return null;
+            }
 
             final BitmapInfo primeBitmap;
             try (LauncherIcons launcherIcons = LauncherIcons.obtain(launcher)) {
@@ -291,6 +362,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                     CACHE.put(key, new PrimeIconCacheEntry(info.bitmap.icon, primeBitmap));
                 }
             }
+            traceIcon(info, shape, "rendered", primeBitmap, source);
             return primeBitmap;
         }
     }
