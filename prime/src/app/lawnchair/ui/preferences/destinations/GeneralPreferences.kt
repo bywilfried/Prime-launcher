@@ -113,6 +113,7 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
                 description = stringResource(R.string.font_picker_description),
             )
             ExpandAndShrink(visible = prefs2.enableFontSelection.asState().value) {
+                androidx.compose.foundation.layout.Column {
                 FontPreference(
                     fontPref = prefs.fontWorkspace,
                     label = stringResource(R.string.fontWorkspace),
@@ -133,6 +134,7 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
                     fontPref = prefs.fontBodyMedium,
                     label = stringResource(R.string.fontBodyMedium),
                 )
+                }
             }
         }
         val wrapAdaptiveIcons = prefs.wrapAdaptiveIcons.getAdapter()
