@@ -73,6 +73,7 @@ import app.lawnchair.ui.preferences.navigation.HomeScreen
 import app.lawnchair.ui.preferences.navigation.PreferenceRootRoute
 import app.lawnchair.ui.preferences.navigation.Quickstep
 import app.lawnchair.ui.preferences.navigation.PrimeDevelopmentOptions
+import app.lawnchair.ui.preferences.navigation.PrimeHapticTuning
 import app.lawnchair.ui.preferences.navigation.Search
 import app.lawnchair.ui.preferences.navigation.Smartspace
 import app.lawnchair.ui.util.addIf
@@ -170,6 +171,14 @@ fun PreferencesDashboard(
                 iconResource = R.drawable.ic_gestures,
                 onNavigate = { onNavigate(Gestures) },
                 isSelected = currentRoute is Gestures,
+            )
+
+            PreferenceCategory(
+                label = stringResource(R.string.prime_haptic_tuning),
+                description = stringResource(R.string.prime_haptic_tuning_description),
+                iconResource = R.drawable.ic_gestures,
+                onNavigate = { onNavigate(PrimeHapticTuning) },
+                isSelected = currentRoute is PrimeHapticTuning,
             )
 
             ExpandAndShrink(
