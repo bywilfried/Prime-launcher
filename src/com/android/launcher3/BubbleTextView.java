@@ -229,17 +229,15 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             // an application ItemInfo and Utilities.getFullDrawable() cannot
             // resolve it, so the old fitting path silently returned null.
             Drawable source = fullDrawable == null ? null : fullDrawable.first;
-            // On Android 11 and earlier Utilities.getFullDrawable() retrieves
-            // the package icon, ignoring the launcher activity (or enabled
-            // activity-alias) icon. Apps which let users choose their launcher
-            // icon therefore revert to the package's default artwork.
-            // Resolve the actual launch component for Prime's shaped render.
-            if (!Utilities.ATLEAST_S
-                    && info.itemType == LauncherSettings.Favorites.ITEM_TYPE_APPLICATION
+            // Prefer the actual launcher activity icon for application items on all
+            // Android versions. The package drawable may differ from the active
+            // activity icon (e.g. apps with selectable or legacy icon variants).
+            if (info.itemType == LauncherSettings.Favorites.ITEM_TYPE_APPLICATION
                     && info.getIntent() != null) {
-                android.content.pm.LauncherActivityInfo launchActivity =
-                        launcher.getSystemService(android.content.pm.LauncherApps.class)
-                                .resolveActivity(info.getIntent(), info.user);
+                android.content.pm.LauncherApps launcherApps =
+                        launcher.getSystemService(android.content.pm.LauncherApps.class);
+                android.content.pm.LauncherActivityInfo launchActivity = launcherApps == null
+                        ? null : launcherApps.resolveActivity(info.getIntent(), info.user);
                 if (launchActivity != null) {
                     Drawable activityIcon = launchActivity.getIcon(
                             launcher.getResources().getDisplayMetrics().densityDpi);
