@@ -300,6 +300,20 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                     if (activityIcon != null) source = activityIcon;
                 }
             }
+            // Experimental: the resolved ItemInfo bitmap is the icon actually
+            // selected by the launcher (including user overrides and provider
+            // variants). The independently fetched activity/package drawable can
+            // disagree with it. Use that resolved artwork for application items.
+            // Keep non-application sources (shortcuts, folders, Prime actions)
+            // on their existing adaptive rendering paths.
+            if (info.itemType == LauncherSettings.Favorites.ITEM_TYPE_APPLICATION
+                    && info.bitmap != null && info.bitmap.icon != null
+                    && !info.bitmap.icon.isRecycled()) {
+                source = new android.graphics.drawable.BitmapDrawable(
+                        launcher.getResources(), info.bitmap.icon);
+                PrimeDebugLog.d("PrimeIconCompare",
+                        info.getTargetPackage() + " stage=resolved-bitmap-source");
+            }
             if (source == null && info instanceof com.android.launcher3.model.data.PackageItemInfo pkg) {
                 try {
                     source = launcher.getPackageManager().getApplicationIcon(pkg.packageName);
