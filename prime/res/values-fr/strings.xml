@@ -60,4 +60,6 @@
     <string name="prime_grid_extended_experimental_label">Augmentation de la taille maximale de la grille (expérimental)</string>
     <string name="prime_extended_grid_active_description">Réduisez d’abord la grille de l’écran d’accueil à 10 × 10 cases ou moins avant de désactiver cette option.</string>
     <string name="prime_font_experimental_section">Police (expérimental)</string>
+    <string name="prime_development_options_enable">Activer les options de développement</string>
+    <string name="prime_development_options_enable_description">Affiche ou masque les options de développement dans le menu principal des paramètres.</string>
 </resources>
