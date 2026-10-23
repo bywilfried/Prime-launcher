@@ -5,7 +5,6 @@ import android.app.WallpaperManager;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
-import android.os.Build;
 import java.util.ArrayList;
 import java.util.List;
 import android.net.Uri;
