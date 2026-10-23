@@ -65,6 +65,10 @@
             <action android:name="android.intent.action.SET_WALLPAPER" />
         </intent>
         <intent>
+            <action android:name="android.intent.action.GET_CONTENT" />
+            <data android:mimeType="image/*" />
+        </intent>
+        <intent>
             <action android:name="android.intent.action.PICK" />
             <data android:mimeType="image/*" />
         </intent>
@@ -74,7 +78,7 @@
         <activity
             android:name="app.lawnchair.wallpaper.PhotoWallpaperActivity"
             android:exported="false"
-            android:theme="@android:style/Theme.Material.NoActionBar"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:excludeFromRecents="true" />
         <service
             android:name="app.lawnchair.prime.search.PrimeNotificationListener"
