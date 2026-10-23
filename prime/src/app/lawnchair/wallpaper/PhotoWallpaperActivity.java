@@ -43,8 +43,11 @@ public class PhotoWallpaperActivity extends Activity {
                     provider.activityInfo.name);
             wallpaperIntents.add(wallpaper);
         }
-        Intent chooser = Intent.createChooser(images, "Fonds d'écran",
-                wallpaperIntents.toArray(new Intent[0]));
+        Intent chooser = Intent.createChooser(images, "Fonds d'écran");
+        if (!wallpaperIntents.isEmpty()) {
+            chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS,
+                    wallpaperIntents.toArray(new Intent[0]));
+        }
         try {
             startActivityForResult(chooser, REQUEST_IMAGE);
         } catch (ActivityNotFoundException e) {
