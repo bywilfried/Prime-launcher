@@ -157,7 +157,34 @@ public class ItemLongClickListener {
         popup.setFocusable(false);
         popup.setTouchable(true);
         popup.setElevation(Math.round(10 * density));
-        popup.showAsDropDown(widget, 0, -widget.getHeight());
+        // Anchor to the actual long-press point, like workspace icon menus.
+        // Clamp the popup inside the visible display frame (including system bars).
+        column.measure(
+                View.MeasureSpec.makeMeasureSpec(Math.round(250 * density),
+                        View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        final int menuWidth = Math.round(250 * density);
+        final int menuHeight = column.getMeasuredHeight();
+        final int[] widgetLocation = new int[2];
+        widget.getLocationOnScreen(widgetLocation);
+        final Rect visibleFrame = new Rect();
+        widget.getWindowVisibleDisplayFrame(visibleFrame);
+        final float touchX = Float.isNaN(widget.getPrimeLongPressX())
+                ? widget.getWidth() / 2f : widget.getPrimeLongPressX();
+        final float touchY = Float.isNaN(widget.getPrimeLongPressY())
+                ? widget.getHeight() / 2f : widget.getPrimeLongPressY();
+        final int gap = Math.round(12 * density);
+        final int anchorX = widgetLocation[0] + Math.round(touchX);
+        final int anchorY = widgetLocation[1] + Math.round(touchY);
+        final int x = Math.max(visibleFrame.left,
+                Math.min(anchorX, visibleFrame.right - menuWidth));
+        final int below = anchorY + gap;
+        final int above = anchorY - menuHeight - gap;
+        final int desiredY = below + menuHeight <= visibleFrame.bottom
+                ? below : above;
+        final int y = Math.max(visibleFrame.top,
+                Math.min(desiredY, visibleFrame.bottom - menuHeight));
+        popup.showAtLocation(widget.getRootView(), Gravity.TOP | Gravity.LEFT, x, y);
         return popup;
     }
 
