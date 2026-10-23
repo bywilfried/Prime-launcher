@@ -64,6 +64,11 @@
     </queries>
 
     <application>
+        <activity
+            android:name="app.lawnchair.wallpaper.PhotoWallpaperActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Material.NoActionBar"
+            android:excludeFromRecents="true" />
         <service
             android:name="app.lawnchair.prime.search.PrimeNotificationListener"
             android:label="Historique des notifications Prime Search"
