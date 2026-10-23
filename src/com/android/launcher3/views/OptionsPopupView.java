@@ -210,21 +210,30 @@ public class OptionsPopupView<T extends Context & ActivityContext> extends Arrow
         }
 
         popup.show();
-        popup.applyPrimePopupContentColors(popup);
-        // The workspace options menu has its own row layout/background pipeline.
-        // Apply the selected popup color after that pipeline has assigned drawables.
-        final int menuBackground = popup.resolvePrimePopupColor(
-                app.lawnchair.theme.ThemeColorRole.HOME_POPUP_BACKGROUND);
-        if (!(activityContext instanceof com.android.launcher3.Launcher)
-                || !((com.android.launcher3.Launcher) activityContext)
-                        .isInState(com.android.launcher3.LauncherState.ALL_APPS)) {
+        // The workspace popup rows are styled during layout/animation. Apply
+        // the resolved theme colors to the actual row views after inflation.
+        // A post also avoids their drawables being replaced during setup.
+        popup.post(() -> {
+            final int background = popup.resolvePrimePopupColor(
+                    app.lawnchair.theme.ThemeColorRole.HOME_POPUP_BACKGROUND);
+            final int foreground = popup.getPrimePopupTextColor();
+            final int iconColor = popup.getPrimePopupIconColor();
             for (View row : popup.mItemMap.keySet()) {
-                android.graphics.drawable.Drawable rowBackground = row.getBackground();
-                if (rowBackground != null) {
-                    rowBackground.mutate().setTint(menuBackground);
+                android.graphics.drawable.GradientDrawable shape =
+                        new android.graphics.drawable.GradientDrawable();
+                shape.setColor(background);
+                shape.setCornerRadius(popup.mOutlineRadius);
+                row.setBackground(shape);
+                if (row instanceof DeepShortcutView) {
+                    DeepShortcutView shortcut = (DeepShortcutView) row;
+                    shortcut.getBubbleText().setTextColor(foreground);
+                    View iconView = shortcut.getIconView();
+                    if (iconView != null && iconView.getBackground() != null) {
+                        iconView.getBackground().mutate().setTint(iconColor);
+                    }
                 }
             }
-        }
+        });
         return popup;
     }
 
