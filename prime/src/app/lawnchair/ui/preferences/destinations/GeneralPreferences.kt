@@ -19,10 +19,14 @@ package app.lawnchair.ui.preferences.destinations
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.lawnchair.data.iconoverride.IconOverrideRepository
+import app.lawnchair.util.collectAsStateBlocking
+import kotlinx.coroutines.launch
 import app.lawnchair.preferences.PreferenceAdapter
 import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences.preferenceManager
@@ -44,6 +48,7 @@ import app.lawnchair.ui.preferences.components.NotificationDotsPreference
 import app.lawnchair.ui.preferences.components.ThemePreference
 import app.lawnchair.ui.preferences.components.colorpreference.ColorContrastWarning
 import app.lawnchair.ui.preferences.components.colorpreference.ColorPreference
+import app.lawnchair.ui.preferences.components.controls.ClickablePreference
 import app.lawnchair.ui.preferences.components.controls.ListPreference
 import app.lawnchair.ui.preferences.components.controls.ListPreferenceEntry
 import app.lawnchair.ui.preferences.components.controls.SliderPreference
@@ -63,6 +68,9 @@ import com.android.launcher3.Utilities
 @Composable
 fun GeneralPreferences(modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val overrideRepo = remember(context) { IconOverrideRepository.INSTANCE.get(context) }
+    val customIconsCount by remember(overrideRepo) { overrideRepo.observeCount() }.collectAsStateBlocking()
     val prefs = preferenceManager()
     val prefs2 = preferenceManager2()
     val navController = app.lawnchair.ui.preferences.LocalNavController.current
@@ -182,6 +190,14 @@ fun GeneralPreferences(modifier: Modifier = Modifier) {
                     valueRange = 0F..1F,
                     step = 0.1f,
                     showAsPercentage = true,
+                )
+            }
+            if (customIconsCount > 0) {
+                ClickablePreference(
+                    label = stringResource(id = R.string.reset_custom_icons),
+                    subtitle = stringResource(id = R.string.reset_custom_icons_description),
+                    confirmationText = stringResource(id = R.string.reset_custom_icons_confirmation),
+                    onClick = { scope.launch { overrideRepo.deleteAll() } },
                 )
             }
         }
