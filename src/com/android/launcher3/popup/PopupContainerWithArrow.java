@@ -301,6 +301,7 @@ public class PopupContainerWithArrow<T extends Context & ActivityContext>
                     R.layout.system_shortcut);
         }
         show();
+        applyPrimePopupContentColors(this);
         loadAppShortcuts(itemInfo);
     }
 
