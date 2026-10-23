@@ -188,6 +188,10 @@ public class OptionsPopupView<T extends Context & ActivityContext> extends Arrow
             popup.setPrimePopupRoles(app.lawnchair.theme.ThemeColorRole.DRAWER_POPUP_BACKGROUND,
                     app.lawnchair.theme.ThemeColorRole.DRAWER_POPUP_TEXT,
                     app.lawnchair.theme.ThemeColorRole.DRAWER_POPUP_ICON);
+        } else {
+            popup.setPrimePopupRoles(app.lawnchair.theme.ThemeColorRole.HOME_POPUP_BACKGROUND,
+                    app.lawnchair.theme.ThemeColorRole.HOME_POPUP_TEXT,
+                    app.lawnchair.theme.ThemeColorRole.HOME_POPUP_ICON);
         }
         popup.setShouldAddArrow(shouldAddArrow);
 
