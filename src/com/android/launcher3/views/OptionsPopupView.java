@@ -268,6 +268,24 @@ public class OptionsPopupView<T extends Context & ActivityContext> extends Arrow
             Toast.makeText(launcher, message, Toast.LENGTH_SHORT).show();
             return false;
         }
+        // Keep the system wallpaper chooser, and offer an explicit image picker
+        // for gallery apps which do not handle ACTION_SET_WALLPAPER.
+        new android.app.AlertDialog.Builder(launcher)
+                .setTitle(R.string.wallpapers)
+                .setItems(new CharSequence[]{"Choisir une photo", "Fonds d'écran système"},
+                        (dialog, which) -> {
+                            if (which == 0) {
+                                launcher.startActivity(new Intent(launcher,
+                                        app.lawnchair.wallpaper.PhotoWallpaperActivity.class));
+                            } else {
+                                launchSystemWallpaperPicker(launcher, v);
+                            }
+                        })
+                .show();
+        return true;
+    }
+
+    private static boolean launchSystemWallpaperPicker(Launcher launcher, View v) {
         Intent intent = new Intent(Intent.ACTION_SET_WALLPAPER)
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
                 .putExtra(EXTRA_WALLPAPER_OFFSET,
