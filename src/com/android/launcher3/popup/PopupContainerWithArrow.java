@@ -220,6 +220,10 @@ public class PopupContainerWithArrow<T extends Context & ActivityContext>
             container.setPrimePopupRoles(app.lawnchair.theme.ThemeColorRole.DRAWER_POPUP_BACKGROUND,
                     app.lawnchair.theme.ThemeColorRole.DRAWER_POPUP_TEXT,
                     app.lawnchair.theme.ThemeColorRole.DRAWER_POPUP_ICON);
+        } else {
+            container.setPrimePopupRoles(app.lawnchair.theme.ThemeColorRole.HOME_POPUP_BACKGROUND,
+                    app.lawnchair.theme.ThemeColorRole.HOME_POPUP_TEXT,
+                    app.lawnchair.theme.ThemeColorRole.HOME_POPUP_ICON);
         }
         container.configureForLauncher(launcher, item);
         
