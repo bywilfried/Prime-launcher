@@ -270,18 +270,19 @@ public class OptionsPopupView<T extends Context & ActivityContext> extends Arrow
         }
         // Keep the system wallpaper chooser, and offer an explicit image picker
         // for gallery apps which do not handle ACTION_SET_WALLPAPER.
-        new android.app.AlertDialog.Builder(launcher)
-                .setTitle(R.string.wallpapers)
-                .setItems(new CharSequence[]{"Choisir une photo", "Fonds d'écran système"},
-                        (dialog, which) -> {
-                            if (which == 0) {
-                                launcher.startActivity(new Intent(launcher,
-                                        app.lawnchair.wallpaper.PhotoWallpaperActivity.class));
-                            } else {
-                                launchSystemWallpaperPicker(launcher, v);
-                            }
-                        })
-                .show();
+        // Use a theme-aware launcher popup rather than a platform AlertDialog:
+        // Prime's dark theme can otherwise render black labels on a dark background.
+        android.widget.PopupMenu menu = new android.widget.PopupMenu(launcher, v);
+        menu.getMenu().add("Choisir une photo").setOnMenuItemClickListener(item -> {
+            launcher.startActivity(new Intent(launcher,
+                    app.lawnchair.wallpaper.PhotoWallpaperActivity.class));
+            return true;
+        });
+        menu.getMenu().add("Fonds d'écran système").setOnMenuItemClickListener(item -> {
+            launchSystemWallpaperPicker(launcher, v);
+            return true;
+        });
+        menu.show();
         return true;
     }
 
