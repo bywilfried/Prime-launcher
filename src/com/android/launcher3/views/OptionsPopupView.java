@@ -210,6 +210,20 @@ public class OptionsPopupView<T extends Context & ActivityContext> extends Arrow
         }
 
         popup.show();
+        // The workspace options menu has its own row layout/background pipeline.
+        // Apply the selected popup color after that pipeline has assigned drawables.
+        final int menuBackground = popup.resolvePrimePopupColor(
+                app.lawnchair.theme.ThemeColorRole.HOME_POPUP_BACKGROUND);
+        if (!(activityContext instanceof com.android.launcher3.Launcher)
+                || !((com.android.launcher3.Launcher) activityContext)
+                        .isInState(com.android.launcher3.LauncherState.ALL_APPS)) {
+            for (View row : popup.mItemMap.keySet()) {
+                android.graphics.drawable.Drawable rowBackground = row.getBackground();
+                if (rowBackground != null) {
+                    rowBackground.mutate().setTint(menuBackground);
+                }
+            }
+        }
         return popup;
     }
 
