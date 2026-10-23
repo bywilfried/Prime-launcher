@@ -63,4 +63,6 @@
     <string name="prime_development_options_enable">Activer les options de développement</string>
     <string name="prime_development_options_enable_description">Affiche ou masque les options de développement dans le menu principal des paramètres.</string>
     <string name="reset_custom_icons_description">Supprime toutes les icônes modifiées manuellement et rétablit celles du pack d’icônes actif ou des applications.</string>
+    <string name="prime_feed_panel_label">Afficher le panneau de flux</string>
+    <string name="prime_feed_panel_description">Affiche un panneau à gauche de l’écran d’accueil avec le contenu du fournisseur de flux sélectionné.</string>
 </resources>
