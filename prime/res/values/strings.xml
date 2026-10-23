@@ -1183,4 +1183,6 @@
     <string name="prime_development_options_enable">Enable developer options</string>
     <string name="prime_development_options_enable_description">Show or hide developer options in the main settings menu.</string>
     <string name="reset_custom_icons_description">Remove all manually customized app icons and restore the icons from your current icon pack or apps.</string>
+    <string name="prime_feed_panel_label">Show feed panel</string>
+    <string name="prime_feed_panel_description">Displays a panel to the left of the home screen with content from the selected feed provider.</string>
 </resources>
