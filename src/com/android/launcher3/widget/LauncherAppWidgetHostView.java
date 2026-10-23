@@ -82,6 +82,12 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
     private final CheckLongPressHelper mLongPressHelper;
     protected final ActivityContext mActivityContext;
 
+    private float mPrimeLongPressX = Float.NaN;
+    private float mPrimeLongPressY = Float.NaN;
+
+    public float getPrimeLongPressX() { return mPrimeLongPressX; }
+    public float getPrimeLongPressY() { return mPrimeLongPressY; }
+
     private boolean mIsScrollable;
     private boolean mIsAttachedToWindow;
     private boolean mIsAutoAdvanceRegistered;
@@ -347,6 +353,8 @@ public class LauncherAppWidgetHostView extends BaseLauncherAppWidgetHostView
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
         if (ev.getAction() == MotionEvent.ACTION_DOWN) {
+            mPrimeLongPressX = ev.getX();
+            mPrimeLongPressY = ev.getY();
             BaseDragLayer<?> dragLayer = mActivityContext.getDragLayer();
             if (mIsScrollable) {
                 dragLayer.requestDisallowInterceptTouchEvent(true);
