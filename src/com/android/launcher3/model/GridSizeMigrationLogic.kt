@@ -479,7 +479,9 @@ class GridSizeMigrationLogic {
         val remainingItemsToPlace: MutableList<DbEntry> = ArrayList(itemsToPlace)
         val occupied = BooleanArray(hotseatSize)
         for (entry in placedHotseatItems) {
-            occupied[entry.screenId] = true
+            if (entry.screenId >= 0 && entry.screenId < occupied.size) {
+                occupied[entry.screenId] = true
+            }
         }
 
         for (i in occupied.indices) {
