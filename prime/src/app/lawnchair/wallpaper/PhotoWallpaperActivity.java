@@ -23,9 +23,9 @@ public class PhotoWallpaperActivity extends Activity {
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         if (state != null) return;
-        // Android may cap EXTRA_INITIAL_INTENTS to two entries, which hid Files
-        // behind the wallpaper providers. Use alternate intents so Android
-        // resolves all supported applications in the same native chooser.
+        // Use GET_CONTENT as the primary action: Samsung may directly launch
+        // the gallery when ACTION_PICK is the primary chooser target.
+        // Alternate actions let gallery and wallpaper apps participate.
         Intent gallery = new Intent(Intent.ACTION_PICK,
                 android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         gallery.setType("image/*");
@@ -39,9 +39,9 @@ public class PhotoWallpaperActivity extends Activity {
         documents.addCategory(Intent.CATEGORY_OPENABLE);
 
         Intent wallpapers = new Intent(Intent.ACTION_SET_WALLPAPER);
-        Intent chooser = Intent.createChooser(gallery, "Fonds d'écran");
+        Intent chooser = Intent.createChooser(files, "Fonds d'écran");
         chooser.putExtra(Intent.EXTRA_ALTERNATE_INTENTS,
-                new Intent[] { files, documents, wallpapers });
+                new Intent[] { gallery, documents, wallpapers });
         try {
             startActivityForResult(chooser, REQUEST_IMAGE);
         } catch (ActivityNotFoundException e) {
