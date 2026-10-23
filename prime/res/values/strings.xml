@@ -1187,4 +1187,6 @@
     <string name="prime_feed_panel_description">Displays a panel to the left of the home screen with content from the selected feed provider.</string>
     <string name="prime_icon_background_brightness">Icon background brightness</string>
     <string name="prime_icon_background_brightness_description">Background of non-adaptive icons: 0% is black, 100% is white.</string>
+    <string name="prime_clear_home_screen_label">Clear home screen</string>
+    <string name="prime_clear_home_screen_description">Removes all shortcuts, folders and widgets from home screen pages without uninstalling apps.</string>
 </resources>
