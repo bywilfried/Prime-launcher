@@ -268,36 +268,24 @@ public class OptionsPopupView<T extends Context & ActivityContext> extends Arrow
             Toast.makeText(launcher, message, Toast.LENGTH_SHORT).show();
             return false;
         }
-        // Keep the system wallpaper chooser, and offer an explicit image picker
-        // for gallery apps which do not handle ACTION_SET_WALLPAPER.
-        // Use a theme-aware launcher popup rather than a platform AlertDialog:
-        // Prime's dark theme can otherwise render black labels on a dark background.
-        android.widget.PopupMenu menu = new android.widget.PopupMenu(launcher, v);
-        menu.getMenu().add("Choisir une photo").setOnMenuItemClickListener(item -> {
-            launcher.startActivity(new Intent(launcher,
-                    app.lawnchair.wallpaper.PhotoWallpaperActivity.class));
-            return true;
-        });
-        menu.getMenu().add("Fonds d'écran système").setOnMenuItemClickListener(item -> {
-            launchSystemWallpaperPicker(launcher, v);
-            return true;
-        });
-        menu.show();
-        return true;
-    }
-
-    private static boolean launchSystemWallpaperPicker(Launcher launcher, View v) {
-        Intent intent = new Intent(Intent.ACTION_SET_WALLPAPER)
+        // Show the native Android chooser directly. Wallpaper providers handle
+        // ACTION_SET_WALLPAPER, while our photo entry handles arbitrary image sources.
+        Intent systemIntent = new Intent(Intent.ACTION_SET_WALLPAPER)
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
                 .putExtra(EXTRA_WALLPAPER_OFFSET,
                         launcher.getWorkspace().getWallpaperOffsetForCenterPage())
                 .putExtra(EXTRA_WALLPAPER_LAUNCH_SOURCE, "app_launched_launcher");
-        if (!Utilities.showStyleWallpapers(launcher)) {
-            intent.putExtra(EXTRA_WALLPAPER_FLAVOR, "wallpaper_only");
-        } else {
-            intent.putExtra(EXTRA_WALLPAPER_FLAVOR, "focus_wallpaper");
-        }
-        return launcher.startActivitySafely(v, intent, placeholderInfo(intent)) != null;
+        systemIntent.putExtra(EXTRA_WALLPAPER_FLAVOR,
+                Utilities.showStyleWallpapers(launcher) ? "focus_wallpaper" : "wallpaper_only");
+
+        Intent photoIntent = new Intent(launcher,
+                app.lawnchair.wallpaper.PhotoWallpaperActivity.class);
+        android.content.pm.LabeledIntent photoOption = new android.content.pm.LabeledIntent(
+                photoIntent, launcher.getPackageName(), "Choisir une image",
+                R.drawable.ic_wallpaper);
+        Intent chooser = Intent.createChooser(systemIntent, launcher.getString(R.string.wallpapers),
+                new Intent[]{photoOption});
+        return launcher.startActivitySafely(v, chooser, placeholderInfo(chooser)) != null;
     }
 
     private static boolean toggleHomeScreenLock(View v) {
