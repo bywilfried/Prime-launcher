@@ -534,6 +534,20 @@ public class DeviceProfile {
         numShownHotseatIcons = displayOptionSpec.numShownHotseatIcons;
         numHotseatRows = Math.max(1, Math.min(2, PreferenceManager.getInstance(context).getHotseatRows().get()));
         numHotseatPages = Math.max(1, Math.min(5, PreferenceManager.getInstance(context).getDockPages().get()));
+        // A book-style foldable uses the cover dock when the display is not two-panel.
+        // Keep the open dock page count as the user setting; the folded page count is
+        // transient and never written back to preferences.
+        if (inv.deviceType == InvariantDeviceProfile.TYPE_MULTI_DISPLAY
+                && !mDeviceProperties.isTwoPanels()
+                && PreferenceManager.getInstance(context).getFoldedDockAutoPages().get()) {
+            int unfoldedColumns = Math.max(1,
+                    PreferenceManager.getInstance(context).getHotseatColumnsUnfolded().get());
+            int foldedColumns = Math.max(1, numShownHotseatIcons);
+            int openSlots = numHotseatPages * unfoldedColumns * numHotseatRows;
+            int foldedSlotsPerPage = foldedColumns * numHotseatRows;
+            numHotseatPages = Math.max(numHotseatPages,
+                    (openSlots + foldedSlotsPerPage - 1) / foldedSlotsPerPage);
+        }
         mHotseatColumnSpan = inv.numColumns;
 
         numShownAllAppsColumns = displayOptionSpec.numAllAppsColumns;
