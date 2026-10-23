@@ -4,9 +4,6 @@ import android.app.Activity;
 import android.app.WallpaperManager;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
-import android.content.pm.ResolveInfo;
-import java.util.ArrayList;
-import java.util.List;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -26,53 +23,25 @@ public class PhotoWallpaperActivity extends Activity {
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         if (state != null) return;
-        // One Android chooser: galleries/files via GET_CONTENT and wallpaper
-        // providers via explicit SET_WALLPAPER intents. The chooser returns a
-        // selected image to this activity so Prime can apply it system-wide.
-        Intent images = new Intent(Intent.ACTION_GET_CONTENT);
-        images.setType("image/*");
-        images.addCategory(Intent.CATEGORY_OPENABLE);
-        Intent wallpaperQuery = new Intent(Intent.ACTION_SET_WALLPAPER);
-        List<ResolveInfo> providers = getPackageManager().queryIntentActivities(
-                wallpaperQuery, 0);
-        ArrayList<Intent> wallpaperIntents = new ArrayList<>();
-        for (ResolveInfo provider : providers) {
-            if (provider.activityInfo == null) continue;
-            Intent wallpaper = new Intent(wallpaperQuery);
-            wallpaper.setClassName(provider.activityInfo.packageName,
-                    provider.activityInfo.name);
-            wallpaperIntents.add(wallpaper);
-        }
-        // Gallery apps often register ACTION_PICK rather than ACTION_GET_CONTENT.
-        // Add their explicit intents to the same system chooser.
-        Intent galleryQuery = new Intent(Intent.ACTION_PICK,
+        // Android may cap EXTRA_INITIAL_INTENTS to two entries, which hid Files
+        // behind the wallpaper providers. Use alternate intents so Android
+        // resolves all supported applications in the same native chooser.
+        Intent gallery = new Intent(Intent.ACTION_PICK,
                 android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        galleryQuery.setType("image/*");
-        List<ResolveInfo> galleries = getPackageManager().queryIntentActivities(
-                galleryQuery, 0);
-        for (ResolveInfo gallery : galleries) {
-            if (gallery.activityInfo == null) continue;
-            Intent pick = new Intent(galleryQuery);
-            pick.setClassName(gallery.activityInfo.packageName, gallery.activityInfo.name);
-            wallpaperIntents.add(pick);
-        }
-        // ACTION_PICK was confirmed to open the Samsung gallery on this device.
-        // Make it the primary chooser action instead of GET_CONTENT, which
-        // Android resolves only to Files here. Keep Files as an extra source.
-        Intent chooser = Intent.createChooser(galleryQuery, "Fonds d'écran");
-        // Include each file browser explicitly: a bare GET_CONTENT extra may
-        // not be expanded into individual applications by Android's chooser.
-        List<ResolveInfo> fileBrowsers = getPackageManager().queryIntentActivities(images, 0);
-        for (ResolveInfo browser : fileBrowsers) {
-            if (browser.activityInfo == null) continue;
-            Intent files = new Intent(images);
-            files.setClassName(browser.activityInfo.packageName, browser.activityInfo.name);
-            wallpaperIntents.add(files);
-        }
-        if (!wallpaperIntents.isEmpty()) {
-            chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS,
-                    wallpaperIntents.toArray(new Intent[0]));
-        }
+        gallery.setType("image/*");
+
+        Intent files = new Intent(Intent.ACTION_GET_CONTENT);
+        files.setType("image/*");
+        files.addCategory(Intent.CATEGORY_OPENABLE);
+
+        Intent documents = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        documents.setType("image/*");
+        documents.addCategory(Intent.CATEGORY_OPENABLE);
+
+        Intent wallpapers = new Intent(Intent.ACTION_SET_WALLPAPER);
+        Intent chooser = Intent.createChooser(gallery, "Fonds d'écran");
+        chooser.putExtra(Intent.EXTRA_ALTERNATE_INTENTS,
+                new Intent[] { files, documents, wallpapers });
         try {
             startActivityForResult(chooser, REQUEST_IMAGE);
         } catch (ActivityNotFoundException e) {
