@@ -296,14 +296,19 @@ public abstract class ArrowPopup<T extends Context & ActivityContext>
                 if (isShortcutOrWrapper(view)) {
                     if (totalVisibleShortcuts == 1) {
                         // Lawnchair-TODO-High: view.setBackgroundResource is use instead
-                        view.setBackground(DrawableTokens.SingleItemPrimary.resolve(getContext()));
+                        GradientDrawable singleBackground = new GradientDrawable();
+                        singleBackground.setColor(mColors[0]);
+                        singleBackground.setCornerRadius(mOutlineRadius);
+                        view.setBackground(singleBackground);
                     } else if (totalVisibleShortcuts > 1) {
                         if (numVisibleShortcut == 0) {
                             view.setBackground(mRoundedTop.getConstantState().newDrawable());
                         } else if (numVisibleShortcut == (totalVisibleShortcuts - 1)) {
                             view.setBackground(mRoundedBottom.getConstantState().newDrawable());
                         } else {
-                            view.setBackground(DrawableTokens.MiddleItemPrimary.resolve(getContext()));
+                            GradientDrawable middleBackground = new GradientDrawable();
+                            middleBackground.setColor(mColors[0]);
+                            view.setBackground(middleBackground);
                         }
                         numVisibleShortcut++;
                     }
