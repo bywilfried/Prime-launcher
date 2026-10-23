@@ -67,4 +67,6 @@
     <string name="prime_feed_panel_description">Affiche un panneau à gauche de l’écran d’accueil avec le contenu du fournisseur de flux sélectionné.</string>
     <string name="prime_icon_background_brightness">Luminosité du fond des icônes</string>
     <string name="prime_icon_background_brightness_description">Fond des icônes non adaptatives : 0 % = noir, 100 % = blanc.</string>
+    <string name="prime_clear_home_screen_label">Vider l’écran d’accueil</string>
+    <string name="prime_clear_home_screen_description">Supprime tous les raccourcis, dossiers et widgets des pages d’accueil, sans désinstaller les applications.</string>
 </resources>
