@@ -104,17 +104,6 @@ fun HomeScreenPreferences(
                 description = stringResource(id = R.string.return_to_main_home_page_description),
             )
         }
-        PreferenceGroup(heading = stringResource(id = R.string.home_screen_actions)) {
-            ClickablePreference(
-                label = stringResource(id = R.string.remove_all_views_from_home_screen),
-                confirmationText = stringResource(id = R.string.remove_all_views_from_home_screen_desc),
-                onClick = {
-                    scope.launch {
-                        clearAllViewsFromHomeScreen(context, LauncherSettings.Favorites.CONTAINER_DESKTOP)
-                    }
-                },
-            )
-        }
         val feedAvailable = OverlayCallbackImpl.minusOneAvailable(LocalContext.current)
         val enableFeedAdapter = prefs2.enableFeed.getAdapter()
         PreferenceGroup(heading = stringResource(id = R.string.minus_one)) {
@@ -251,6 +240,18 @@ fun HomeScreenPreferences(
                 step = 0.05f,
                 valueRange = 0F..2F,
                 showAsPercentage = true,
+            )
+        }
+        PreferenceGroup {
+            ClickablePreference(
+                label = stringResource(id = R.string.prime_clear_home_screen_label),
+                subtitle = stringResource(id = R.string.prime_clear_home_screen_description),
+                confirmationText = stringResource(id = R.string.remove_all_views_from_home_screen_desc),
+                onClick = {
+                    scope.launch {
+                        clearAllViewsFromHomeScreen(context, LauncherSettings.Favorites.CONTAINER_DESKTOP)
+                    }
+                },
             )
         }
     }
