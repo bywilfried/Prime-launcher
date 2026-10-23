@@ -60,7 +60,15 @@ public class PhotoWallpaperActivity extends Activity {
         // Make it the primary chooser action instead of GET_CONTENT, which
         // Android resolves only to Files here. Keep Files as an extra source.
         Intent chooser = Intent.createChooser(galleryQuery, "Fonds d'écran");
-        wallpaperIntents.add(images);
+        // Include each file browser explicitly: a bare GET_CONTENT extra may
+        // not be expanded into individual applications by Android's chooser.
+        List<ResolveInfo> fileBrowsers = getPackageManager().queryIntentActivities(images, 0);
+        for (ResolveInfo browser : fileBrowsers) {
+            if (browser.activityInfo == null) continue;
+            Intent files = new Intent(images);
+            files.setClassName(browser.activityInfo.packageName, browser.activityInfo.name);
+            wallpaperIntents.add(files);
+        }
         if (!wallpaperIntents.isEmpty()) {
             chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS,
                     wallpaperIntents.toArray(new Intent[0]));
