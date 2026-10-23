@@ -467,7 +467,9 @@ public class GridSizeMigrationDBController {
 
         final boolean[] occupied = new boolean[dstHotseatSize];
         for (DbEntry entry : placedHotseatItems) {
-            occupied[entry.screenId] = true;
+            if (entry.screenId >= 0 && entry.screenId < occupied.length) {
+                occupied[entry.screenId] = true;
+            }
         }
 
         for (int i = 0; i < occupied.length; i++) {
