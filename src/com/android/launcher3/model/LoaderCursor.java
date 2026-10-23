@@ -593,6 +593,11 @@ public class LoaderCursor extends CursorWrapper {
             if (mRestoreEventLogger != null) {
                 mRestoreEventLogger.logSingleFavoritesItemRestored(itemType);
             }
+        } else if (info.container == Favorites.CONTAINER_HOTSEAT
+                && info.screenId >= mIDP.numDatabaseHotseatIcons) {
+            // Keep temporarily out-of-range dock items in the database.
+            // They can reappear when the dock capacity increases.
+            FileLog.d(TAG, "Keeping out-of-range dock item: " + info);
         } else {
             markDeleted("Item position overlap", RestoreError.OVERLAPPING_ITEM);
         }
