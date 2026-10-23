@@ -120,8 +120,8 @@ fun HomeScreenPreferences(
         PreferenceGroup(heading = stringResource(id = R.string.minus_one)) {
             SwitchPreference(
                 adapter = enableFeedAdapter,
-                label = stringResource(id = R.string.minus_one_enable),
-                description = if (feedAvailable) null else stringResource(id = R.string.minus_one_unavailable),
+                label = stringResource(id = R.string.prime_feed_panel_label),
+                description = stringResource(id = if (feedAvailable) R.string.prime_feed_panel_description else R.string.minus_one_unavailable),
                 enabled = feedAvailable,
             )
             ExpandAndShrink(visible = feedAvailable && enableFeedAdapter.state.value) {
