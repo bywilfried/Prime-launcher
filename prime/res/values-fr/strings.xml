@@ -62,4 +62,5 @@
     <string name="prime_font_experimental_section">Police (expérimental)</string>
     <string name="prime_development_options_enable">Activer les options de développement</string>
     <string name="prime_development_options_enable_description">Affiche ou masque les options de développement dans le menu principal des paramètres.</string>
+    <string name="reset_custom_icons_description">Supprime toutes les icônes modifiées manuellement et rétablit celles du pack d’icônes actif ou des applications.</string>
 </resources>
