@@ -43,6 +43,19 @@ public class PhotoWallpaperActivity extends Activity {
                     provider.activityInfo.name);
             wallpaperIntents.add(wallpaper);
         }
+        // Gallery apps often register ACTION_PICK rather than ACTION_GET_CONTENT.
+        // Add their explicit intents to the same system chooser.
+        Intent galleryQuery = new Intent(Intent.ACTION_PICK,
+                android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        galleryQuery.setType("image/*");
+        List<ResolveInfo> galleries = getPackageManager().queryIntentActivities(
+                galleryQuery, 0);
+        for (ResolveInfo gallery : galleries) {
+            if (gallery.activityInfo == null) continue;
+            Intent pick = new Intent(galleryQuery);
+            pick.setClassName(gallery.activityInfo.packageName, gallery.activityInfo.name);
+            wallpaperIntents.add(pick);
+        }
         Intent chooser = Intent.createChooser(images, "Fonds d'écran");
         if (!wallpaperIntents.isEmpty()) {
             chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS,
