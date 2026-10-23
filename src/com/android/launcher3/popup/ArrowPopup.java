@@ -314,7 +314,8 @@ public abstract class ArrowPopup<T extends Context & ActivityContext>
                     }
                 }
 
-                setChildColor(view, backgroundColor, colorAnimator);
+                setChildColor(view, backgroundColor == Color.TRANSPARENT
+                        ? mColors[0] : backgroundColor, colorAnimator);
             }
         }
 
