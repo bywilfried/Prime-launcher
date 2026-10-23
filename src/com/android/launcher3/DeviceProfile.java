@@ -534,19 +534,24 @@ public class DeviceProfile {
         numShownHotseatIcons = displayOptionSpec.numShownHotseatIcons;
         numHotseatRows = Math.max(1, Math.min(2, PreferenceManager.getInstance(context).getHotseatRows().get()));
         numHotseatPages = Math.max(1, Math.min(5, PreferenceManager.getInstance(context).getDockPages().get()));
-        // A book-style foldable uses the cover dock when the display is not two-panel.
-        // Keep the open dock page count as the user setting; the folded page count is
-        // transient and never written back to preferences.
+        // On a book-style foldable, the cover display uses its own dock capacity.
+        // Never persist this temporary page count: unfolding restores the user's
+        // configured number of open-dock pages.
         if (inv.deviceType == InvariantDeviceProfile.TYPE_MULTI_DISPLAY
-                && !mDeviceProperties.isTwoPanels()
-                && PreferenceManager.getInstance(context).getFoldedDockAutoPages().get()) {
-            int unfoldedColumns = Math.max(1,
-                    PreferenceManager.getInstance(context).getHotseatColumnsUnfolded().get());
-            int foldedColumns = Math.max(1, numShownHotseatIcons);
-            int openSlots = numHotseatPages * unfoldedColumns * numHotseatRows;
-            int foldedSlotsPerPage = foldedColumns * numHotseatRows;
-            numHotseatPages = Math.max(numHotseatPages,
-                    (openSlots + foldedSlotsPerPage - 1) / foldedSlotsPerPage);
+                && !mDeviceProperties.isTwoPanels()) {
+            if (PreferenceManager.getInstance(context).getFoldedDockAutoPages().get()) {
+                int unfoldedColumns = Math.max(1,
+                        PreferenceManager.getInstance(context).getHotseatColumnsUnfolded().get());
+                int foldedColumns = Math.max(1, numShownHotseatIcons);
+                int openSlots = numHotseatPages * unfoldedColumns * numHotseatRows;
+                int foldedSlotsPerPage = foldedColumns * numHotseatRows;
+                numHotseatPages = Math.max(1,
+                        (openSlots + foldedSlotsPerPage - 1) / foldedSlotsPerPage);
+            } else {
+                // Disabled means one cover page. Extra icons remain in the database
+                // and reappear when the device is unfolded.
+                numHotseatPages = 1;
+            }
         }
         mHotseatColumnSpan = inv.numColumns;
 
