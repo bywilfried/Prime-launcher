@@ -1182,4 +1182,5 @@
     <string name="prime_font_experimental_section">Fonts (experimental)</string>
     <string name="prime_development_options_enable">Enable developer options</string>
     <string name="prime_development_options_enable_description">Show or hide developer options in the main settings menu.</string>
+    <string name="reset_custom_icons_description">Remove all manually customized app icons and restore the icons from your current icon pack or apps.</string>
 </resources>
