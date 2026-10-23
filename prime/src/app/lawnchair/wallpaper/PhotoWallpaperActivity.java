@@ -23,14 +23,24 @@ public class PhotoWallpaperActivity extends Activity {
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         if (state != null) return;
-        Intent pick = new Intent(Intent.ACTION_GET_CONTENT);
+        // ACTION_PICK opens a photo-oriented gallery instead of the last Files folder.
+        // Fall back to the generic image document picker if no gallery is installed.
+        Intent pick = new Intent(Intent.ACTION_PICK,
+                android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         pick.setType("image/*");
-        pick.addCategory(Intent.CATEGORY_OPENABLE);
         try {
-            startActivityForResult(Intent.createChooser(pick, "Choisir une photo"), REQUEST_IMAGE);
+            startActivityForResult(pick, REQUEST_IMAGE);
         } catch (ActivityNotFoundException e) {
-            Toast.makeText(this, "Aucune application pour choisir une photo", Toast.LENGTH_LONG).show();
-            finish();
+            Intent fallback = new Intent(Intent.ACTION_GET_CONTENT);
+            fallback.setType("image/*");
+            fallback.addCategory(Intent.CATEGORY_OPENABLE);
+            try {
+                startActivityForResult(fallback, REQUEST_IMAGE);
+            } catch (ActivityNotFoundException ignored) {
+                Toast.makeText(this, "Aucune application pour choisir une photo",
+                        Toast.LENGTH_LONG).show();
+                finish();
+            }
         }
     }
 
