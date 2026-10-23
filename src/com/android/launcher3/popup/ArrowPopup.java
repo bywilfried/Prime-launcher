@@ -207,6 +207,27 @@ public abstract class ArrowPopup<T extends Context & ActivityContext>
     public int getPrimePopupTextColor() { return resolvePrimePopupColor(mPrimePopupTextRole); }
     public int getPrimePopupIconColor() { return resolvePrimePopupColor(mPrimePopupIconRole); }
 
+    /** Apply the chosen text/icon roles to inflated shortcut rows. */
+    public void applyPrimePopupContentColors(View root) {
+        if (root instanceof com.android.launcher3.shortcuts.DeepShortcutView) {
+            com.android.launcher3.shortcuts.DeepShortcutView shortcut =
+                    (com.android.launcher3.shortcuts.DeepShortcutView) root;
+            shortcut.getBubbleText().setTextColor(getPrimePopupTextColor());
+            View icon = shortcut.getIconView();
+            if (icon != null && icon.getBackground() != null) {
+                icon.getBackground().mutate().setTint(getPrimePopupIconColor());
+            }
+        } else if (root instanceof android.widget.TextView) {
+            ((android.widget.TextView) root).setTextColor(getPrimePopupTextColor());
+        }
+        if (root instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) root;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                applyPrimePopupContentColors(group.getChildAt(i));
+            }
+        }
+    }
+
     public ArrowPopup(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
     }
