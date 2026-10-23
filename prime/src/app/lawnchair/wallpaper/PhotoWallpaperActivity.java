@@ -4,6 +4,10 @@ import android.app.Activity;
 import android.app.WallpaperManager;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.pm.ResolveInfo;
+import android.os.Build;
+import java.util.ArrayList;
+import java.util.List;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -23,16 +27,29 @@ public class PhotoWallpaperActivity extends Activity {
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         if (state != null) return;
-        // Let Android show every compatible image source instead of jumping
-        // straight into the default gallery or the last-used Files folder.
-        Intent pick = new Intent(Intent.ACTION_GET_CONTENT);
-        pick.setType("image/*");
-        pick.addCategory(Intent.CATEGORY_OPENABLE);
+        // One Android chooser: galleries/files via GET_CONTENT and wallpaper
+        // providers via explicit SET_WALLPAPER intents. The chooser returns a
+        // selected image to this activity so Prime can apply it system-wide.
+        Intent images = new Intent(Intent.ACTION_GET_CONTENT);
+        images.setType("image/*");
+        images.addCategory(Intent.CATEGORY_OPENABLE);
+        Intent wallpaperQuery = new Intent(Intent.ACTION_SET_WALLPAPER);
+        List<ResolveInfo> providers = getPackageManager().queryIntentActivities(
+                wallpaperQuery, 0);
+        ArrayList<Intent> wallpaperIntents = new ArrayList<>();
+        for (ResolveInfo provider : providers) {
+            if (provider.activityInfo == null) continue;
+            Intent wallpaper = new Intent(wallpaperQuery);
+            wallpaper.setClassName(provider.activityInfo.packageName,
+                    provider.activityInfo.name);
+            wallpaperIntents.add(wallpaper);
+        }
+        Intent chooser = Intent.createChooser(images, "Fonds d'écran",
+                wallpaperIntents.toArray(new Intent[0]));
         try {
-            startActivityForResult(Intent.createChooser(pick, "Choisir une image"),
-                    REQUEST_IMAGE);
+            startActivityForResult(chooser, REQUEST_IMAGE);
         } catch (ActivityNotFoundException e) {
-            Toast.makeText(this, "Aucune application pour choisir une image",
+            Toast.makeText(this, "Aucune application de fond d'écran disponible",
                     Toast.LENGTH_LONG).show();
             finish();
         }
