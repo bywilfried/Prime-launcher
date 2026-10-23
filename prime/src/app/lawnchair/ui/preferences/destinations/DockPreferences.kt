@@ -183,13 +183,13 @@ fun GridSettings(prefs: PreferenceManager, prefs2: PreferenceManager2) {
     PreferenceGroup(heading = stringResource(id = R.string.grid)) {
         if (isFoldable) {
             SliderPreference(
-                label = stringResource(id = R.string.state_folded, stringResource(id = R.string.dock_icons)),
+                label = "Nombre d’icônes du dock fermé",
                 adapter = hotseatColumnsAdapter,
                 step = 1,
                 valueRange = 3..10,
             )
             SliderPreference(
-                label = stringResource(id = R.string.state_unfolded, stringResource(id = R.string.dock_icons)),
+                label = "Nombre d’icônes du dock ouvert",
                 adapter = hotseatColumnsUnfoldedAdapter,
                 step = 1,
                 valueRange = 3..10,
@@ -216,11 +216,17 @@ fun GridSettings(prefs: PreferenceManager, prefs2: PreferenceManager2) {
             valueRange = 1..2,
         )
         SliderPreference(
-            label = stringResource(id = R.string.dock_pages),
+            label = if (isFoldable) "Pages du dock ouvert" else stringResource(id = R.string.dock_pages),
             adapter = dockPagesAdapter,
             step = 1,
             valueRange = 1..5,
         )
+        if (isFoldable) {
+            SwitchPreference(
+                adapter = prefs.foldedDockAutoPages.getAdapter(),
+                label = "Lorsque le téléphone est replié, permettre le passage automatique sur plusieurs pages",
+            )
+        }
         SliderPreference(
             adapter = prefs2.hotseatBottomFactor.getAdapter(),
             label = stringResource(id = R.string.hotseat_bottom_space_label),
