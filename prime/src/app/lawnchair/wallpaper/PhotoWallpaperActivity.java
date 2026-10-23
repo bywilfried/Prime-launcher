@@ -56,7 +56,11 @@ public class PhotoWallpaperActivity extends Activity {
             pick.setClassName(gallery.activityInfo.packageName, gallery.activityInfo.name);
             wallpaperIntents.add(pick);
         }
-        Intent chooser = Intent.createChooser(images, "Fonds d'écran");
+        // ACTION_PICK was confirmed to open the Samsung gallery on this device.
+        // Make it the primary chooser action instead of GET_CONTENT, which
+        // Android resolves only to Files here. Keep Files as an extra source.
+        Intent chooser = Intent.createChooser(galleryQuery, "Fonds d'écran");
+        wallpaperIntents.add(images);
         if (!wallpaperIntents.isEmpty()) {
             chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS,
                     wallpaperIntents.toArray(new Intent[0]));
