@@ -24,7 +24,10 @@ import static com.android.launcher3.LauncherState.NORMAL;
 import static com.android.launcher3.LauncherState.OVERVIEW;
 import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCHER_ALLAPPS_ITEM_LONG_PRESSED;
 
-import app.lawnchair.theme.color.tokens.ColorTokens;
+import app.lawnchair.theme.ThemeColors;
+import app.lawnchair.theme.ThemeColorRole;
+import app.lawnchair.theme.ThemeProfile;
+import app.lawnchair.theme.ThemeAppearanceModeKt;
 import android.graphics.drawable.GradientDrawable;
 import android.widget.PopupWindow;
 import android.graphics.Point;
@@ -106,7 +109,11 @@ public class ItemLongClickListener {
         int padding = Math.round(16 * density);
         column.setPadding(padding / 2, padding / 2, padding / 2, padding / 2);
         GradientDrawable background = new GradientDrawable();
-        background.setColor(ColorTokens.PopupShadeFirst.resolveColor(launcher));
+        final ThemeProfile profile = ThemeProfile.Companion.current(launcher);
+        final app.lawnchair.theme.ThemeVariant variant =
+                ThemeAppearanceModeKt.effectiveThemeVariant(launcher);
+        background.setColor(ThemeColors.INSTANCE.resolve(launcher, profile,
+                ThemeColorRole.HOME_POPUP_BACKGROUND, variant));
         background.setCornerRadius(Math.round(26 * density));
         column.setBackground(background);
         column.setElevation(Math.round(8 * density));
@@ -122,7 +129,8 @@ public class ItemLongClickListener {
             row.setMinimumHeight(Math.round(52 * density));
             ImageView image = new ImageView(launcher);
             image.setImageResource(icons[i]);
-            image.setColorFilter(ColorTokens.TextColorSecondary.resolveColor(launcher));
+            image.setColorFilter(ThemeColors.INSTANCE.resolve(launcher, profile,
+                    ThemeColorRole.HOME_POPUP_ICON, variant));
             LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(
                     Math.round(24 * density), Math.round(24 * density));
             iconParams.rightMargin = padding;
@@ -130,7 +138,8 @@ public class ItemLongClickListener {
             TextView label = new TextView(launcher);
             label.setText(labels[i]);
             label.setTextSize(15);
-            label.setTextColor(ColorTokens.TextColorPrimary.resolveColor(launcher));
+            label.setTextColor(ThemeColors.INSTANCE.resolve(launcher, profile,
+                    ThemeColorRole.HOME_POPUP_TEXT, variant));
             row.addView(label);
             row.setOnClickListener(clicked -> {
                 popup.dismiss();
