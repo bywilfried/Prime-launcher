@@ -124,10 +124,12 @@ public interface WorkspaceLayoutManager {
             Hotseat hotseat = getHotseat();
             layout = hotseat.getPageAt(screenId);
             if (layout == null) {
-                layout = hotseat.getCurrentPageLayout();
-            }
-            if (layout == null) {
-                Log.e(TAG, "Skipping child, hotseat page " + screenId + " not found");
+                // A saved rank can exceed the number of currently visible dock pages,
+                // especially on a folded cover display with automatic paging disabled.
+                // Never redirect it onto the current page: that would overlap icons
+                // and could corrupt the visible layout. The model/DB retains the item.
+                Log.d(TAG, "Keeping dock item hidden: page " + screenId
+                        + " is not available in the current display profile");
                 return;
             }
 
