@@ -24,7 +24,7 @@ import static com.android.launcher3.LauncherState.NORMAL;
 import static com.android.launcher3.LauncherState.OVERVIEW;
 import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCHER_ALLAPPS_ITEM_LONG_PRESSED;
 
-import android.graphics.Color;
+import app.lawnchair.theme.color.tokens.ColorTokens;
 import android.graphics.drawable.GradientDrawable;
 import android.widget.PopupWindow;
 import android.graphics.Point;
@@ -106,7 +106,7 @@ public class ItemLongClickListener {
         int padding = Math.round(16 * density);
         column.setPadding(padding / 2, padding / 2, padding / 2, padding / 2);
         GradientDrawable background = new GradientDrawable();
-        background.setColor(Color.rgb(45, 48, 69));
+        background.setColor(ColorTokens.PopupShadeFirst.resolveColor(launcher));
         background.setCornerRadius(Math.round(26 * density));
         column.setBackground(background);
         column.setElevation(Math.round(8 * density));
@@ -122,7 +122,7 @@ public class ItemLongClickListener {
             row.setMinimumHeight(Math.round(52 * density));
             ImageView image = new ImageView(launcher);
             image.setImageResource(icons[i]);
-            image.setColorFilter(Color.rgb(205, 203, 222));
+            image.setColorFilter(ColorTokens.TextColorSecondary.resolveColor(launcher));
             LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(
                     Math.round(24 * density), Math.round(24 * density));
             iconParams.rightMargin = padding;
@@ -130,7 +130,7 @@ public class ItemLongClickListener {
             TextView label = new TextView(launcher);
             label.setText(labels[i]);
             label.setTextSize(15);
-            label.setTextColor(Color.WHITE);
+            label.setTextColor(ColorTokens.TextColorPrimary.resolveColor(launcher));
             row.addView(label);
             row.setOnClickListener(clicked -> {
                 popup.dismiss();
@@ -153,8 +153,8 @@ public class ItemLongClickListener {
         popup.setHeight(android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
         popup.setBackgroundDrawable(background);
         popup.setOutsideTouchable(true);
-        // Keep the original touch stream in DragLayer, as for icon pre-drag popups.
-        popup.setFocusable(false);
+        // A focusable popup consumes Android Back and dismisses itself.
+        popup.setFocusable(true);
         popup.setTouchable(true);
         popup.setElevation(Math.round(10 * density));
         // Anchor to the actual long-press point, like workspace icon menus.
