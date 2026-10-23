@@ -210,6 +210,7 @@ public class OptionsPopupView<T extends Context & ActivityContext> extends Arrow
         }
 
         popup.show();
+        popup.applyPrimePopupContentColors(popup);
         // The workspace options menu has its own row layout/background pipeline.
         // Apply the selected popup color after that pipeline has assigned drawables.
         final int menuBackground = popup.resolvePrimePopupColor(
