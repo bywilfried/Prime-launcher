@@ -37,6 +37,9 @@ import android.widget.TextView;
 import android.view.Gravity;
 
 import com.android.launcher3.AppWidgetResizeFrame;
+import com.android.launcher3.R;
+import com.android.launcher3.LauncherConstants.ActivityCodes;
+import com.android.launcher3.util.PendingRequestArgs;
 import com.android.launcher3.model.data.LauncherAppWidgetInfo;
 import android.graphics.Rect;
 import android.view.View;
@@ -118,9 +121,18 @@ public class ItemLongClickListener {
         column.setBackground(background);
         column.setElevation(Math.round(8 * density));
 
-        String[] labels = {"Redimensionner", "Marges du widget"};
-        int[] icons = {android.R.drawable.ic_menu_crop,
-                android.R.drawable.ic_menu_edit};
+        // Reuse Prime's existing edit icon; show configuration only when Android
+        // declares that this particular widget can be reconfigured.
+        final boolean reconfigurable = widget.getAppWidgetInfo() != null
+                && widget.getAppWidgetInfo().isReconfigurable();
+        String[] labels = reconfigurable
+                ? new String[]{"Redimensionner", "Marges du widget", "Personnaliser le widget"}
+                : new String[]{"Redimensionner", "Marges du widget"};
+        int[] icons = reconfigurable
+                ? new int[]{android.R.drawable.ic_menu_crop,
+                        R.drawable.ic_widget_margins_dashed, R.drawable.ic_edit}
+                : new int[]{android.R.drawable.ic_menu_crop,
+                        R.drawable.ic_widget_margins_dashed};
         for (int i = 0; i < labels.length; i++) {
             final int action = i;
             LinearLayout row = new LinearLayout(launcher);
@@ -151,8 +163,12 @@ public class ItemLongClickListener {
                         AppWidgetResizeFrame.showForWidget(widget,
                                 (com.android.launcher3.CellLayout) widget.getParent().getParent());
                     }
-                } else {
-                    beginDrag(widget, launcher, info, new DragOptions());
+                } else if (action == 2 && reconfigurable) {
+                    launcher.setWaitingForResult(PendingRequestArgs.forWidgetInfo(
+                            widget.getAppWidgetId(), null, info));
+                    launcher.getAppWidgetHolder().startConfigActivity(
+                            launcher, widget.getAppWidgetId(),
+                            ActivityCodes.REQUEST_RECONFIGURE_APPWIDGET);
                 }
             });
             column.addView(row);
