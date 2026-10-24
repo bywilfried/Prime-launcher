@@ -223,6 +223,10 @@ fun PreferenceNavigation(
                 defaultDynamicColor = ThemeColors.officialDynamicRecipe(role, variant),
                 themeDefaultDescription = ThemeColors.officialDefaultDescription(profile, role),
                 iconLabelText = role == ThemeColorRole.DRAWER_TEXT ||
+                    role == ThemeColorRole.HOME_POPUP_TEXT ||
+                    role == ThemeColorRole.HOME_POPUP_ICON ||
+                    role == ThemeColorRole.DRAWER_POPUP_TEXT ||
+                    role == ThemeColorRole.DRAWER_POPUP_ICON ||
                     role == ThemeColorRole.HOME_ICON_TEXT ||
                     role == ThemeColorRole.HOME_FOLDER_ICON_TEXT ||
                     role == ThemeColorRole.HOME_FOLDER_CLOSED_TEXT ||
