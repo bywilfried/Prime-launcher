@@ -62,7 +62,7 @@ fun PrimeDevelopmentOptionsPreference() {
                 onClick = {
                     popupLog = PrimeDebugLog.getText().lineSequence()
                         .filter { it.contains("PrimePopupTrace") }
-                        .joinToString("\\n")
+                        .joinToString("\n")
                         .ifBlank { "Aucune trace. Effectuez un appui long sur une zone vide de l’accueil, puis revenez ici." }
                     showPopupDiagnostic = true
                 },
