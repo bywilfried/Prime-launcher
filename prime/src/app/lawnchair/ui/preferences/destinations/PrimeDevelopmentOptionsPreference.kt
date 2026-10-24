@@ -60,9 +60,7 @@ fun PrimeDevelopmentOptionsPreference() {
                 label = "Diagnostic des menus contextuels",
                 subtitle = "Afficher et partager les couleurs et fonds des menus de l’accueil",
                 onClick = {
-                    popupLog = PrimeDebugLog.getText().lineSequence()
-                        .filter { it.contains("PrimePopupTrace") }
-                        .joinToString("\n")
+                    popupLog = PrimeDebugLog.getPopupText(context)
                         .ifBlank { "Aucune trace. Effectuez un appui long sur une zone vide de l’accueil, puis revenez ici." }
                     showPopupDiagnostic = true
                 },
@@ -99,7 +97,7 @@ fun PrimeDevelopmentOptionsPreference() {
                     context.startActivity(Intent.createChooser(share, "Partager le diagnostic"))
                 }) { Text("Partager") }
                 TextButton(onClick = {
-                    PrimeDebugLog.clear()
+                    PrimeDebugLog.clearPopup(context)
                     popupLog = "Journal effacé. Effectuez un nouvel appui long sur une zone vide."
                 }) { Text("Effacer") }
             },
