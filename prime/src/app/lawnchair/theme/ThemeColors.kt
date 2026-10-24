@@ -437,6 +437,14 @@ object ThemeColors {
             ColorOption.Default -> official
             ColorOption.LegacyBehavior -> legacy(context, role, variant)
             ColorOption.AutomaticBlackWhite -> when (role) {
+                ThemeColorRole.HOME_POPUP_TEXT,
+                ThemeColorRole.HOME_POPUP_ICON -> categoryBlackWhite(
+                    resolveTheme(context, profile, ThemeColorRole.HOME_POPUP_BACKGROUND, variant), variant,
+                )
+                ThemeColorRole.DRAWER_POPUP_TEXT,
+                ThemeColorRole.DRAWER_POPUP_ICON -> categoryBlackWhite(
+                    resolveTheme(context, profile, ThemeColorRole.DRAWER_POPUP_BACKGROUND, variant), variant,
+                )
                 ThemeColorRole.PRIME_SEARCH_TEXT,
                 ThemeColorRole.PRIME_SEARCH_HINT,
                 ThemeColorRole.PRIME_SEARCH_ICON,
@@ -470,6 +478,10 @@ object ThemeColors {
             }
             ColorOption.AdaptiveThemeText -> {
                 val backgroundRole = when (role) {
+                    ThemeColorRole.HOME_POPUP_TEXT,
+                    ThemeColorRole.HOME_POPUP_ICON -> ThemeColorRole.HOME_POPUP_BACKGROUND
+                    ThemeColorRole.DRAWER_POPUP_TEXT,
+                    ThemeColorRole.DRAWER_POPUP_ICON -> ThemeColorRole.DRAWER_POPUP_BACKGROUND
                     ThemeColorRole.PRIME_SEARCH_TEXT,
                     ThemeColorRole.PRIME_SEARCH_HINT,
                     ThemeColorRole.PRIME_SEARCH_ICON,
