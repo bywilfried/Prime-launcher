@@ -452,6 +452,19 @@ class LawnchairLauncher : QuickstepLauncher() {
         val layout = R.layout.wallpaper_options_popup
 
         val popup = activityContext.layoutInflater.inflate(layout, activityContext.dragLayer, false) as OptionsPopupView<T>
+        // This carousel path bypasses OptionsPopupView.show(), so it must set
+        // the same workspace theme roles explicitly before ArrowPopup.show().
+        popup.setPrimePopupRoles(
+            app.lawnchair.theme.ThemeColorRole.HOME_POPUP_BACKGROUND,
+            app.lawnchair.theme.ThemeColorRole.HOME_POPUP_TEXT,
+            app.lawnchair.theme.ThemeColorRole.HOME_POPUP_ICON,
+        )
+        com.android.launcher3.PrimeDebugLog.popup(
+            this,
+            "carousel popup roles background=" + String.format("#%08X", popup.mColors[0]) +
+                " text=" + String.format("#%08X", popup.primePopupTextColor) +
+                " icon=" + String.format("#%08X", popup.primePopupIconColor),
+        )
         popup.setTargetRect(targetRect)
         popup.setShouldAddArrow(shouldAddArrow)
 
@@ -461,6 +474,8 @@ class LawnchairLauncher : QuickstepLauncher() {
             val view = popup.inflateAndAdd<DeepShortcutView>(deepLayout, popup)
             if (width > 0) view.layoutParams.width = width
             view.iconView.setBackgroundDrawable(item.icon)
+            item.icon?.mutate()?.setTint(popup.primePopupIconColor)
+            view.bubbleText.setTextColor(popup.primePopupTextColor)
             view.bubbleText.text = item.label
             view.setOnClickListener(popup)
             view.setOnLongClickListener(popup)
@@ -468,6 +483,12 @@ class LawnchairLauncher : QuickstepLauncher() {
         }
 
         popup.show()
+        com.android.launcher3.PrimeDebugLog.popup(
+            this,
+            "carousel popup shown children=" + popup.childCount +
+                " rows=" + popup.mItemMap.size +
+                " background=" + String.format("#%08X", popup.mColors[0]),
+        )
         return popup
     }
 
