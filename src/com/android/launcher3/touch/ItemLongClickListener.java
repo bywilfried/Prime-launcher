@@ -123,8 +123,10 @@ public class ItemLongClickListener {
 
         // Reuse Prime's existing edit icon; show configuration only when Android
         // declares that this particular widget can be reconfigured.
-        final boolean reconfigurable = widget.getAppWidgetInfo() != null
-                && widget.getAppWidgetInfo().isReconfigurable();
+        final boolean reconfigurable = widget.getAppWidgetInfo() instanceof
+                com.android.launcher3.widget.LauncherAppWidgetProviderInfo
+                && ((com.android.launcher3.widget.LauncherAppWidgetProviderInfo)
+                        widget.getAppWidgetInfo()).isReconfigurable();
         String[] labels = reconfigurable
                 ? new String[]{"Redimensionner", "Marges du widget", "Personnaliser le widget"}
                 : new String[]{"Redimensionner", "Marges du widget"};
