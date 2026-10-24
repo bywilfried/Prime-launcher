@@ -131,9 +131,9 @@ public class ItemLongClickListener {
                 ? new String[]{"Redimensionner", "Marges du widget", "Personnaliser le widget"}
                 : new String[]{"Redimensionner", "Marges du widget"};
         int[] icons = reconfigurable
-                ? new int[]{android.R.drawable.ic_menu_crop,
+                ? new int[]{R.drawable.ic_widget_resize_outline,
                         R.drawable.ic_widget_margins_dashed, R.drawable.ic_edit}
-                : new int[]{android.R.drawable.ic_menu_crop,
+                : new int[]{R.drawable.ic_widget_resize_outline,
                         R.drawable.ic_widget_margins_dashed};
         for (int i = 0; i < labels.length; i++) {
             final int action = i;
