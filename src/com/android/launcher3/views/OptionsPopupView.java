@@ -193,7 +193,7 @@ public class OptionsPopupView<T extends Context & ActivityContext> extends Arrow
                     app.lawnchair.theme.ThemeColorRole.HOME_POPUP_TEXT,
                     app.lawnchair.theme.ThemeColorRole.HOME_POPUP_ICON);
         }
-        com.android.launcher3.PrimeDebugLog.d("PrimePopupTrace",
+        com.android.launcher3.PrimeDebugLog.popup(popup.getContext(),
                 "open state=" + ((activityContext instanceof com.android.launcher3.Launcher
                         && ((com.android.launcher3.Launcher) activityContext)
                         .isInState(com.android.launcher3.LauncherState.ALL_APPS))
@@ -218,18 +218,18 @@ public class OptionsPopupView<T extends Context & ActivityContext> extends Arrow
             popup.mItemMap.put(view, item);
         }
 
-        com.android.launcher3.PrimeDebugLog.d("PrimePopupTrace", "beforeShow children=" + popup.getChildCount());
+        com.android.launcher3.PrimeDebugLog.popup(popup.getContext(), "beforeShow children=" + popup.getChildCount());
         popup.show();
         // The workspace popup rows are styled during layout/animation. Apply
         // the resolved theme colors to the actual row views after inflation.
         // A post also avoids their drawables being replaced during setup.
         popup.post(() -> {
-            com.android.launcher3.PrimeDebugLog.d("PrimePopupTrace",
+            com.android.launcher3.PrimeDebugLog.popup(popup.getContext(),
                     "afterShow root=" + popup.getClass().getSimpleName()
                             + " children=" + popup.getChildCount());
             for (int i = 0; i < popup.getChildCount(); i++) {
                 View child = popup.getChildAt(i);
-                com.android.launcher3.PrimeDebugLog.d("PrimePopupTrace",
+                com.android.launcher3.PrimeDebugLog.popup(popup.getContext(),
                         "child[" + i + "]=" + child.getClass().getSimpleName()
                                 + " background=" + describePrimeBackground(child));
             }
@@ -239,7 +239,7 @@ public class OptionsPopupView<T extends Context & ActivityContext> extends Arrow
             final int foreground = popup.getPrimePopupTextColor();
             final int iconColor = popup.getPrimePopupIconColor();
             for (View row : popup.mItemMap.keySet()) {
-                com.android.launcher3.PrimeDebugLog.d("PrimePopupTrace",
+                com.android.launcher3.PrimeDebugLog.popup(popup.getContext(),
                         "row before recolor label=" + ((DeepShortcutView) row).getBubbleText().getText()
                                 + " background=" + describePrimeBackground(row)
                                 + " text=" + String.format("#%08X",
@@ -250,7 +250,7 @@ public class OptionsPopupView<T extends Context & ActivityContext> extends Arrow
                 shape.setColor(background);
                 shape.setCornerRadius(popup.mOutlineRadius);
                 row.setBackground(shape);
-                com.android.launcher3.PrimeDebugLog.d("PrimePopupTrace",
+                com.android.launcher3.PrimeDebugLog.popup(popup.getContext(),
                         "row after recolor background=" + describePrimeBackground(row));
                 if (row instanceof DeepShortcutView) {
                     DeepShortcutView shortcut = (DeepShortcutView) row;
