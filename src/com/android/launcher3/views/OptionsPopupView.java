@@ -193,6 +193,15 @@ public class OptionsPopupView<T extends Context & ActivityContext> extends Arrow
                     app.lawnchair.theme.ThemeColorRole.HOME_POPUP_TEXT,
                     app.lawnchair.theme.ThemeColorRole.HOME_POPUP_ICON);
         }
+        com.android.launcher3.PrimeDebugLog.d("PrimePopupTrace",
+                "open state=" + ((activityContext instanceof com.android.launcher3.Launcher
+                        && ((com.android.launcher3.Launcher) activityContext)
+                        .isInState(com.android.launcher3.LauncherState.ALL_APPS))
+                        ? "drawer" : "workspace")
+                        + " requestedBackground=" + String.format("#%08X", popup.mColors[0])
+                        + " requestedText=" + String.format("#%08X", popup.getPrimePopupTextColor())
+                        + " requestedIcon=" + String.format("#%08X", popup.getPrimePopupIconColor())
+                        + " rows=" + items.size());
         popup.setShouldAddArrow(shouldAddArrow);
 
         for (OptionItem item : items) {
@@ -209,21 +218,40 @@ public class OptionsPopupView<T extends Context & ActivityContext> extends Arrow
             popup.mItemMap.put(view, item);
         }
 
+        com.android.launcher3.PrimeDebugLog.d("PrimePopupTrace", "beforeShow children=" + popup.getChildCount());
         popup.show();
         // The workspace popup rows are styled during layout/animation. Apply
         // the resolved theme colors to the actual row views after inflation.
         // A post also avoids their drawables being replaced during setup.
         popup.post(() -> {
+            com.android.launcher3.PrimeDebugLog.d("PrimePopupTrace",
+                    "afterShow root=" + popup.getClass().getSimpleName()
+                            + " children=" + popup.getChildCount());
+            for (int i = 0; i < popup.getChildCount(); i++) {
+                View child = popup.getChildAt(i);
+                com.android.launcher3.PrimeDebugLog.d("PrimePopupTrace",
+                        "child[" + i + "]=" + child.getClass().getSimpleName()
+                                + " background=" + describePrimeBackground(child));
+            }
+
             final int background = popup.resolvePrimePopupColor(
                     app.lawnchair.theme.ThemeColorRole.HOME_POPUP_BACKGROUND);
             final int foreground = popup.getPrimePopupTextColor();
             final int iconColor = popup.getPrimePopupIconColor();
             for (View row : popup.mItemMap.keySet()) {
+                com.android.launcher3.PrimeDebugLog.d("PrimePopupTrace",
+                        "row before recolor label=" + ((DeepShortcutView) row).getBubbleText().getText()
+                                + " background=" + describePrimeBackground(row)
+                                + " text=" + String.format("#%08X",
+                                        ((DeepShortcutView) row).getBubbleText().getCurrentTextColor()));
+
                 android.graphics.drawable.GradientDrawable shape =
                         new android.graphics.drawable.GradientDrawable();
                 shape.setColor(background);
                 shape.setCornerRadius(popup.mOutlineRadius);
                 row.setBackground(shape);
+                com.android.launcher3.PrimeDebugLog.d("PrimePopupTrace",
+                        "row after recolor background=" + describePrimeBackground(row));
                 if (row instanceof DeepShortcutView) {
                     DeepShortcutView shortcut = (DeepShortcutView) row;
                     shortcut.getBubbleText().setTextColor(foreground);
@@ -235,6 +263,21 @@ public class OptionsPopupView<T extends Context & ActivityContext> extends Arrow
             }
         });
         return popup;
+    }
+
+    private static String describePrimeBackground(View view) {
+        android.graphics.drawable.Drawable drawable = view.getBackground();
+        if (drawable == null) return "null";
+        String description = drawable.getClass().getSimpleName();
+        if (drawable instanceof android.graphics.drawable.GradientDrawable) {
+            android.content.res.ColorStateList colors =
+                    ((android.graphics.drawable.GradientDrawable) drawable).getColor();
+            if (colors != null) description += "(" + String.format("#%08X", colors.getDefaultColor()) + ")";
+        } else if (drawable instanceof android.graphics.drawable.ColorDrawable) {
+            description += "(" + String.format("#%08X",
+                    ((android.graphics.drawable.ColorDrawable) drawable).getColor()) + ")";
+        }
+        return description;
     }
 
     /**
