@@ -25,6 +25,8 @@ import app.lawnchair.ui.preferences.navigation.PrimeDiagnosticLogs
 import app.lawnchair.util.restartLauncher
 import com.android.launcher3.R
 import com.android.launcher3.allapps.ActivityAllAppsContainerView
+import android.content.Intent
+import com.android.launcher3.PrimeDebugLog
 import android.content.ClipData
 import android.content.ClipboardManager
 
@@ -33,6 +35,8 @@ fun PrimeDevelopmentOptionsPreference() {
     val navController = LocalNavController.current
     val context = LocalContext.current
     var showSwipeDiagnostic by remember { mutableStateOf(false) }
+    var showPopupDiagnostic by remember { mutableStateOf(false) }
+    var popupLog by remember { mutableStateOf("") }
     PreferenceLayout(
         label = stringResource(R.string.prime_development_options),
         backArrowVisible = true,
@@ -53,11 +57,53 @@ fun PrimeDevelopmentOptionsPreference() {
                 onClick = { app.lawnchair.bugreport.PrimeWidgetLogExporter.export(context) },
             )
             ClickablePreference(
+                label = "Diagnostic des menus contextuels",
+                subtitle = "Afficher et partager les couleurs et fonds des menus de l’accueil",
+                onClick = {
+                    popupLog = PrimeDebugLog.getText().lineSequence()
+                        .filter { it.contains("PrimePopupTrace") }
+                        .joinToString("\\n")
+                        .ifBlank { "Aucune trace. Effectuez un appui long sur une zone vide de l’accueil, puis revenez ici." }
+                    showPopupDiagnostic = true
+                },
+            )
+            ClickablePreference(
                 label = "Diagnostic swipe",
                 subtitle = "Afficher les traces du swipe entre les catégories du tiroir",
                 onClick = { showSwipeDiagnostic = true },
             )
         }
+    }
+
+    if (showPopupDiagnostic) {
+        AlertDialog(
+            onDismissRequest = { showPopupDiagnostic = false },
+            title = { Text("Diagnostic des menus contextuels") },
+            text = {
+                Box(Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState())) {
+                    Text(popupLog)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    context.getSystemService(ClipboardManager::class.java)
+                        ?.setPrimaryClip(ClipData.newPlainText("Prime popup diagnostic", popupLog))
+                }) { Text("Copier") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    val share = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, popupLog)
+                    }
+                    context.startActivity(Intent.createChooser(share, "Partager le diagnostic"))
+                }) { Text("Partager") }
+                TextButton(onClick = {
+                    PrimeDebugLog.clear()
+                    popupLog = "Journal effacé. Effectuez un nouvel appui long sur une zone vide."
+                }) { Text("Effacer") }
+            },
+        )
     }
 
     if (showSwipeDiagnostic) {
