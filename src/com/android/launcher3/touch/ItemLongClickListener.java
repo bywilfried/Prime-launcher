@@ -139,19 +139,21 @@ public class ItemLongClickListener {
             final int action = i;
             LinearLayout row = new LinearLayout(launcher);
             row.setGravity(Gravity.CENTER_VERTICAL);
-            row.setPadding(padding / 2, padding / 2, padding / 2, padding / 2);
-            row.setMinimumHeight(Math.round(52 * density));
+            row.setPadding(padding / 2, 0, padding / 2, 0);
+            row.setMinimumHeight(launcher.getResources().getDimensionPixelSize(
+                    R.dimen.bg_popup_item_height));
             ImageView image = new ImageView(launcher);
             image.setImageResource(icons[i]);
             image.setColorFilter(ThemeColors.INSTANCE.resolve(launcher, profile,
                     ThemeColorRole.HOME_POPUP_ICON, variant));
             LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(
-                    Math.round(24 * density), Math.round(24 * density));
+                    launcher.getResources().getDimensionPixelSize(R.dimen.system_shortcut_icon_size),
+                    launcher.getResources().getDimensionPixelSize(R.dimen.system_shortcut_icon_size));
             iconParams.rightMargin = padding;
             row.addView(image, iconParams);
             TextView label = new TextView(launcher);
             label.setText(labels[i]);
-            label.setTextSize(15);
+            label.setTextSize(14);
             label.setTextColor(ThemeColors.INSTANCE.resolve(launcher, profile,
                     ThemeColorRole.HOME_POPUP_TEXT, variant));
             row.addView(label);
