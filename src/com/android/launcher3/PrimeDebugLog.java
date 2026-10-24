@@ -1,6 +1,7 @@
 package com.android.launcher3;
 
 import android.util.Log;
+import android.content.Context;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
@@ -25,6 +26,34 @@ public final class PrimeDebugLog {
                 ENTRIES.removeFirst();
             }
         }
+    }
+
+    private static final String POPUP_PREFS = "prime_popup_diagnostic";
+    private static final String POPUP_KEY = "trace";
+
+    /** Persist popup traces so opening settings or a process restart cannot lose them. */
+    public static void popup(Context context, String message) {
+        d("PrimePopupTrace", message);
+        if (context == null) return;
+        android.content.SharedPreferences prefs = context.getApplicationContext()
+                .getSharedPreferences(POPUP_PREFS, Context.MODE_PRIVATE);
+        String previous = prefs.getString(POPUP_KEY, "");
+        String next = previous + new SimpleDateFormat("HH:mm:ss.SSS", Locale.US)
+                .format(new Date()) + "  PrimePopupTrace  " + message + "\n";
+        if (next.length() > 30000) next = next.substring(next.length() - 30000);
+        prefs.edit().putString(POPUP_KEY, next).apply();
+    }
+
+    public static String getPopupText(Context context) {
+        return context.getApplicationContext()
+                .getSharedPreferences(POPUP_PREFS, Context.MODE_PRIVATE)
+                .getString(POPUP_KEY, "");
+    }
+
+    public static void clearPopup(Context context) {
+        context.getApplicationContext()
+                .getSharedPreferences(POPUP_PREFS, Context.MODE_PRIVATE)
+                .edit().remove(POPUP_KEY).apply();
     }
 
     public static String getText() {
