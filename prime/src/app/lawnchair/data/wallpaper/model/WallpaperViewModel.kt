@@ -65,6 +65,12 @@ class WallpaperViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    /** The carousel creates this model per popup; release its wallpaper callback on close. */
+    fun dispose() {
+        wallpaperManagerCompat.removeOnChangeListener(listener)
+        viewModelScope.coroutineContext[kotlinx.coroutines.Job]?.cancel()
+    }
+
     suspend fun updateWallpaperRank(wallpaper: Wallpaper) {
         withContext(Dispatchers.IO) {
             wallpaperManagerCompat.service.updateWallpaperRank(wallpaper)
