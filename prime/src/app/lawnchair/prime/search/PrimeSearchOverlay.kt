@@ -118,8 +118,6 @@ object PrimeSearchOverlay {
             content.findFocus()?.clearFocus()
             scrim.isFocusableInTouchMode = true
             scrim.requestFocus()
-            androidx.core.view.ViewCompat.getWindowInsetsController(content)
-                ?.hide(androidx.core.view.WindowInsetsCompat.Type.ime())
             (launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
                 .hideSoftInputFromWindow(content.windowToken, 0)
         }
