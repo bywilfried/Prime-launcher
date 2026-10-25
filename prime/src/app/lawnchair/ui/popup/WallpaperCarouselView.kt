@@ -209,6 +209,7 @@ class WallpaperCarouselView @JvmOverloads constructor(
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+        viewModel.dispose()
         viewScope.cancel()
     }
 
