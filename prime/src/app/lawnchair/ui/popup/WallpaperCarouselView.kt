@@ -168,12 +168,16 @@ class WallpaperCarouselView @JvmOverloads constructor(
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                WallpaperManager.getInstance(context).setBitmap(
-                    BitmapFactory.decodeFile(wallpaper.imagePath),
-                    null,
-                    true,
-                    WallpaperManager.FLAG_SYSTEM,
-                )
+                // Stream the original image to Android instead of allocating a
+                // full-resolution bitmap in the launcher's own heap.
+                File(wallpaper.imagePath).inputStream().use { stream ->
+                    WallpaperManager.getInstance(context).setStream(
+                        stream,
+                        null,
+                        true,
+                        WallpaperManager.FLAG_SYSTEM,
+                    )
+                }
                 viewModel.updateWallpaperRank(wallpaper)
             } catch (e: Exception) {
                 Log.e("WallpaperCarouselView", "Failed to set wallpaper: ${e.message}")
