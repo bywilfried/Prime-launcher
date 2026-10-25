@@ -85,7 +85,7 @@ class WallpaperCarouselView @JvmOverloads constructor(
     private fun displayWallpapers(wallpapers: List<Wallpaper>) {
         removeAllViews()
         val totalWidth = calculateTotalWidth()
-        val firstItemWidth = totalWidth * 0.4
+        val firstItemWidth = if (wallpapers.size == 1) totalWidth.toDouble() else totalWidth * 0.4
         val itemWidth = calculateItemWidth(totalWidth, wallpapers.size, firstItemWidth)
         val margin = (totalWidth * 0.03).toInt()
 
