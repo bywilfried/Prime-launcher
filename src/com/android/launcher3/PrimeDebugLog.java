@@ -56,6 +56,34 @@ public final class PrimeDebugLog {
                 .edit().remove(POPUP_KEY).apply();
     }
 
+    private static final String WALLPAPER_PREFS = "prime_wallpaper_diagnostic";
+    private static final String WALLPAPER_KEY = "trace";
+
+    /** Persist metadata-only wallpaper diagnostics across process restarts. */
+    public static synchronized void wallpaper(Context context, String message) {
+        d("PrimeWallpaperTrace", message);
+        if (context == null) return;
+        android.content.SharedPreferences prefs = context.getApplicationContext()
+                .getSharedPreferences(WALLPAPER_PREFS, Context.MODE_PRIVATE);
+        String previous = prefs.getString(WALLPAPER_KEY, "");
+        String next = previous + new SimpleDateFormat("HH:mm:ss.SSS", Locale.US)
+                .format(new Date()) + "  PrimeWallpaperTrace  " + message + "\n";
+        if (next.length() > 30000) next = next.substring(next.length() - 30000);
+        prefs.edit().putString(WALLPAPER_KEY, next).apply();
+    }
+
+    public static String getWallpaperText(Context context) {
+        return context.getApplicationContext()
+                .getSharedPreferences(WALLPAPER_PREFS, Context.MODE_PRIVATE)
+                .getString(WALLPAPER_KEY, "");
+    }
+
+    public static void clearWallpaper(Context context) {
+        context.getApplicationContext()
+                .getSharedPreferences(WALLPAPER_PREFS, Context.MODE_PRIVATE)
+                .edit().remove(WALLPAPER_KEY).apply();
+    }
+
     public static String getText() {
         synchronized (ENTRIES) {
             if (ENTRIES.isEmpty()) return "No Prime diagnostic logs yet.";
