@@ -112,6 +112,11 @@ object PrimeSearchOverlay {
         }
         fun dismiss() {
             if (!isShowing) return
+            // Hide the IME while the search field is still attached to the window,
+            // so it does not linger over the activity opened from any result type.
+            (launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                .hideSoftInputFromWindow(content.windowToken, 0)
+            content.findFocus()?.clearFocus()
             (content.parent as? ViewGroup)?.removeView(content)
             layer.removeView(scrim)
             layer.setPrimeSearchOpen(false)
