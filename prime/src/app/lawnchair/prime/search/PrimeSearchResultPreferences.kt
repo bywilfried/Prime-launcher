@@ -11,6 +11,14 @@ import com.android.app.search.LayoutType
  */
 object PrimeSearchResultPreferences {
     private const val STORE = "prime_search_result_preferences"
+
+    fun autoShowKeyboard(context: Context): Boolean =
+        context.getSharedPreferences(STORE, Context.MODE_PRIVATE).getBoolean("auto_show_keyboard", true)
+
+    fun setAutoShowKeyboard(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(STORE, Context.MODE_PRIVATE)
+            .edit().putBoolean("auto_show_keyboard", enabled).apply()
+    }
     /** Drawer and overlay preferences are deliberately isolated. */
     enum class Surface(val store: String) {
         PRIME_SEARCH(STORE),
