@@ -1121,13 +1121,27 @@ object PrimeSearchOverlay {
         }.start()
         container.translationY = -120 * density
         container.animate().translationY(0f).setDuration(220).start()
-        input.post {
-            if (activeDialog !== dialog || !dialog.isShowing) return@post
-            (launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
-                .showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
-            zeroState.visibility = View.VISIBLE
-            scroll.visibility = View.GONE
+        // Request the IME as soon as the search field is attached, rather than
+        // waiting for the next posted UI task. Keep the existing Prime Search
+        // entrance animation and its 220 ms duration unchanged.
+        val keyboard = launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        if (input.isAttachedToWindow) {
+            keyboard.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
+        } else {
+            input.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: View) {
+                    input.removeOnAttachStateChangeListener(this)
+                    if (activeDialog === dialog && dialog.isShowing) {
+                        keyboard.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
+                    }
+                }
+                override fun onViewDetachedFromWindow(v: View) {
+                    input.removeOnAttachStateChangeListener(this)
+                }
+            })
         }
+        zeroState.visibility = View.VISIBLE
+        scroll.visibility = View.GONE
     }
 
     fun dismiss() {
