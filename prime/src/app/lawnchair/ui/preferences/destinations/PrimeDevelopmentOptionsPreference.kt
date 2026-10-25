@@ -36,6 +36,8 @@ fun PrimeDevelopmentOptionsPreference() {
     val context = LocalContext.current
     var showSwipeDiagnostic by remember { mutableStateOf(false) }
     var showPopupDiagnostic by remember { mutableStateOf(false) }
+    var showWallpaperDiagnostic by remember { mutableStateOf(false) }
+    var wallpaperLog by remember { mutableStateOf("") }
     var popupLog by remember { mutableStateOf("") }
     PreferenceLayout(
         label = stringResource(R.string.prime_development_options),
@@ -63,6 +65,15 @@ fun PrimeDevelopmentOptionsPreference() {
                     popupLog = PrimeDebugLog.getPopupText(context)
                         .ifBlank { "Aucune trace. Effectuez un appui long sur une zone vide de l’accueil, puis revenez ici." }
                     showPopupDiagnostic = true
+                },
+            )
+            ClickablePreference(
+                label = "Diagnostic du carrousel de fonds d'écran",
+                subtitle = "Examiner la récupération et la sauvegarde des fonds d'écran",
+                onClick = {
+                    wallpaperLog = PrimeDebugLog.getWallpaperText(context)
+                        .ifBlank { "Aucune trace. Ouvrez le menu de l’accueil, puis revenez ici." }
+                    showWallpaperDiagnostic = true
                 },
             )
             ClickablePreference(
@@ -99,6 +110,37 @@ fun PrimeDevelopmentOptionsPreference() {
                 TextButton(onClick = {
                     PrimeDebugLog.clearPopup(context)
                     popupLog = "Journal effacé. Effectuez un nouvel appui long sur une zone vide."
+                }) { Text("Effacer") }
+            },
+        )
+    }
+
+    if (showWallpaperDiagnostic) {
+        AlertDialog(
+            onDismissRequest = { showWallpaperDiagnostic = false },
+            title = { Text("Diagnostic du carrousel de fonds d'écran") },
+            text = {
+                Box(Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState())) {
+                    Text(wallpaperLog)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    context.getSystemService(ClipboardManager::class.java)
+                        ?.setPrimaryClip(ClipData.newPlainText("Prime wallpaper diagnostic", wallpaperLog))
+                }) { Text("Copier") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    val share = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, wallpaperLog)
+                    }
+                    context.startActivity(Intent.createChooser(share, "Partager le diagnostic"))
+                }) { Text("Partager") }
+                TextButton(onClick = {
+                    PrimeDebugLog.clearWallpaper(context)
+                    wallpaperLog = "Journal effacé. Ouvrez de nouveau le menu de l’accueil."
                 }) { Text("Effacer") }
             },
         )
