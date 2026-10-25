@@ -4,6 +4,8 @@ import android.app.Application
 import android.app.WallpaperManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import app.lawnchair.data.wallpaper.Wallpaper
 import app.lawnchair.wallpaper.WallpaperManagerCompat
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,15 +41,20 @@ class WallpaperViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private suspend fun saveWallpaper(wallpaperManager: WallpaperManager) {
-        wallpaperManagerCompat.service.saveWallpaper(wallpaperManager)
+        withContext(Dispatchers.IO) {
+            wallpaperManagerCompat.service.saveWallpaper(wallpaperManager)
+        }
         refreshWallpapers()
     }
 
     private suspend fun refreshWallpapers() {
         // Always try to capture the currently active wallpaper, even when
         // historical entries already exist. This also seeds an empty history.
-        wallpaperManagerCompat.service.saveWallpaper(wallpaperManagerCompat.wallpaperManager)
-        wallpapers.value = wallpaperManagerCompat.service.dao.getTopWallpapers()
+        val savedWallpapers = withContext(Dispatchers.IO) {
+            wallpaperManagerCompat.service.saveWallpaper(wallpaperManagerCompat.wallpaperManager)
+            wallpaperManagerCompat.service.dao.getTopWallpapers()
+        }
+        wallpapers.value = savedWallpapers
         com.android.launcher3.PrimeDebugLog.wallpaper(getApplication(),
             "history refreshed count=" + wallpapers.value.size)
         loading.value = false
@@ -70,7 +77,9 @@ class WallpaperViewModel(application: Application) : AndroidViewModel(applicatio
 
     suspend fun saveCurrentWallpaperBeforeSwitch() {
         mutex.withLock {
-            wallpaperManagerCompat.service.saveWallpaper(wallpaperManagerCompat.wallpaperManager)
+            withContext(Dispatchers.IO) {
+                wallpaperManagerCompat.service.saveWallpaper(wallpaperManagerCompat.wallpaperManager)
+            }
         }
     }
 
