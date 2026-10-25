@@ -48,6 +48,8 @@ class WallpaperViewModel(application: Application) : AndroidViewModel(applicatio
         // historical entries already exist. This also seeds an empty history.
         wallpaperManagerCompat.service.saveWallpaper(wallpaperManagerCompat.wallpaperManager)
         wallpapers.value = wallpaperManagerCompat.service.dao.getTopWallpapers()
+        com.android.launcher3.PrimeDebugLog.wallpaper(getApplication(),
+            "history refreshed count=" + wallpapers.value.size)
         loading.value = false
     }
 
@@ -56,6 +58,9 @@ class WallpaperViewModel(application: Application) : AndroidViewModel(applicatio
             mutex.withLock {
                 try {
                     refreshWallpapers()
+                } catch (e: Exception) {
+                    com.android.launcher3.PrimeDebugLog.wallpaper(getApplication(),
+                        "history refresh failed type=" + e.javaClass.simpleName + " message=" + e.message)
                 } finally {
                     loading.value = false
                 }
