@@ -166,6 +166,24 @@ fun PrimeSearchPreference() {
         }
     }
     PreferenceGroup(heading = "Fenêtre Prime Search") {
+        var autoKeyboard by remember { mutableStateOf(PrimeSearchResultPreferences.autoShowKeyboard(context)) }
+        PreferenceTemplate(
+            title = { Text("Ouvrir automatiquement le clavier") },
+            description = { Text("Afficher le clavier dès l’ouverture de Prime Search") },
+            endWidget = {
+                androidx.compose.material3.Switch(
+                    checked = autoKeyboard,
+                    onCheckedChange = {
+                        autoKeyboard = it
+                        PrimeSearchResultPreferences.setAutoShowKeyboard(context, it)
+                    },
+                )
+            },
+            onClick = {
+                autoKeyboard = !autoKeyboard
+                PrimeSearchResultPreferences.setAutoShowKeyboard(context, autoKeyboard)
+            },
+        )
         var floating by remember { mutableStateOf(PrimeSearchResultPreferences.floatingWindow(context)) }
         PreferenceTemplate(
             title = { Text("Fenêtre flottante (overlay)") },
