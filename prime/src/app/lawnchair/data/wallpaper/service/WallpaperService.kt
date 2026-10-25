@@ -31,7 +31,7 @@ class WallpaperService @Inject constructor(
         try {
             val wallpaperDrawable = wallpaperManager.drawable
             com.android.launcher3.PrimeDebugLog.wallpaper(
-                context, "drawable type=" + wallpaperDrawable.javaClass.simpleName,
+                context, "drawable type=" + wallpaperDrawable?.javaClass?.simpleName ?: "null",
             )
             val currentBitmap = (wallpaperDrawable as BitmapDrawable).toBitmap()
             com.android.launcher3.PrimeDebugLog.wallpaper(
