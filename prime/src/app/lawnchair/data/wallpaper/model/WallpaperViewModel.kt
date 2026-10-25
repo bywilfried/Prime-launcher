@@ -4,8 +4,6 @@ import android.app.Application
 import android.app.WallpaperManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import app.lawnchair.data.wallpaper.Wallpaper
 import app.lawnchair.wallpaper.WallpaperManagerCompat
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,9 +17,6 @@ class WallpaperViewModel(application: Application) : AndroidViewModel(applicatio
 
     val wallpapers: StateFlow<List<Wallpaper>>
         field = MutableStateFlow<List<Wallpaper>>(emptyList())
-
-    val loading: StateFlow<Boolean>
-        field = MutableStateFlow(true)
 
     private val mutex = Mutex()
 
@@ -41,44 +36,24 @@ class WallpaperViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private suspend fun saveWallpaper(wallpaperManager: WallpaperManager) {
-        withContext(Dispatchers.IO) {
-            wallpaperManagerCompat.service.saveWallpaper(wallpaperManager)
-        }
+        wallpaperManagerCompat.service.saveWallpaper(wallpaperManager)
         refreshWallpapers()
     }
 
     private suspend fun refreshWallpapers() {
-        // Always try to capture the currently active wallpaper, even when
-        // historical entries already exist. This also seeds an empty history.
-        val savedWallpapers = withContext(Dispatchers.IO) {
+        var topWallpapers = wallpaperManagerCompat.service.dao.getTopWallpapers()
+        if (topWallpapers.isEmpty()) {
+            // A restored launcher can have a wallpaper but no local carousel history.
             wallpaperManagerCompat.service.saveWallpaper(wallpaperManagerCompat.wallpaperManager)
-            wallpaperManagerCompat.service.dao.getTopWallpapers()
+            topWallpapers = wallpaperManagerCompat.service.dao.getTopWallpapers()
         }
-        wallpapers.value = savedWallpapers
-        com.android.launcher3.PrimeDebugLog.wallpaper(getApplication(),
-            "history refreshed count=" + wallpapers.value.size)
-        loading.value = false
+        wallpapers.value = topWallpapers
     }
 
     private fun loadTopWallpapers() {
         viewModelScope.launch {
             mutex.withLock {
-                try {
-                    refreshWallpapers()
-                } catch (e: Exception) {
-                    com.android.launcher3.PrimeDebugLog.wallpaper(getApplication(),
-                        "history refresh failed type=" + e.javaClass.simpleName + " message=" + e.message)
-                } finally {
-                    loading.value = false
-                }
-            }
-        }
-    }
-
-    suspend fun saveCurrentWallpaperBeforeSwitch() {
-        mutex.withLock {
-            withContext(Dispatchers.IO) {
-                wallpaperManagerCompat.service.saveWallpaper(wallpaperManagerCompat.wallpaperManager)
+                refreshWallpapers()
             }
         }
     }
