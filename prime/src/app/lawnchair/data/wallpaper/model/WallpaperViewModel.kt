@@ -18,6 +18,9 @@ class WallpaperViewModel(application: Application) : AndroidViewModel(applicatio
     val wallpapers: StateFlow<List<Wallpaper>>
         field = MutableStateFlow<List<Wallpaper>>(emptyList())
 
+    val loading: StateFlow<Boolean>
+        field = MutableStateFlow(true)
+
     private val mutex = Mutex()
 
     private val listener = object : WallpaperManagerCompat.OnColorsChangedListener {
@@ -42,12 +45,12 @@ class WallpaperViewModel(application: Application) : AndroidViewModel(applicatio
 
     private suspend fun refreshWallpapers() {
         var topWallpapers = wallpaperManagerCompat.service.dao.getTopWallpapers()
-        if (topWallpapers.isEmpty()) {
-            // A restored launcher can have a wallpaper but no local carousel history.
-            wallpaperManagerCompat.service.saveWallpaper(wallpaperManagerCompat.wallpaperManager)
-            topWallpapers = wallpaperManagerCompat.service.dao.getTopWallpapers()
-        }
+        // Always try to capture the currently active wallpaper, even when
+        // historical entries already exist. This also seeds an empty history.
+        wallpaperManagerCompat.service.saveWallpaper(wallpaperManagerCompat.wallpaperManager)
+        topWallpapers = wallpaperManagerCompat.service.dao.getTopWallpapers()
         wallpapers.value = topWallpapers
+        loading.value = false
     }
 
     private fun loadTopWallpapers() {
@@ -55,6 +58,12 @@ class WallpaperViewModel(application: Application) : AndroidViewModel(applicatio
             mutex.withLock {
                 refreshWallpapers()
             }
+        }
+    }
+
+    suspend fun saveCurrentWallpaperBeforeSwitch() {
+        mutex.withLock {
+            wallpaperManagerCompat.service.saveWallpaper(wallpaperManagerCompat.wallpaperManager)
         }
     }
 
