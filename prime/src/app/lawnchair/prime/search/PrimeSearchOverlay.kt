@@ -111,17 +111,20 @@ object PrimeSearchOverlay {
             content.isClickable = true
         }
         fun hideKeyboardForSelection() {
+            if (!isShowing) return
+            // Transfer focus away from the editor before launching the target.
+            // This prevents the IME from remaining tied to the launcher during
+            // the destination activity's startup transition.
+            content.findFocus()?.clearFocus()
+            scrim.isFocusableInTouchMode = true
+            scrim.requestFocus()
+            androidx.core.view.ViewCompat.getWindowInsetsController(content)
+                ?.hide(androidx.core.view.WindowInsetsCompat.Type.ime())
             (launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
                 .hideSoftInputFromWindow(content.windowToken, 0)
-            content.findFocus()?.clearFocus()
         }
         fun dismiss() {
             if (!isShowing) return
-            // Hide the IME while the search field is still attached to the window,
-            // so it does not linger over the activity opened from any result type.
-            (launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
-                .hideSoftInputFromWindow(content.windowToken, 0)
-            content.findFocus()?.clearFocus()
             (content.parent as? ViewGroup)?.removeView(content)
             layer.removeView(scrim)
             layer.setPrimeSearchOpen(false)
@@ -467,6 +470,7 @@ object PrimeSearchOverlay {
                         setPadding(2, cellTopPadding, 2, cellBottomPadding)
                         setOnClickListener {
                             packageManager.getLaunchIntentForPackage(app.packageName)?.let { intent ->
+                                dialog.hideKeyboardForSelection()
                                 dialog.dismiss()
                                 launcher.startActivity(intent)
                             }
@@ -922,7 +926,7 @@ object PrimeSearchOverlay {
                     // Bound drawer results own their click actions. Hide the keyboard
                     // on a completed tap without replacing those click handlers.
                     view.setOnTouchListener { _, event ->
-                        if (event.actionMasked == MotionEvent.ACTION_UP && view.isClickable) {
+                        if (event.actionMasked == MotionEvent.ACTION_DOWN && view.isClickable) {
                             dialog.hideKeyboardForSelection()
                         }
                         false
