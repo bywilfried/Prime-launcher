@@ -4,6 +4,8 @@ import android.app.Application
 import android.app.WallpaperManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import app.lawnchair.data.wallpaper.Wallpaper
 import app.lawnchair.wallpaper.WallpaperManagerCompat
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,16 +38,21 @@ class WallpaperViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private suspend fun saveWallpaper(wallpaperManager: WallpaperManager) {
-        wallpaperManagerCompat.service.saveWallpaper(wallpaperManager)
+        withContext(Dispatchers.IO) {
+            wallpaperManagerCompat.service.saveWallpaper(wallpaperManager)
+        }
         refreshWallpapers()
     }
 
     private suspend fun refreshWallpapers() {
-        var topWallpapers = wallpaperManagerCompat.service.dao.getTopWallpapers()
-        if (topWallpapers.isEmpty()) {
-            // A restored launcher can have a wallpaper but no local carousel history.
-            wallpaperManagerCompat.service.saveWallpaper(wallpaperManagerCompat.wallpaperManager)
-            topWallpapers = wallpaperManagerCompat.service.dao.getTopWallpapers()
+        val topWallpapers = withContext(Dispatchers.IO) {
+            var entries = wallpaperManagerCompat.service.dao.getTopWallpapers()
+            if (entries.isEmpty()) {
+                // A restored launcher can have a wallpaper but no local carousel history.
+                wallpaperManagerCompat.service.saveWallpaper(wallpaperManagerCompat.wallpaperManager)
+                entries = wallpaperManagerCompat.service.dao.getTopWallpapers()
+            }
+            entries
         }
         wallpapers.value = topWallpapers
     }
@@ -59,7 +66,9 @@ class WallpaperViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     suspend fun updateWallpaperRank(wallpaper: Wallpaper) {
-        wallpaperManagerCompat.service.updateWallpaperRank(wallpaper)
+        withContext(Dispatchers.IO) {
+            wallpaperManagerCompat.service.updateWallpaperRank(wallpaper)
+        }
         loadTopWallpapers()
     }
 }
