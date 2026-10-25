@@ -31,6 +31,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.withContext
 
 class WallpaperCarouselView @JvmOverloads constructor(
@@ -67,10 +68,12 @@ class WallpaperCarouselView @JvmOverloads constructor(
         // StateFlow starts with an empty list while wallpapers are loaded from disk.
         // observeOnce consumed that initial value and never rendered the loaded images.
         viewScope.launch {
-            viewModel.wallpapers.collectLatest { wallpapers ->
+            combine(viewModel.wallpapers, viewModel.loading) { wallpapers, loading ->
+                wallpapers to loading
+            }.collectLatest { (wallpapers, loading) ->
                 if (wallpapers.isEmpty()) {
-                    loadingView.visibility = if (viewModel.loading.value) VISIBLE else GONE
-                    emptyView.visibility = if (viewModel.loading.value) GONE else VISIBLE
+                    loadingView.visibility = if (loading) VISIBLE else GONE
+                    emptyView.visibility = if (loading) GONE else VISIBLE
                 } else {
                     visibility = VISIBLE
                     displayWallpapers(wallpapers)
