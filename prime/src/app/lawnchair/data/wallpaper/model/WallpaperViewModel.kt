@@ -44,19 +44,21 @@ class WallpaperViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private suspend fun refreshWallpapers() {
-        var topWallpapers = wallpaperManagerCompat.service.dao.getTopWallpapers()
         // Always try to capture the currently active wallpaper, even when
         // historical entries already exist. This also seeds an empty history.
         wallpaperManagerCompat.service.saveWallpaper(wallpaperManagerCompat.wallpaperManager)
-        topWallpapers = wallpaperManagerCompat.service.dao.getTopWallpapers()
-        wallpapers.value = topWallpapers
+        wallpapers.value = wallpaperManagerCompat.service.dao.getTopWallpapers()
         loading.value = false
     }
 
     private fun loadTopWallpapers() {
         viewModelScope.launch {
             mutex.withLock {
-                refreshWallpapers()
+                try {
+                    refreshWallpapers()
+                } finally {
+                    loading.value = false
+                }
             }
         }
     }
