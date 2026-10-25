@@ -110,6 +110,11 @@ object PrimeSearchOverlay {
             })
             content.isClickable = true
         }
+        fun hideKeyboardForSelection() {
+            (launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                .hideSoftInputFromWindow(content.windowToken, 0)
+            content.findFocus()?.clearFocus()
+        }
         fun dismiss() {
             if (!isShowing) return
             // Hide the IME while the search field is still attached to the window,
@@ -537,7 +542,10 @@ object PrimeSearchOverlay {
                     textSize = 14f
                     setTextColor(foreground)
                     setPadding(inset, (11 * density).toInt(), inset, (11 * density).toInt())
-                    setOnClickListener { action() }
+                    setOnClickListener {
+                        if (title != "Suggestions Web" && title != "Raccourcis Web") dialog.hideKeyboardForSelection()
+                        action()
+                    }
                 }
                 webPanel.addView(label, LinearLayout.LayoutParams(-1, -2))
             }
@@ -681,6 +689,7 @@ object PrimeSearchOverlay {
                                 (4 * density).toInt(), (8 * density).toInt())
                             contentDescription = "Rechercher sur ${engine.title}"
                             setOnClickListener {
+                                dialog.hideKeyboardForSelection()
                                 val url = engine.url + Uri.encode(query)
                                 val preferredPackages = when (engine) {
                                     PrimeSearchResultPreferences.WebEngine.FDROID ->
@@ -910,6 +919,14 @@ object PrimeSearchOverlay {
                     }
                     item.setRippleEffect(view)
                     resultView.bind(item.searchTarget, emptyList())
+                    // Bound drawer results own their click actions. Hide the keyboard
+                    // on a completed tap without replacing those click handlers.
+                    view.setOnTouchListener { _, event ->
+                        if (event.actionMasked == MotionEvent.ACTION_UP && view.isClickable) {
+                            dialog.hideKeyboardForSelection()
+                        }
+                        false
+                    }
                     // The inherited drawer search action has no title property on
                     // SearchTargetCompat. Inspect the actual bound row instead.
                     // This affects Prime Search only, not the app drawer.
