@@ -14,6 +14,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import app.lawnchair.data.wallpaper.Wallpaper
@@ -47,11 +48,18 @@ class WallpaperCarouselView @JvmOverloads constructor(
         setBackgroundWithRadius(Themes.getColorAccent(context), 100F)
     }
     private val loadingView = ProgressBar(context).apply { isIndeterminate = true }
+    private val emptyView = TextView(context).apply {
+        text = "Fond d’écran inaccessible : aucun aperçu disponible"
+        gravity = Gravity.CENTER
+        visibility = GONE
+        setPadding(16, 12, 16, 12)
+    }
     private val viewScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     init {
         orientation = HORIZONTAL
         addView(loadingView)
+        addView(emptyView)
         observeWallpapers()
     }
 
@@ -61,7 +69,8 @@ class WallpaperCarouselView @JvmOverloads constructor(
         viewScope.launch {
             viewModel.wallpapers.collectLatest { wallpapers ->
                 if (wallpapers.isEmpty()) {
-                    loadingView.visibility = VISIBLE
+                    loadingView.visibility = if (viewModel.loading.value) VISIBLE else GONE
+                    emptyView.visibility = if (viewModel.loading.value) GONE else VISIBLE
                 } else {
                     visibility = VISIBLE
                     displayWallpapers(wallpapers)
@@ -93,6 +102,7 @@ class WallpaperCarouselView @JvmOverloads constructor(
     private fun calculateItemWidth(totalWidth: Int, itemCount: Int, firstItemWidth: Double): Double {
         val remainingWidth = totalWidth - firstItemWidth
         val marginBetweenItems = totalWidth * 0.03
+        if (itemCount <= 1) return firstItemWidth
         return (remainingWidth - (marginBetweenItems * (itemCount - 1))) / (itemCount - 1)
     }
 
@@ -168,6 +178,8 @@ class WallpaperCarouselView @JvmOverloads constructor(
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                // Preserve the currently displayed wallpaper before overwriting it.
+                viewModel.saveCurrentWallpaperBeforeSwitch()
                 WallpaperManager.getInstance(context).setBitmap(
                     BitmapFactory.decodeFile(wallpaper.imagePath),
                     null,
