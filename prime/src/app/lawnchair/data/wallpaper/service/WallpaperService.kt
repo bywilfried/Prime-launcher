@@ -27,25 +27,15 @@ class WallpaperService @Inject constructor(
     val dao = AppDatabase.Companion.INSTANCE.get(context).wallpaperDao()
 
     suspend fun saveWallpaper(wallpaperManager: WallpaperManager) {
-        com.android.launcher3.PrimeDebugLog.wallpaper(context, "capture started")
         try {
             val wallpaperDrawable = wallpaperManager.drawable
-            com.android.launcher3.PrimeDebugLog.wallpaper(
-                context, "drawable type=" + wallpaperDrawable?.javaClass?.simpleName ?: "null",
-            )
             val currentBitmap = (wallpaperDrawable as BitmapDrawable).toBitmap()
-            com.android.launcher3.PrimeDebugLog.wallpaper(
-                context, "bitmap decoded dimensions=" + currentBitmap.width + "x" + currentBitmap.height,
-            )
+
             val byteArray = bitmapToByteArray(currentBitmap)
-            com.android.launcher3.PrimeDebugLog.wallpaper(context, "bitmap encoded bytes=" + byteArray.size)
+
             saveWallpaper(byteArray)
-            com.android.launcher3.PrimeDebugLog.wallpaper(context, "capture finished")
         } catch (e: Exception) {
-            com.android.launcher3.PrimeDebugLog.wallpaper(
-                context, "capture failed type=" + e.javaClass.simpleName + " message=" + e.message,
-            )
-            Log.e("WallpaperChange", "Error detecting wallpaper change", e)
+            Log.e("WallpaperChange", "Error detecting wallpaper change: ${e.message}")
         }
     }
 
@@ -61,15 +51,12 @@ class WallpaperService @Inject constructor(
         val checksum = calculateChecksum(imageData)
 
         val existingWallpapers = dao.getTopWallpapers()
-        com.android.launcher3.PrimeDebugLog.wallpaper(context, "history count=" + existingWallpapers.size)
 
         if (existingWallpapers.any { it.checksum == checksum }) {
-            com.android.launcher3.PrimeDebugLog.wallpaper(context, "wallpaper already saved")
             Log.d("WallpaperService", "Wallpaper already exists with checksum: $checksum")
             return
         }
         val imagePath = saveImageToAppStorage(imageData)
-        com.android.launcher3.PrimeDebugLog.wallpaper(context, "image saved exists=" + File(imagePath).exists())
         if (existingWallpapers.size < 4) {
             val wallpaper = Wallpaper(
                 imagePath = imagePath,
@@ -78,7 +65,6 @@ class WallpaperService @Inject constructor(
                 checksum = checksum,
             )
             dao.insert(wallpaper)
-            com.android.launcher3.PrimeDebugLog.wallpaper(context, "database insert succeeded")
         } else {
             val lowestRankedWallpaper = existingWallpapers.minByOrNull { it.timestamp }
 
