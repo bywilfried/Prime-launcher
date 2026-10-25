@@ -14,7 +14,6 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
-import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import app.lawnchair.data.wallpaper.Wallpaper
@@ -31,7 +30,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.withContext
 
 class WallpaperCarouselView @JvmOverloads constructor(
@@ -49,19 +47,11 @@ class WallpaperCarouselView @JvmOverloads constructor(
         setBackgroundWithRadius(Themes.getColorAccent(context), 100F)
     }
     private val loadingView = ProgressBar(context).apply { isIndeterminate = true }
-    private val emptyView = TextView(context).apply {
-        text = "Fond d’écran inaccessible : aucun aperçu disponible"
-        gravity = Gravity.CENTER
-        visibility = GONE
-        setPadding(16, 12, 16, 12)
-    }
     private val viewScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     init {
         orientation = HORIZONTAL
         addView(loadingView)
-        addView(emptyView)
-        com.android.launcher3.PrimeDebugLog.wallpaper(context, "carousel view opened")
         observeWallpapers()
     }
 
@@ -69,14 +59,9 @@ class WallpaperCarouselView @JvmOverloads constructor(
         // StateFlow starts with an empty list while wallpapers are loaded from disk.
         // observeOnce consumed that initial value and never rendered the loaded images.
         viewScope.launch {
-            combine(viewModel.wallpapers, viewModel.loading) { wallpapers, loading ->
-                wallpapers to loading
-            }.collectLatest { (wallpapers, loading) ->
-                com.android.launcher3.PrimeDebugLog.wallpaper(context,
-                    "carousel state count=" + wallpapers.size + " loading=" + loading)
+            viewModel.wallpapers.collectLatest { wallpapers ->
                 if (wallpapers.isEmpty()) {
-                    loadingView.visibility = if (loading) VISIBLE else GONE
-                    emptyView.visibility = if (loading) GONE else VISIBLE
+                    loadingView.visibility = VISIBLE
                 } else {
                     visibility = VISIBLE
                     displayWallpapers(wallpapers)
@@ -88,7 +73,7 @@ class WallpaperCarouselView @JvmOverloads constructor(
     private fun displayWallpapers(wallpapers: List<Wallpaper>) {
         removeAllViews()
         val totalWidth = calculateTotalWidth()
-        val firstItemWidth = if (wallpapers.size == 1) totalWidth.toDouble() else totalWidth * 0.4
+        val firstItemWidth = totalWidth * 0.4
         val itemWidth = calculateItemWidth(totalWidth, wallpapers.size, firstItemWidth)
         val margin = (totalWidth * 0.03).toInt()
 
@@ -108,7 +93,6 @@ class WallpaperCarouselView @JvmOverloads constructor(
     private fun calculateItemWidth(totalWidth: Int, itemCount: Int, firstItemWidth: Double): Double {
         val remainingWidth = totalWidth - firstItemWidth
         val marginBetweenItems = totalWidth * 0.03
-        if (itemCount <= 1) return firstItemWidth
         return (remainingWidth - (marginBetweenItems * (itemCount - 1))) / (itemCount - 1)
     }
 
@@ -184,8 +168,6 @@ class WallpaperCarouselView @JvmOverloads constructor(
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Preserve the currently displayed wallpaper before overwriting it.
-                viewModel.saveCurrentWallpaperBeforeSwitch()
                 WallpaperManager.getInstance(context).setBitmap(
                     BitmapFactory.decodeFile(wallpaper.imagePath),
                     null,
