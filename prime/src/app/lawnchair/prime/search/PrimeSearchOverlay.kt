@@ -1147,7 +1147,9 @@ object PrimeSearchOverlay {
         // waiting for the next posted UI task. Keep the existing Prime Search
         // entrance animation and its 220 ms duration unchanged.
         val keyboard = launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        if (input.isAttachedToWindow) {
+        if (!PrimeSearchResultPreferences.autoShowKeyboard(launcher)) {
+            // Keep the field usable: tapping it still opens the keyboard normally.
+        } else if (input.isAttachedToWindow) {
             keyboard.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
         } else {
             input.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
