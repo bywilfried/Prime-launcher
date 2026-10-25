@@ -61,6 +61,7 @@ class WallpaperCarouselView @JvmOverloads constructor(
         orientation = HORIZONTAL
         addView(loadingView)
         addView(emptyView)
+        com.android.launcher3.PrimeDebugLog.wallpaper(context, "carousel view opened")
         observeWallpapers()
     }
 
@@ -71,6 +72,8 @@ class WallpaperCarouselView @JvmOverloads constructor(
             combine(viewModel.wallpapers, viewModel.loading) { wallpapers, loading ->
                 wallpapers to loading
             }.collectLatest { (wallpapers, loading) ->
+                com.android.launcher3.PrimeDebugLog.wallpaper(context,
+                    "carousel state count=" + wallpapers.size + " loading=" + loading)
                 if (wallpapers.isEmpty()) {
                     loadingView.visibility = if (loading) VISIBLE else GONE
                     emptyView.visibility = if (loading) GONE else VISIBLE
