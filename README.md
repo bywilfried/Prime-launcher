@@ -8,7 +8,7 @@
 
 **An open-source Android launcher built for personalisation, control, and a home screen that feels like yours.**
 
-[Explore the source](https://github.com/bywilfried/Prime-launcher/tree/main) · [Releases](https://github.com/bywilfried/Prime-launcher/releases) · [Report an issue](https://github.com/bywilfried/Prime-launcher/issues)
+[Explore the source](https://github.com/bywilfried/Prime-launcher/tree/main) · [Releases](https://github.com/bywilfried/Prime-launcher/releases) · [Report an issue](https://github.com/bywilfried/Prime-launcher/issues) · [☕ Support development](https://buymeacoffee.com/bywilfried)
 
 </div>
 
