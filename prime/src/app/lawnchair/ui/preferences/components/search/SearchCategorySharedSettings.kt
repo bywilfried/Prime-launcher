@@ -2,6 +2,8 @@ package app.lawnchair.ui.preferences.components.search
 
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.DragHandle
@@ -295,7 +297,7 @@ internal fun SharedCategorySettingsDialog(
         onDismissRequest = onDismiss,
         title = { Text(category.title) },
         text = {
-            Column {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Text(category.description)
                 SharedCategoryOptions(category, surface, permissionRefresh)
                 extra()
