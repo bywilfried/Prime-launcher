@@ -66,6 +66,19 @@ class LawnchairSearchAdapterProvider(
         // Applied after bind because individual result views restore their own heights.
         val density = holder.itemView.resources.displayMetrics.density
         val dp: (Int) -> Int = { (it * density).toInt() }
+        // Search algorithms also emit structural spacer headers. They are not
+        // user-facing labels and must never render as "space" in the drawer.
+        if (adapterItem.searchTarget.layoutType == LayoutType.TEXT_HEADER) {
+            val label = holder.itemView.findViewById<TextView>(R.id.title)?.text?.toString()?.trim().orEmpty()
+            if (label.equals(app.lawnchair.search.adapter.SPACE, ignoreCase = true) ||
+                label.equals(app.lawnchair.search.adapter.SPACE_MINI, ignoreCase = true)) {
+                holder.itemView.visibility = View.GONE
+                holder.itemView.minimumHeight = 0
+                holder.itemView.layoutParams.height = 0
+                return
+            }
+        }
+        holder.itemView.visibility = View.VISIBLE
         when (adapterItem.searchTarget.layoutType) {
             LayoutType.TEXT_HEADER -> {
                 val heading = holder.itemView.findViewById<TextView>(R.id.title)
