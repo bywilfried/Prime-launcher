@@ -1043,8 +1043,8 @@ object PrimeSearchOverlay {
                                 setTypeface(typeface, android.graphics.Typeface.BOLD)
                                 setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
                                 gravity = Gravity.CENTER_VERTICAL
-                                setPadding((6 * density).toInt(), (10 * density).toInt(),
-                                    (6 * density).toInt(), (2 * density).toInt())
+                                setPadding((6 * density).toInt(), (14 * density).toInt(),
+                                    (6 * density).toInt(), 0)
                                 includeFontPadding = false
                             }
                             parent.removeView(view)
