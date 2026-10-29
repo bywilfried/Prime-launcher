@@ -1125,7 +1125,7 @@ object PrimeSearchOverlay {
                         visible.bottom
                     }
                     val maximum = (keyboardTop - contentLocation[1] -
-                        if (imeVisible) 0 else margin)
+                        if (imeVisible) (8 * density).toInt() else margin)
                         .coerceAtLeast((160 * density).toInt())
                     val barHeight = input.height.coerceAtLeast((64 * density).toInt())
                     val desiredContent = if (zeroState.visibility == View.VISIBLE) zeroState.measuredHeight else results.measuredHeight
