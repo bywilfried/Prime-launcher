@@ -1,6 +1,8 @@
 package app.lawnchair.search.algorithms.engine.provider
 
 import android.content.Context
+import android.os.Environment
+import java.io.File
 import android.database.Cursor
 import android.net.Uri
 import android.provider.MediaStore
@@ -54,7 +56,7 @@ object FileSearchProvider : SearchProvider {
 
         val fileSearchEnabled = prefs.searchResultFilesToggle.get()
         val anyProviderEnabled = searchAllFiles || searchAudio || searchVisualMedia
-        if (query.isBlank() || !fileSearchEnabled || !anyProviderEnabled) {
+        if (query.isBlank() || (drawer && (!fileSearchEnabled || !anyProviderEnabled))) {
             // do nothing if query is empty, file search is disabled, or none of the providers are enabled
             emit(emptyList())
             return@flow
@@ -70,20 +72,20 @@ object FileSearchProvider : SearchProvider {
         val visualMediaGranted = fileAccessManager.visualMediaAccessState.value != FileAccessState.Denied
 
         val results = coroutineScope {
-            val allFilesDeferred = if (allFilesGranted && searchAllFiles) {
+            val allFilesDeferred = if (allFilesGranted && (searchAllFiles || !drawer)) {
                 async { searchAllFiles(context, query, maxResults).first() }
             } else {
                 null
             }
 
             // Only launch visual media and audio if allFiles search isn't happening
-            val visualMediaDeferred = if (allFilesDeferred == null && visualMediaGranted && searchVisualMedia) {
+            val visualMediaDeferred = if (allFilesDeferred == null && visualMediaGranted && (searchVisualMedia || !drawer)) {
                 async { searchVisualMedia(context, query, maxResults).first() }
             } else {
                 null
             }
 
-            val audioDeferred = if (allFilesDeferred == null && audioGranted && searchAudio) {
+            val audioDeferred = if (allFilesDeferred == null && audioGranted && (searchAudio || !drawer)) {
                 async { searchAudio(context, query, maxResults).first() }
             } else {
                 null
@@ -100,7 +102,10 @@ object FileSearchProvider : SearchProvider {
             }
         }
 
-        val uniqueResults = results.distinctBy { it.path }.filter { file ->
+        val primeResults = if (!drawer && allFilesGranted) {
+            (results + scanAccessibleFiles(query, maxResults)).distinctBy { it.path }
+        } else results
+        val uniqueResults = primeResults.distinctBy { it.path }.filter { file ->
             if (!drawer) true else {
                 val settings = app.lawnchair.prime.search.PrimeSearchResultPreferences
                 val surface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
@@ -110,6 +115,37 @@ object FileSearchProvider : SearchProvider {
         }.take(maxResults)
         emit(uniqueResults.map { SearchResult.File(it) })
     }
+
+    /**
+     * MediaStore does not index every document or folder. When the user has
+     * explicitly granted All files access, supplement indexed results with a
+     * bounded filesystem walk of shared storage (never private app data).
+     */
+    private suspend fun scanAccessibleFiles(query: String, maxResults: Int): List<IFileInfo> =
+        withContext(Dispatchers.IO) {
+            val found = mutableListOf<IFileInfo>()
+            val roots = listOf(Environment.getExternalStorageDirectory())
+            val pending = java.util.ArrayDeque<File>()
+            roots.filter { it.exists() && it.isDirectory }.forEach { pending.add(it) }
+            var visited = 0
+            while (pending.isNotEmpty() && visited < 30000 && found.size < maxResults) {
+                val dir = pending.removeFirst()
+                val children = runCatching { dir.listFiles() }.getOrNull() ?: continue
+                for (child in children) {
+                    if (++visited > 30000 || found.size >= maxResults) break
+                    if (child.name.startsWith(".") || !child.canRead()) continue
+                    if (child.isDirectory) {
+                        if (child.name.contains(query, ignoreCase = true)) {
+                            found.add(FolderInfo("", child.absolutePath, child.name, 0L, child.lastModified(), null))
+                        }
+                        pending.add(child)
+                    } else if (child.isFile && child.name.contains(query, ignoreCase = true)) {
+                        found.add(FileInfo("", child.absolutePath, child.name, child.length(), child.lastModified(), null))
+                    }
+                }
+            }
+            found
+        }
 
     private val IMAGE_MIME_TYPES = imageFileTypes.values.toTypedArray()
     private val VIDEO_MIME_TYPES = videoFileTypes.values.toTypedArray()
