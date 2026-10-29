@@ -1100,17 +1100,38 @@ object PrimeSearchOverlay {
                     val visible = Rect()
                     decor.getWindowVisibleDisplayFrame(visible)
                     val insets = androidx.core.view.ViewCompat.getRootWindowInsets(decor)
-                    val imeHeight = if (insets?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) == true) {
-                        insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.ime()).bottom
+                    val imeVisible = insets?.isVisible(
+                        androidx.core.view.WindowInsetsCompat.Type.ime()
+                    ) == true
+                    val root = launcher.window.decorView
+                    val rootLocation = IntArray(2)
+                    val contentLocation = IntArray(2)
+                    root.getLocationOnScreen(rootLocation)
+                    decor.getLocationOnScreen(contentLocation)
+                    val rootBottom = rootLocation[1] + root.height
+                    val imeBottomInset = if (imeVisible) {
+                        insets?.getInsets(androidx.core.view.WindowInsetsCompat.Type.ime())?.bottom ?: 0
                     } else 0
-                    val available = minOf(visible.height(), screenHeight - imeHeight)
+                    // adjustResize already moves the visible frame above the keyboard.
+                    // On adjustNothing/adjustPan the window stays full height, so use
+                    // the IME top instead. Never subtract the keyboard height twice.
+                    val keyboardTop = if (imeVisible && imeBottomInset > 0) {
+                        if (rootBottom < screenHeight - (48 * density).toInt()) {
+                            visible.bottom
+                        } else {
+                            minOf(visible.bottom, rootBottom - imeBottomInset)
+                        }
+                    } else {
+                        visible.bottom
+                    }
+                    val maximum = (keyboardTop - contentLocation[1] -
+                        if (imeVisible) 0 else margin)
                         .coerceAtLeast((160 * density).toInt())
-                    val maximum = (available - margin).coerceAtLeast((160 * density).toInt())
                     val barHeight = input.height.coerceAtLeast((64 * density).toInt())
                     val desiredContent = if (zeroState.visibility == View.VISIBLE) zeroState.measuredHeight else results.measuredHeight
                     val footerHeight = container.getChildAt(container.childCount - 1).measuredHeight
                         .coerceAtLeast((40 * density).toInt())
-                    val desired = if (imeHeight > 0 && scroll.visibility == View.VISIBLE) {
+                    val desired = if (imeVisible && scroll.visibility == View.VISIBLE) {
                         // With the keyboard visible, fill the space above it;
                         // the ScrollView handles content that exceeds that height.
                         maximum
