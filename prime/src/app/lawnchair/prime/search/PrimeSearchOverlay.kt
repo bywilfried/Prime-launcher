@@ -1026,6 +1026,12 @@ object PrimeSearchOverlay {
                         }
                     }
                     applyPrimeTextColors(view)
+                    if (!isAppIcon && item.searchTarget.layoutType in listOf(
+                            LayoutType.HORIZONTAL_MEDIUM_TEXT, LayoutType.ICON_SLICE,
+                            LayoutType.WIDGET_LIVE,
+                        )) {
+                        app.lawnchair.search.SearchResultGeometry.styleTextRow(view)
+                    }
                     if (!isAppIcon && item.searchTarget.layoutType.toString().contains("HEADER", ignoreCase = true)) {
                         // Replace the drawer's fixed-height header wrapper with a compact label.
                         fun headerLabel(node: View): CharSequence? {
@@ -1040,15 +1046,11 @@ object PrimeSearchOverlay {
                             val compactHeading = TextView(launcher).apply {
                                 text = heading
                                 setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
-                                setTypeface(typeface, android.graphics.Typeface.BOLD)
-                                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
                                 gravity = Gravity.CENTER_VERTICAL
-                                setPadding((6 * density).toInt(), (14 * density).toInt(),
-                                    (6 * density).toInt(), 0)
-                                includeFontPadding = false
                             }
                             parent.removeView(view)
                             parent.addView(compactHeading, LinearLayout.LayoutParams(-1, -2))
+                            app.lawnchair.search.SearchResultGeometry.styleHeading(compactHeading, compactHeading)
                             return@forEach
                         }
                     }
