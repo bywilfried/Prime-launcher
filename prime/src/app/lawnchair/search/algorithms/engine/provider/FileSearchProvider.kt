@@ -51,7 +51,7 @@ object FileSearchProvider : SearchProvider {
     // The SQL wildcard form also works for MediaStore entries without filesystem access.
     private fun flexiblePattern(query: String): String {
         val terms = query.trim().split(Regex("[\\s_.-]+")).filter { it.isNotBlank() }
-        return "%" + terms.joinToString("%") { it.replace("%", "\\\\%").replace("_", "\\\\_") } + "%"
+        return "%" + terms.joinToString("%") + "%"
     }
 
     private fun matchesFilename(name: String, query: String): Boolean {
