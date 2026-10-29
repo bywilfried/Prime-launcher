@@ -1103,7 +1103,7 @@ object PrimeSearchOverlay {
                     val imeVisible = insets?.isVisible(
                         androidx.core.view.WindowInsetsCompat.Type.ime()
                     ) == true
-                    val root = launcher.window.decorView
+                    val root = launcher.window?.decorView ?: decor.rootView
                     val rootLocation = IntArray(2)
                     val contentLocation = IntArray(2)
                     root.getLocationOnScreen(rootLocation)
