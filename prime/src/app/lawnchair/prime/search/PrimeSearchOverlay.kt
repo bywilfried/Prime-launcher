@@ -550,8 +550,9 @@ object PrimeSearchOverlay {
                     textSize = 14f
                     setTextColor(foreground)
                     if (isHeading) setTypeface(typeface, android.graphics.Typeface.BOLD)
-                    val vertical = ((if (isHeading) 12 else 5) * density).toInt()
-                    setPadding(inset, vertical, inset, vertical)
+                    val top = ((if (isHeading) 18 else 5) * density).toInt()
+                    val bottom = ((if (isHeading) 2 else 5) * density).toInt()
+                    setPadding(inset, top, inset, bottom)
                     setOnClickListener {
                         if (title != "Suggestions Web" && title != "Raccourcis Web") dialog.hideKeyboardForSelection()
                         action()
