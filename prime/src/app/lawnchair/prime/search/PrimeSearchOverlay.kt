@@ -1028,15 +1028,24 @@ object PrimeSearchOverlay {
                     applyPrimeTextColors(view)
                     if (!isAppIcon && item.searchTarget.layoutType.toString().contains("HEADER", ignoreCase = true)) {
                         fun emphasizeHeading(node: View) {
-                            if (node is TextView) node.setTypeface(node.typeface, android.graphics.Typeface.BOLD)
+                            if (node is TextView) {
+                                node.setTypeface(node.typeface, android.graphics.Typeface.BOLD)
+                                node.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
+                                node.minHeight = 0
+                                node.setPadding(node.paddingLeft, (2 * density).toInt(),
+                                    node.paddingRight, (2 * density).toInt())
+                            }
                             else if (node is ViewGroup) for (index in 0 until node.childCount) emphasizeHeading(node.getChildAt(index))
                         }
                         emphasizeHeading(view)
                         // Keep section separation, but remove the oversized gap
                         // inherited from drawer header layouts in Prime Search.
                         view.minimumHeight = 0
+                        view.layoutParams = (view.layoutParams as? LinearLayout.LayoutParams)?.apply {
+                            height = LinearLayout.LayoutParams.WRAP_CONTENT
+                        } ?: view.layoutParams
                         view.setPadding(view.paddingLeft, (6 * density).toInt(),
-                            view.paddingRight, (2 * density).toInt())
+                            view.paddingRight, 0)
                     }
                     if (isAppIcon) {
                         view.minimumHeight = 0
