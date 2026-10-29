@@ -151,7 +151,7 @@ object FileSearchProvider : SearchProvider {
             if (root.isDirectory && root.canRead()) pending.add(root)
             val seen = HashSet<String>()
             var visited = 0
-            while (pending.isNotEmpty() && visited < 60000 && files.size < maxResults) {
+            while (pending.isNotEmpty() && visited < 60000) {
                 val dir = pending.removeFirst()
                 if (!seen.add(dir.absolutePath)) continue
                 val children = runCatching { dir.listFiles() }.getOrNull() ?: continue
@@ -165,11 +165,26 @@ object FileSearchProvider : SearchProvider {
                         pending.add(child)
                     } else if (child.isFile && matchesFilename(child.name, query)) {
                         files.add(FileInfo("", child.absolutePath, child.name, child.length(), child.lastModified(), null))
-                        if (files.size >= maxResults) break
                     }
                 }
             }
-            (files + folders).distinctBy { it.path }.take(maxResults)
+            (files + folders).distinctBy { it.path }
+                .sortedWith(compareBy<IFileInfo> {
+                    val name = it.path.substringAfterLast('/')
+                    val normalizedName = Normalizer.normalize(name, Normalizer.Form.NFD)
+                        .replace(Regex("\\p{M}+"), "")
+                        .lowercase(java.util.Locale.ROOT)
+                        .replace(Regex("[\\s_.-]+"), "")
+                    val normalizedQuery = Normalizer.normalize(query, Normalizer.Form.NFD)
+                        .replace(Regex("\\p{M}+"), "")
+                        .lowercase(java.util.Locale.ROOT)
+                        .replace(Regex("[\\s_.-]+"), "")
+                    when {
+                        normalizedName.startsWith(normalizedQuery) -> 0
+                        normalizedName.contains(normalizedQuery) -> 1
+                        else -> 2
+                    }
+                }).take(maxResults)
         }
 
     private val IMAGE_MIME_TYPES = imageFileTypes.values.toTypedArray()
