@@ -1110,8 +1110,14 @@ object PrimeSearchOverlay {
                     val desiredContent = if (zeroState.visibility == View.VISIBLE) zeroState.measuredHeight else results.measuredHeight
                     val footerHeight = container.getChildAt(container.childCount - 1).measuredHeight
                         .coerceAtLeast((40 * density).toInt())
-                    val desired = (barHeight + desiredContent + footerHeight + inset)
-                        .coerceIn((120 * density).toInt(), maximum)
+                    val desired = if (imeHeight > 0 && scroll.visibility == View.VISIBLE) {
+                        // With the keyboard visible, fill the space above it;
+                        // the ScrollView handles content that exceeds that height.
+                        maximum
+                    } else {
+                        (barHeight + desiredContent + footerHeight + inset)
+                            .coerceIn((120 * density).toInt(), maximum)
+                    }
                     if (desired != lastHeight) {
                         lastHeight = desired
                         dialog.updateHeight(desired)
