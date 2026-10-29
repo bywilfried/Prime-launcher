@@ -269,13 +269,15 @@ object PrimeSearchOverlay {
         }
         val results = LinearLayout(launcher).apply {
             orientation = LinearLayout.VERTICAL
+            setPadding((12 * density).toInt(), (12 * density).toInt(),
+                (12 * density).toInt(), (8 * density).toInt())
             // Search results must not start flush against the search field.
             // This padding belongs only to typed results, not the zero-state tabs.
-            setPadding(0, (12 * density).toInt(), 0, (8 * density).toInt())
             setBackgroundColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND))
         }
         val zeroState = LinearLayout(launcher).apply {
             orientation = LinearLayout.VERTICAL
+            setPadding((12 * density).toInt(), 0, (12 * density).toInt(), 0)
         }
         val tabs = LinearLayout(launcher).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -431,7 +433,7 @@ object PrimeSearchOverlay {
             val columns = PrimeSearchResultPreferences.appsPerRow(launcher)
             val maxCount = columns * PrimeSearchResultPreferences.zeroStateRows(launcher)
             val usableWidth = launcher.resources.displayMetrics.widthPixels -
-                (if (floating) (48 * density).toInt() else 0) - inset * 2
+                (if (floating) (48 * density).toInt() else 0) - inset * 2 - (24 * density).toInt()
             val cellWidth = (usableWidth.coerceAtMost((600 * density).toInt() - inset * 2) / columns)
                 .coerceAtLeast(1)
             // Always allocate the configured number of rows, even if a tab
@@ -865,7 +867,7 @@ object PrimeSearchOverlay {
                 // Each row is centered independently. Fixed-width cells keep
                 // identical spacing whether the row has 1, 2 or 6 apps.
                 val availableWidth = launcher.resources.displayMetrics.widthPixels -
-                    (if (floating) (48 * density).toInt() else 0) - inset * 2
+                    (if (floating) (48 * density).toInt() else 0) - inset * 2 - (24 * density).toInt()
                 val gridWidth = availableWidth.coerceAtMost(
                     if (floating) (600 * density).toInt() - inset * 2 else availableWidth,
                 )
