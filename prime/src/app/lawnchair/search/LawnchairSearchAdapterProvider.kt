@@ -72,20 +72,13 @@ class LawnchairSearchAdapterProvider(
                 val label = heading?.text?.toString().orEmpty()
                 if (label.isNotBlank() && label != app.lawnchair.search.adapter.SPACE &&
                     label != app.lawnchair.search.adapter.SPACE_MINI) {
-                    heading.setTypeface(heading.typeface, Typeface.BOLD)
-                    heading.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
-                    heading.includeFontPadding = false
-                    holder.itemView.minimumHeight = 0
-                    holder.itemView.setPadding(dp(6), dp(10), dp(6), dp(2))
-                    holder.itemView.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
-                    holder.itemView.findViewById<View>(R.id.text_rows)?.setPadding(0, 0, 0, 0)
+                    SearchResultGeometry.styleHeading(heading, holder.itemView)
                 }
             }
             LayoutType.THUMBNAIL -> {
                 if (adapterItem.searchTarget.resultType ==
                     app.lawnchair.search.adapter.SearchTargetCompat.RESULT_TYPE_FILE_TILE) {
-                    holder.itemView.layoutParams.height = dp(52)
-                    holder.itemView.minimumHeight = 0
+                    SearchResultGeometry.styleFileRow(holder.itemView)
                     holder.itemView.findViewById<TextView>(R.id.title)?.apply {
                         setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
                         maxLines = 2
@@ -94,7 +87,7 @@ class LawnchairSearchAdapterProvider(
                 }
             }
             LayoutType.HORIZONTAL_MEDIUM_TEXT, LayoutType.ICON_SLICE, LayoutType.WIDGET_LIVE -> {
-                holder.itemView.layoutParams.height = dp(40)
+                SearchResultGeometry.styleTextRow(holder.itemView)
             }
         }
         if (itemView.isQuickLaunch) {
