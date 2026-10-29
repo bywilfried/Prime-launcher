@@ -123,28 +123,37 @@ object FileSearchProvider : SearchProvider {
      */
     private suspend fun scanAccessibleFiles(query: String, maxResults: Int): List<IFileInfo> =
         withContext(Dispatchers.IO) {
-            val found = mutableListOf<IFileInfo>()
-            val roots = listOf(Environment.getExternalStorageDirectory())
+            val files = mutableListOf<IFileInfo>()
+            val folders = mutableListOf<IFileInfo>()
+            val root = Environment.getExternalStorageDirectory()
             val pending = java.util.ArrayDeque<File>()
-            roots.filter { it.exists() && it.isDirectory }.forEach { pending.add(it) }
+            // Check common user folders first, including Download (PDFs, APKs, archives).
+            listOf("Download", "Documents", "DCIM", "Pictures", "Movies", "Music").forEach {
+                val dir = File(root, it)
+                if (dir.isDirectory && dir.canRead()) pending.add(dir)
+            }
+            if (root.isDirectory && root.canRead()) pending.add(root)
+            val seen = HashSet<String>()
             var visited = 0
-            while (pending.isNotEmpty() && visited < 30000 && found.size < maxResults) {
+            while (pending.isNotEmpty() && visited < 60000 && files.size < maxResults) {
                 val dir = pending.removeFirst()
+                if (!seen.add(dir.absolutePath)) continue
                 val children = runCatching { dir.listFiles() }.getOrNull() ?: continue
                 for (child in children) {
-                    if (++visited > 30000 || found.size >= maxResults) break
+                    if (++visited > 60000) break
                     if (child.name.startsWith(".") || !child.canRead()) continue
                     if (child.isDirectory) {
                         if (child.name.contains(query, ignoreCase = true)) {
-                            found.add(FolderInfo(child.absolutePath, child.name, 0L, child.lastModified()))
+                            folders.add(FolderInfo(child.absolutePath, child.name, 0L, child.lastModified()))
                         }
                         pending.add(child)
                     } else if (child.isFile && child.name.contains(query, ignoreCase = true)) {
-                        found.add(FileInfo("", child.absolutePath, child.name, child.length(), child.lastModified(), null))
+                        files.add(FileInfo("", child.absolutePath, child.name, child.length(), child.lastModified(), null))
+                        if (files.size >= maxResults) break
                     }
                 }
             }
-            found
+            (files + folders).distinctBy { it.path }.take(maxResults)
         }
 
     private val IMAGE_MIME_TYPES = imageFileTypes.values.toTypedArray()
