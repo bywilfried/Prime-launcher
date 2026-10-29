@@ -289,6 +289,7 @@ object PrimeSearchOverlay {
         val scroll = ScrollView(launcher).apply {
             addView(results)
         }
+        lateinit var settings: ImageView
         val container = LinearLayout(launcher).apply {
             orientation = LinearLayout.VERTICAL
             background = GradientDrawable().apply {
@@ -297,7 +298,9 @@ object PrimeSearchOverlay {
             }
             clipToOutline = floating
             setPadding(inset, inset, inset, 0)
-            addView(input, LinearLayout.LayoutParams(-1, -2))
+            val searchBar = FrameLayout(launcher)
+            searchBar.addView(input, FrameLayout.LayoutParams(-1, -2))
+            addView(searchBar, LinearLayout.LayoutParams(-1, -2))
             addView(zeroState, LinearLayout.LayoutParams(-1, -2))
             addView(scroll, LinearLayout.LayoutParams(-1, -2))
             // Use a real outlined vector-like gear instead of the platform
@@ -341,7 +344,7 @@ object PrimeSearchOverlay {
                 @Deprecated("Deprecated in Java")
                 override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
             }
-            val settings = ImageView(launcher).apply {
+            settings = ImageView(launcher).apply {
                 setImageDrawable(settingsIcon)
                 scaleType = ImageView.ScaleType.CENTER_INSIDE
                 setPadding((10 * density).toInt(), (10 * density).toInt(),
@@ -354,13 +357,11 @@ object PrimeSearchOverlay {
                     )
                 }
             }
-            val settingsFooter = LinearLayout(launcher).apply {
-                gravity = Gravity.END or Gravity.CENTER_VERTICAL
-                addView(settings, LinearLayout.LayoutParams(
-                    (40 * density).toInt(), (40 * density).toInt(),
-                ))
-            }
-            addView(settingsFooter, LinearLayout.LayoutParams(-1, (40 * density).toInt()))
+            searchBar.addView(settings, FrameLayout.LayoutParams(
+                (40 * density).toInt(), (40 * density).toInt(),
+                Gravity.END or Gravity.CENTER_VERTICAL,
+            ).apply { marginEnd = (8 * density).toInt() })
+            input.setPadding(inset, 0, (56 * density).toInt(), 0)
         }
         lateinit var dialog: PrimeSearchSurface
         dialog = PrimeSearchSurface(launcher, container, floating, density) {
@@ -1075,6 +1076,7 @@ object PrimeSearchOverlay {
                 val query = s?.toString().orEmpty()
                 zeroState.visibility = if (query.isBlank()) View.VISIBLE else View.GONE
                 scroll.visibility = if (query.isBlank()) View.GONE else View.VISIBLE
+                settings.visibility = if (query.isBlank()) View.VISIBLE else View.GONE
                 updateWebSuggestions(query)
                 if (query.isBlank()) {
                     results.removeAllViews()
@@ -1129,14 +1131,12 @@ object PrimeSearchOverlay {
                         .coerceAtLeast((160 * density).toInt())
                     val barHeight = input.height.coerceAtLeast((64 * density).toInt())
                     val desiredContent = if (zeroState.visibility == View.VISIBLE) zeroState.measuredHeight else results.measuredHeight
-                    val footerHeight = container.getChildAt(container.childCount - 1).measuredHeight
-                        .coerceAtLeast((40 * density).toInt())
                     val desired = if (imeVisible && scroll.visibility == View.VISIBLE) {
                         // With the keyboard visible, fill the space above it;
                         // the ScrollView handles content that exceeds that height.
                         maximum
                     } else {
-                        (barHeight + desiredContent + footerHeight + inset)
+                        (barHeight + desiredContent + inset)
                             .coerceIn((120 * density).toInt(), maximum)
                     }
                     if (desired != lastHeight) {
