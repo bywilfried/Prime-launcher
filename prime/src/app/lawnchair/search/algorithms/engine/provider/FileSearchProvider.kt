@@ -118,10 +118,23 @@ object FileSearchProvider : SearchProvider {
             }
         }
 
-        val primeResults = if (allFilesGranted && (searchAllFiles || !drawer)) {
-            (scanAccessibleFiles(query, maxResults) + results).distinctBy { it.path }
-        } else results
-        val uniqueResults = primeResults.distinctBy { it.path }.filter { file ->
+        // Show indexed matches immediately; a full filesystem walk may take longer.
+        // Never hold MediaStore results hostage to a slow scan.
+        if (results.isNotEmpty()) {
+            emit(results.distinctBy { it.path }.filter { file ->
+                if (!drawer) true else {
+                    app.lawnchair.prime.search.PrimeSearchResultPreferences.fileAllowed(
+                        context, file.path.substringAfterLast('/'), null,
+                        app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER,
+                    )
+                }
+            }.take(maxResults).map { SearchResult.File(it) })
+        }
+        val scanned = if (allFilesGranted && (searchAllFiles || !drawer)) {
+            scanAccessibleFiles(query, maxResults)
+        } else emptyList()
+        val primeResults = (results + scanned).distinctBy { it.path }
+        val uniqueResults = primeResults.filter { file ->
             if (!drawer) true else {
                 val settings = app.lawnchair.prime.search.PrimeSearchResultPreferences
                 val surface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
