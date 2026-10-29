@@ -14,6 +14,9 @@ import android.content.Context
 import android.content.Intent
 import android.os.Process
 import android.provider.Settings
+import android.os.Build
+import android.os.Environment
+import android.net.Uri
 import androidx.compose.material3.Text
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -550,6 +553,26 @@ fun PrimeSearchPreference() {
                                 TextButton(onClick = { requestCategory(selected) }) { Text("Autoriser l'accès") }
                             }
                         } else {
+                            if (selected == PrimeSearchResultPreferences.Category.FILES &&
+                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                                val allFilesGranted = Environment.isExternalStorageManager()
+                                Text(if (allFilesGranted)
+                                    "Accès à tous les fichiers : autorisé"
+                                    else "Accès à tous les fichiers : non autorisé")
+                                Text("Cet accès permet de rechercher les documents, APK, archives et dossiers dans le stockage partagé, dans Prime Search et dans le tiroir.")
+                                TextButton(onClick = {
+                                    val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                                        Uri.parse("package:${context.packageName}"))
+                                    runCatching { context.startActivity(intent) }.onFailure {
+                                        runCatching {
+                                            context.startActivity(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
+                                        }
+                                    }
+                                }) {
+                                    Text(if (allFilesGranted) "Gérer l'accès à tous les fichiers"
+                                        else "Autoriser l'accès à tous les fichiers")
+                                }
+                            }
                             if (PrimeSearchPermissions.required(selected)) {
                                 val granted = PrimeSearchPermissions.granted(context, selected)
                                 Text(if (granted) "Autorisation accordée" else PrimeSearchPermissions.explanation(selected))
