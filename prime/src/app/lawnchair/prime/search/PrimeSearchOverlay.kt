@@ -981,9 +981,9 @@ object PrimeSearchOverlay {
                         val compact = LinearLayout(launcher).apply {
                             orientation = LinearLayout.HORIZONTAL
                             gravity = Gravity.CENTER_VERTICAL
-                            setPadding((12 * density).toInt(), (4 * density).toInt(),
-                                (12 * density).toInt(), (4 * density).toInt())
-                            minimumHeight = (60 * density).toInt()
+                            setPadding((12 * density).toInt(), (2 * density).toInt(),
+                                (12 * density).toInt(), (2 * density).toInt())
+                            minimumHeight = (52 * density).toInt()
                             isClickable = true
                             isFocusable = true
                             setOnClickListener { view.performClick() }
@@ -1032,6 +1032,11 @@ object PrimeSearchOverlay {
                             else if (node is ViewGroup) for (index in 0 until node.childCount) emphasizeHeading(node.getChildAt(index))
                         }
                         emphasizeHeading(view)
+                        // Keep section separation, but remove the oversized gap
+                        // inherited from drawer header layouts in Prime Search.
+                        view.minimumHeight = 0
+                        view.setPadding(view.paddingLeft, (6 * density).toInt(),
+                            view.paddingRight, (2 * density).toInt())
                     }
                     if (isAppIcon) {
                         view.minimumHeight = 0
