@@ -103,7 +103,7 @@ object FileSearchProvider : SearchProvider {
         }
 
         val primeResults = if (allFilesGranted && (searchAllFiles || !drawer)) {
-            (results + scanAccessibleFiles(query, maxResults)).distinctBy { it.path }
+            (scanAccessibleFiles(query, maxResults) + results).distinctBy { it.path }
         } else results
         val uniqueResults = primeResults.distinctBy { it.path }.filter { file ->
             if (!drawer) true else {
