@@ -18,15 +18,15 @@ object SearchResultGeometry {
         label.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
         label.includeFontPadding = false
         container.minimumHeight = 0
-        container.setPadding(container.dp(6), container.dp(12), container.dp(6), 0)
+        container.setPadding(container.dp(6), container.dp(18), container.dp(6), container.dp(2))
         container.layoutParams?.height = ViewGroup.LayoutParams.WRAP_CONTENT
         container.findViewById<View>(R.id.text_rows)?.setPadding(0, 0, 0, 0)
     }
 
     fun styleTextRow(view: View) {
         // Never force a height smaller than the content: this clipped task and web labels.
-        view.minimumHeight = 0
-        view.layoutParams?.height = ViewGroup.LayoutParams.WRAP_CONTENT
+        view.minimumHeight = view.dp(64)
+        view.layoutParams?.height = view.dp(64)
     }
 
     fun styleFileRow(view: View) {
