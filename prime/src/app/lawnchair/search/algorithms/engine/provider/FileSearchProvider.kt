@@ -3,6 +3,7 @@ package app.lawnchair.search.algorithms.engine.provider
 import android.content.Context
 import android.os.Environment
 import java.io.File
+import java.text.Normalizer
 import android.database.Cursor
 import android.net.Uri
 import android.provider.MediaStore
@@ -55,7 +56,9 @@ object FileSearchProvider : SearchProvider {
     }
 
     private fun matchesFilename(name: String, query: String): Boolean {
-        fun normalized(value: String) = value.lowercase(java.util.Locale.ROOT)
+        fun normalized(value: String) = Normalizer.normalize(value, Normalizer.Form.NFD)
+            .replace(Regex("\\p{M}+"), "")
+            .lowercase(java.util.Locale.ROOT)
             .replace(Regex("[\\s_.-]+"), "")
         return normalized(name).contains(normalized(query))
     }
@@ -160,7 +163,7 @@ object FileSearchProvider : SearchProvider {
                             folders.add(FolderInfo(child.absolutePath, child.name, 0L, child.lastModified()))
                         }
                         pending.add(child)
-                    } else if (child.isFile && child.name.contains(query, ignoreCase = true)) {
+                    } else if (child.isFile && matchesFilename(child.name, query)) {
                         files.add(FileInfo("", child.absolutePath, child.name, child.length(), child.lastModified(), null))
                         if (files.size >= maxResults) break
                     }
