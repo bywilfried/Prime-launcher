@@ -432,9 +432,11 @@ object PrimeSearchOverlay {
             }
             val columns = PrimeSearchResultPreferences.appsPerRow(launcher)
             val maxCount = columns * PrimeSearchResultPreferences.zeroStateRows(launcher)
-            val usableWidth = launcher.resources.displayMetrics.widthPixels -
-                (if (floating) (48 * density).toInt() else 0) - inset * 2 - (24 * density).toInt()
-            val cellWidth = (usableWidth.coerceAtMost((600 * density).toInt() - inset * 2) / columns)
+            val usableWidth = (if (floating) {
+                (launcher.resources.displayMetrics.widthPixels - (24 * density).toInt())
+                    .coerceAtMost((600 * density).toInt())
+            } else launcher.resources.displayMetrics.widthPixels) - inset * 2
+            val cellWidth = (usableWidth / columns)
                 .coerceAtLeast(1)
             // Always allocate the configured number of rows, even if a tab
             // has fewer apps (or none). This keeps the overlay height stable
@@ -866,11 +868,10 @@ object PrimeSearchOverlay {
                 val columns = PrimeSearchResultPreferences.appsPerRow(launcher)
                 // Each row is centered independently. Fixed-width cells keep
                 // identical spacing whether the row has 1, 2 or 6 apps.
-                val availableWidth = launcher.resources.displayMetrics.widthPixels -
-                    (if (floating) (48 * density).toInt() else 0) - inset * 2 - (24 * density).toInt()
-                val gridWidth = availableWidth.coerceAtMost(
-                    if (floating) (600 * density).toInt() - inset * 2 else availableWidth,
-                )
+                val gridWidth = (if (floating) {
+                    (launcher.resources.displayMetrics.widthPixels - (24 * density).toInt())
+                        .coerceAtMost((600 * density).toInt())
+                } else launcher.resources.displayMetrics.widthPixels) - inset * 2
                 val cellWidth = (gridWidth / columns).coerceAtLeast(1)
                 // Match the zero-state Prime Search icon and label settings.
                 // This is local to the Prime overlay; drawer search is untouched.
