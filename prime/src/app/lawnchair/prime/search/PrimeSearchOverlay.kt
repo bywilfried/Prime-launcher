@@ -1026,17 +1026,6 @@ object PrimeSearchOverlay {
                         }
                     }
                     applyPrimeTextColors(view)
-                    // The standard drawer rows have taller XML heights than the compact
-                    // Prime Search file rows. Normalize non-file text results here so
-                    // their first visible line sits closer to the section heading.
-                    if (!isAppIcon && item.searchTarget.layoutType in listOf(
-                            LayoutType.HORIZONTAL_MEDIUM_TEXT,
-                            LayoutType.ICON_SLICE,
-                            LayoutType.WIDGET_LIVE,
-                        )) {
-                        view.minimumHeight = 0
-                        view.layoutParams.height = (40 * density).toInt()
-                    }
                     if (!isAppIcon && item.searchTarget.layoutType.toString().contains("HEADER", ignoreCase = true)) {
                         // Replace the drawer's fixed-height header wrapper with a compact label.
                         fun headerLabel(node: View): CharSequence? {
@@ -1059,11 +1048,7 @@ object PrimeSearchOverlay {
                                 includeFontPadding = false
                             }
                             parent.removeView(view)
-                            // Result layouts add their own top inset; tighten the boundary
-                            // consistently for every section, regardless of result type.
-                            parent.addView(compactHeading, LinearLayout.LayoutParams(-1, -2).apply {
-                                bottomMargin = -(4 * density).toInt()
-                            })
+                            parent.addView(compactHeading, LinearLayout.LayoutParams(-1, -2))
                             return@forEach
                         }
                     }
