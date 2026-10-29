@@ -612,7 +612,7 @@ object PrimeSearchOverlay {
                 if (tasks.isNotEmpty()) {
                     row("Tâches · Tasks.org") {}
                     tasks.forEach { task ->
-                        row("☑  ${task.title}\n${task.detail}") {
+                        row("☑  ${task.title}" + task.detail.takeIf { it.isNotBlank() }?.let { "\n$it" }.orEmpty()) {
                             runCatching {
                                 launcher.startActivity(Intent(Intent.ACTION_VIEW, task.uri))
                                 dismiss()
