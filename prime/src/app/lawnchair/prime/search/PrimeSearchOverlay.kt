@@ -984,7 +984,7 @@ object PrimeSearchOverlay {
                             gravity = Gravity.CENTER_VERTICAL
                             setPadding((12 * density).toInt(), (2 * density).toInt(),
                                 (12 * density).toInt(), (2 * density).toInt())
-                            minimumHeight = (52 * density).toInt()
+                            minimumHeight = (44 * density).toInt()
                             isClickable = true
                             isFocusable = true
                             setOnClickListener { view.performClick() }
@@ -995,8 +995,8 @@ object PrimeSearchOverlay {
                             scaleType = ImageView.ScaleType.CENTER_INSIDE
                         }
                         compact.addView(icon, LinearLayout.LayoutParams(
-                            (40 * density).toInt(), (40 * density).toInt()).apply {
-                            marginEnd = (12 * density).toInt()
+                            (32 * density).toInt(), (32 * density).toInt()).apply {
+                            marginEnd = (10 * density).toInt()
                         })
                         val title = TextView(launcher).apply {
                             text = filename
