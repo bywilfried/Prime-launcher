@@ -1048,7 +1048,11 @@ object PrimeSearchOverlay {
                                 includeFontPadding = false
                             }
                             parent.removeView(view)
-                            parent.addView(compactHeading, LinearLayout.LayoutParams(-1, -2))
+                            // Result layouts add their own top inset; tighten the boundary
+                            // consistently for every section, regardless of result type.
+                            parent.addView(compactHeading, LinearLayout.LayoutParams(-1, -2).apply {
+                                bottomMargin = -(4 * density).toInt()
+                            })
                             return@forEach
                         }
                     }
