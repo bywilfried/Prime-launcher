@@ -47,6 +47,19 @@ object FileSearchProvider : SearchProvider {
     fun searchForPrime(context: Context, query: String): Flow<List<SearchResult>> =
         searchWithLimit(context, query, app.lawnchair.prime.search.PrimeSearchResultPreferences.maxFileResults(context), false)
 
+    // Treat spaces, underscores, hyphens and dots as equivalent word separators.
+    // The SQL wildcard form also works for MediaStore entries without filesystem access.
+    private fun flexiblePattern(query: String): String {
+        val terms = query.trim().split(Regex("[\\s_.-]+")).filter { it.isNotBlank() }
+        return "%" + terms.joinToString("%") { it.replace("%", "\\\\%").replace("_", "\\\\_") } + "%"
+    }
+
+    private fun matchesFilename(name: String, query: String): Boolean {
+        fun normalized(value: String) = value.lowercase(java.util.Locale.ROOT)
+            .replace(Regex("[\\s_.-]+"), "")
+        return normalized(name).contains(normalized(query))
+    }
+
     private fun searchWithLimit(context: Context, query: String, overrideLimit: Int?, drawer: Boolean): Flow<List<SearchResult>> = flow {
         val prefs = PreferenceManager.getInstance(context)
 
@@ -143,7 +156,7 @@ object FileSearchProvider : SearchProvider {
                     if (++visited > 60000) break
                     if (child.name.startsWith(".") || !child.canRead()) continue
                     if (child.isDirectory) {
-                        if (child.name.contains(query, ignoreCase = true)) {
+                        if (matchesFilename(child.name, query)) {
                             folders.add(FolderInfo(child.absolutePath, child.name, 0L, child.lastModified()))
                         }
                         pending.add(child)
@@ -269,7 +282,7 @@ object FileSearchProvider : SearchProvider {
         val selectionArgsList = mutableListOf<String>()
 
         selectionClauses.add("(${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ? OR ${MediaStore.MediaColumns.TITLE} LIKE ?)")
-        selectionArgsList.add("%$keyword%")
+        selectionArgsList.add(flexiblePattern(keyword))
         selectionArgsList.add("%$keyword%")
 
         if (!mimeTypes.isNullOrEmpty()) {
