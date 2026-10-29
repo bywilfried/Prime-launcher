@@ -76,13 +76,8 @@ class LawnchairSearchAdapterProvider(
                     heading.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
                     heading.includeFontPadding = false
                     holder.itemView.minimumHeight = 0
-                    holder.itemView.setPadding(dp(6), dp(14), dp(6), 0)
+                    holder.itemView.setPadding(dp(6), dp(10), dp(6), dp(2))
                     holder.itemView.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
-                    // The following result rows have their own top inset. Compensate
-                    // at the section boundary without changing spacing within rows.
-                    (holder.itemView.layoutParams as? ViewGroup.MarginLayoutParams)?.let {
-                        it.bottomMargin = -dp(4)
-                    }
                     holder.itemView.findViewById<View>(R.id.text_rows)?.setPadding(0, 0, 0, 0)
                 }
             }
