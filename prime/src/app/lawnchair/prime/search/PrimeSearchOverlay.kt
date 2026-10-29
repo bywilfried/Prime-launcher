@@ -299,7 +299,7 @@ object PrimeSearchOverlay {
             setPadding(inset, inset, inset, 0)
             addView(input, LinearLayout.LayoutParams(-1, -2))
             addView(zeroState, LinearLayout.LayoutParams(-1, -2))
-            addView(scroll, LinearLayout.LayoutParams(-1, -2))
+            addView(scroll, LinearLayout.LayoutParams(-1, if (floating) 0 else -2, if (floating) 1f else 0f))
             // Use a real outlined vector-like gear instead of the platform
             // Unicode gear glyph, whose filled appearance varies by font.
             val settingsIcon = object : Drawable() {
@@ -1099,10 +1099,15 @@ object PrimeSearchOverlay {
                     }
                     val visible = Rect()
                     decor.getWindowVisibleDisplayFrame(visible)
-                    val available = visible.height().coerceAtMost(screenHeight)
+                    val insets = androidx.core.view.ViewCompat.getRootWindowInsets(decor)
+                    val imeHeight = if (insets?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) == true) {
+                        insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.ime()).bottom
+                    } else 0
+                    val available = minOf(visible.height(), screenHeight - imeHeight)
+                        .coerceAtLeast((160 * density).toInt())
                     val maximum = (available - margin).coerceAtLeast((160 * density).toInt())
                     val barHeight = input.height.coerceAtLeast((64 * density).toInt())
-                    val desiredContent = if (zeroState.visibility == View.VISIBLE) zeroState.measuredHeight else results.measuredHeight
+                    val desiredContent = if (zeroState.visibility == View.VISIBLE) zeroState.measuredHeight else results.height.coerceAtLeast(results.measuredHeight)
                     val footerHeight = container.getChildAt(container.childCount - 1).measuredHeight
                         .coerceAtLeast((40 * density).toInt())
                     val desired = (barHeight + desiredContent + footerHeight + inset)
