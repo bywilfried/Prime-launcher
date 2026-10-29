@@ -136,7 +136,7 @@ object FileSearchProvider : SearchProvider {
                     if (child.name.startsWith(".") || !child.canRead()) continue
                     if (child.isDirectory) {
                         if (child.name.contains(query, ignoreCase = true)) {
-                            found.add(FolderInfo("", child.absolutePath, child.name, 0L, child.lastModified(), null))
+                            found.add(FolderInfo(child.absolutePath, child.name, 0L, child.lastModified()))
                         }
                         pending.add(child)
                     } else if (child.isFile && child.name.contains(query, ignoreCase = true)) {
