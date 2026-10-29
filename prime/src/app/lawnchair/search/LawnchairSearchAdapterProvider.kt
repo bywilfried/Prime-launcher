@@ -4,6 +4,9 @@ import android.util.SparseIntArray
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
+import android.graphics.Typeface
+import android.util.TypedValue
 import androidx.core.util.contains
 import app.lawnchair.allapps.views.SearchItemDecorator
 import app.lawnchair.allapps.views.SearchResultView
@@ -59,6 +62,41 @@ class LawnchairSearchAdapterProvider(
             adapterItem.searchTarget,
             emptyList(),
         )
+        // Match Prime Search's compact section headings and non-app result rows.
+        // Applied after bind because individual result views restore their own heights.
+        val density = holder.itemView.resources.displayMetrics.density
+        val dp: (Int) -> Int = { (it * density).toInt() }
+        when (adapterItem.searchTarget.layoutType) {
+            LayoutType.TEXT_HEADER -> {
+                val heading = holder.itemView.findViewById<TextView>(R.id.title)
+                val label = heading?.text?.toString().orEmpty()
+                if (label.isNotBlank() && label != app.lawnchair.search.adapter.SPACE &&
+                    label != app.lawnchair.search.adapter.SPACE_MINI) {
+                    heading.setTypeface(heading.typeface, Typeface.BOLD)
+                    heading.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+                    heading.includeFontPadding = false
+                    holder.itemView.minimumHeight = 0
+                    holder.itemView.setPadding(dp(6), dp(10), dp(6), dp(2))
+                    holder.itemView.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                    holder.itemView.findViewById<View>(R.id.text_rows)?.setPadding(0, 0, 0, 0)
+                }
+            }
+            LayoutType.THUMBNAIL -> {
+                if (adapterItem.searchTarget.resultType ==
+                    app.lawnchair.search.adapter.SearchTargetCompat.RESULT_TYPE_FILE_TILE) {
+                    holder.itemView.layoutParams.height = dp(52)
+                    holder.itemView.minimumHeight = 0
+                    holder.itemView.findViewById<TextView>(R.id.title)?.apply {
+                        setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+                        maxLines = 2
+                        isSingleLine = false
+                    }
+                }
+            }
+            LayoutType.HORIZONTAL_MEDIUM_TEXT, LayoutType.ICON_SLICE, LayoutType.WIDGET_LIVE -> {
+                holder.itemView.layoutParams.height = dp(40)
+            }
+        }
         if (itemView.isQuickLaunch) {
             quickLaunchItem = itemView
         }
