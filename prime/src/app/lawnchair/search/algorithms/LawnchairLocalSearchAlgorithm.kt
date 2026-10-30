@@ -68,6 +68,7 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
     )
 
     override fun doSearch(query: String, callback: SearchCallback<BaseAllAppsAdapter.AdapterItem>) {
+        app.lawnchair.search.PrimeSearchTrace.record("engine doSearch len=${query.length} same=${query == lastQuery} callbackChanged=${callback !== lastCallback} prime=$primeSearch")
         // IME visibility/focus changes can request the same drawer search again.
         // Keep the current provider flows and displayed results instead of
         // restarting network suggestions for an unchanged query.
@@ -185,6 +186,7 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                         if (generation != searchGeneration) return@withContext
                         val snapshot = ArrayList(adapterItems)
                         lastDeliveredItems = ArrayList<BaseAllAppsAdapter.AdapterItem>(snapshot)
+                        app.lawnchair.search.PrimeSearchTrace.record("engine deliver len=${query.length} items=${snapshot.size} generation=$generation")
                         lastCallback?.onSearchResult(query, ArrayList(snapshot))
                     }
                 }
@@ -193,6 +195,7 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
     }
 
     override fun doZeroStateSearch(callback: SearchCallback<BaseAllAppsAdapter.AdapterItem>) {
+        app.lawnchair.search.PrimeSearchTrace.record("engine zeroState prime=$primeSearch")
         lastQuery = null
         lastCallback = null
         lastDeliveredItems = null
@@ -234,6 +237,7 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
     }
 
     override fun cancel(interruptActiveRequests: Boolean) {
+        app.lawnchair.search.PrimeSearchTrace.record("engine cancel interrupt=$interruptActiveRequests previousLen=${lastQuery?.length ?: 0} prime=$primeSearch")
         lastQuery = null
         lastCallback = null
         searchGeneration++
