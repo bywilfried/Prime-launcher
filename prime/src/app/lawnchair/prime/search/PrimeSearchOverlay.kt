@@ -547,12 +547,14 @@ object PrimeSearchOverlay {
                 val isHeading = title in setOf("Suggestions Web", "Raccourcis Web", "Contacts", "Événements de l'agenda", "Tâches · Tasks.org")
                 val label = TextView(launcher).apply {
                     text = title
-                    textSize = 14f
+                    textSize = 15f
                     setTextColor(foreground)
                     if (isHeading) setTypeface(typeface, android.graphics.Typeface.BOLD)
-                    val top = ((if (isHeading) 18 else 5) * density).toInt()
-                    val bottom = ((if (isHeading) 2 else 5) * density).toInt()
-                    setPadding(inset, top, inset, bottom)
+                    val top = ((if (isHeading) 18 else 4) * density).toInt()
+                    val bottom = ((if (isHeading) 2 else 4) * density).toInt()
+                    val left = (12 * density).toInt() + (if (isHeading) 0 else (42 * density).toInt())
+                    setPadding(left, top, (12 * density).toInt(), bottom)
+                    if (!isHeading) minimumHeight = (44 * density).toInt()
                     setOnClickListener {
                         if (title != "Suggestions Web" && title != "Raccourcis Web") dialog.hideKeyboardForSelection()
                         action()
@@ -1028,7 +1030,8 @@ object PrimeSearchOverlay {
                     }
                     applyPrimeTextColors(view)
                     if (!isAppIcon && item.searchTarget.layoutType in listOf(
-                            LayoutType.HORIZONTAL_MEDIUM_TEXT, LayoutType.ICON_SLICE,
+                            LayoutType.HORIZONTAL_MEDIUM_TEXT, LayoutType.SMALL_ICON_HORIZONTAL_TEXT,
+                            LayoutType.ICON_HORIZONTAL_TEXT, LayoutType.ICON_SLICE,
                             LayoutType.WIDGET_LIVE,
                         )) {
                         app.lawnchair.search.SearchResultGeometry.styleTextRow(view)
