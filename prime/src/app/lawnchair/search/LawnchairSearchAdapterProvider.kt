@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import android.graphics.Typeface
 import android.util.TypedValue
+import app.lawnchair.theme.effectiveThemeVariant
 import androidx.core.util.contains
 import app.lawnchair.allapps.views.SearchItemDecorator
 import app.lawnchair.allapps.views.SearchResultView
@@ -103,8 +104,27 @@ class LawnchairSearchAdapterProvider(
                 SearchResultGeometry.styleTextRow(holder.itemView)
             }
         }
+        // Search results inherit the selected drawer/category palette, not the
+        // launcher's default theme or Prime Search's independent palette.
+        val context = holder.itemView.context
+        val profile = app.lawnchair.theme.ThemeProfile.current(context)
+        val variant = context.effectiveThemeVariant()
+        val role = if (adapterItem.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT)
+            app.lawnchair.theme.ThemeColorRole.DRAWER_ICON_TEXT
+        else app.lawnchair.theme.ThemeColorRole.DRAWER_TEXT
+        val textColor = app.lawnchair.theme.ThemeColors.resolve(context, profile, role, variant)
+        applySearchTextColor(holder.itemView, textColor)
         if (itemView.isQuickLaunch) {
             quickLaunchItem = itemView
+        }
+    }
+
+    private fun applySearchTextColor(view: View, color: Int) {
+        if (view is TextView) view.setTextColor(color)
+        if (view is ViewGroup) {
+            for (index in 0 until view.childCount) {
+                applySearchTextColor(view.getChildAt(index), color)
+            }
         }
     }
 
