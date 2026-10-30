@@ -1105,10 +1105,15 @@ object PrimeSearchOverlay {
                 results.requestLayout()
             }
         }
+        // IME visibility and focus changes must not restart an unchanged query.
+        // Only an actual change in the search text starts a new request.
+        var lastSubmittedQuery = input.text?.toString().orEmpty()
         input.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val query = s?.toString().orEmpty()
+                if (query == lastSubmittedQuery) return
+                lastSubmittedQuery = query
                 zeroState.visibility = if (query.isBlank()) View.VISIBLE else View.GONE
                 scroll.visibility = if (query.isBlank()) View.GONE else View.VISIBLE
                 settings.visibility = if (query.isBlank()) View.VISIBLE else View.GONE
