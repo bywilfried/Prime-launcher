@@ -72,7 +72,15 @@ object FileSearchProvider : SearchProvider {
 
         val fileSearchEnabled = prefs.searchResultFilesToggle.get()
         val anyProviderEnabled = searchAllFiles || searchAudio || searchVisualMedia
-        if (query.isBlank() || (drawer && (!fileSearchEnabled || !anyProviderEnabled))) {
+        // The drawer has its own search-category and file-type preferences.
+        // Legacy all-apps file toggles must not suppress a drawer category that
+        // the user explicitly enabled in the search settings.
+        val drawerFilesEnabled = app.lawnchair.prime.search.PrimeSearchResultPreferences.enabled(
+            context,
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.FILES,
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER,
+        )
+        if (query.isBlank() || (drawer && !drawerFilesEnabled)) {
             // do nothing if query is empty, file search is disabled, or none of the providers are enabled
             emit(emptyList())
             return@flow
@@ -88,20 +96,20 @@ object FileSearchProvider : SearchProvider {
         val visualMediaGranted = fileAccessManager.visualMediaAccessState.value != FileAccessState.Denied
 
         val results = coroutineScope {
-            val allFilesDeferred = if (allFilesGranted && (searchAllFiles || !drawer)) {
+            val allFilesDeferred = if (allFilesGranted && (drawerFilesEnabled || !drawer)) {
                 async { searchAllFiles(context, query, maxResults).first() }
             } else {
                 null
             }
 
             // Only launch visual media and audio if allFiles search isn't happening
-            val visualMediaDeferred = if (allFilesDeferred == null && visualMediaGranted && (searchVisualMedia || !drawer)) {
+            val visualMediaDeferred = if (allFilesDeferred == null && visualMediaGranted && (drawerFilesEnabled || !drawer)) {
                 async { searchVisualMedia(context, query, maxResults).first() }
             } else {
                 null
             }
 
-            val audioDeferred = if (allFilesDeferred == null && audioGranted && (searchAudio || !drawer)) {
+            val audioDeferred = if (allFilesDeferred == null && audioGranted && (drawerFilesEnabled || !drawer)) {
                 async { searchAudio(context, query, maxResults).first() }
             } else {
                 null
