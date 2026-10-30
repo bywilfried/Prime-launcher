@@ -503,6 +503,7 @@ object ThemeColors {
                     ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> ThemeColorRole.DRAWER_BACKGROUND
                     ThemeColorRole.DRAWER_SEARCH_TEXT, ThemeColorRole.DRAWER_SEARCH_HINT,
                     ThemeColorRole.DRAWER_SEARCH_ICON -> ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE
+                    ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT -> ThemeColorRole.GLOBAL_NOTIFICATION_DOT
                     else -> null
                 }
                 if (backgroundRole == null) official
