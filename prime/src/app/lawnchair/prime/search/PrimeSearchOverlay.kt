@@ -552,7 +552,7 @@ object PrimeSearchOverlay {
                     if (isHeading) setTypeface(typeface, android.graphics.Typeface.BOLD)
                     val top = ((if (isHeading) 18 else 4) * density).toInt()
                     val bottom = ((if (isHeading) 2 else 4) * density).toInt()
-                    val left = (12 * density).toInt() + (if (isHeading) 0 else (42 * density).toInt())
+                    val left = (12 * density).toInt() + (if (isHeading) 0 else (8 * density).toInt())
                     setPadding(left, top, (12 * density).toInt(), bottom)
                     if (!isHeading) minimumHeight = (44 * density).toInt()
                     setOnClickListener {
