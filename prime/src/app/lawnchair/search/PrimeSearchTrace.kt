@@ -14,7 +14,7 @@ object PrimeSearchTrace {
     @Synchronized fun record(event: String) {
         if (!enabled) return
         val time = SimpleDateFormat("HH:mm:ss.SSS", Locale.ROOT).format(Date())
-        lines.addLast("$"+"time [$"+"{SystemClock.uptimeMillis()}] $"+"event")
+        lines.addLast("${time} [${SystemClock.uptimeMillis()}] ${event}")
         while (lines.size > MAX_LINES) lines.removeFirst()
     }
 
