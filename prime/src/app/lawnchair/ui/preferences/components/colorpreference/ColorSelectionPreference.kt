@@ -235,7 +235,7 @@ fun PrimeColorSelection(
         ) else null
     val explicitDotTextContrast = if (automaticContrastDefaultLabel)
         ColorPreferenceEntry<ColorOption>(
-            value = ColorOption.AutomaticBlackWhite,
+            value = ColorOption.AdaptiveThemeText,
             label = { "Contraste automatique" },
             lightColor = { themeFallbackColor },
             darkColor = { themeFallbackColor },
