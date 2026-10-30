@@ -99,6 +99,7 @@ public class AllAppsSearchBarController
     @Override
     public void afterTextChanged(final Editable s) {
         mQuery = Utilities.trim(s);
+        app.lawnchair.search.PrimeSearchTrace.INSTANCE.record("controller afterTextChanged len=" + mQuery.length());
         if (mQuery.isEmpty()) {
             mCallback.clearSearchResult();
         } else {
@@ -108,6 +109,7 @@ public class AllAppsSearchBarController
     }
 
     public void refreshSearchResult() {
+        app.lawnchair.search.PrimeSearchTrace.INSTANCE.record("controller refreshSearchResult len=" + (mQuery == null ? 0 : mQuery.length()));
         if (TextUtils.isEmpty(mQuery)) {
             return;
         }
@@ -135,6 +137,7 @@ public class AllAppsSearchBarController
 
     @Override
     public boolean onBackKey() {
+        app.lawnchair.search.PrimeSearchTrace.INSTANCE.record("controller onBackKey imeVisible=" + (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && mInput.getRootWindowInsets() != null && mInput.getRootWindowInsets().isVisible(WindowInsets.Type.ime())));
         // First Back dismisses the IME without clearing the query or its results.
         // Keep focus so tapping the search field can bring the keyboard back.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
@@ -157,6 +160,7 @@ public class AllAppsSearchBarController
      * Resets the search bar state.
      */
     public void reset() {
+        app.lawnchair.search.PrimeSearchTrace.INSTANCE.record("controller reset");
         // Cancel any in-flight search so a late-arriving result can't re-enter the search
         // state after the drawer has closed (see afterTextChanged/refreshSearchResult, which
         // also cancel before starting a new search).
