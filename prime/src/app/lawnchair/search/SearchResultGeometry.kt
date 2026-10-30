@@ -25,8 +25,8 @@ object SearchResultGeometry {
 
     fun styleTextRow(view: View) {
         // Never force a height smaller than the content: this clipped task and web labels.
-        view.minimumHeight = view.dp(64)
-        view.layoutParams?.height = view.dp(64)
+        view.minimumHeight = view.dp(44)
+        view.layoutParams?.height = ViewGroup.LayoutParams.WRAP_CONTENT
     }
 
     fun styleFileRow(view: View) {
