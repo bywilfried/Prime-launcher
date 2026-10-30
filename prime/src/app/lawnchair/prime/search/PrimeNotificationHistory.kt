@@ -112,22 +112,13 @@ object PrimeNotificationHistory {
 class PrimeNotificationListener : NotificationListenerService() {
     override fun onListenerConnected() {
         super.onListenerConnected()
-        // Capture notifications already present when permission is granted or
-        // the listener reconnects; onNotificationPosted only sees future posts.
-        if (PrimeSearchResultPreferences.enabled(this, PrimeSearchResultPreferences.Category.NOTIFICATIONS) ||
-            PrimeSearchResultPreferences.enabled(this, PrimeSearchResultPreferences.Category.NOTIFICATIONS,
-                PrimeSearchResultPreferences.Surface.DRAWER)) {
-            runCatching {
-                activeNotifications?.forEach { PrimeNotificationHistory.save(this, it) }
-            }
+        // Keep the local history independently of whether the search category is shown.
+        runCatching {
+            activeNotifications?.forEach { PrimeNotificationHistory.save(this, it) }
         }
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        if (PrimeSearchResultPreferences.enabled(this, PrimeSearchResultPreferences.Category.NOTIFICATIONS) ||
-            PrimeSearchResultPreferences.enabled(this, PrimeSearchResultPreferences.Category.NOTIFICATIONS,
-                PrimeSearchResultPreferences.Surface.DRAWER)) {
-            runCatching { PrimeNotificationHistory.save(this, sbn) }
-        }
+        runCatching { PrimeNotificationHistory.save(this, sbn) }
     }
 }
