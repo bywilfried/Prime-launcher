@@ -552,9 +552,9 @@ object PrimeSearchOverlay {
                     if (isHeading) setTypeface(typeface, android.graphics.Typeface.BOLD)
                     val top = ((if (isHeading) 18 else 4) * density).toInt()
                     val bottom = ((if (isHeading) 2 else 4) * density).toInt()
-                    val left = (12 * density).toInt() + (if (isHeading) 0 else (8 * density).toInt())
+                    val left = (12 * density).toInt() + (if (isHeading) 0 else (42 * density).toInt())
                     setPadding(left, top, (12 * density).toInt(), bottom)
-                    if (!isHeading) minimumHeight = (36 * density).toInt()
+                    if (!isHeading) minimumHeight = (44 * density).toInt()
                     setOnClickListener {
                         if (title != "Suggestions Web" && title != "Raccourcis Web") dialog.hideKeyboardForSelection()
                         action()
@@ -1031,6 +1031,20 @@ object PrimeSearchOverlay {
                         }
                     }
                     applyPrimeTextColors(view)
+                    // Normalize every bound text result after the drawer view has
+                    // finished binding; drawer styles otherwise overwrite Prime's scale.
+                    if (!isAppIcon) {
+                        fun normalizeText(node: View) {
+                            if (node is TextView) {
+                                node.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
+                                node.includeFontPadding = false
+                            }
+                            if (node is ViewGroup) {
+                                for (index in 0 until node.childCount) normalizeText(node.getChildAt(index))
+                            }
+                        }
+                        normalizeText(view)
+                    }
                     if (!isAppIcon && item.searchTarget.layoutType.toString().contains("HEADER", ignoreCase = true)) {
                         // Replace the drawer's fixed-height header wrapper with a compact label.
                         fun headerLabel(node: View): CharSequence? {
