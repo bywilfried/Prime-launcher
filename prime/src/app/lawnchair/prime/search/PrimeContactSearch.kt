@@ -5,7 +5,7 @@ import android.net.Uri
 import android.provider.ContactsContract
 
 object PrimeContactSearch {
-    data class Result(val name: String, val uri: Uri)
+    data class Result(val name: String, val uri: Uri, val phone: String?)
     fun search(context: Context, query: String): List<Result> =
         search(context, query, PrimeSearchResultPreferences.Surface.PRIME_SEARCH)
 
@@ -38,8 +38,19 @@ object PrimeContactSearch {
                         while (cursor.moveToNext() && results.size < 30) {
                             val id = cursor.getLong(0)
                             if (id !in allowedIds) continue
+                            val phone = context.contentResolver.query(
+                                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                                arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+                                "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID}=?",
+                                arrayOf(id.toString()),
+                                "${ContactsContract.CommonDataKinds.Phone.IS_SUPER_PRIMARY} DESC, " +
+                                    "${ContactsContract.CommonDataKinds.Phone.IS_PRIMARY} DESC",
+                            )?.use { phones ->
+                                if (phones.moveToFirst()) phones.getString(0) else null
+                            }
                             results[id] = Result(cursor.getString(1).orEmpty(),
-                                android.content.ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, id))
+                                android.content.ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, id),
+                                phone)
                         }
                     }
                 }
