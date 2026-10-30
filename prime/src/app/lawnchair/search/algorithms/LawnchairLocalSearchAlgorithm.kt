@@ -52,6 +52,8 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
     private var currentJob: Job? = null
     private var modelRetryJob: Job? = null
     @Volatile private var searchGeneration = 0L
+    private var lastQuery: String? = null
+    private var lastCallback: SearchCallback<BaseAllAppsAdapter.AdapterItem>? = null
 
     private val appSearchProvider = AppSearchProvider
     private val shortcutSearchProvider = ShortcutSearchProvider
@@ -65,6 +67,12 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
     )
 
     override fun doSearch(query: String, callback: SearchCallback<BaseAllAppsAdapter.AdapterItem>) {
+        // IME visibility/focus changes can request the same drawer search again.
+        // Keep the current provider flows and displayed results instead of
+        // restarting network suggestions for an unchanged query.
+        if (query == lastQuery && callback === lastCallback) return
+        lastQuery = query
+        lastCallback = callback
         val generation = ++searchGeneration
         modelRetryJob?.cancel()
         currentJob?.cancel()
@@ -173,6 +181,9 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
     }
 
     override fun doZeroStateSearch(callback: SearchCallback<BaseAllAppsAdapter.AdapterItem>) {
+        lastQuery = null
+        lastCallback = null
+        searchGeneration++
         modelRetryJob?.cancel()
         currentJob?.cancel()
 
@@ -210,6 +221,9 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
     }
 
     override fun cancel(interruptActiveRequests: Boolean) {
+        lastQuery = null
+        lastCallback = null
+        searchGeneration++
         modelRetryJob?.cancel()
         currentJob?.cancel()
     }
