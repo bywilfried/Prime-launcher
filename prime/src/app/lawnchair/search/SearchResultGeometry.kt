@@ -23,13 +23,17 @@ object SearchResultGeometry {
         container.findViewById<View>(R.id.text_rows)?.setPadding(0, 0, 0, 0)
     }
 
-    // Match the file results: 15sp text and 52dp minimum row height.
-    fun styleTextRow(view: View) {
+    // Every non-grid search result uses the file-result typography and row rhythm.
+    private fun styleResultRow(view: View, file: Boolean) {
         view.minimumHeight = view.dp(52)
         view.layoutParams?.height = ViewGroup.LayoutParams.WRAP_CONTENT
         view.findViewById<TextView>(R.id.title)?.apply {
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
             includeFontPadding = false
+            if (file) {
+                maxLines = 2
+                isSingleLine = false
+            }
         }
         view.findViewById<TextView>(R.id.subtitle)?.apply {
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
@@ -40,12 +44,7 @@ object SearchResultGeometry {
         }
     }
 
-    fun styleFileRow(view: View) {
-        view.minimumHeight = view.dp(52)
-        view.layoutParams?.height = ViewGroup.LayoutParams.WRAP_CONTENT
-        view.findViewById<TextView>(R.id.title)?.apply {
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
-            includeFontPadding = false
-        }
-    }
+    fun styleTextRow(view: View) = styleResultRow(view, false)
+
+    fun styleFileRow(view: View) = styleResultRow(view, true)
 }
