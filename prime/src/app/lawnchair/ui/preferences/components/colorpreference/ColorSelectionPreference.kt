@@ -234,7 +234,12 @@ fun PrimeColorSelection(
             darkColor = { themeFallbackColor },
         ) else null
     val explicitDotTextContrast = if (automaticContrastDefaultLabel)
-        ColorOption.AutomaticBlackWhite.colorPreferenceEntry else null
+        ColorPreferenceEntry<ColorOption>(
+            value = ColorOption.AutomaticBlackWhite,
+            label = { "Contraste automatique" },
+            lightColor = { themeFallbackColor },
+            darkColor = { themeFallbackColor },
+        ) else null
     // Only suppress the Legacy fallback when an independently selectable option reproduces
     // the actual semantic behavior. A similar-looking dynamic swatch is not proof of equivalence.
     val hasExactExplicitEquivalent = notificationDotBackground || iconLabelText ||
