@@ -100,7 +100,8 @@ class LawnchairSearchAdapterProvider(
                     }
                 }
             }
-            LayoutType.HORIZONTAL_MEDIUM_TEXT, LayoutType.ICON_SLICE, LayoutType.WIDGET_LIVE -> {
+            LayoutType.HORIZONTAL_MEDIUM_TEXT, LayoutType.SMALL_ICON_HORIZONTAL_TEXT,
+            LayoutType.ICON_HORIZONTAL_TEXT, LayoutType.ICON_SLICE, LayoutType.WIDGET_LIVE -> {
                 SearchResultGeometry.styleTextRow(holder.itemView)
             }
         }
