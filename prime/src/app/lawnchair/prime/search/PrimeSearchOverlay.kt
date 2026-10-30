@@ -1048,7 +1048,7 @@ object PrimeSearchOverlay {
                                 node.setCompoundDrawables(null, null, null, null)
                                 val original = node.text?.toString().orEmpty()
                                 val cleaned = original.replace(
-                                    Regex("""^\\s*[☑✔✓👤👥📅🗓📆🔎🔍]\\s*"""),
+                                    Regex("""^\s*[☑✔✓👤👥📅🗓📆🔎🔍]\s*"""),
                                     "",
                                 )
                                 if (cleaned != original && cleaned.isNotBlank()) node.text = cleaned
