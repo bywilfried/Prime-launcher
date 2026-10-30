@@ -19,6 +19,16 @@ import kotlinx.coroutines.flow.timeout
 object WebSuggestionProvider : SearchProvider {
     override val id = "web_suggestions"
 
+    // Preserve suggestions if the drawer restarts the same query on an IME transition.
+    private data class DrawerSuggestionKey(val query: String, val provider: String, val limit: Int)
+    private val cacheLock = Any()
+    private val drawerSuggestionCache =
+        object : LinkedHashMap<DrawerSuggestionKey, List<SearchResult>>(24, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<DrawerSuggestionKey, List<SearchResult>>?): Boolean =
+                size > 24
+        }
+
+
     override fun search(
         context: Context,
         query: String,
@@ -68,7 +78,13 @@ object WebSuggestionProvider : SearchProvider {
         }
 
         val selected = settings.suggestionProvider(context, surface)
+        val cacheKey = DrawerSuggestionKey(query, selected.name, limit)
         return flow {
+            val cached = synchronized(cacheLock) { drawerSuggestionCache[cacheKey] }
+            if (cached != null) {
+                emit(cached)
+                return@flow
+            }
             fun fetchSuggestions(
                 provider: app.lawnchair.prime.search.PrimeSearchResultPreferences.SuggestionProvider,
             ): List<String> {
@@ -122,9 +138,13 @@ object WebSuggestionProvider : SearchProvider {
                     fetchSuggestions(app.lawnchair.prime.search.PrimeSearchResultPreferences.SuggestionProvider.DUCKDUCKGO)
                 }.getOrDefault(emptyList())
             }
-            emit(suggestions.distinct().take(limit).map {
+            val results: List<SearchResult> = suggestions.distinct().take(limit).map {
                 SearchResult.WebSuggestion(it, selected.name.lowercase(java.util.Locale.ROOT))
-            })
+            }
+            if (results.isNotEmpty()) {
+                synchronized(cacheLock) { drawerSuggestionCache[cacheKey] = results }
+            }
+            emit(results)
         }.flowOn(kotlinx.coroutines.Dispatchers.IO).catch { error ->
             if (error is kotlinx.coroutines.CancellationException) throw error
             Log.w(TAG, "Drawer web suggestions unavailable", error)
