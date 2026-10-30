@@ -634,8 +634,8 @@ object PrimeSearchOverlay {
                                 contactRow.addView(button, LinearLayout.LayoutParams(
                                     (48 * density).toInt(), (44 * density).toInt()))
                             }
-                            actionIcon(R.drawable.ic_message, "Envoyer un SMS à ${contact.name}", Uri.fromParts("smsto", phone, null))
-                            actionIcon(R.drawable.ic_phone, "Appeler ${contact.name}", Uri.fromParts("tel", phone, null))
+                            actionIcon(android.R.drawable.ic_dialog_email, "Envoyer un SMS à ${contact.name}", Uri.fromParts("smsto", phone, null))
+                            actionIcon(android.R.drawable.ic_menu_call, "Appeler ${contact.name}", Uri.fromParts("tel", phone, null))
                         }
                         webPanel.addView(contactRow, LinearLayout.LayoutParams(-1, -2))
                     }
