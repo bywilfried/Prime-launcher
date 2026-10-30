@@ -554,7 +554,7 @@ object PrimeSearchOverlay {
                     val bottom = ((if (isHeading) 2 else 4) * density).toInt()
                     val left = (12 * density).toInt() + (if (isHeading) 0 else (42 * density).toInt())
                     setPadding(left, top, (12 * density).toInt(), bottom)
-                    if (!isHeading) minimumHeight = (44 * density).toInt()
+                    if (!isHeading) minimumHeight = (52 * density).toInt()
                     setOnClickListener {
                         if (title != "Suggestions Web" && title != "Raccourcis Web") dialog.hideKeyboardForSelection()
                         action()
@@ -986,7 +986,7 @@ object PrimeSearchOverlay {
                             gravity = Gravity.CENTER_VERTICAL
                             setPadding((12 * density).toInt(), (2 * density).toInt(),
                                 (12 * density).toInt(), (2 * density).toInt())
-                            minimumHeight = (44 * density).toInt()
+                            minimumHeight = (52 * density).toInt()
                             isClickable = true
                             isFocusable = true
                             setOnClickListener { view.performClick() }
@@ -1035,6 +1035,9 @@ object PrimeSearchOverlay {
                             LayoutType.WIDGET_LIVE,
                         )) {
                         app.lawnchair.search.SearchResultGeometry.styleTextRow(view)
+                    }
+                    if (!isAppIcon && item.searchTarget.layoutType == LayoutType.THUMBNAIL) {
+                        app.lawnchair.search.SearchResultGeometry.styleFileRow(view)
                     }
                     if (!isAppIcon && item.searchTarget.layoutType.toString().contains("HEADER", ignoreCase = true)) {
                         // Replace the drawer's fixed-height header wrapper with a compact label.
