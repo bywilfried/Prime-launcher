@@ -832,6 +832,32 @@ object PrimeSearchOverlay {
                     webPanel.addView(icons, LinearLayout.LayoutParams(-1, -2))
                 }
             }
+            // Sort complete dynamic sections (heading plus rows) by user preference.
+            val order = PrimeSearchResultPreferences.order(launcher)
+            val headings = mapOf(
+                "Suggestions Web" to PrimeSearchResultPreferences.Category.WEB,
+                "Contacts" to PrimeSearchResultPreferences.Category.CONTACTS,
+                "Événements de l'agenda" to PrimeSearchResultPreferences.Category.CALENDAR,
+                "Tâches · Tasks.org" to PrimeSearchResultPreferences.Category.REMINDERS,
+                "Historique des notifications" to PrimeSearchResultPreferences.Category.NOTIFICATIONS,
+                "Paramètres de l'appareil" to PrimeSearchResultPreferences.Category.SETTINGS,
+                "Device settings" to PrimeSearchResultPreferences.Category.SETTINGS,
+                "Raccourcis Web" to PrimeSearchResultPreferences.Category.WEB_SHORTCUTS,
+            )
+            val sections = mutableListOf<Pair<PrimeSearchResultPreferences.Category, MutableList<View>>>()
+            var current: MutableList<View>? = null
+            while (webPanel.childCount > 0) {
+                val child = webPanel.getChildAt(0)
+                webPanel.removeViewAt(0)
+                val category = (child as? TextView)?.text?.toString()?.let(headings::get)
+                if (category != null) {
+                    current = mutableListOf()
+                    sections.add(category to current)
+                }
+                current?.add(child)
+            }
+            sections.sortedBy { (category, _) -> order.indexOf(category) }
+                .forEach { (_, views) -> views.forEach(webPanel::addView) }
         }
         fun updateWebSuggestions(query: String) {
             val request = ++webRequestSerial
