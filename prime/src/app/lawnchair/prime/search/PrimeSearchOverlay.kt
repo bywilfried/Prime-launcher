@@ -552,9 +552,9 @@ object PrimeSearchOverlay {
                     if (isHeading) setTypeface(typeface, android.graphics.Typeface.BOLD)
                     val top = ((if (isHeading) 18 else 4) * density).toInt()
                     val bottom = ((if (isHeading) 2 else 4) * density).toInt()
-                    val left = (12 * density).toInt() + (if (isHeading) 0 else (42 * density).toInt())
+                    val left = (12 * density).toInt() + (if (isHeading) 0 else (8 * density).toInt())
                     setPadding(left, top, (12 * density).toInt(), bottom)
-                    if (!isHeading) minimumHeight = (52 * density).toInt()
+                    if (!isHeading) minimumHeight = (36 * density).toInt()
                     setOnClickListener {
                         if (title != "Suggestions Web" && title != "Raccourcis Web") dialog.hideKeyboardForSelection()
                         action()
@@ -1029,16 +1029,6 @@ object PrimeSearchOverlay {
                         }
                     }
                     applyPrimeTextColors(view)
-                    if (!isAppIcon && item.searchTarget.layoutType in listOf(
-                            LayoutType.HORIZONTAL_MEDIUM_TEXT, LayoutType.SMALL_ICON_HORIZONTAL_TEXT,
-                            LayoutType.ICON_HORIZONTAL_TEXT, LayoutType.ICON_SLICE,
-                            LayoutType.WIDGET_LIVE,
-                        )) {
-                        app.lawnchair.search.SearchResultGeometry.styleTextRow(view)
-                    }
-                    if (!isAppIcon && item.searchTarget.layoutType == LayoutType.THUMBNAIL) {
-                        app.lawnchair.search.SearchResultGeometry.styleFileRow(view)
-                    }
                     if (!isAppIcon && item.searchTarget.layoutType.toString().contains("HEADER", ignoreCase = true)) {
                         // Replace the drawer's fixed-height header wrapper with a compact label.
                         fun headerLabel(node: View): CharSequence? {
@@ -1120,6 +1110,7 @@ object PrimeSearchOverlay {
                 val query = s?.toString().orEmpty()
                 if (query == lastSubmittedQuery) return
                 lastSubmittedQuery = query
+                scroll.scrollTo(0, 0)
                 zeroState.visibility = if (query.isBlank()) View.VISIBLE else View.GONE
                 scroll.visibility = if (query.isBlank()) View.GONE else View.VISIBLE
                 settings.visibility = if (query.isBlank()) View.VISIBLE else View.GONE
