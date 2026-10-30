@@ -1105,6 +1105,26 @@ object PrimeSearchOverlay {
                         }
                         return false
                     }
+                    // The drawer emits the file header before its first file tile.
+                    // Do not attach that header to the preceding category (usually Apps).
+                    // A heading is created only after an actual file survives filtering.
+                    fun isDeviceFilesHeading(node: View): Boolean {
+                        if (node is TextView) {
+                            val title = node.text?.toString()?.trim().orEmpty()
+                            if (title == "Fichiers de l'appareil" || title == "Device files" ||
+                                title == "Files on device") return true
+                        }
+                        if (node is ViewGroup) {
+                            for (i in 0 until node.childCount) {
+                                if (isDeviceFilesHeading(node.getChildAt(i))) return true
+                            }
+                        }
+                        return false
+                    }
+                    if (!isAppIcon && isDeviceFilesHeading(view)) {
+                        parent.removeView(view)
+                        return@forEach
+                    }
                     if (!isAppIcon && isLegacyGoogleAction(view)) {
                         parent.removeView(view)
                         return@forEach
@@ -1160,6 +1180,18 @@ object PrimeSearchOverlay {
                         }
                         compact.addView(title, LinearLayout.LayoutParams(0, -2, 1f))
                         parent.removeView(view)
+                        if (renderedFilesInSection == 0) {
+                            val fileHeading = TextView(launcher).apply {
+                                text = "Fichiers de l'appareil"
+                                setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+                                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                                textSize = 15f
+                                includeFontPadding = false
+                                setPadding((12 * density).toInt(), (14 * density).toInt(),
+                                    (12 * density).toInt(), (3 * density).toInt())
+                            }
+                            parent.addView(fileHeading, LinearLayout.LayoutParams(-1, -2))
+                        }
                         parent.addView(compact)
                         renderedFilesInSection++
                         return@forEach
