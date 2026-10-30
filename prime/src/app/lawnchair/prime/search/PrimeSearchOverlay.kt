@@ -589,12 +589,54 @@ object PrimeSearchOverlay {
                 if (contacts.isNotEmpty()) {
                     row("Contacts") {}
                     contacts.forEach { contact ->
-                        row(contact.name) {
-                            runCatching {
-                                launcher.startActivity(Intent(Intent.ACTION_VIEW, contact.uri))
-                                dismiss()
+                        val contactRow = LinearLayout(launcher).apply {
+                            orientation = LinearLayout.HORIZONTAL
+                            gravity = Gravity.CENTER_VERTICAL
+                            minimumHeight = (44 * density).toInt()
+                        }
+                        val name = TextView(launcher).apply {
+                            text = contact.name
+                            textSize = 15f
+                            includeFontPadding = false
+                            setTextColor(foreground)
+                            setPadding((20 * density).toInt(), (5 * density).toInt(),
+                                (4 * density).toInt(), (5 * density).toInt())
+                            gravity = Gravity.CENTER_VERTICAL
+                            setOnClickListener {
+                                dialog.hideKeyboardForSelection()
+                                runCatching {
+                                    launcher.startActivity(Intent(Intent.ACTION_VIEW, contact.uri))
+                                    dismiss()
+                                }
                             }
                         }
+                        contactRow.addView(name, LinearLayout.LayoutParams(0, -1, 1f))
+                        contact.phone?.takeIf { it.isNotBlank() }?.let { phone ->
+                            fun actionIcon(symbol: String, description: String, uri: Uri) {
+                                val button = TextView(launcher).apply {
+                                    text = symbol
+                                    textSize = 22f
+                                    gravity = Gravity.CENTER
+                                    contentDescription = description
+                                    setTextColor(foreground)
+                                    setOnClickListener {
+                                        dialog.hideKeyboardForSelection()
+                                        runCatching {
+                                            launcher.startActivity(Intent(
+                                                if (uri.scheme == "tel") Intent.ACTION_DIAL else Intent.ACTION_SENDTO,
+                                                uri,
+                                            ))
+                                            dismiss()
+                                        }
+                                    }
+                                }
+                                contactRow.addView(button, LinearLayout.LayoutParams(
+                                    (48 * density).toInt(), (44 * density).toInt()))
+                            }
+                            actionIcon("✉", "Envoyer un SMS à ${contact.name}", Uri.fromParts("smsto", phone, null))
+                            actionIcon("☎", "Appeler ${contact.name}", Uri.fromParts("tel", phone, null))
+                        }
+                        webPanel.addView(contactRow, LinearLayout.LayoutParams(-1, -2))
                     }
                 }
             }
