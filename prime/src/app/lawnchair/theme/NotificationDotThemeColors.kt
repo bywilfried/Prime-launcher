@@ -24,7 +24,7 @@ object NotificationDotThemeColors {
             // The real color is per icon; DeviceProfile uses this only as a fallback.
             return ThemeColors.official(context, profile, role, variant)
         }
-        if (override == ColorOption.AutomaticBlackWhite &&
+        if ((override == ColorOption.AutomaticBlackWhite || override == ColorOption.AdaptiveThemeText) &&
             role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT) {
             val dotOption = PreferenceManager2.getInstance(context).notificationDotColor.firstCached()
             return contrastTextColor(resolve(context, ThemeColorRole.GLOBAL_NOTIFICATION_DOT, dotOption))
@@ -59,13 +59,17 @@ object NotificationDotThemeColors {
             ThemeColorRole.GLOBAL_NOTIFICATION_DOT).let { it == ColorOption.IconColor || it == ColorOption.LegacyBehavior || (it == ColorOption.Default && PreferenceManager2.getInstance(context).notificationDotColor.firstCached() == ColorOption.Default) }
 
     @JvmStatic
-    fun isAutomaticText(context: Context): Boolean =
-        ThemeColorOverrides(context).get(ThemeProfile.current(context), context.effectiveThemeVariant(),
-            ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT).let {
-                it == ColorOption.Default || it == ColorOption.LegacyBehavior ||
-                    it == ColorOption.AutomaticBlackWhite
-            } &&
-            PreferenceManager2.getInstance(context).notificationDotTextColor.firstCached() == ColorOption.Default
+    fun isAutomaticText(context: Context): Boolean {
+        val override = ThemeColorOverrides(context).get(
+            ThemeProfile.current(context), context.effectiveThemeVariant(),
+            ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT,
+        )
+        // An explicit automatic choice overrides the older text-color preference.
+        if (override == ColorOption.AutomaticBlackWhite ||
+            override == ColorOption.AdaptiveThemeText) return true
+        if (override != ColorOption.Default && override != ColorOption.LegacyBehavior) return false
+        return PreferenceManager2.getInstance(context).notificationDotTextColor.firstCached() == ColorOption.Default
+    }
 
     @JvmStatic
     fun contrastForBackground(background: Int): Int = contrastTextColor(background)
