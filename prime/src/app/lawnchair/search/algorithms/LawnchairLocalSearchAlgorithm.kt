@@ -51,6 +51,7 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var currentJob: Job? = null
     private var modelRetryJob: Job? = null
+    @Volatile private var searchGeneration = 0L
 
     private val appSearchProvider = AppSearchProvider
     private val shortcutSearchProvider = ShortcutSearchProvider
@@ -64,8 +65,11 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
     )
 
     override fun doSearch(query: String, callback: SearchCallback<BaseAllAppsAdapter.AdapterItem>) {
+        val generation = ++searchGeneration
         modelRetryJob?.cancel()
+        currentJob?.cancel()
         modelRetryJob = appState.model.runWhenModelLoaded(coroutineScope) { apps ->
+            if (generation != searchGeneration) return@runWhenModelLoaded
             val appResults = appSearchProvider.search(context, query, apps, if (primeSearch) Int.MAX_VALUE else null, if (primeSearch) app.lawnchair.prime.search.PrimeSearchResultPreferences.fuzzyApps(context) else null)
             val shortcutResults = shortcutSearchProvider.search(context, appResults)
 
@@ -160,6 +164,7 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                     setFirstItemQuickLaunch(searchTargets)
                     val adapterItems = transformSearchResults(searchTargets)
                     withContext(Dispatchers.Main) {
+                        if (generation != searchGeneration) return@withContext
                         callback.onSearchResult(query, ArrayList(adapterItems))
                     }
                 }
