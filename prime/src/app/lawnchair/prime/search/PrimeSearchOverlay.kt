@@ -612,13 +612,14 @@ object PrimeSearchOverlay {
                         }
                         contactRow.addView(name, LinearLayout.LayoutParams(0, -1, 1f))
                         contact.phone?.takeIf { it.isNotBlank() }?.let { phone ->
-                            fun actionIcon(symbol: String, description: String, uri: Uri) {
-                                val button = TextView(launcher).apply {
-                                    text = symbol
-                                    textSize = 22f
-                                    gravity = Gravity.CENTER
+                            fun actionIcon(drawableId: Int, description: String, uri: Uri) {
+                                val button = ImageView(launcher).apply {
+                                    setImageResource(drawableId)
+                                    imageTintList = android.content.res.ColorStateList.valueOf(foreground)
+                                    scaleType = ImageView.ScaleType.CENTER_INSIDE
+                                    setPadding((12 * density).toInt(), (10 * density).toInt(),
+                                        (12 * density).toInt(), (10 * density).toInt())
                                     contentDescription = description
-                                    setTextColor(foreground)
                                     setOnClickListener {
                                         dialog.hideKeyboardForSelection()
                                         runCatching {
@@ -633,8 +634,8 @@ object PrimeSearchOverlay {
                                 contactRow.addView(button, LinearLayout.LayoutParams(
                                     (48 * density).toInt(), (44 * density).toInt()))
                             }
-                            actionIcon("✉", "Envoyer un SMS à ${contact.name}", Uri.fromParts("smsto", phone, null))
-                            actionIcon("☎", "Appeler ${contact.name}", Uri.fromParts("tel", phone, null))
+                            actionIcon(R.drawable.ic_message, "Envoyer un SMS à ${contact.name}", Uri.fromParts("smsto", phone, null))
+                            actionIcon(R.drawable.ic_phone, "Appeler ${contact.name}", Uri.fromParts("tel", phone, null))
                         }
                         webPanel.addView(contactRow, LinearLayout.LayoutParams(-1, -2))
                     }
