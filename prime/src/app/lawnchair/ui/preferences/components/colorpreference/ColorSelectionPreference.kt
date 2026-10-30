@@ -222,7 +222,7 @@ fun PrimeColorSelection(
     ) else null
     // Keep the inherited theme default separate from explicit color behaviours.
     // Both remain selectable even when a future theme changes its official default.
-    val blackWhiteTabPreset = if (categoryTabText || iconLabelText || workspacePagination)
+    val blackWhiteTabPreset = if (categoryTabText || iconLabelText || workspacePagination || automaticContrastDefaultLabel)
         ColorOption.AutomaticBlackWhite.colorPreferenceEntry else null
     val themedTabPreset = if (categoryTabText) adaptiveTextPreset ?: ColorOption.AdaptiveThemeText.colorPreferenceEntry else null
     val workspaceThemePreset = if (workspacePagination) ColorOption.ThemePalette.colorPreferenceEntry else null
