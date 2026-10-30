@@ -860,6 +860,43 @@ object PrimeSearchOverlay {
             sections.sortedBy { (category, _) -> order.indexOf(category) }
                 .forEach { (_, views) -> views.forEach(webPanel::addView) }
         }
+        fun reorderSearchSections() {
+            val priorities = PrimeSearchResultPreferences.order(launcher)
+            // Remove previously materialized dynamic sections before re-rendering.
+            val stale = (0 until results.childCount).map { results.getChildAt(it) }
+                .filter { it.getTag() is PrimeSearchResultPreferences.Category && it !== webPanel }
+            // Native sections are retained; dynamic sections are regenerated below.
+            val headingCategories = mapOf(
+                "Suggestions Web" to PrimeSearchResultPreferences.Category.WEB,
+                "Contacts" to PrimeSearchResultPreferences.Category.CONTACTS,
+                "Événements de l'agenda" to PrimeSearchResultPreferences.Category.CALENDAR,
+                "Tâches · Tasks.org" to PrimeSearchResultPreferences.Category.REMINDERS,
+                "Historique des notifications" to PrimeSearchResultPreferences.Category.NOTIFICATIONS,
+                "Paramètres de l'appareil" to PrimeSearchResultPreferences.Category.SETTINGS,
+                "Device settings" to PrimeSearchResultPreferences.Category.SETTINGS,
+                "Raccourcis Web" to PrimeSearchResultPreferences.Category.WEB_SHORTCUTS,
+            )
+            val dynamic = mutableListOf<Pair<PrimeSearchResultPreferences.Category, LinearLayout>>()
+            var group: LinearLayout? = null
+            while (webPanel.childCount > 0) {
+                val child = webPanel.getChildAt(0)
+                webPanel.removeViewAt(0)
+                val category = (child as? TextView)?.text?.toString()?.let(headingCategories::get)
+                if (category != null) {
+                    group = LinearLayout(launcher).apply { orientation = LinearLayout.VERTICAL }
+                    dynamic.add(category to group!!)
+                }
+                group?.addView(child)
+            }
+            // Keep native section wrappers and rebuild only Prime-owned sections.
+            val native = stale.filter { it.getTag() is PrimeSearchResultPreferences.Category }
+            val ordered = native.map { it.getTag() as PrimeSearchResultPreferences.Category to it } +
+                dynamic.map { it.first to it.second as View }
+            results.removeAllViews()
+            ordered.sortedWith(compareBy({ priorities.indexOf(it.first).let { index -> if (index < 0) Int.MAX_VALUE else index } }))
+                .forEach { (_, view) -> results.addView(view) }
+            results.addView(webPanel)
+        }
         fun updateWebSuggestions(query: String) {
             val request = ++webRequestSerial
             currentSuggestions = emptyList()
@@ -929,6 +966,7 @@ object PrimeSearchOverlay {
                     if (request == webRequestSerial && input.text.toString() == query && dialog.isShowing) {
                         currentSuggestions = suggestions
                         renderWebPanel(query)
+                        reorderSearchSections()
                         container.requestLayout()
                     }
                 }
@@ -974,9 +1012,33 @@ object PrimeSearchOverlay {
                     searchIconLabelGap + searchLabelHeight + searchRowBottomPadding
                 var appRow: LinearLayout? = null
                 var appsInRow = 0
+                val nativeSections = mutableListOf<Pair<PrimeSearchResultPreferences.Category, LinearLayout>>()
+                var nativeSection = LinearLayout(launcher).apply { orientation = LinearLayout.VERTICAL }
+                var nativeCategory: PrimeSearchResultPreferences.Category? = null
+                fun nativeCategoryFor(item: SearchAdapterItem): PrimeSearchResultPreferences.Category? =
+                    when (item.searchTarget.resultType) {
+                        SearchTargetCompat.RESULT_TYPE_APPLICATION -> PrimeSearchResultPreferences.Category.APPS
+                        SearchTargetCompat.RESULT_TYPE_SHORTCUT -> PrimeSearchResultPreferences.Category.APP_SHORTCUTS
+                        SearchTargetCompat.RESULT_TYPE_FILE_TILE -> PrimeSearchResultPreferences.Category.FILES
+                        SearchTargetCompat.RESULT_TYPE_CONTACT_TILE -> PrimeSearchResultPreferences.Category.CONTACTS
+                        SearchTargetCompat.RESULT_TYPE_SETTING_TILE -> PrimeSearchResultPreferences.Category.SETTINGS
+                        SearchTargetCompat.RESULT_TYPE_CALCULATOR -> PrimeSearchResultPreferences.Category.CALCULATOR
+                        SearchTargetCompat.RESULT_TYPE_SUGGESTIONS -> PrimeSearchResultPreferences.Category.HISTORY
+                        else -> null
+                    }
+                fun flushNativeSection() {
+                    val category = nativeCategory
+                    if (category != null && nativeSection.childCount > 0) nativeSections.add(category to nativeSection)
+                    nativeSection = LinearLayout(launcher).apply { orientation = LinearLayout.VERTICAL }
+                    appRow = null
+                    appsInRow = 0
+                }
                 PrimeSearchResultPreferences.filter(
                     launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(),
                 ).forEach { item ->
+                    val category = nativeCategoryFor(item)
+                    if (category != null && nativeCategory != null && category != nativeCategory) flushNativeSection()
+                    if (category != null) nativeCategory = category
                     val isAppIcon = item.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT
                     if (isAppIcon) {
                         if (appRow == null || appsInRow == columns) {
@@ -984,14 +1046,14 @@ object PrimeSearchOverlay {
                                 orientation = LinearLayout.HORIZONTAL
                                 gravity = Gravity.CENTER_HORIZONTAL
                             }
-                            results.addView(appRow, LinearLayout.LayoutParams(-1, -2))
+                            nativeSection.addView(appRow, LinearLayout.LayoutParams(-1, -2))
                             appsInRow = 0
                         }
                     } else {
                         appRow = null
                         appsInRow = 0
                     }
-                    val parent = if (isAppIcon) appRow!! else results
+                    val parent = if (isAppIcon) appRow!! else nativeSection
                     val layout = LawnchairSearchAdapterProvider.layoutForViewType(item.viewType)
                         ?: return@forEach
                     val view = inflater.inflate(layout, parent, false)
@@ -1205,8 +1267,14 @@ object PrimeSearchOverlay {
                         }
                     }
                 }
+                flushNativeSection()
+                nativeSections.forEach { (category, section) ->
+                    section.tag = category
+                    results.addView(section)
+                }
                 results.addView(webPanel)
                 renderWebPanel(query)
+                reorderSearchSections()
                 results.requestLayout()
             }
 
