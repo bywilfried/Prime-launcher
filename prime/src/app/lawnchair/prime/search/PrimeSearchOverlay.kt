@@ -851,8 +851,9 @@ object PrimeSearchOverlay {
                 webPanel.removeViewAt(0)
                 val category = (child as? TextView)?.text?.toString()?.let(headings::get)
                 if (category != null) {
-                    current = mutableListOf()
-                    sections.add(category to current)
+                    val group = mutableListOf<View>()
+                    current = group
+                    sections.add(category to group)
                 }
                 current?.add(child)
             }
