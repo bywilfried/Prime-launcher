@@ -314,7 +314,8 @@ object ThemeColors {
         val variant = context.effectiveThemeVariant()
         val profile = ThemeProfile.current(context)
         return when (role) {
-            ThemeColorRole.DRAWER_ICON_TEXT -> resolve(context, profile, ThemeColorRole.DRAWER_BACKGROUND, variant)
+            ThemeColorRole.DRAWER_ICON_TEXT -> liveDrawerBackgroundByVariant[variant]
+                ?: resolve(context, profile, ThemeColorRole.DRAWER_BACKGROUND, variant)
             ThemeColorRole.DOCK_ICON_TEXT -> resolve(context, profile, ThemeColorRole.HOME_HOTSEAT_BACKGROUND, variant)
             else -> Color.TRANSPARENT
         }
@@ -457,6 +458,12 @@ object ThemeColors {
                     val opaque = ColorUtils.compositeColors(surface, if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE)
                     if (ColorUtils.calculateContrast(Color.BLACK, opaque) >= ColorUtils.calculateContrast(Color.WHITE, opaque)) Color.BLACK else Color.WHITE
                 }
+                ThemeColorRole.DRAWER_TEXT,
+                ThemeColorRole.DRAWER_ICON_TEXT,
+                ThemeColorRole.DRAWER_FOLDER_ICON_TEXT,
+                ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> categoryBlackWhite(
+                    resolve(context, profile, ThemeColorRole.DRAWER_BACKGROUND, variant), variant,
+                )
                 ThemeColorRole.DRAWER_HANDLE -> categoryBlackWhite(
                     resolveTheme(context, profile, ThemeColorRole.DRAWER_BACKGROUND, variant), variant,
                 )
@@ -492,7 +499,8 @@ object ThemeColors {
                     ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND
                     ThemeColorRole.DRAWER_HANDLE,
                     ThemeColorRole.DRAWER_TEXT, ThemeColorRole.DRAWER_ICON_TEXT,
-                    ThemeColorRole.DRAWER_FOLDER_ICON_TEXT -> ThemeColorRole.DRAWER_BACKGROUND
+                    ThemeColorRole.DRAWER_FOLDER_ICON_TEXT,
+                    ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> ThemeColorRole.DRAWER_BACKGROUND
                     ThemeColorRole.DRAWER_SEARCH_TEXT, ThemeColorRole.DRAWER_SEARCH_HINT,
                     ThemeColorRole.DRAWER_SEARCH_ICON -> ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE
                     else -> null
