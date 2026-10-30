@@ -301,6 +301,7 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
         }
 
         input.onFocusChangeListener = { _, hasFocus ->
+            app.lawnchair.search.PrimeSearchTrace.record("drawer focus=$hasFocus len=${input.text?.length ?: 0}")
             if (hasFocus) {
                 if (prefs2.searchAlgorithm.firstCached() != LawnchairSearchAlgorithm.APP_SEARCH) {
                     input.setHint(R.string.all_apps_device_search_hint)
@@ -448,6 +449,7 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
     }
 
     override fun onGlobalLayout() {
+        app.lawnchair.search.PrimeSearchTrace.record("drawer layout height=$height inputHeight=${input.height} focused=${input.hasFocus()}")
         canShowHint = input.layout?.getEllipsisCount(0) == 0
     }
 
@@ -471,6 +473,7 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
     }
 
     override fun onAppsUpdated() {
+        app.lawnchair.search.PrimeSearchTrace.record("drawer appsUpdated")
         searchBarController.refreshSearchResult()
     }
 
@@ -514,6 +517,7 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
     }
 
     override fun onSearchResult(query: String, items: ArrayList<AdapterItem>?) {
+        app.lawnchair.search.PrimeSearchTrace.record("drawer onSearchResult len=${query.length} items=${items?.size ?: 0}")
         if (items != null) {
             apps.setSearchResults(items)
             notifyResultChanged()
@@ -522,6 +526,7 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
     }
 
     override fun clearSearchResult() {
+        app.lawnchair.search.PrimeSearchTrace.record("drawer clearSearchResult")
         if (apps.setSearchResults(null)) {
             notifyResultChanged()
         }
