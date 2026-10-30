@@ -360,6 +360,9 @@ object ThemeColors {
         }
     }
 
+    fun adaptiveTextForSurface(backgroundColor: Int, variant: ThemeVariant): Int =
+        adaptiveTextAgainstSurface(backgroundColor, variant)
+
     private fun adaptiveTextAgainstSurface(backgroundColor: Int, variant: ThemeVariant): Int {
         val backdrop = if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE
         val opaqueBackground = ColorUtils.compositeColors(backgroundColor, backdrop)
