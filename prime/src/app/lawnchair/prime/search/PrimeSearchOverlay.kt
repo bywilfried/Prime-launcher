@@ -544,7 +544,12 @@ object PrimeSearchOverlay {
             if (query.isBlank()) return
             val foreground = themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT)
             fun row(title: String, action: () -> Unit) {
-                val isHeading = title in setOf("Suggestions Web", "Raccourcis Web", "Contacts", "Événements de l'agenda", "Tâches · Tasks.org")
+                val isHeading = title in setOf(
+                    "Suggestions Web", "Raccourcis Web", "Contacts",
+                    "Événements de l'agenda", "Tâches · Tasks.org",
+                    "Historique des notifications", "Paramètres de l'appareil",
+                    "Device settings",
+                )
                 val label = TextView(launcher).apply {
                     text = title
                     textSize = 15f
