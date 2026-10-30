@@ -23,14 +23,29 @@ object SearchResultGeometry {
         container.findViewById<View>(R.id.text_rows)?.setPadding(0, 0, 0, 0)
     }
 
+    // Match the file results: 15sp text and 52dp minimum row height.
     fun styleTextRow(view: View) {
-        // Never force a height smaller than the content: this clipped task and web labels.
-        view.minimumHeight = view.dp(44)
+        view.minimumHeight = view.dp(52)
         view.layoutParams?.height = ViewGroup.LayoutParams.WRAP_CONTENT
+        view.findViewById<TextView>(R.id.title)?.apply {
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            includeFontPadding = false
+        }
+        view.findViewById<TextView>(R.id.subtitle)?.apply {
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            includeFontPadding = false
+        }
+        view.findViewById<View>(R.id.text_rows)?.apply {
+            setPadding(paddingLeft, view.dp(4), paddingRight, view.dp(4))
+        }
     }
 
     fun styleFileRow(view: View) {
         view.minimumHeight = view.dp(52)
         view.layoutParams?.height = ViewGroup.LayoutParams.WRAP_CONTENT
+        view.findViewById<TextView>(R.id.title)?.apply {
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            includeFontPadding = false
+        }
     }
 }
