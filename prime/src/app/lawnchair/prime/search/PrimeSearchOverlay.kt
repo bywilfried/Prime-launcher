@@ -1031,10 +1031,18 @@ object PrimeSearchOverlay {
                         SearchTargetCompat.RESULT_TYPE_SUGGESTIONS -> PrimeSearchResultPreferences.Category.HISTORY
                         else -> null
                     }
+                var renderedFilesInSection = 0
                 fun flushNativeSection() {
                     val category = nativeCategory
-                    if (category != null && nativeSection.childCount > 0) nativeSections.add(category to nativeSection)
+                    // File entries may be rejected after binding (e.g. file type
+                    // preferences). Never keep a heading without visible files.
+                    if (category != null && nativeSection.childCount > 0 &&
+                        (category != PrimeSearchResultPreferences.Category.FILES ||
+                            renderedFilesInSection > 0)) {
+                        nativeSections.add(category to nativeSection)
+                    }
                     nativeSection = LinearLayout(launcher).apply { orientation = LinearLayout.VERTICAL }
+                    renderedFilesInSection = 0
                     appRow = null
                     appsInRow = 0
                 }
@@ -1153,6 +1161,7 @@ object PrimeSearchOverlay {
                         compact.addView(title, LinearLayout.LayoutParams(0, -2, 1f))
                         parent.removeView(view)
                         parent.addView(compact)
+                        renderedFilesInSection++
                         return@forEach
                     }
                     // Drawer search result views may apply their own text colors
