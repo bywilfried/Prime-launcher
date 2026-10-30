@@ -24,7 +24,7 @@ object NotificationDotThemeColors {
             // The real color is per icon; DeviceProfile uses this only as a fallback.
             return ThemeColors.official(context, profile, role, variant)
         }
-        if ((override == ColorOption.AutomaticBlackWhite || override == ColorOption.AdaptiveThemeText) &&
+        if (override == ColorOption.AutomaticBlackWhite &&
             role == ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT) {
             val dotOption = PreferenceManager2.getInstance(context).notificationDotColor.firstCached()
             return contrastTextColor(resolve(context, ThemeColorRole.GLOBAL_NOTIFICATION_DOT, dotOption))
@@ -73,6 +73,19 @@ object NotificationDotThemeColors {
 
     @JvmStatic
     fun contrastForBackground(background: Int): Int = contrastTextColor(background)
+
+    /** The per-icon badge renderer supplies the actual badge color here. */
+    @JvmStatic
+    fun textForBackground(context: Context, background: Int): Int {
+        val variant = context.effectiveThemeVariant()
+        val profile = ThemeProfile.current(context)
+        val override = ThemeColorOverrides(context).get(
+            profile, variant, ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT,
+        )
+        return if (override == ColorOption.AdaptiveThemeText)
+            ThemeColors.adaptiveTextForSurface(background, variant)
+        else contrastTextColor(background)
+    }
 
     /** Choose the higher WCAG contrast ratio against the actual dot background. */
     private fun contrastTextColor(background: Int): Int {
