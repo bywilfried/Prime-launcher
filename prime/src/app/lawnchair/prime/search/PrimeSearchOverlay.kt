@@ -568,7 +568,7 @@ object PrimeSearchOverlay {
             if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB) && currentSuggestions.isNotEmpty()) {
                 row("Suggestions Web") {}
                 currentSuggestions.forEach { suggestion ->
-                    row("⌕  $suggestion") {
+                    row(suggestion) {
                         val provider = PrimeSearchResultPreferences.suggestionProvider(launcher)
                         val engine = when (provider) {
                             PrimeSearchResultPreferences.SuggestionProvider.GOOGLE -> PrimeSearchResultPreferences.WebEngine.GOOGLE
@@ -589,7 +589,7 @@ object PrimeSearchOverlay {
                 if (contacts.isNotEmpty()) {
                     row("Contacts") {}
                     contacts.forEach { contact ->
-                        row("👤  ${contact.name}") {
+                        row(contact.name) {
                             runCatching {
                                 launcher.startActivity(Intent(Intent.ACTION_VIEW, contact.uri))
                                 dismiss()
@@ -603,7 +603,7 @@ object PrimeSearchOverlay {
                 if (events.isNotEmpty()) {
                     row("Événements de l'agenda") {}
                     events.forEach { event ->
-                        row("📅  ${event.title}\n${event.detail}") {
+                        row("${event.title}\n${event.detail}") {
                             runCatching {
                                 launcher.startActivity(Intent(Intent.ACTION_VIEW, event.uri))
                                 dismiss()
@@ -617,7 +617,7 @@ object PrimeSearchOverlay {
                 if (tasks.isNotEmpty()) {
                     row("Tâches · Tasks.org") {}
                     tasks.forEach { task ->
-                        row("☑  ${task.title}" + task.detail.takeIf { it.isNotBlank() }?.let { "\n$it" }.orEmpty()) {
+                        row(task.title + task.detail.takeIf { it.isNotBlank() }?.let { "\n$it" }.orEmpty()) {
                             runCatching {
                                 launcher.startActivity(Intent(Intent.ACTION_VIEW, task.uri))
                                 dismiss()
@@ -636,7 +636,7 @@ object PrimeSearchOverlay {
                             java.text.DateFormat.SHORT, java.text.DateFormat.SHORT
                         )
                         matches.forEach { entry ->
-                            row("🔔  ${entry.app} · ${entry.title}\n${entry.body.take(180)}\n${formatter.format(java.util.Date(entry.posted))}") {}
+                            row("${entry.app} · ${entry.title}\n${entry.body.take(180)}\n${formatter.format(java.util.Date(entry.posted))}") {}
                         }
                     }
                 } else if (query.contains("notif", ignoreCase = true)) {
@@ -678,7 +678,7 @@ object PrimeSearchOverlay {
                 if (term.length >= 2 && matches.isNotEmpty()) {
                     row(if (locale == "fr") "Paramètres de l'appareil" else "Device settings") {}
                     matches.forEach { (name, action, _) ->
-                        row("⚙  $name") {
+                        row(name) {
                             runCatching {
                                 launcher.startActivity(Intent(action))
                                 dismiss()
