@@ -184,7 +184,7 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                     withContext(Dispatchers.Main) {
                         if (generation != searchGeneration) return@withContext
                         val snapshot = ArrayList(adapterItems)
-                        lastDeliveredItems = snapshot
+                        lastDeliveredItems = ArrayList<BaseAllAppsAdapter.AdapterItem>(snapshot)
                         lastCallback?.onSearchResult(query, ArrayList(snapshot))
                     }
                 }
