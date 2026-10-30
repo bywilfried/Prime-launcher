@@ -866,6 +866,8 @@ object PrimeSearchOverlay {
             override fun onSearchResult(query: String, items: ArrayList<BaseAllAppsAdapter.AdapterItem>?) {
                 if (!dialog.isShowing || input.text.toString() != query) return
                 results.removeAllViews()
+                scroll.scrollTo(0, 0)
+                scroll.post { if (dialog.isShowing && input.text.toString() == query) scroll.scrollTo(0, 0) }
                 // Re-measure after the search results have changed.
                 results.post { if (dialog.isShowing) container.requestLayout() }
                 // Preserve the algorithm's order and section boundaries. Each item is
