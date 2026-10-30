@@ -686,10 +686,14 @@ object PrimeSearchOverlay {
                     matches.forEach { entry ->
                         row("${entry.app} · ${entry.title}\n${entry.body.take(180)}\n${formatter.format(java.util.Date(entry.posted))}") {}
                     }
-                } else if (!PrimeNotificationHistory.isGranted(launcher) &&
-                    query.contains("notif", ignoreCase = true)) {
-                    row("Autoriser l'accès aux notifications") {
-                        launcher.startActivity(PrimeNotificationHistory.accessIntent(launcher))
+                } else if (query.contains("notif", ignoreCase = true)) {
+                    row("Historique des notifications") {}
+                    if (!PrimeNotificationHistory.isGranted(launcher)) {
+                        row("Accès aux notifications désactivé · toucher pour autoriser") {
+                            launcher.startActivity(PrimeNotificationHistory.accessIntent(launcher))
+                        }
+                    } else {
+                        row("Aucune notification correspondante enregistrée · vérifier les nouvelles notifications") {}
                     }
                 }
             }
