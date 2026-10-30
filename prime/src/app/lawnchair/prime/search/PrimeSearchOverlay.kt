@@ -1034,6 +1034,31 @@ object PrimeSearchOverlay {
                         }
                     }
                     applyPrimeTextColors(view)
+                    // Hide redundant leading pictograms in text-only results.
+                    // App icons and file thumbnails remain untouched.
+                    if (!isAppIcon &&
+                        item.searchTarget.resultType != SearchTargetCompat.RESULT_TYPE_FILE_TILE &&
+                        !item.searchTarget.layoutType.toString().contains("HEADER", ignoreCase = true)) {
+                        fun hideDecorativeIcons(node: View) {
+                            if (node is ImageView) {
+                                node.visibility = View.GONE
+                                return
+                            }
+                            if (node is TextView) {
+                                node.setCompoundDrawables(null, null, null, null)
+                                val original = node.text?.toString().orEmpty()
+                                val cleaned = original.replace(
+                                    Regex("""^\\s*[☑✔✓👤👥📅🗓📆🔎🔍]\\s*"""),
+                                    "",
+                                )
+                                if (cleaned != original && cleaned.isNotBlank()) node.text = cleaned
+                            }
+                            if (node is ViewGroup) {
+                                for (index in 0 until node.childCount) hideDecorativeIcons(node.getChildAt(index))
+                            }
+                        }
+                        hideDecorativeIcons(view)
+                    }
                     // Normalize every bound text result after the drawer view has
                     // finished binding; drawer styles otherwise overwrite Prime's scale.
                     if (!isAppIcon) {
