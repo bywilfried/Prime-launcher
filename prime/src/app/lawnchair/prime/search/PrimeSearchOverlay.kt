@@ -539,6 +539,13 @@ object PrimeSearchOverlay {
         var webRequestSerial = 0
         var currentSuggestions = emptyList<String>()
         val webPanel = LinearLayout(launcher).apply { orientation = LinearLayout.VERTICAL }
+        // ContactsProvider and photo decoding use ContentResolver/disk I/O.
+        // Never perform either operation on the keyboard/UI thread.
+        val contactExecutor = java.util.concurrent.Executors.newSingleThreadExecutor()
+        val photoExecutor = java.util.concurrent.Executors.newFixedThreadPool(2)
+        var contactQuery = ""
+        var contactResults = emptyList<PrimeContactSearch.Result>()
+        val photoCache = android.util.LruCache<String, android.graphics.Bitmap>(64)
         fun renderWebPanel(query: String) {
             webPanel.removeAllViews()
             if (query.isBlank()) return
@@ -590,7 +597,23 @@ object PrimeSearchOverlay {
                 }
             }
             if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.CONTACTS)) {
-                val contacts = PrimeContactSearch.search(launcher, query)
+                if (contactQuery != query) {
+                    contactQuery = query
+                    contactResults = emptyList()
+                    contactExecutor.execute {
+                        if (contactQuery != query) return@execute
+                        val found = PrimeContactSearch.search(launcher, query)
+                        webHandler.post {
+                            if (contactQuery == query && dialog.isShowing) {
+                                contactResults = found
+                                renderWebPanel(query)
+                                reorderSearchSections()
+                                results.requestLayout()
+                            }
+                        }
+                    }
+                }
+                val contacts = contactResults
                 if (contacts.isNotEmpty()) {
                     row("Contacts") {}
                     contacts.forEach { contact ->
@@ -612,12 +635,24 @@ object PrimeSearchOverlay {
                             scaleType = ImageView.ScaleType.CENTER_CROP
                             contentDescription = "Photo de " + contact.name
                             setImageResource(android.R.drawable.ic_menu_myplaces)
-                            val photo = runCatching {
-                                android.provider.ContactsContract.Contacts.openContactPhotoInputStream(
-                                    launcher.contentResolver, contact.uri, true,
-                                )?.use { android.graphics.BitmapFactory.decodeStream(it) }
-                            }.getOrNull()
-                            if (photo != null) setImageBitmap(photo)
+                            val photoKey = contact.uri.toString()
+                            val cachedPhoto = photoCache.get(photoKey)
+                            if (cachedPhoto != null) {
+                                setImageBitmap(cachedPhoto)
+                            } else {
+                                val target = this
+                                photoExecutor.execute {
+                                    val photo = runCatching {
+                                        android.provider.ContactsContract.Contacts.openContactPhotoInputStream(
+                                            launcher.contentResolver, contact.uri, true,
+                                        )?.use { android.graphics.BitmapFactory.decodeStream(it) }
+                                    }.getOrNull()
+                                    if (photo != null) {
+                                        photoCache.put(photoKey, photo)
+                                        webHandler.post { target.setImageBitmap(photo) }
+                                    }
+                                }
+                            }
                             setOnClickListener {
                                 dialog.hideKeyboardForSelection()
                                 runCatching {
