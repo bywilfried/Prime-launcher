@@ -260,7 +260,7 @@ object PrimeSearchOverlay {
             orientation = LinearLayout.VERTICAL
             // Search results must not start flush against the search field.
             // This padding belongs only to typed results, not the zero-state tabs.
-            setPadding(0, (12 * density).toInt(), 0, (8 * density).toInt())
+            setPadding(0, (8 * density).toInt(), 0, (6 * density).toInt())
             setBackgroundColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND))
         }
         val zeroState = LinearLayout(launcher).apply {
@@ -531,7 +531,7 @@ object PrimeSearchOverlay {
                     text = title
                     textSize = 14f
                     setTextColor(foreground)
-                    setPadding(inset, (11 * density).toInt(), inset, (11 * density).toInt())
+                    setPadding(inset, (6 * density).toInt(), inset, (6 * density).toInt())
                     setOnClickListener { action() }
                 }
                 webPanel.addView(label, LinearLayout.LayoutParams(-1, -2))
@@ -865,9 +865,9 @@ object PrimeSearchOverlay {
                     (searchLabelPaint.fontMetrics.descent - searchLabelPaint.fontMetrics.ascent).toDouble()
                 ).toInt().coerceAtLeast(1) * searchLabelLines
                 // Use the same geometry as the working Fréquentes/Récentes/Nouvelles grid.
-                val searchCellTopPadding = (4 * density).toInt()
+                val searchCellTopPadding = (2 * density).toInt()
                 val searchIconLabelGap = (4 * density).toInt()
-                val searchRowBottomPadding = (10 * density).toInt()
+                val searchRowBottomPadding = (5 * density).toInt()
                 val iconViewHeight = searchIconSize
                 val searchRowHeight = searchCellTopPadding + iconViewHeight +
                     searchIconLabelGap + searchLabelHeight + searchRowBottomPadding
@@ -950,9 +950,9 @@ object PrimeSearchOverlay {
                         val compact = LinearLayout(launcher).apply {
                             orientation = LinearLayout.HORIZONTAL
                             gravity = Gravity.CENTER_VERTICAL
-                            setPadding((12 * density).toInt(), (4 * density).toInt(),
-                                (12 * density).toInt(), (4 * density).toInt())
-                            minimumHeight = (60 * density).toInt()
+                            setPadding((12 * density).toInt(), (3 * density).toInt(),
+                                (12 * density).toInt(), (3 * density).toInt())
+                            minimumHeight = (52 * density).toInt()
                             isClickable = true
                             isFocusable = true
                             setOnClickListener { view.performClick() }
@@ -963,13 +963,13 @@ object PrimeSearchOverlay {
                             scaleType = ImageView.ScaleType.CENTER_INSIDE
                         }
                         compact.addView(icon, LinearLayout.LayoutParams(
-                            (40 * density).toInt(), (40 * density).toInt()).apply {
+                            (36 * density).toInt(), (36 * density).toInt()).apply {
                             marginEnd = (12 * density).toInt()
                         })
                         val title = TextView(launcher).apply {
                             text = filename
                             setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
-                            textSize = 15f
+                            textSize = 14f
                             maxLines = 2
                             ellipsize = android.text.TextUtils.TruncateAt.END
                             gravity = Gravity.CENTER_VERTICAL
