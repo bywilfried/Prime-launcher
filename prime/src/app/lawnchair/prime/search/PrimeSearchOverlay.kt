@@ -693,7 +693,9 @@ object PrimeSearchOverlay {
                             launcher.startActivity(PrimeNotificationHistory.accessIntent(launcher))
                         }
                     } else {
-                        row("Aucune notification correspondante enregistrée · vérifier les nouvelles notifications") {}
+                        row("Aucune notification correspondante enregistrée") {}
+                        row(runCatching { PrimeNotificationHistory.diagnostic(launcher) }
+                            .getOrElse { "Diagnostic indisponible : " + it.javaClass.simpleName }) {}
                     }
                 }
             }
