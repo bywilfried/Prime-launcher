@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.Switch
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -58,53 +60,42 @@ fun NotificationDotsPreference(
     serviceEnabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    var showPermissionDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val showWarning = enabled && !serviceEnabled
-    val summary = when {
-        showWarning -> R.string.missing_notification_access_label
-        enabled -> R.string.notification_dots_desc_on
-        else -> R.string.notification_dots_desc_off
+    val dotPreferences = remember(context) {
+        context.getSharedPreferences("prime_notification_display", Context.MODE_PRIVATE)
     }
-    val mMSDLPlayerWrapper = MSDLPlayerWrapper.INSTANCE.get(context)
-
+    var dotsVisible by remember { mutableStateOf(dotPreferences.getBoolean("show_dots", true)) }
     PreferenceTemplate(
         title = { Text(text = stringResource(id = R.string.notification_dots)) },
         modifier = modifier,
-        description = { Text(text = stringResource(id = summary)) },
-        endWidget = if (showWarning) {
-            {
-                Icon(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .size(24.dp),
-                    painter = painterResource(id = R.drawable.ic_warning),
-                    contentDescription = "",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        } else {
-            null
+        description = {
+            Text(text = if (dotsVisible) "Afficher les pastilles sur les icônes"
+                else "Pastilles masquées, accès aux notifications conservé")
+        },
+        endWidget = {
+            Switch(
+                checked = dotsVisible,
+                onCheckedChange = { checked ->
+                    dotsVisible = checked
+                    dotPreferences.edit().putBoolean("show_dots", checked).apply()
+                    // Refresh visible icons without changing notification permissions.
+                    val activity = context as? android.app.Activity
+                    fun refresh(node: android.view.View) {
+                        node.invalidate()
+                        if (node is android.view.ViewGroup) {
+                            for (index in 0 until node.childCount) refresh(node.getChildAt(index))
+                        }
+                    }
+                    activity?.window?.decorView?.let(::refresh)
+                },
+            )
         },
         onClick = {
-            if (showWarning) {
-                mMSDLPlayerWrapper.playToken(MSDLToken.FAILURE)
-                showPermissionDialog = true
-            } else {
-                mMSDLPlayerWrapper.playToken(MSDLToken.TAP_MEDIUM_EMPHASIS)
-                val extras = bundleOf(EXTRA_FRAGMENT_HIGHLIGHT_KEY to "notification_badging")
-                val intent = Intent("android.settings.NOTIFICATION_SETTINGS")
-                    .putExtra(EXTRA_FRAGMENT_ARGS, extras)
-                context.startActivity(intent)
-            }
+            dotsVisible = !dotsVisible
+            dotPreferences.edit().putBoolean("show_dots", dotsVisible).apply()
         },
     )
 
-    if (showPermissionDialog) {
-        NotificationAccessConfirmation {
-            showPermissionDialog = false
-        }
-    }
 }
 
 @Composable
