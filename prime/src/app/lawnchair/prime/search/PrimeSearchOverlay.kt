@@ -873,10 +873,6 @@ object PrimeSearchOverlay {
         }
         fun reorderSearchSections() {
             val priorities = PrimeSearchResultPreferences.order(launcher)
-            // Remove previously materialized dynamic sections before re-rendering.
-            val stale = (0 until results.childCount).map { results.getChildAt(it) }
-                .filter { it.getTag() is PrimeSearchResultPreferences.Category && it !== webPanel }
-            // Native sections are retained; dynamic sections are regenerated below.
             val headingCategories = mapOf(
                 "Suggestions Web" to PrimeSearchResultPreferences.Category.WEB,
                 "Contacts" to PrimeSearchResultPreferences.Category.CONTACTS,
@@ -887,27 +883,51 @@ object PrimeSearchOverlay {
                 "Device settings" to PrimeSearchResultPreferences.Category.SETTINGS,
                 "Raccourcis Web" to PrimeSearchResultPreferences.Category.WEB_SHORTCUTS,
             )
-            val dynamic = mutableListOf<Pair<PrimeSearchResultPreferences.Category, LinearLayout>>()
-            var group: LinearLayout? = null
+            // Exactly one section per enabled category, regardless of how many
+            // separate chunks the drawer provider produced.
+            val grouped = linkedMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
+            fun sectionFor(category: PrimeSearchResultPreferences.Category): LinearLayout =
+                grouped.getOrPut(category) {
+                    LinearLayout(launcher).apply {
+                        orientation = LinearLayout.VERTICAL
+                        tag = category
+                    }
+                }
+            val native = (0 until results.childCount).map { results.getChildAt(it) }
+                .filter { it !== webPanel }
+            native.forEach { view ->
+                val category = view.tag as? PrimeSearchResultPreferences.Category
+                if (category != null && PrimeSearchResultPreferences.enabled(launcher, category)) {
+                    val section = sectionFor(category)
+                    if (view is ViewGroup) {
+                        while (view.childCount > 0) {
+                            val child = view.getChildAt(0)
+                            view.removeViewAt(0)
+                            section.addView(child)
+                        }
+                    }
+                }
+            }
+            var currentCategory: PrimeSearchResultPreferences.Category? = null
             while (webPanel.childCount > 0) {
                 val child = webPanel.getChildAt(0)
                 webPanel.removeViewAt(0)
-                val category = (child as? TextView)?.text?.toString()?.let(headingCategories::get)
-                if (category != null) {
-                    group = LinearLayout(launcher).apply { orientation = LinearLayout.VERTICAL }
-                    dynamic.add(category to group!!)
+                val headingCategory = (child as? TextView)?.text?.toString()?.let(headingCategories::get)
+                if (headingCategory != null) currentCategory = headingCategory
+                val category = currentCategory
+                if (category != null && PrimeSearchResultPreferences.enabled(launcher, category)) {
+                    sectionFor(category).addView(child)
                 }
-                group?.addView(child)
             }
-            // Keep native section wrappers and rebuild only Prime-owned sections.
-            val native = stale.filter { it.getTag() is PrimeSearchResultPreferences.Category }
-            val ordered = native.map { it.getTag() as PrimeSearchResultPreferences.Category to it } +
-                dynamic.map { it.first to it.second as View }
             results.removeAllViews()
-            ordered.sortedWith(compareBy({ priorities.indexOf(it.first).let { index -> if (index < 0) Int.MAX_VALUE else index } }))
-                .forEach { (_, view) -> results.addView(view) }
+            priorities.forEach { category ->
+                grouped[category]?.takeIf { it.childCount > 0 }?.let(results::addView)
+            }
+            // The panel is a staging area only; it must not become an extra
+            // unconfigured results block.
             results.addView(webPanel)
         }
+
         fun updateWebSuggestions(query: String) {
             val request = ++webRequestSerial
             currentSuggestions = emptyList()
