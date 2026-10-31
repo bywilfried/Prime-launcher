@@ -546,6 +546,7 @@ object PrimeSearchOverlay {
         var contactQuery = ""
         var contactResults = emptyList<PrimeContactSearch.Result>()
         val photoCache = android.util.LruCache<String, android.graphics.Bitmap>(64)
+        var reorderAfterContacts: () -> Unit = {}
         fun renderWebPanel(query: String) {
             webPanel.removeAllViews()
             if (query.isBlank()) return
@@ -607,7 +608,7 @@ object PrimeSearchOverlay {
                             if (contactQuery == query && dialog.isShowing) {
                                 contactResults = found
                                 renderWebPanel(query)
-                                reorderSearchSections()
+                                reorderAfterContacts()
                                 results.requestLayout()
                             }
                         }
@@ -998,6 +999,7 @@ object PrimeSearchOverlay {
             results.addView(webPanel)
         }
 
+        reorderAfterContacts = { reorderSearchSections() }
         fun updateWebSuggestions(query: String) {
             val request = ++webRequestSerial
             currentSuggestions = emptyList()
