@@ -63,6 +63,15 @@ object PrimeNotificationHistory {
         }
     }
 
+    fun requestRebindIfNeeded(context: Context) {
+        if (!isGranted(context) || state(context).getBoolean("connected", false)) return
+        runCatching {
+            NotificationListenerService.requestRebind(
+                ComponentName(context, PrimeNotificationListener::class.java)
+            )
+        }.onFailure { recordError(context, it) }
+    }
+
     fun accessIntent(context: Context): Intent =
         Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
 
