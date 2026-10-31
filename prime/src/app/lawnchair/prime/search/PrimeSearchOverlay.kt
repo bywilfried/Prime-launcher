@@ -1353,6 +1353,44 @@ object PrimeSearchOverlay {
                             return@forEach
                         }
                     }
+                    // Show the owning application's icon at the far right of each
+                    // Prime app shortcut, without replacing its contact/avatar icon.
+                    if (category == PrimeSearchResultPreferences.Category.APP_SHORTCUTS && !isAppIcon) {
+                        val appPackage = item.searchTarget.packageName
+                        val appDrawable = if (appPackage.isNotBlank()) {
+                            runCatching { launcher.packageManager.getApplicationIcon(appPackage) }.getOrNull()
+                        } else null
+                        if (appDrawable != null) {
+                            val index = parent.indexOfChild(view)
+                            val originalParams = view.layoutParams
+                            parent.removeView(view)
+                            val container = android.widget.FrameLayout(launcher).apply {
+                                minimumHeight = (56 * density).toInt()
+                            }
+                            container.addView(view, android.widget.FrameLayout.LayoutParams(
+                                -1, -1,
+                            ))
+                            val appIcon = ImageView(launcher).apply {
+                                setImageDrawable(appDrawable)
+                                scaleType = ImageView.ScaleType.FIT_CENTER
+                                isClickable = false
+                                isFocusable = false
+                                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                            }
+                            val iconSize = (24 * density).toInt()
+                            container.addView(appIcon, android.widget.FrameLayout.LayoutParams(
+                                iconSize, iconSize, Gravity.END or Gravity.CENTER_VERTICAL,
+                            ).apply {
+                                marginEnd = (12 * density).toInt()
+                            })
+                            // Reserve room so long shortcut names cannot run under the icon.
+                            view.setPadding(
+                                view.paddingLeft, view.paddingTop,
+                                view.paddingRight + (44 * density).toInt(), view.paddingBottom,
+                            )
+                            parent.addView(container, index, originalParams)
+                        }
+                    }
                     if (isAppIcon) {
                         view.minimumHeight = 0
                         (view as? app.lawnchair.allapps.views.SearchResultIcon)?.let { icon ->
