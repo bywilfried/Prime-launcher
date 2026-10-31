@@ -557,12 +557,12 @@ object PrimeSearchOverlay {
                     if (isHeading) setTypeface(typeface, android.graphics.Typeface.BOLD)
                     // These are plain text rows, not the large icon/file tiles.
                     // Keep them content-sized with a compact, consistent rhythm.
-                    val top = ((if (isHeading) 14 else 5) * density).toInt()
-                    val bottom = ((if (isHeading) 3 else 5) * density).toInt()
+                    val top = ((if (isHeading) 10 else 3) * density).toInt()
+                    val bottom = ((if (isHeading) 2 else 3) * density).toInt()
                     val left = (12 * density).toInt() + (if (isHeading) 0 else (8 * density).toInt())
                     setPadding(left, top, (12 * density).toInt(), bottom)
                     includeFontPadding = false
-                    if (!isHeading) minimumHeight = (32 * density).toInt()
+                    if (!isHeading) minimumHeight = (30 * density).toInt()
                     setOnClickListener {
                         if (title != "Suggestions Web" && title != "Raccourcis Web") dialog.hideKeyboardForSelection()
                         action()
@@ -1037,7 +1037,7 @@ object PrimeSearchOverlay {
                 // Use the same geometry as the working Fréquentes/Récentes/Nouvelles grid.
                 val searchCellTopPadding = (4 * density).toInt()
                 val searchIconLabelGap = (4 * density).toInt()
-                val searchRowBottomPadding = (10 * density).toInt()
+                val searchRowBottomPadding = (4 * density).toInt()
                 val iconViewHeight = searchIconSize
                 val searchRowHeight = searchCellTopPadding + iconViewHeight +
                     searchIconLabelGap + searchLabelHeight + searchRowBottomPadding
@@ -1099,8 +1099,8 @@ object PrimeSearchOverlay {
                                 setTypeface(typeface, android.graphics.Typeface.BOLD)
                                 setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
                                 includeFontPadding = false
-                                setPadding((12 * density).toInt(), (14 * density).toInt(),
-                                    (12 * density).toInt(), (3 * density).toInt())
+                                setPadding((12 * density).toInt(), (10 * density).toInt(),
+                                    (12 * density).toInt(), (2 * density).toInt())
                             }
                             nativeSection.addView(heading)
                         }
