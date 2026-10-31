@@ -1060,9 +1060,12 @@ object PrimeSearchOverlay {
                     // section title (e.g. "space"). Prime Search owns its category
                     // headings, so discard that inherited header instead.
                     if (item.searchTarget.resultType == SearchTargetCompat.RESULT_TYPE_SECTION_HEADER &&
-                        filteredNativeItems.drop(itemIndex + 1).firstOrNull {
-                            nativeCategoryFor(it) != null
-                        }?.let { nativeCategoryFor(it) } == PrimeSearchResultPreferences.Category.APP_SHORTCUTS
+                        filteredNativeItems.drop(itemIndex + 1)
+                            .takeWhile {
+                                it.searchTarget.resultType != SearchTargetCompat.RESULT_TYPE_SECTION_HEADER
+                            }.any {
+                                nativeCategoryFor(it) == PrimeSearchResultPreferences.Category.APP_SHORTCUTS
+                            }
                     ) return@forEachIndexed
                     val category = nativeCategoryFor(item)
                     if (category != null && nativeCategory != null && category != nativeCategory) flushNativeSection()
