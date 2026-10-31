@@ -1056,10 +1056,10 @@ object PrimeSearchOverlay {
                     launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(),
                 )
                 filteredNativeItems.forEach { item ->
-                    // Prime Search renders its own section titles. Drawer headers and
-                    // unclassified rows (including the duplicate "Notes" row) must
-                    // not leak into the overlay.
                     val category = nativeCategoryFor(item) ?: return@forEach
+                    // A result is visible only when its corresponding search
+                    // category is enabled in the Prime Search settings.
+                    if (!PrimeSearchResultPreferences.enabled(launcher, category)) return@forEach
                     if (category != null && nativeCategory != null && category != nativeCategory) flushNativeSection()
                     if (category != null && nativeCategory != category) {
                         nativeCategory = category
@@ -1339,8 +1339,10 @@ object PrimeSearchOverlay {
                 }
                 flushNativeSection()
                 nativeSections.forEach { (category, section) ->
-                    section.tag = category
-                    results.addView(section)
+                    if (PrimeSearchResultPreferences.enabled(launcher, category)) {
+                        section.tag = category
+                        results.addView(section)
+                    }
                 }
                 results.addView(webPanel)
                 renderWebPanel(query)
