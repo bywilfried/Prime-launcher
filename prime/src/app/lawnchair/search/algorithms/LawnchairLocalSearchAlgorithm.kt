@@ -9,6 +9,7 @@ import app.lawnchair.search.adapter.SearchTargetCompat
 import app.lawnchair.search.adapter.SearchTargetFactory
 import app.lawnchair.search.algorithms.engine.ActionsSectionBuilder
 import app.lawnchair.search.algorithms.engine.AppsAndShortcutsSectionBuilder
+import app.lawnchair.search.algorithms.engine.PrimeAppsAndShortcutsSectionBuilder
 import app.lawnchair.search.algorithms.engine.CalculationSectionBuilder
 import app.lawnchair.search.algorithms.engine.ContactsSectionBuilder
 import app.lawnchair.search.algorithms.engine.EmptyStateSectionBuilder
@@ -300,7 +301,11 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
         val factory = SearchTargetFactory(context)
 
         // The new function is just a flatMap. It's declarative and beautiful.
-        val builders = if (primeSearch) sectionBuilders else {
+        val builders = if (primeSearch) {
+            sectionBuilders.map { builder ->
+                if (builder === AppsAndShortcutsSectionBuilder) PrimeAppsAndShortcutsSectionBuilder else builder
+            }
+        } else {
             val settings = app.lawnchair.prime.search.PrimeSearchResultPreferences
             val order = settings.order(context, app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER)
             val byCategory = mapOf(
