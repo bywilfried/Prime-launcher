@@ -557,12 +557,12 @@ object PrimeSearchOverlay {
                     if (isHeading) setTypeface(typeface, android.graphics.Typeface.BOLD)
                     // These are plain text rows, not the large icon/file tiles.
                     // Keep them content-sized with a compact, consistent rhythm.
-                    val top = ((if (isHeading) 10 else 3) * density).toInt()
-                    val bottom = ((if (isHeading) 2 else 3) * density).toInt()
+                    val top = ((if (isHeading) 8 else 2) * density).toInt()
+                    val bottom = ((if (isHeading) 2 else 2) * density).toInt()
                     val left = (12 * density).toInt() + (if (isHeading) 0 else (8 * density).toInt())
                     setPadding(left, top, (12 * density).toInt(), bottom)
                     includeFontPadding = false
-                    if (!isHeading) minimumHeight = (30 * density).toInt()
+                    if (!isHeading) minimumHeight = (28 * density).toInt()
                     setOnClickListener {
                         if (title != "Suggestions Web" && title != "Raccourcis Web") dialog.hideKeyboardForSelection()
                         action()
@@ -1039,9 +1039,9 @@ object PrimeSearchOverlay {
                     (searchLabelPaint.fontMetrics.descent - searchLabelPaint.fontMetrics.ascent).toDouble()
                 ).toInt().coerceAtLeast(1) * searchLabelLines
                 // Use the same geometry as the working Fréquentes/Récentes/Nouvelles grid.
-                val searchCellTopPadding = (4 * density).toInt()
-                val searchIconLabelGap = (4 * density).toInt()
-                val searchRowBottomPadding = (4 * density).toInt()
+                val searchCellTopPadding = (2 * density).toInt()
+                val searchIconLabelGap = (3 * density).toInt()
+                val searchRowBottomPadding = (2 * density).toInt()
                 val iconViewHeight = searchIconSize
                 val searchRowHeight = searchCellTopPadding + iconViewHeight +
                     searchIconLabelGap + searchLabelHeight + searchRowBottomPadding
@@ -1103,7 +1103,7 @@ object PrimeSearchOverlay {
                                 setTypeface(typeface, android.graphics.Typeface.BOLD)
                                 setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
                                 includeFontPadding = false
-                                setPadding((12 * density).toInt(), (10 * density).toInt(),
+                                setPadding((12 * density).toInt(), (8 * density).toInt(),
                                     (12 * density).toInt(), (2 * density).toInt())
                             }
                             nativeSection.addView(heading)
@@ -1255,8 +1255,8 @@ object PrimeSearchOverlay {
                                 setTypeface(typeface, android.graphics.Typeface.BOLD)
                                 textSize = 15f
                                 includeFontPadding = false
-                                setPadding((12 * density).toInt(), (14 * density).toInt(),
-                                    (12 * density).toInt(), (3 * density).toInt())
+                                setPadding((12 * density).toInt(), (8 * density).toInt(),
+                                    (12 * density).toInt(), (2 * density).toInt())
                             }
                             parent.addView(fileHeading, LinearLayout.LayoutParams(-1, -2))
                         }
@@ -1304,6 +1304,20 @@ object PrimeSearchOverlay {
                             }
                         }
                         hideDecorativeIcons(view)
+                    }
+                    // Prime Search's native shortcut rows inherit tall drawer item
+                    // dimensions. Normalize only text-result wrappers, leaving app
+                    // tiles and file rows to their dedicated layouts.
+                    if (!isAppIcon &&
+                        item.searchTarget.resultType != SearchTargetCompat.RESULT_TYPE_FILE_TILE &&
+                        !item.searchTarget.layoutType.toString().contains("HEADER", ignoreCase = true)) {
+                        view.minimumHeight = 0
+                        view.layoutParams = (view.layoutParams as? LinearLayout.LayoutParams
+                            ?: LinearLayout.LayoutParams(-1, -2)).apply {
+                            height = (56 * density).toInt()
+                            topMargin = 0
+                            bottomMargin = 0
+                        }
                     }
                     // Normalize every bound text result after the drawer view has
                     // finished binding; drawer styles otherwise overwrite Prime's scale.
