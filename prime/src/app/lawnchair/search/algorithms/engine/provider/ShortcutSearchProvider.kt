@@ -11,12 +11,26 @@ import com.android.launcher3.shortcuts.ShortcutRequest
 
 object ShortcutSearchProvider {
     fun search(context: Context, appResults: List<SearchResult.App>): List<SearchResult.Shortcut> {
-        if (appResults.size == 1 && context.isDefaultLauncher()) {
-            val singleApp = appResults.first().data
-            val shortcuts = getShortcuts(singleApp, context)
-            return shortcuts.map { SearchResult.Shortcut(data = it) }
-        }
-        return emptyList()
+        if (!context.isDefaultLauncher()) return emptyList()
+
+        // Multiple matching apps may expose shortcuts. Deduplicate launcher activities
+        // and shortcut identities to avoid repeated results.
+        val seenApps = HashSet<String>()
+        val seenShortcuts = HashSet<String>()
+        return appResults.asSequence()
+            .map { it.data }
+            .filter { app ->
+                seenApps.add("${app.user}:${app.targetComponent?.packageName}")
+            }
+            .flatMap { app ->
+                runCatching { getShortcuts(app, context).asSequence() }
+                    .getOrDefault(emptySequence())
+            }
+            .filter { shortcut ->
+                seenShortcuts.add("${shortcut.userHandle}:${shortcut.id}:${shortcut.activity}")
+            }
+            .map { SearchResult.Shortcut(data = it) }
+            .toList()
     }
 
     private fun getShortcuts(app: AppInfo, context: Context): List<ShortcutInfo> {
