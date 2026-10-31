@@ -897,6 +897,10 @@ object PrimeSearchOverlay {
                 .filter { it !== webPanel }
             native.forEach { view ->
                 val category = view.tag as? PrimeSearchResultPreferences.Category
+                // Dynamic web sections are rebuilt by renderWebPanel on each refresh.
+                // Never carry over the previous copy when suggestions arrive asynchronously.
+                if (category == PrimeSearchResultPreferences.Category.WEB ||
+                    category == PrimeSearchResultPreferences.Category.WEB_SHORTCUTS) return@forEach
                 if (category != null && PrimeSearchResultPreferences.enabled(launcher, category)) {
                     val section = sectionFor(category)
                     if (view is ViewGroup) {
