@@ -22,6 +22,34 @@ object PrimeNotificationHistory {
 
     data class Entry(val app: String, val title: String, val body: String, val posted: Long)
 
+    private fun state(context: Context) =
+        context.getSharedPreferences("prime_notification_diagnostics", Context.MODE_PRIVATE)
+
+    fun markConnected(context: Context, connected: Boolean) {
+        state(context).edit().putBoolean("connected", connected)
+            .putLong("last_connection", System.currentTimeMillis()).apply()
+    }
+
+    fun recordError(context: Context, error: Throwable) {
+        state(context).edit().putString("error",
+            error.javaClass.simpleName + ": " + (error.message ?: "unknown")).apply()
+        android.util.Log.e("PrimeNotificationHistory", "Notification capture failed", error)
+    }
+
+    fun diagnostic(context: Context): String {
+        val prefs = state(context)
+        val count = Store(context).use { helper ->
+            helper.readableDatabase.rawQuery("SELECT COUNT(*) FROM notifications", null).use {
+                if (it.moveToFirst()) it.getInt(0) else 0
+            }
+        }
+        val status = if (prefs.getBoolean("connected", false)) "Service connecté"
+            else "Service non connecté"
+        val error = prefs.getString("error", null)
+        return "$status · $count notification(s) enregistrée(s)" +
+            (if (error != null) " · Erreur : $error" else "")
+    }
+
     fun isGranted(context: Context): Boolean {
         val enabled = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners").orEmpty()
         val component = ComponentName(context, PrimeNotificationListener::class.java)
@@ -112,13 +140,20 @@ object PrimeNotificationHistory {
 class PrimeNotificationListener : NotificationListenerService() {
     override fun onListenerConnected() {
         super.onListenerConnected()
+        PrimeNotificationHistory.markConnected(this, true)
         // Keep the local history independently of whether the search category is shown.
         runCatching {
             activeNotifications?.forEach { PrimeNotificationHistory.save(this, it) }
-        }
+        }.onFailure { PrimeNotificationHistory.recordError(this, it) }
+    }
+
+    override fun onListenerDisconnected() {
+        PrimeNotificationHistory.markConnected(this, false)
+        super.onListenerDisconnected()
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         runCatching { PrimeNotificationHistory.save(this, sbn) }
+            .onFailure { PrimeNotificationHistory.recordError(this, it) }
     }
 }
