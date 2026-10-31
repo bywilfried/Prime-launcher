@@ -1057,6 +1057,14 @@ object PrimeSearchOverlay {
                         SearchTargetCompat.RESULT_TYPE_SUGGESTIONS -> PrimeSearchResultPreferences.Category.HISTORY
                         else -> null
                     }
+                // Prefer grid application tiles over the drawer's duplicate text rows.
+                // The provider may return both layouts for the same package.
+                val gridApplicationIds = PrimeSearchResultPreferences.filter(
+                    launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(),
+                ).filter {
+                    it.searchTarget.resultType == SearchTargetCompat.RESULT_TYPE_APPLICATION &&
+                        it.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT
+                }.map { it.searchTarget.packageName }.filter { it.isNotBlank() }.toSet()
                 val renderedApplicationIds = mutableSetOf<String>()
                 var renderedFilesInSection = 0
                 fun flushNativeSection() {
@@ -1101,8 +1109,11 @@ object PrimeSearchOverlay {
                     // and again as a text row. Prime Search keeps one app entry.
                     if (category == PrimeSearchResultPreferences.Category.APPS) {
                         val appId = item.searchTarget.packageName
-                        if (appId.isNotBlank() && !renderedApplicationIds.add(appId)) {
-                            return@forEach
+                        if (appId.isNotBlank()) {
+                            // Do not show a second, standalone row below the app grid.
+                            if (item.searchTarget.layoutType != LayoutType.ICON_SINGLE_VERTICAL_TEXT &&
+                                appId in gridApplicationIds) return@forEach
+                            if (!renderedApplicationIds.add(appId)) return@forEach
                         }
                     }
                     val isAppIcon = item.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT
