@@ -599,12 +599,37 @@ object PrimeSearchOverlay {
                             gravity = Gravity.CENTER_VERTICAL
                             minimumHeight = (44 * density).toInt()
                         }
+                        // Show the Android contact photo on the left when available.
+                        // Keep a neutral avatar placeholder for contacts without a photo.
+                        val avatarSize = (36 * density).toInt()
+                        val avatar = ImageView(launcher).apply {
+                            scaleType = ImageView.ScaleType.CENTER_CROP
+                            contentDescription = "Photo de " + contact.name
+                            setImageResource(android.R.drawable.ic_menu_myplaces)
+                            val photo = runCatching {
+                                android.provider.ContactsContract.Contacts.openContactPhotoInputStream(
+                                    launcher.contentResolver, contact.uri, true,
+                                )?.use { android.graphics.BitmapFactory.decodeStream(it) }
+                            }.getOrNull()
+                            if (photo != null) setImageBitmap(photo)
+                            setOnClickListener {
+                                dialog.hideKeyboardForSelection()
+                                runCatching {
+                                    launcher.startActivity(Intent(Intent.ACTION_VIEW, contact.uri))
+                                    dismiss()
+                                }
+                            }
+                        }
+                        contactRow.addView(avatar, LinearLayout.LayoutParams(avatarSize, avatarSize).apply {
+                            marginStart = (12 * density).toInt()
+                            marginEnd = (8 * density).toInt()
+                        })
                         val name = TextView(launcher).apply {
                             text = contact.name
                             textSize = 15f
                             includeFontPadding = false
                             setTextColor(foreground)
-                            setPadding((20 * density).toInt(), (5 * density).toInt(),
+                            setPadding(0, (5 * density).toInt(),
                                 (4 * density).toInt(), (5 * density).toInt())
                             gravity = Gravity.CENTER_VERTICAL
                             setOnClickListener {
