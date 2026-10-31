@@ -675,7 +675,6 @@ object PrimeSearchOverlay {
                 }
             }
             if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.NOTIFICATIONS)) {
-                PrimeNotificationHistory.requestRebindIfNeeded(launcher)
                 // Stored history is searchable even after notification access is revoked.
                 val matches = runCatching { PrimeNotificationHistory.search(launcher, query) }
                     .getOrDefault(emptyList())
