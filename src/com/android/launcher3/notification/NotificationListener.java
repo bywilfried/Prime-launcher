@@ -232,6 +232,16 @@ public class NotificationListener extends NotificationListenerService {
         super.onListenerConnected();
         Log.i(TAG, "onListenerConnected");
         sIsConnected = true;
+        // Feed Prime Search history from the launcher's already-bound listener.
+        app.lawnchair.prime.search.PrimeNotificationHistory.INSTANCE.markConnected(this, true);
+        try {
+            for (StatusBarNotification notification : getActiveNotificationsSafely(null)) {
+                app.lawnchair.prime.search.PrimeNotificationHistory.INSTANCE.save(this, notification);
+            }
+        } catch (Exception error) {
+            app.lawnchair.prime.search.PrimeNotificationHistory.INSTANCE.recordError(this, error);
+        }
+
 
         // Register an observer to rebind the notification listener when dots are re-enabled.
         mSettingsCache = SettingsCache.INSTANCE.get(this);
@@ -259,6 +269,7 @@ public class NotificationListener extends NotificationListenerService {
         super.onListenerDisconnected();
         Log.i(TAG, "onListenerDisconnected");
         sIsConnected = false;
+        app.lawnchair.prime.search.PrimeNotificationHistory.INSTANCE.markConnected(this, false);
         mSettingsCache.unregister(NOTIFICATION_BADGING_URI, mNotificationSettingsChangedListener);
         onNotificationFullRefresh();
     }
@@ -266,6 +277,11 @@ public class NotificationListener extends NotificationListenerService {
     @Override
     public void onNotificationPosted(final StatusBarNotification sbn) {
         if (sbn != null) {
+            try {
+                app.lawnchair.prime.search.PrimeNotificationHistory.INSTANCE.save(this, sbn);
+            } catch (Exception error) {
+                app.lawnchair.prime.search.PrimeNotificationHistory.INSTANCE.recordError(this, error);
+            }
             mWorkerHandler.obtainMessage(MSG_NOTIFICATION_POSTED, sbn).sendToTarget();
             mNotificationManager.onNotificationPosted(sbn);
         }
