@@ -1052,12 +1052,35 @@ object PrimeSearchOverlay {
                     appRow = null
                     appsInRow = 0
                 }
-                PrimeSearchResultPreferences.filter(
+                val filteredNativeItems = PrimeSearchResultPreferences.filter(
                     launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(),
-                ).forEach { item ->
+                )
+                filteredNativeItems.forEachIndexed { itemIndex, item ->
+                    // The drawer may label published shortcuts with the source app's
+                    // section title (e.g. "space"). Prime Search owns its category
+                    // headings, so discard that inherited header instead.
+                    if (item.searchTarget.resultType == SearchTargetCompat.RESULT_TYPE_SECTION_HEADER &&
+                        filteredNativeItems.drop(itemIndex + 1).firstOrNull {
+                            nativeCategoryFor(it) != null
+                        }?.let { nativeCategoryFor(it) } == PrimeSearchResultPreferences.Category.APP_SHORTCUTS
+                    ) return@forEachIndexed
                     val category = nativeCategoryFor(item)
                     if (category != null && nativeCategory != null && category != nativeCategory) flushNativeSection()
-                    if (category != null) nativeCategory = category
+                    if (category != null && nativeCategory != category) {
+                        nativeCategory = category
+                        if (category == PrimeSearchResultPreferences.Category.APP_SHORTCUTS) {
+                            val heading = TextView(launcher).apply {
+                                text = "Raccourcis d'app"
+                                setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+                                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
+                                includeFontPadding = false
+                                setPadding((12 * density).toInt(), (14 * density).toInt(),
+                                    (12 * density).toInt(), (3 * density).toInt())
+                            }
+                            nativeSection.addView(heading)
+                        }
+                    }
                     val isAppIcon = item.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT
                     if (isAppIcon) {
                         if (appRow == null || appsInRow == columns) {
@@ -1074,9 +1097,9 @@ object PrimeSearchOverlay {
                     }
                     val parent = if (isAppIcon) appRow!! else nativeSection
                     val layout = LawnchairSearchAdapterProvider.layoutForViewType(item.viewType)
-                        ?: return@forEach
+                        ?: return@forEachIndexed
                     val view = inflater.inflate(layout, parent, false)
-                    val resultView = view as? SearchResultView ?: return@forEach
+                    val resultView = view as? SearchResultView ?: return@forEachIndexed
                     if (isAppIcon) {
                         parent.addView(view, LinearLayout.LayoutParams(
                             cellWidth, searchRowHeight,
@@ -1129,11 +1152,11 @@ object PrimeSearchOverlay {
                     }
                     if (!isAppIcon && isDeviceFilesHeading(view)) {
                         parent.removeView(view)
-                        return@forEach
+                        return@forEachIndexed
                     }
                     if (!isAppIcon && isLegacyGoogleAction(view)) {
                         parent.removeView(view)
-                        return@forEach
+                        return@forEachIndexed
                     }
                     if (item.searchTarget.resultType == SearchTargetCompat.RESULT_TYPE_FILE_TILE) {
                         // The drawer file tile has large internal spacing; build a
@@ -1155,7 +1178,7 @@ object PrimeSearchOverlay {
                         val filename = findFileTitle(view).orEmpty()
                         if (!PrimeSearchResultPreferences.fileAllowed(launcher, filename)) {
                             parent.removeView(view)
-                            return@forEach
+                            return@forEachIndexed
                         }
                         val compact = LinearLayout(launcher).apply {
                             orientation = LinearLayout.HORIZONTAL
@@ -1200,7 +1223,7 @@ object PrimeSearchOverlay {
                         }
                         parent.addView(compact)
                         renderedFilesInSection++
-                        return@forEach
+                        return@forEachIndexed
                     }
                     // Drawer search result views may apply their own text colors
                     // during bind. Override them after binding for Prime Search.
@@ -1276,7 +1299,7 @@ object PrimeSearchOverlay {
                             parent.removeView(view)
                             parent.addView(compactHeading, LinearLayout.LayoutParams(-1, -2))
                             app.lawnchair.search.SearchResultGeometry.styleHeading(compactHeading, compactHeading)
-                            return@forEach
+                            return@forEachIndexed
                         }
                     }
                     if (isAppIcon) {
