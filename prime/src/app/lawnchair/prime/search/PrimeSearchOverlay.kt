@@ -1037,6 +1037,7 @@ object PrimeSearchOverlay {
                         SearchTargetCompat.RESULT_TYPE_SUGGESTIONS -> PrimeSearchResultPreferences.Category.HISTORY
                         else -> null
                     }
+                val renderedApplicationIds = mutableSetOf<String>()
                 var renderedFilesInSection = 0
                 fun flushNativeSection() {
                     val category = nativeCategory
@@ -1074,6 +1075,14 @@ object PrimeSearchOverlay {
                                     (12 * density).toInt(), (3 * density).toInt())
                             }
                             nativeSection.addView(heading)
+                        }
+                    }
+                    // The drawer can emit the same application as a grid icon
+                    // and again as a text row. Prime Search keeps one app entry.
+                    if (category == PrimeSearchResultPreferences.Category.APPS) {
+                        val appId = item.searchTarget.packageName
+                        if (appId.isNotBlank() && !renderedApplicationIds.add(appId)) {
+                            return@forEach
                         }
                     }
                     val isAppIcon = item.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT
