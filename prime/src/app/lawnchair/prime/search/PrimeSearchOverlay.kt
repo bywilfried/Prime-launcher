@@ -603,6 +603,12 @@ object PrimeSearchOverlay {
                         // Keep a neutral avatar placeholder for contacts without a photo.
                         val avatarSize = (36 * density).toInt()
                         val avatar = ImageView(launcher).apply {
+                            // Clip both contact photos and fallback icons to a circle.
+                            background = android.graphics.drawable.GradientDrawable().apply {
+                                shape = android.graphics.drawable.GradientDrawable.OVAL
+                                setColor(android.graphics.Color.TRANSPARENT)
+                            }
+                            clipToOutline = true
                             scaleType = ImageView.ScaleType.CENTER_CROP
                             contentDescription = "Photo de " + contact.name
                             setImageResource(android.R.drawable.ic_menu_myplaces)
