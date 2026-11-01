@@ -104,7 +104,8 @@ object AppSearchProvider {
                 } else if (allowedEdits > 0) {
                     val words = preparedName.words
                     val distance = words.minOfOrNull { word ->
-                        if (kotlin.math.abs(word.length - needle.length) > allowedEdits) {
+                        if (kotlin.math.abs(word.length - needle.length) > allowedEdits ||
+                            !sharesEnoughCharacters(word, needle, allowedEdits)) {
                             allowedEdits + 1
                         } else {
                             editDistanceWithin(word, needle, allowedEdits)
@@ -117,6 +118,24 @@ object AppSearchProvider {
             .map { it.first }
             .take(maxResults)
             .toList()
+    }
+
+    // A distance of at most k implies at least max(lengths)-k shared characters
+    // (counting duplicates). Cheap rejection before allocating the DP matrix.
+    private fun sharesEnoughCharacters(word: String, needle: String, edits: Int): Boolean {
+        val required = maxOf(word.length, needle.length) - edits * 2
+        if (required <= 0) return true
+        val counts = HashMap<Char, Int>()
+        word.forEach { counts[it] = (counts[it] ?: 0) + 1 }
+        var common = 0
+        needle.forEach { c ->
+            val count = counts[c] ?: 0
+            if (count > 0) {
+                common++
+                counts[c] = count - 1
+            }
+        }
+        return common >= required
     }
 
     // Bounded Damerau-Levenshtein: insertions, deletions, replacements

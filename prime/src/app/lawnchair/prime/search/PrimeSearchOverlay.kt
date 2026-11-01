@@ -1096,6 +1096,7 @@ object PrimeSearchOverlay {
         }
         // Avoid tearing down clickable views when an asynchronous provider
         // reports the exact same native results again.
+        var lastRenderedLayoutQuery: String? = null
         var lastNativeRenderQuery: String? = null
         var lastNativeRenderSignature: List<String>? = null
         val callback = object : SearchCallback<BaseAllAppsAdapter.AdapterItem> {
@@ -1109,11 +1110,11 @@ object PrimeSearchOverlay {
                 lastNativeRenderQuery = query
                 lastNativeRenderSignature = signature
                 val renderStarted = android.os.SystemClock.elapsedRealtime()
+                // Keep scroll position stable for progressive provider updates of the same query.
+                val queryChanged = lastRenderedLayoutQuery != query
+                lastRenderedLayoutQuery = query
                 results.removeAllViews()
-                scroll.scrollTo(0, 0)
-                scroll.post { if (dialog.isShowing && input.text.toString() == query) scroll.scrollTo(0, 0) }
-                // Re-measure after the search results have changed.
-                results.post { if (dialog.isShowing) container.requestLayout() }
+                if (queryChanged) scroll.scrollTo(0, 0)
                 // Preserve the algorithm's order and section boundaries. Each item is
                 // inflated with the same layout used by the drawer's adapter provider.
                 val inflater = LayoutInflater.from(launcher)
@@ -1546,7 +1547,7 @@ object PrimeSearchOverlay {
                 results.addView(webPanel)
                 renderWebPanel(query)
                 reorderSearchSections()
-                results.requestLayout()
+                // addView/removeAllViews already schedule layout; avoid another explicit pass.
                 app.lawnchair.search.PrimeSearchTrace.record("overlay render len=${query.length} items=${items?.size ?: 0} ms=${android.os.SystemClock.elapsedRealtime() - renderStarted}")
             }
 

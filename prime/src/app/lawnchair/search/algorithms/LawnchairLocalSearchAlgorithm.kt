@@ -137,13 +137,16 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                     resultsArray.toList().flatten()
                 }
 
+                val calcResult = CalculatorSearchProvider.search(context, query).firstOrNull()
+                val actions = generateActionResults(query).filterNot { primeSearch && it is SearchResult.Action.SearchSettings }
+                var previousProviderSnapshot: Pair<List<SearchResult>, List<SearchResult.Shortcut>>? = null
                 combine(nonAppProvidersFlow, shortcutResultsFlow) { nonAppResults, shortcutResults ->
                     nonAppResults to shortcutResults
                 }.collect { (nonAppResults, shortcutResults) ->
-                    val calcResult = CalculatorSearchProvider.search(context, query)
-                        .firstOrNull()
-
-                    val actions = generateActionResults(query).filterNot { primeSearch && it is SearchResult.Action.SearchSettings }
+                    val providerSnapshot = nonAppResults to shortcutResults
+                    if (previousProviderSnapshot == providerSnapshot) return@collect
+                    previousProviderSnapshot = providerSnapshot
+                    val updateStarted = SystemClock.elapsedRealtime()
                     val drawerWebActions = if (primeSearch) emptyList() else {
                         val settings = app.lawnchair.prime.search.PrimeSearchResultPreferences
                         val surface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
@@ -207,6 +210,7 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                     val searchTargets = translateToSearchTargets(visibleResults + drawerEntries)
                     setFirstItemQuickLaunch(searchTargets)
                     val adapterItems = transformSearchResults(searchTargets)
+                    app.lawnchair.search.PrimeSearchTrace.record("engine transform len=${query.length} items=${adapterItems.size} ms=${SystemClock.elapsedRealtime() - updateStarted}")
                     withContext(Dispatchers.Main) {
                         if (generation != searchGeneration) return@withContext
                         val snapshot = ArrayList(adapterItems)
