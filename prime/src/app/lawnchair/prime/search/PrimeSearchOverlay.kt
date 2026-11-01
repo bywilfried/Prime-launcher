@@ -1538,6 +1538,9 @@ object PrimeSearchOverlay {
         // IME visibility and focus changes must not restart an unchanged query.
         // Only an actual change in the search text starts a new request.
         var lastSubmittedQuery = input.text?.toString().orEmpty()
+        // Coalesce rapid keystrokes rather than rebuilding the entire result
+        // hierarchy for each intermediate prefix.
+        var pendingSearch: Runnable? = null
         input.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
@@ -1548,13 +1551,23 @@ object PrimeSearchOverlay {
                 zeroState.visibility = if (query.isBlank()) View.VISIBLE else View.GONE
                 scroll.visibility = if (query.isBlank()) View.GONE else View.VISIBLE
                 settings.visibility = if (query.isBlank()) View.VISIBLE else View.GONE
+                pendingSearch?.let(webHandler::removeCallbacks)
+                pendingSearch = null
                 updateWebSuggestions(query)
-                // Keep the current rows visible until the new query delivers
-                // its results. The callback already rejects stale query replies.
+                // Keep current rows visible while the user types. Only the
+                // settled query is sent to the expensive native search engine.
                 if (query.isBlank()) {
                     results.removeAllViews()
                     renderZeroState()
-                } else algorithm.doSearch(query, callback)
+                } else {
+                    val task = Runnable {
+                        if (dialog.isShowing && input.text.toString() == query) {
+                            algorithm.doSearch(query, callback)
+                        }
+                    }
+                    pendingSearch = task
+                    webHandler.postDelayed(task, 110L)
+                }
             }
             override fun afterTextChanged(s: Editable?) = Unit
         })
