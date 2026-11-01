@@ -960,6 +960,16 @@ object PrimeSearchOverlay {
                         tag = category
                     }
                 }
+            // When the dedicated Prime settings provider has results, use it
+            // instead of also rendering the drawer's settings section.
+            // Both providers can return the same "Applications" action.
+            val hasPrimeSettings = (0 until webPanel.childCount).any { index ->
+                val child = webPanel.getChildAt(index)
+                child is TextView && (
+                    child.text?.toString() == "Paramètres de l'appareil" ||
+                    child.text?.toString() == "Device settings"
+                )
+            }
             val native = (0 until results.childCount).map { results.getChildAt(it) }
                 .filter { it !== webPanel }
             native.forEach { view ->
@@ -967,7 +977,8 @@ object PrimeSearchOverlay {
                 // Dynamic web sections are rebuilt by renderWebPanel on each refresh.
                 // Never carry over the previous copy when suggestions arrive asynchronously.
                 if (category == PrimeSearchResultPreferences.Category.WEB ||
-                    category == PrimeSearchResultPreferences.Category.WEB_SHORTCUTS) return@forEach
+                    category == PrimeSearchResultPreferences.Category.WEB_SHORTCUTS ||
+                    (hasPrimeSettings && category == PrimeSearchResultPreferences.Category.SETTINGS)) return@forEach
                 if (category != null && PrimeSearchResultPreferences.enabled(launcher, category)) {
                     val section = sectionFor(category)
                     if (view is ViewGroup) {
