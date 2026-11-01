@@ -1549,6 +1549,10 @@ object PrimeSearchOverlay {
                 scroll.visibility = if (query.isBlank()) View.GONE else View.VISIBLE
                 settings.visibility = if (query.isBlank()) View.VISIBLE else View.GONE
                 updateWebSuggestions(query)
+                // Do not leave results from the previous prefix visible while
+                // the new query is being processed (shortcut lookup may take time).
+                results.removeAllViews()
+                webPanel.removeAllViews()
                 if (query.isBlank()) {
                     results.removeAllViews()
                     renderZeroState()
