@@ -1008,13 +1008,20 @@ object PrimeSearchOverlay {
                     sectionFor(category).addView(child)
                 }
             }
-            results.removeAllViews()
-            priorities.forEach { category ->
-                grouped[category]?.takeIf { it.childCount > 0 }?.let(results::addView)
+            // Reconcile the section containers rather than removing every
+            // result view on each asynchronous provider update.
+            val desired = priorities.mapNotNull { category ->
+                grouped[category]?.takeIf { it.childCount > 0 }
+            } + webPanel
+            desired.forEachIndexed { index, view ->
+                if (results.getChildAt(index) !== view) {
+                    (view.parent as? ViewGroup)?.removeView(view)
+                    results.addView(view, index.coerceAtMost(results.childCount))
+                }
             }
-            // The panel is a staging area only; it must not become an extra
-            // unconfigured results block.
-            results.addView(webPanel)
+            while (results.childCount > desired.size) {
+                results.removeViewAt(results.childCount - 1)
+            }
         }
 
         reorderAfterContacts = { reorderSearchSections() }
@@ -1113,7 +1120,6 @@ object PrimeSearchOverlay {
                 // Keep scroll position stable for progressive provider updates of the same query.
                 val queryChanged = lastRenderedLayoutQuery != query
                 lastRenderedLayoutQuery = query
-                results.removeAllViews()
                 if (queryChanged) scroll.scrollTo(0, 0)
                 // Preserve the algorithm's order and section boundaries. Each item is
                 // inflated with the same layout used by the drawer's adapter provider.
@@ -1541,10 +1547,10 @@ object PrimeSearchOverlay {
                 nativeSections.forEach { (category, section) ->
                     if (PrimeSearchResultPreferences.enabled(launcher, category)) {
                         section.tag = category
-                        results.addView(section)
+                        results.addView(section, results.indexOfChild(webPanel).let { if (it < 0) results.childCount else it })
                     }
                 }
-                results.addView(webPanel)
+                if (webPanel.parent == null) results.addView(webPanel)
                 renderWebPanel(query)
                 reorderSearchSections()
                 // addView/removeAllViews already schedule layout; avoid another explicit pass.
