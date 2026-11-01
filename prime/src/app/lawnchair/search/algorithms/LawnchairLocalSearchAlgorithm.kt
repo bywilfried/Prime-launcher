@@ -90,22 +90,22 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
         currentJob?.cancel()
         modelRetryJob = appState.model.runWhenModelLoaded(coroutineScope) { apps ->
             if (generation != searchGeneration) return@runWhenModelLoaded
-            // Prime keeps app-name matches separate from shortcut-title matches.
-            // Disable fuzzy app matches here so a shortcut query does not pull
-            // unrelated application tiles into the Applications category.
-            val appResults = appSearchProvider.search(
-                context, query, apps, if (primeSearch) Int.MAX_VALUE else null,
-                if (primeSearch) false else null,
-                strictTypos = primeSearch,
-            )
-            val shortcutResults = if (primeSearch) {
-                shortcutSearchProvider.searchForPrime(context, query, apps.data, appResults)
-            } else {
-                shortcutSearchProvider.search(context, appResults)
-            }
-
+            // Querying published shortcuts can be expensive. Keep it off the
+            // model/UI callback thread so typing remains responsive.
             currentJob?.cancel()
             currentJob = coroutineScope.launch {
+                val appResults = appSearchProvider.search(
+                    context, query, apps, if (primeSearch) Int.MAX_VALUE else null,
+                    if (primeSearch) false else null,
+                    strictTypos = primeSearch,
+                )
+                val shortcutResults = if (primeSearch) {
+                    shortcutSearchProvider.searchForPrime(context, query, apps.data, appResults)
+                } else {
+                    shortcutSearchProvider.search(context, appResults)
+                }
+                if (generation != searchGeneration) return@launch
+
                 // Each provider flow starts by emitting an empty list so that combine() can
                 // produce a first value without waiting for the slowest provider (e.g. web
                 // suggestions blocked on a network roundtrip, or contacts/files with no
