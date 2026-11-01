@@ -37,7 +37,9 @@ object ShortcutSearchProvider {
     // Prime searches shortcut titles independently of the owning app name.
     // Avoid querying every installed app again on every keystroke.
     private val primeCache = HashMap<String, Pair<Long, List<ShortcutInfo>>>()
-    private const val PRIME_CACHE_MS = 60_000L
+    private const val PRIME_CACHE_MS = 10 * 60_000L
+    private const val PRIME_CACHE_MAX_ENTRIES = 400
+    private val primeCacheLock = Any()
 
     fun searchForPrime(
         context: Context,
@@ -59,12 +61,18 @@ object ShortcutSearchProvider {
             .filter { app -> seenApps.add("${app.user}:${app.targetComponent?.packageName}") }
             .flatMap { app ->
                 val key = "${app.user}:${app.targetComponent?.flattenToString()}"
-                val cached = synchronized(primeCache) { primeCache[key] }
+                val cached = synchronized(primeCacheLock) { primeCache[key] }
                 val shortcuts = if (cached != null && now - cached.first < PRIME_CACHE_MS) {
                     cached.second
                 } else {
                     val loaded = runCatching { getShortcuts(app, context) }.getOrDefault(emptyList())
-                    synchronized(primeCache) { primeCache[key] = now to loaded }
+                    synchronized(primeCacheLock) {
+                        if (primeCache.size >= PRIME_CACHE_MAX_ENTRIES) {
+                            val oldest = primeCache.minByOrNull { it.value.first }?.key
+                            if (oldest != null) primeCache.remove(oldest)
+                        }
+                        primeCache[key] = now to loaded
+                    }
                     loaded
                 }
                 val matchesApp = app.targetComponent?.packageName in matchedPackages
