@@ -1512,6 +1512,13 @@ object PrimeSearchOverlay {
                             cell.addView(title, LinearLayout.LayoutParams(-1, searchLabelHeight).apply {
                                 topMargin = searchIconLabelGap
                             })
+                            // The icon keeps its native launcher click and long-press
+                            // behavior; tapping the label or empty cell space launches
+                            // the very same app instead of doing nothing.
+                            cell.isClickable = true
+                            cell.isFocusable = true
+                            cell.setOnClickListener { icon.performClick() }
+                            title.setOnClickListener { icon.performClick() }
                             parent.addView(cell, LinearLayout.LayoutParams(cellWidth, searchRowHeight))
                             enableNativeAppGestures(launcher, dialog, icon)
                         }
