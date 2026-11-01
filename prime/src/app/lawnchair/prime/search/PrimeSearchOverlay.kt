@@ -970,6 +970,12 @@ object PrimeSearchOverlay {
                     child.text?.toString() == "Device settings"
                 )
             }
+            // Prime's own contact rows include avatars and call/message actions.
+            // Do not also show the drawer's contact tiles for the same query.
+            val hasPrimeContacts = (0 until webPanel.childCount).any { index ->
+                val child = webPanel.getChildAt(index)
+                child is TextView && child.text?.toString() == "Contacts"
+            }
             val native = (0 until results.childCount).map { results.getChildAt(it) }
                 .filter { it !== webPanel }
             native.forEach { view ->
@@ -978,7 +984,8 @@ object PrimeSearchOverlay {
                 // Never carry over the previous copy when suggestions arrive asynchronously.
                 if (category == PrimeSearchResultPreferences.Category.WEB ||
                     category == PrimeSearchResultPreferences.Category.WEB_SHORTCUTS ||
-                    (hasPrimeSettings && category == PrimeSearchResultPreferences.Category.SETTINGS)) return@forEach
+                    (hasPrimeSettings && category == PrimeSearchResultPreferences.Category.SETTINGS) ||
+                    (hasPrimeContacts && category == PrimeSearchResultPreferences.Category.CONTACTS)) return@forEach
                 if (category != null && PrimeSearchResultPreferences.enabled(launcher, category)) {
                     val section = sectionFor(category)
                     if (view is ViewGroup) {
