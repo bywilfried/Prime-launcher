@@ -90,8 +90,18 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
         currentJob?.cancel()
         modelRetryJob = appState.model.runWhenModelLoaded(coroutineScope) { apps ->
             if (generation != searchGeneration) return@runWhenModelLoaded
-            val appResults = appSearchProvider.search(context, query, apps, if (primeSearch) Int.MAX_VALUE else null, if (primeSearch) app.lawnchair.prime.search.PrimeSearchResultPreferences.fuzzyApps(context) else null)
-            val shortcutResults = shortcutSearchProvider.search(context, appResults)
+            // Prime keeps app-name matches separate from shortcut-title matches.
+            // Disable fuzzy app matches here so a shortcut query does not pull
+            // unrelated application tiles into the Applications category.
+            val appResults = appSearchProvider.search(
+                context, query, apps, if (primeSearch) Int.MAX_VALUE else null,
+                if (primeSearch) false else null,
+            )
+            val shortcutResults = if (primeSearch) {
+                shortcutSearchProvider.searchForPrime(context, query, apps.data, appResults)
+            } else {
+                shortcutSearchProvider.search(context, appResults)
+            }
 
             currentJob?.cancel()
             currentJob = coroutineScope.launch {
