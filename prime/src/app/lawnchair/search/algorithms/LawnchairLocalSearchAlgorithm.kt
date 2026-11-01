@@ -96,6 +96,7 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
             val appResults = appSearchProvider.search(
                 context, query, apps, if (primeSearch) Int.MAX_VALUE else null,
                 if (primeSearch) false else null,
+                strictTypos = primeSearch,
             )
             val shortcutResults = if (primeSearch) {
                 shortcutSearchProvider.searchForPrime(context, query, apps.data, appResults)
