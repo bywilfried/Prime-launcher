@@ -46,6 +46,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import android.os.SystemClock
 
 class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: Boolean = false) : LawnchairSearchAlgorithm(context) {
 
@@ -96,11 +97,13 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
             // model/UI callback thread so typing remains responsive.
             currentJob?.cancel()
             currentJob = coroutineScope.launch {
+                val appSearchStarted = SystemClock.elapsedRealtime()
                 val appResults = appSearchProvider.search(
                     context, query, apps, if (primeSearch) Int.MAX_VALUE else null,
                     if (primeSearch) false else null,
                     strictTypos = primeSearch,
                 )
+                app.lawnchair.search.PrimeSearchTrace.record("engine appMatch len=${query.length} count=${appResults.size} ms=${SystemClock.elapsedRealtime() - appSearchStarted}")
                 if (generation != searchGeneration) return@launch
                 // Publish application matches immediately. Shortcut discovery
                 // can take much longer on devices with many installed apps.

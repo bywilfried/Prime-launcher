@@ -14,6 +14,17 @@ import java.util.Locale
 object AppSearchProvider {
 
     private val DIACRITICS_REMOVE_PATTERN = "\\p{M}+".toRegex()
+    private val wordSeparator = Regex("[^\\p{L}\\p{N}]+")
+    private data class PreparedName(val title: String, val normalized: String, val words: List<String>)
+    private val preparedNames = java.util.WeakHashMap<AppInfo, PreparedName>()
+    private fun prepared(app: AppInfo): PreparedName = synchronized(preparedNames) {
+        val title = app.title.toString()
+        preparedNames[app]?.takeIf { it.title == title } ?: run {
+            val normalized = stripDiacritics(title).lowercase(Locale.getDefault())
+            PreparedName(title, normalized, normalized.split(wordSeparator).filter { it.isNotEmpty() })
+                .also { preparedNames[app] = it }
+        }
+    }
 
     fun search(context: Context, query: String, allApps: AllAppsList, maxResultsOverride: Int? = null, fuzzyOverride: Boolean? = null, strictTypos: Boolean = false): List<SearchResult.App> {
         val prefs = PreferenceManager2.getInstance(context)
@@ -86,11 +97,12 @@ object AppSearchProvider {
         return apps.asSequence()
             .filterHiddenApps(needle, hiddenApps, hiddenAppsInSearch)
             .mapNotNull { app ->
-                val name = stripDiacritics(app.title.toString()).lowercase(Locale.getDefault())
+                val preparedName = prepared(app)
+                val name = preparedName.normalized
                 if (StringMatcherUtility.matches(needle, name, matcher)) {
                     app to 0
                 } else if (allowedEdits > 0) {
-                    val words = name.split(Regex("[^\\p{L}\\p{N}]+")).filter { it.isNotEmpty() }
+                    val words = preparedName.words
                     val distance = words.minOfOrNull { word ->
                         if (kotlin.math.abs(word.length - needle.length) > allowedEdits) {
                             allowedEdits + 1
@@ -110,6 +122,7 @@ object AppSearchProvider {
     // Bounded Damerau-Levenshtein: insertions, deletions, replacements
     // and adjacent letter transpositions count as one typo.
     private fun editDistanceWithin(a: String, b: String, limit: Int): Int {
+        if (kotlin.math.abs(a.length - b.length) > limit) return limit + 1
         val rows = Array(a.length + 1) { IntArray(b.length + 1) }
         for (i in 0..a.length) rows[i][0] = i
         for (j in 0..b.length) rows[0][j] = j

@@ -1108,6 +1108,7 @@ object PrimeSearchOverlay {
                 if (lastNativeRenderQuery == query && lastNativeRenderSignature == signature) return
                 lastNativeRenderQuery = query
                 lastNativeRenderSignature = signature
+                val renderStarted = android.os.SystemClock.elapsedRealtime()
                 results.removeAllViews()
                 scroll.scrollTo(0, 0)
                 scroll.post { if (dialog.isShowing && input.text.toString() == query) scroll.scrollTo(0, 0) }
@@ -1546,6 +1547,7 @@ object PrimeSearchOverlay {
                 renderWebPanel(query)
                 reorderSearchSections()
                 results.requestLayout()
+                app.lawnchair.search.PrimeSearchTrace.record("overlay render len=${query.length} items=${items?.size ?: 0} ms=${android.os.SystemClock.elapsedRealtime() - renderStarted}")
             }
 
             override fun clearSearchResult() {
@@ -1584,7 +1586,7 @@ object PrimeSearchOverlay {
                         }
                     }
                     pendingSearch = task
-                    webHandler.postDelayed(task, 110L)
+                    webHandler.post(task)
                 }
             }
             override fun afterTextChanged(s: Editable?) = Unit
