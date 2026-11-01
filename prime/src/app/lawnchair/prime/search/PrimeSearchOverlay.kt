@@ -1094,9 +1094,20 @@ object PrimeSearchOverlay {
                 }.start()
             }, 250L)
         }
+        // Avoid tearing down clickable views when an asynchronous provider
+        // reports the exact same native results again.
+        var lastNativeRenderQuery: String? = null
+        var lastNativeRenderSignature: List<String>? = null
         val callback = object : SearchCallback<BaseAllAppsAdapter.AdapterItem> {
             override fun onSearchResult(query: String, items: ArrayList<BaseAllAppsAdapter.AdapterItem>?) {
                 if (!dialog.isShowing || input.text.toString() != query) return
+                val signature = items.orEmpty().map { adapterItem ->
+                    val target = (adapterItem as? SearchAdapterItem)?.searchTarget
+                    if (target != null) "${target.resultType}:${target.layoutType}:${target.id}" else adapterItem.toString()
+                }
+                if (lastNativeRenderQuery == query && lastNativeRenderSignature == signature) return
+                lastNativeRenderQuery = query
+                lastNativeRenderSignature = signature
                 results.removeAllViews()
                 scroll.scrollTo(0, 0)
                 scroll.post { if (dialog.isShowing && input.text.toString() == query) scroll.scrollTo(0, 0) }
