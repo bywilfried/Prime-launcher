@@ -41,6 +41,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -99,12 +101,18 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                     if (primeSearch) false else null,
                     strictTypos = primeSearch,
                 )
-                val shortcutResults = if (primeSearch) {
-                    shortcutSearchProvider.searchForPrime(context, query, apps.data, appResults)
-                } else {
-                    shortcutSearchProvider.search(context, appResults)
-                }
                 if (generation != searchGeneration) return@launch
+                // Publish application matches immediately. Shortcut discovery
+                // can take much longer on devices with many installed apps.
+                val shortcutResultsFlow = flow {
+                    emit(emptyList<SearchResult.Shortcut>())
+                    val shortcuts = if (primeSearch) {
+                        shortcutSearchProvider.searchForPrime(context, query, apps.data, appResults)
+                    } else {
+                        shortcutSearchProvider.search(context, appResults)
+                    }
+                    emit(shortcuts)
+                }.flowOn(Dispatchers.IO)
 
                 // Each provider flow starts by emitting an empty list so that combine() can
                 // produce a first value without waiting for the slowest provider (e.g. web
@@ -126,7 +134,9 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                     resultsArray.toList().flatten()
                 }
 
-                nonAppProvidersFlow.collect { nonAppResults ->
+                combine(nonAppProvidersFlow, shortcutResultsFlow) { nonAppResults, shortcutResults ->
+                    nonAppResults to shortcutResults
+                }.collect { (nonAppResults, shortcutResults) ->
                     val calcResult = CalculatorSearchProvider.search(context, query)
                         .firstOrNull()
 
