@@ -33,6 +33,54 @@ object ShortcutSearchProvider {
             .toList()
     }
 
+
+    // Prime searches shortcut titles independently of the owning app name.
+    // Avoid querying every installed app again on every keystroke.
+    private val primeCache = HashMap<String, Pair<Long, List<ShortcutInfo>>>()
+    private const val PRIME_CACHE_MS = 60_000L
+
+    fun searchForPrime(
+        context: Context,
+        query: String,
+        allApps: List<AppInfo>,
+        matchedApps: List<SearchResult.App>,
+    ): List<SearchResult.Shortcut> {
+        if (!context.isDefaultLauncher() || query.isBlank()) return emptyList()
+        fun normalize(value: String): String =
+            java.text.Normalizer.normalize(value, java.text.Normalizer.Form.NFKD)
+                .replace(Regex("\\p{M}+"), "")
+                .lowercase(java.util.Locale.getDefault())
+        val needle = normalize(query.trim())
+        val matchedPackages = matchedApps.mapNotNull { it.data.targetComponent?.packageName }.toSet()
+        val now = android.os.SystemClock.elapsedRealtime()
+        val seenApps = HashSet<String>()
+        val seenShortcuts = HashSet<String>()
+        return allApps.asSequence()
+            .filter { app -> seenApps.add("${app.user}:${app.targetComponent?.packageName}") }
+            .flatMap { app ->
+                val key = "${app.user}:${app.targetComponent?.flattenToString()}"
+                val cached = synchronized(primeCache) { primeCache[key] }
+                val shortcuts = if (cached != null && now - cached.first < PRIME_CACHE_MS) {
+                    cached.second
+                } else {
+                    val loaded = runCatching { getShortcuts(app, context) }.getOrDefault(emptyList())
+                    synchronized(primeCache) { primeCache[key] = now to loaded }
+                    loaded
+                }
+                val matchesApp = app.targetComponent?.packageName in matchedPackages
+                shortcuts.asSequence().filter { shortcut ->
+                    val shortName = shortcut.shortLabel?.toString().orEmpty()
+                    val longName = shortcut.longLabel?.toString().orEmpty()
+                    matchesApp || normalize(shortName).contains(needle) || normalize(longName).contains(needle)
+                }
+            }
+            .filter { shortcut ->
+                seenShortcuts.add("${shortcut.userHandle}:${shortcut.id}:${shortcut.activity}")
+            }
+            .map { SearchResult.Shortcut(data = it) }
+            .toList()
+    }
+
     private fun getShortcuts(app: AppInfo, context: Context): List<ShortcutInfo> {
         val shortcuts = ShortcutRequest(context.launcher, app.user)
             .withContainer(app.targetComponent)
