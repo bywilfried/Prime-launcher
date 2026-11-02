@@ -1041,7 +1041,6 @@ object PrimeSearchOverlay {
             detailPage.visibility = View.GONE
             input.setText(originalDetailQuery)
             input.setSelection(input.text.length)
-            lastSubmittedQuery = originalDetailQuery
             scroll.visibility = View.VISIBLE
             scroll.post { scroll.scrollTo(0, savedScrollY) }
             container.requestLayout()
