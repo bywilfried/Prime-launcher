@@ -1008,6 +1008,7 @@ object PrimeSearchOverlay {
             addView(detailScroll, LinearLayout.LayoutParams(-1, 0, 1f).apply {
                 marginStart = (4 * density).toInt()
                 marginEnd = (4 * density).toInt()
+                topMargin = (16 * density).toInt()
                 bottomMargin = (4 * density).toInt()
             })
             addView(detailReduce, LinearLayout.LayoutParams(-1, -2))
