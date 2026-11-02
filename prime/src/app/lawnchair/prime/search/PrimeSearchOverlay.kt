@@ -946,6 +946,8 @@ object PrimeSearchOverlay {
         // Detail navigation retains the existing search result views and query.
         var detailOpen = false
         var savedScrollY = 0
+        var returnCardScrollY = 0
+        var detailClosing = false
         var detailCard: LinearLayout? = null
         var detailParent: ViewGroup? = null
         var detailIndex = 0
@@ -1014,7 +1016,7 @@ object PrimeSearchOverlay {
             addView(detailReduce, LinearLayout.LayoutParams(-1, -2))
         }
         container.addView(detailPage, LinearLayout.LayoutParams(-1, 0, 1f))
-        fun closeDetail() {
+        fun finishCloseDetail() {
             if (!detailOpen) return
             val card = detailCard
             val parent = detailParent
@@ -1043,8 +1045,21 @@ object PrimeSearchOverlay {
             input.setText(originalDetailQuery)
             input.setSelection(input.text.length)
             scroll.visibility = View.VISIBLE
-            scroll.post { scroll.scrollTo(0, savedScrollY) }
+            scroll.post { scroll.scrollTo(0, returnCardScrollY) }
+            detailClosing = false
             container.requestLayout()
+        }
+        fun closeDetail() {
+            if (!detailOpen || detailClosing) return
+            detailClosing = true
+            dialog.hideKeyboardForSelection()
+            detailScroll.animate().cancel()
+            detailScroll.pivotY = 0f
+            detailScroll.animate().scaleY(0.72f).alpha(0.25f)
+                .setDuration(260L)
+                .setInterpolator(android.view.animation.AccelerateDecelerateInterpolator())
+                .withEndAction { finishCloseDetail() }
+                .start()
         }
         detailBack.setOnClickListener { closeDetail() }
         detailReduce.setOnClickListener { closeDetail() }
@@ -1059,6 +1074,8 @@ object PrimeSearchOverlay {
             if (detailOpen) return
             val parent = card.parent as? ViewGroup ?: return
             savedScrollY = scroll.scrollY
+            val wrapper = (parent.parent as? ViewGroup)
+            returnCardScrollY = (wrapper?.top ?: savedScrollY).coerceAtLeast(0)
             detailIndex = parent.indexOfChild(card)
             detailParent = parent
             detailCard = card
@@ -1744,16 +1761,36 @@ object PrimeSearchOverlay {
                             // The drawer row centers its label vertically by default.
                             // Shift only text upward so the shortcut name starts at the
                             // top of the leading icon, without moving either icon.
-                            fun alignShortcutText(node: View) {
-                                if (node is TextView) {
-                                    node.translationY = -(12 * density)
-                                } else if (node is ViewGroup) {
-                                    for (childIndex in 0 until node.childCount) {
-                                        alignShortcutText(node.getChildAt(childIndex))
-                                    }
+                            // Render the shortcut title at a fixed top baseline.
+                            // Translating the drawer's nested label was unreliable
+                            // because its parent may clip translated descendants.
+                            fun findShortcutTitle(node: View): TextView? {
+                                if (node is TextView && !node.text.isNullOrBlank()) return node
+                                if (node is ViewGroup) for (childIndex in 0 until node.childCount) {
+                                    findShortcutTitle(node.getChildAt(childIndex))?.let { return it }
                                 }
+                                return null
                             }
-                            alignShortcutText(view)
+                            findShortcutTitle(view)?.let { nativeTitle ->
+                                val title = TextView(launcher).apply {
+                                    text = nativeTitle.text
+                                    setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+                                    setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
+                                    maxLines = 1
+                                    ellipsize = android.text.TextUtils.TruncateAt.END
+                                    gravity = Gravity.CENTER_VERTICAL
+                                    isClickable = false
+                                    isFocusable = false
+                                }
+                                nativeTitle.alpha = 0f
+                                container.addView(title, FrameLayout.LayoutParams(
+                                    -1, (25 * density).toInt(), Gravity.TOP,
+                                ).apply {
+                                    marginStart = (68 * density).toInt()
+                                    marginEnd = (52 * density).toInt()
+                                    topMargin = (9 * density).toInt()
+                                })
+                            }
                             val appName = runCatching {
                                 launcher.packageManager.getApplicationLabel(
                                     launcher.packageManager.getApplicationInfo(appPackage, 0)
