@@ -1771,9 +1771,19 @@ object PrimeSearchOverlay {
                                 view.paddingLeft, view.paddingTop,
                                 view.paddingRight + (44 * density).toInt(), view.paddingBottom,
                             )
-                            // Preserve the drawer's native shortcut row: its title,
-                            // leading icon and click handling belong to the same view.
-                            // Do not draw a duplicate title over the native row.
+                            // Reposition only the native title, never the shortcut
+                            // icon or its clickable row. No duplicate text overlay.
+                            fun alignNativeShortcutTitle(node: View) {
+                                if (node is TextView && !node.text.isNullOrBlank()) {
+                                    node.translationY = -(10 * density)
+                                    node.gravity = (node.gravity and Gravity.HORIZONTAL_GRAVITY_MASK) or Gravity.TOP
+                                    return
+                                }
+                                if (node is ViewGroup) for (i in 0 until node.childCount) {
+                                    alignNativeShortcutTitle(node.getChildAt(i))
+                                }
+                            }
+                            alignNativeShortcutTitle(view)
                             val appName = runCatching {
                                 launcher.packageManager.getApplicationLabel(
                                     launcher.packageManager.getApplicationInfo(appPackage, 0)
