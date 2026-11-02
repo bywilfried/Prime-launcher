@@ -956,6 +956,15 @@ object PrimeSearchOverlay {
             setPadding((8 * density).toInt(), (8 * density).toInt(),
                 (8 * density).toInt(), (12 * density).toInt())
         }
+        val detailHeading = TextView(launcher).apply {
+            textSize = 16f
+            setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setPadding((18 * density).toInt(), (12 * density).toInt(),
+                (12 * density).toInt(), (8 * density).toInt())
+            visibility = View.GONE
+        }
+        detailContent.addView(detailHeading, LinearLayout.LayoutParams(-1, -2))
         // The expanded category is ONE full-height card, not a wrap-content
         // card sitting inside a transparent scrolling viewport.
         val detailScroll = ScrollView(launcher).apply {
@@ -1063,8 +1072,8 @@ object PrimeSearchOverlay {
             dialog.hideKeyboardForSelection()
             detailScroll.animate().cancel()
             detailScroll.pivotY = 0f
-            detailScroll.animate().scaleY(0.82f).alpha(1f)
-                .setDuration(260L)
+            detailScroll.animate().scaleY(0.82f).alpha(0.88f)
+                .setDuration(310L)
                 .setInterpolator(android.view.animation.AccelerateDecelerateInterpolator())
                 .withEndAction { finishCloseDetail() }
                 .start()
@@ -1091,6 +1100,28 @@ object PrimeSearchOverlay {
             detailCard = card
             detailOpen = true
             parent.removeView(card)
+            val category = card.tag as? PrimeSearchResultPreferences.Category
+            val heading = when (category) {
+                PrimeSearchResultPreferences.Category.APPS -> "Applications"
+                PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> "Raccourcis d'app"
+                PrimeSearchResultPreferences.Category.CONTACTS -> "Contacts"
+                PrimeSearchResultPreferences.Category.FILES -> "Fichiers"
+                PrimeSearchResultPreferences.Category.WEB -> "Suggestions Web"
+                PrimeSearchResultPreferences.Category.WEB_SHORTCUTS -> "Raccourcis Web"
+                PrimeSearchResultPreferences.Category.CALENDAR -> "Événements de l'agenda"
+                PrimeSearchResultPreferences.Category.REMINDERS -> "Tâches"
+                PrimeSearchResultPreferences.Category.NOTIFICATIONS -> "Historique des notifications"
+                PrimeSearchResultPreferences.Category.SETTINGS -> "Paramètres de l'appareil"
+                else -> null
+            }
+            // Many sections already contain their own heading. Add a matching
+            // header only when one is missing, keeping the compact position.
+            val existingHeading = (0 until card.childCount).any { index ->
+                val child = card.getChildAt(index)
+                child is TextView && child.text?.toString() == heading
+            }
+            detailHeading.text = heading.orEmpty()
+            detailHeading.visibility = if (heading != null && !existingHeading) View.VISIBLE else View.GONE
             detailContent.addView(card, LinearLayout.LayoutParams(-1, -2))
             originalDetailQuery = input.text.toString()
             applyDetailFilter()
