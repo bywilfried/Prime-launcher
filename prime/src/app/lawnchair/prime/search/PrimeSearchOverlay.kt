@@ -1758,39 +1758,9 @@ object PrimeSearchOverlay {
                                 view.paddingLeft, view.paddingTop,
                                 view.paddingRight + (44 * density).toInt(), view.paddingBottom,
                             )
-                            // The drawer row centers its label vertically by default.
-                            // Shift only text upward so the shortcut name starts at the
-                            // top of the leading icon, without moving either icon.
-                            // Render the shortcut title at a fixed top baseline.
-                            // Translating the drawer's nested label was unreliable
-                            // because its parent may clip translated descendants.
-                            fun findShortcutTitle(node: View): TextView? {
-                                if (node is TextView && !node.text.isNullOrBlank()) return node
-                                if (node is ViewGroup) for (childIndex in 0 until node.childCount) {
-                                    findShortcutTitle(node.getChildAt(childIndex))?.let { return it }
-                                }
-                                return null
-                            }
-                            findShortcutTitle(view)?.let { nativeTitle ->
-                                val title = TextView(launcher).apply {
-                                    text = nativeTitle.text
-                                    setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
-                                    setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
-                                    maxLines = 1
-                                    ellipsize = android.text.TextUtils.TruncateAt.END
-                                    gravity = Gravity.CENTER_VERTICAL
-                                    isClickable = false
-                                    isFocusable = false
-                                }
-                                nativeTitle.alpha = 0f
-                                container.addView(title, FrameLayout.LayoutParams(
-                                    -1, (25 * density).toInt(), Gravity.TOP,
-                                ).apply {
-                                    marginStart = (68 * density).toInt()
-                                    marginEnd = (52 * density).toInt()
-                                    topMargin = (9 * density).toInt()
-                                })
-                            }
+                            // Preserve the drawer's native shortcut row: its title,
+                            // leading icon and click handling belong to the same view.
+                            // Do not draw a duplicate title over the native row.
                             val appName = runCatching {
                                 launcher.packageManager.getApplicationLabel(
                                     launcher.packageManager.getApplicationInfo(appPackage, 0)
