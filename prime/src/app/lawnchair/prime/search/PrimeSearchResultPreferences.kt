@@ -353,6 +353,37 @@ object PrimeSearchResultPreferences {
         prefs(context).edit().putInt("icon_size_percent", percent.coerceIn(60, 150)).apply()
     }
 
+    fun appResultsFollowGeneral(context: Context): Boolean =
+        prefs(context).getBoolean("app_results_follow_general", true)
+
+    fun setAppResultsFollowGeneral(context: Context, follow: Boolean) {
+        prefs(context).edit().putBoolean("app_results_follow_general", follow).apply()
+    }
+
+    fun appResultsColumns(context: Context): Int =
+        if (appResultsFollowGeneral(context)) appsPerRow(context)
+        else prefs(context).getInt("app_results_columns", 5).coerceIn(3, 5)
+
+    fun setAppResultsColumns(context: Context, columns: Int) {
+        prefs(context).edit().putInt("app_results_columns", columns.coerceIn(3, 5)).apply()
+    }
+
+    fun appResultsRows(context: Context): Int =
+        if (appResultsFollowGeneral(context)) zeroStateRows(context)
+        else prefs(context).getInt("app_results_rows", 2).coerceIn(1, 3)
+
+    fun setAppResultsRows(context: Context, rows: Int) {
+        prefs(context).edit().putInt("app_results_rows", rows.coerceIn(1, 3)).apply()
+    }
+
+    fun appResultsIconSizePercent(context: Context): Int =
+        if (appResultsFollowGeneral(context)) iconSizePercent(context)
+        else prefs(context).getInt("app_results_icon_percent", 100).coerceIn(60, 150)
+
+    fun setAppResultsIconSizePercent(context: Context, percent: Int) {
+        prefs(context).edit().putInt("app_results_icon_percent", percent.coerceIn(60, 150)).apply()
+    }
+
     fun appsPerRow(context: Context): Int =
         prefs(context).getInt("apps_per_row", 4).coerceIn(3, 6)
 

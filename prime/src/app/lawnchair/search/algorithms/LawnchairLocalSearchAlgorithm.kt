@@ -76,7 +76,7 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
         // IME visibility/focus changes can request the same drawer search again.
         // Keep the current provider flows and displayed results instead of
         // restarting network suggestions for an unchanged query.
-        if (query == lastQuery) {
+        if (query == lastQuery && lastDeliveredItems != null) {
             if (callback !== lastCallback) {
                 lastCallback = callback
                 lastDeliveredItems?.let { items ->

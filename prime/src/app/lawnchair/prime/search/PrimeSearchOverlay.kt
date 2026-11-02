@@ -1142,7 +1142,9 @@ object PrimeSearchOverlay {
                 // Preserve the algorithm's order and section boundaries. Each item is
                 // inflated with the same layout used by the drawer's adapter provider.
                 val inflater = LayoutInflater.from(launcher)
-                val columns = PrimeSearchResultPreferences.appsPerRow(launcher)
+                val columns = PrimeSearchResultPreferences.appResultsColumns(launcher)
+                val maxAppTiles = columns * PrimeSearchResultPreferences.appResultsRows(launcher)
+                var displayedAppTiles = 0
                 // Each row is centered independently. Fixed-width cells keep
                 // identical spacing whether the row has 1, 2 or 6 apps.
                 val gridWidth = (if (floating) {
@@ -1153,7 +1155,7 @@ object PrimeSearchOverlay {
                 // Match the zero-state Prime Search icon and label settings.
                 // This is local to the Prime overlay; drawer search is untouched.
                 val searchIconSize = (48 * density *
-                    PrimeSearchResultPreferences.iconSizePercent(launcher) / 100f).toInt().coerceAtLeast(1)
+                    PrimeSearchResultPreferences.appResultsIconSizePercent(launcher) / 100f).toInt().coerceAtLeast(1)
                 val searchLabelLines = if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
                 val searchLabelPaint = android.text.TextPaint().apply {
                     textSize = 11f * launcher.resources.displayMetrics.scaledDensity
@@ -1243,8 +1245,12 @@ object PrimeSearchOverlay {
                             if (!renderedApplicationIds.add(appId)) return@forEach
                         }
                     }
-                    val isAppIcon = item.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT
+                    val isAppIcon = item.searchTarget.resultType ==
+                        SearchTargetCompat.RESULT_TYPE_APPLICATION &&
+                        item.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT
+                    if (isAppIcon && displayedAppTiles >= maxAppTiles) return@forEach
                     if (isAppIcon) {
+                        displayedAppTiles++
                         if (appRow == null || appsInRow == columns) {
                             appRow = LinearLayout(launcher).apply {
                                 orientation = LinearLayout.HORIZONTAL
