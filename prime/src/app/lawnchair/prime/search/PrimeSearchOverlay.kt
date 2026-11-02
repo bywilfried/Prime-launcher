@@ -1818,62 +1818,47 @@ object PrimeSearchOverlay {
                                 view.paddingLeft, view.paddingTop,
                                 view.paddingRight + (44 * density).toInt(), view.paddingBottom,
                             )
-                            // The drawer vertically centers its native label. Keep
-                            // its icon and click target, but render the title and app
-                            // subtitle as one top-aligned block in our own layout.
-                            val nativeLabels = mutableListOf<TextView>()
-                            fun collectShortcutLabels(node: View) {
-                                if (node is TextView && !node.text.isNullOrBlank()) nativeLabels.add(node)
-                                if (node is ViewGroup) for (childIndex in 0 until node.childCount) {
-                                    collectShortcutLabels(node.getChildAt(childIndex))
+                            // Use the actual drawer title and its text container,
+                            // never the first TextView (SearchResultIcon is also text).
+                            // Keep the native shortcut icon and click target intact.
+                            val nativeTitle = view.findViewById<TextView>(com.android.launcher3.R.id.title)
+                            val textRows = view.findViewById<LinearLayout>(com.android.launcher3.R.id.text_rows)
+                            val appName = runCatching {
+                                launcher.packageManager.getApplicationLabel(
+                                    launcher.packageManager.getApplicationInfo(appPackage, 0)
+                                ).toString()
+                            }.getOrDefault(appPackage)
+                            if (nativeTitle != null && textRows != null) {
+                                textRows.orientation = LinearLayout.VERTICAL
+                                (textRows.layoutParams as? LinearLayout.LayoutParams)?.let { params ->
+                                    params.gravity = Gravity.TOP
+                                    params.topMargin = (8 * density).toInt()
+                                    textRows.layoutParams = params
                                 }
-                            }
-                            collectShortcutLabels(view)
-                            val shortcutTitle = nativeLabels.firstOrNull()?.text?.toString()
-                            if (!shortcutTitle.isNullOrBlank()) {
-                                // Hide native labels only when a replacement can be
-                                // rendered. Preserve the original icon and actions.
-                                nativeLabels.first().setTextColor(Color.TRANSPARENT)
-                                val alignedTitle = TextView(launcher).apply {
-                                    text = shortcutTitle
+                                textRows.setPadding(textRows.paddingLeft, 0,
+                                    textRows.paddingRight, 0)
+                                nativeTitle.setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+                                nativeTitle.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
+                                nativeTitle.gravity = Gravity.TOP
+                                nativeTitle.maxLines = 1
+                                nativeTitle.ellipsize = android.text.TextUtils.TruncateAt.END
+                                val nativeSubtitle = view.findViewById<TextView>(com.android.launcher3.R.id.subtitle)
+                                nativeSubtitle?.visibility = View.GONE
+                                val appSubtitle = TextView(launcher).apply {
+                                    text = appName
                                     setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
-                                    setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
+                                    alpha = 0.7f
+                                    setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f)
                                     maxLines = 1
                                     ellipsize = android.text.TextUtils.TruncateAt.END
                                     gravity = Gravity.TOP
                                     isClickable = false
                                     isFocusable = false
                                 }
-                                container.addView(alignedTitle, FrameLayout.LayoutParams(
-                                    -1, (24 * density).toInt(), Gravity.TOP,
-                                ).apply {
-                                    marginStart = (68 * density).toInt()
-                                    marginEnd = (48 * density).toInt()
-                                    topMargin = (8 * density).toInt()
+                                textRows.addView(appSubtitle, LinearLayout.LayoutParams(-1, -2).apply {
+                                    topMargin = (4 * density).toInt()
                                 })
                             }
-                            val appName = runCatching {
-                                launcher.packageManager.getApplicationLabel(
-                                    launcher.packageManager.getApplicationInfo(appPackage, 0)
-                                ).toString()
-                            }.getOrDefault(appPackage)
-                            val subtitle = TextView(launcher).apply {
-                                text = appName
-                                setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
-                                alpha = 0.7f
-                                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f)
-                                maxLines = 1
-                                ellipsize = android.text.TextUtils.TruncateAt.END
-                                gravity = Gravity.CENTER_VERTICAL
-                                // Align subtitle with the shortcut action label,
-                                // not with the leading shortcut icon.
-                                setPadding((68 * density).toInt(), 0, (48 * density).toInt(), 0)
-                            }
-                            container.addView(subtitle, FrameLayout.LayoutParams(
-                                -1, (24 * density).toInt(), Gravity.TOP,
-                            ).apply {
-                                topMargin = (32 * density).toInt()
-                            })
                             parent.addView(container, index, (originalParams as? LinearLayout.LayoutParams
                                 ?: LinearLayout.LayoutParams(-1, -2)).apply {
                                 height = (66 * density).toInt()
