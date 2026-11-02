@@ -1210,7 +1210,7 @@ object PrimeSearchOverlay {
                             if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
                         ) * 2 + (52 * density).toInt()
                     } else if (category == PrimeSearchResultPreferences.Category.APP_SHORTCUTS) {
-                        (250 * density).toInt()
+                        (188 * density).toInt()
                     } else (190 * density).toInt()
                     // Cards are cached across asynchronous contact/web refreshes.
                     // Detach from the previous clipped holder before reparenting.
@@ -1739,7 +1739,7 @@ object PrimeSearchOverlay {
                             val originalParams = view.layoutParams
                             parent.removeView(view)
                             val container = android.widget.FrameLayout(launcher).apply {
-                                minimumHeight = (72 * density).toInt()
+                                minimumHeight = (66 * density).toInt()
                             }
                             container.addView(view, android.widget.FrameLayout.LayoutParams(
                                 -1, (56 * density).toInt(), Gravity.TOP,
@@ -1783,11 +1783,11 @@ object PrimeSearchOverlay {
                             container.addView(subtitle, FrameLayout.LayoutParams(
                                 -1, (24 * density).toInt(), Gravity.TOP,
                             ).apply {
-                                topMargin = (40 * density).toInt()
+                                topMargin = (34 * density).toInt()
                             })
                             parent.addView(container, index, (originalParams as? LinearLayout.LayoutParams
                                 ?: LinearLayout.LayoutParams(-1, -2)).apply {
-                                height = (72 * density).toInt()
+                                height = (66 * density).toInt()
                             })
                         }
                     }
