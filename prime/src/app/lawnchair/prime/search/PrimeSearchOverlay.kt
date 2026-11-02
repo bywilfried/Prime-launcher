@@ -938,6 +938,7 @@ object PrimeSearchOverlay {
             sections.sortedBy { (category, _) -> order.indexOf(category) }
                 .forEach { (_, views) -> views.forEach(webPanel::addView) }
         }
+        val categoryCards = mutableMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
         fun reorderSearchSections() {
             val priorities = PrimeSearchResultPreferences.order(launcher)
             val headingCategories = mapOf(
@@ -955,9 +956,19 @@ object PrimeSearchOverlay {
             val grouped = linkedMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
             fun sectionFor(category: PrimeSearchResultPreferences.Category): LinearLayout =
                 grouped.getOrPut(category) {
-                    LinearLayout(launcher).apply {
-                        orientation = LinearLayout.VERTICAL
-                        tag = category
+                    categoryCards.getOrPut(category) {
+                        LinearLayout(launcher).apply {
+                            orientation = LinearLayout.VERTICAL
+                            tag = category
+                            background = GradientDrawable().apply {
+                                cornerRadius = 16 * density
+                                setColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND))
+                                setStroke((density).toInt().coerceAtLeast(1),
+                                    themed(ThemeColorRole.PRIME_SEARCH_BORDER))
+                            }
+                            setPadding((8 * density).toInt(), (8 * density).toInt(),
+                                (8 * density).toInt(), (8 * density).toInt())
+                        }
                     }
                 }
             // When the dedicated Prime settings provider has results, use it
@@ -988,7 +999,8 @@ object PrimeSearchOverlay {
                     (hasPrimeContacts && category == PrimeSearchResultPreferences.Category.CONTACTS)) return@forEach
                 if (category != null && PrimeSearchResultPreferences.enabled(launcher, category)) {
                     val section = sectionFor(category)
-                    if (view is ViewGroup) {
+                    if (view is ViewGroup && view !== section) {
+                        section.removeAllViews()
                         while (view.childCount > 0) {
                             val child = view.getChildAt(0)
                             view.removeViewAt(0)
@@ -998,6 +1010,7 @@ object PrimeSearchOverlay {
                 }
             }
             var currentCategory: PrimeSearchResultPreferences.Category? = null
+            val dynamicCategories = mutableSetOf<PrimeSearchResultPreferences.Category>()
             while (webPanel.childCount > 0) {
                 val child = webPanel.getChildAt(0)
                 webPanel.removeViewAt(0)
@@ -1005,12 +1018,20 @@ object PrimeSearchOverlay {
                 if (headingCategory != null) currentCategory = headingCategory
                 val category = currentCategory
                 if (category != null && PrimeSearchResultPreferences.enabled(launcher, category)) {
-                    sectionFor(category).addView(child)
+                    val section = sectionFor(category)
+                    if (dynamicCategories.add(category)) section.removeAllViews()
+                    section.addView(child)
                 }
             }
             results.removeAllViews()
             priorities.forEach { category ->
-                grouped[category]?.takeIf { it.childCount > 0 }?.let(results::addView)
+                grouped[category]?.takeIf { it.childCount > 0 }?.let { card ->
+                    results.addView(card, LinearLayout.LayoutParams(-1, -2).apply {
+                        val margin = (6 * density).toInt()
+                        topMargin = margin
+                        bottomMargin = margin
+                    })
+                }
             }
             // The panel is a staging area only; it must not become an extra
             // unconfigured results block.
