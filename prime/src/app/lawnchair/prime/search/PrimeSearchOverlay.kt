@@ -1803,9 +1803,40 @@ object PrimeSearchOverlay {
                                 view.paddingLeft, view.paddingTop,
                                 view.paddingRight + (44 * density).toInt(), view.paddingBottom,
                             )
-                            // Keep the native shortcut title and icon together.
-                            // Do not translate nested labels: the drawer clips them
-                            // and can produce missing or overlapping text.
+                            // The drawer vertically centers its native label. Keep
+                            // its icon and click target, but render the title and app
+                            // subtitle as one top-aligned block in our own layout.
+                            val nativeLabels = mutableListOf<TextView>()
+                            fun collectShortcutLabels(node: View) {
+                                if (node is TextView && !node.text.isNullOrBlank()) nativeLabels.add(node)
+                                if (node is ViewGroup) for (childIndex in 0 until node.childCount) {
+                                    collectShortcutLabels(node.getChildAt(childIndex))
+                                }
+                            }
+                            collectShortcutLabels(view)
+                            val shortcutTitle = nativeLabels.firstOrNull()?.text?.toString()
+                            if (!shortcutTitle.isNullOrBlank()) {
+                                // Hide native labels only when a replacement can be
+                                // rendered. Preserve the original icon and actions.
+                                nativeLabels.forEach { it.alpha = 0f }
+                                val alignedTitle = TextView(launcher).apply {
+                                    text = shortcutTitle
+                                    setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+                                    setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
+                                    maxLines = 1
+                                    ellipsize = android.text.TextUtils.TruncateAt.END
+                                    gravity = Gravity.TOP
+                                    isClickable = false
+                                    isFocusable = false
+                                }
+                                container.addView(alignedTitle, FrameLayout.LayoutParams(
+                                    -1, (24 * density).toInt(), Gravity.TOP,
+                                ).apply {
+                                    marginStart = (68 * density).toInt()
+                                    marginEnd = (48 * density).toInt()
+                                    topMargin = (8 * density).toInt()
+                                })
+                            }
                             val appName = runCatching {
                                 launcher.packageManager.getApplicationLabel(
                                     launcher.packageManager.getApplicationInfo(appPackage, 0)
@@ -1826,7 +1857,7 @@ object PrimeSearchOverlay {
                             container.addView(subtitle, FrameLayout.LayoutParams(
                                 -1, (24 * density).toInt(), Gravity.TOP,
                             ).apply {
-                                topMargin = (29 * density).toInt()
+                                topMargin = (32 * density).toInt()
                             })
                             parent.addView(container, index, (originalParams as? LinearLayout.LayoutParams
                                 ?: LinearLayout.LayoutParams(-1, -2)).apply {
