@@ -617,41 +617,81 @@ fun PrimeSearchPreference() {
                                     valueRange = 60f..150f,
                                 )
                             }
+                            // Real installed icons, built once when opening the dialog.
+                            // Sliders only recompose the grid, never decode icons again.
+                            val previewShape = app.lawnchair.preferences2.PreferenceManager2
+                                .getInstance(context).iconShape.firstCached()
+                            val installedPreview = remember(context, previewShape.key) {
+                                val pm = context.packageManager
+                                val installed = pm.getInstalledApplications(0)
+                                    .asSequence()
+                                    .filter { pm.getLaunchIntentForPackage(it.packageName) != null }
+                                    .sortedBy { pm.getApplicationLabel(it).toString().lowercase() }
+                                    .take(15).toList()
+                                com.android.launcher3.icons.LauncherIcons.obtain(context).use { factory ->
+                                    installed.mapNotNull { app ->
+                                        runCatching {
+                                            pm.getApplicationLabel(app).toString() to
+                                                factory.createPrimeIconBitmap(
+                                                    pm.getApplicationIcon(app.packageName),
+                                                    android.os.Process.myUserHandle(),
+                                                    previewShape,
+                                                ).icon.asImageBitmap()
+                                        }.getOrNull()
+                                    }
+                                }
+                            }
                             Text("Aperçu des résultats d'applications")
+                            val resultCardColor = ThemeColors.resolve(
+                                context, ThemeProfile.current(context),
+                                ThemeColorRole.PRIME_SEARCH_CARD_BACKGROUND, variant)
+                            val resultCardBorder = ThemeColors.resolve(
+                                context, ThemeProfile.current(context),
+                                ThemeColorRole.PRIME_SEARCH_CARD_BORDER, variant)
                             androidx.compose.material3.Surface(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                                color = androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant,
+                                color = androidx.compose.ui.graphics.Color(resultCardColor),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp, androidx.compose.ui.graphics.Color(resultCardBorder)),
                             ) {
                                 Column(modifier = Modifier.padding(8.dp)) {
                                     Text("Applications", modifier = Modifier.padding(6.dp),
                                         style = androidx.compose.material3.MaterialTheme.typography.titleSmall)
                                     repeat(effectiveRows) { rowIndex ->
-                                        Row(modifier = Modifier.fillMaxWidth(),
+                                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                                             horizontalArrangement = Arrangement.SpaceEvenly) {
                                             repeat(effectiveColumns) { columnIndex ->
+                                                val index = rowIndex * effectiveColumns + columnIndex
+                                                val app = installedPreview.getOrNull(index)
                                                 Column(modifier = Modifier.weight(1f),
                                                     horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
-                                                    androidx.compose.material3.Surface(
-                                                        modifier = Modifier.size((48f * effectiveIconPercent / 100f).dp),
-                                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer,
+                                                    androidx.compose.foundation.layout.Box(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .height((48f * effectiveIconPercent / 100f).dp),
+                                                        contentAlignment = androidx.compose.ui.Alignment.Center,
                                                     ) {
-                                                        androidx.compose.foundation.layout.Box(
-                                                            contentAlignment = androidx.compose.ui.Alignment.Center) {
-                                                            Text("${rowIndex * effectiveColumns + columnIndex + 1}",
-                                                                style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
+                                                        if (app != null) {
+                                                            androidx.compose.foundation.Image(
+                                                                bitmap = app.second,
+                                                                contentDescription = null,
+                                                                modifier = Modifier.size(
+                                                                    (48f * effectiveIconPercent / 100f).dp),
+                                                            )
                                                         }
                                                     }
-                                                    Text("App", maxLines = 1,
-                                                        style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
+                                                    Text(app?.first.orEmpty(), maxLines = 1,
+                                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                                        style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                                                 }
                                             }
                                         }
                                     }
                                 }
                             }
-                        } else                         if (selected == PrimeSearchResultPreferences.Category.NOTIFICATIONS) {
+                        } else if (selected == PrimeSearchResultPreferences.Category.NOTIFICATIONS) {
                             val granted = PrimeSearchPermissions.granted(context, selected)
                             Text(if (granted) "Accès aux notifications autorisé" else "Accès aux notifications non autorisé")
                             TextButton(onClick = {
