@@ -37,6 +37,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.input.pointer.pointerInput
@@ -649,8 +651,39 @@ fun PrimeSearchPreference() {
                             val resultCardBorder = ThemeColors.resolve(
                                 context, ThemeProfile.current(context),
                                 ThemeColorRole.PRIME_SEARCH_CARD_BORDER, variant)
-                            androidx.compose.material3.Surface(
+                            // Layout at the real search width, then scale the entire card
+                            // uniformly to the narrower settings dialog. This preserves
+                            // column proportions, text truncation and border geometry.
+                            androidx.compose.foundation.layout.BoxWithConstraints(
                                 modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                val actualWidthDp = (
+                                    context.resources.displayMetrics.widthPixels /
+                                        context.resources.displayMetrics.density - 8f
+                                    ).coerceAtLeast(1f)
+                                val scale = (maxWidth.value / actualWidthDp).coerceAtMost(1f)
+                                var measuredCardHeightPx by remember { mutableStateOf(0) }
+                                val densityValue = context.resources.displayMetrics.density
+                                val expectedHeightDp = 60f + effectiveRows *
+                                    (app.lawnchair.prime.search.PrimeAppGridGeometry.rowHeightPx(
+                                        context, effectiveIconPercent,
+                                        if (PrimeSearchResultPreferences.twoLineAppLabels(context)) 2 else 1
+                                    ) / densityValue)
+                                val scaledHeight = if (measuredCardHeightPx > 0)
+                                    (measuredCardHeightPx / densityValue * scale).dp
+                                else (expectedHeightDp * scale).dp
+                                androidx.compose.foundation.layout.Box(
+                                    modifier = Modifier.fillMaxWidth().height(scaledHeight),
+                                ) {
+                            androidx.compose.material3.Surface(
+                                modifier = Modifier
+                                    .width(actualWidthDp.dp)
+                                    .graphicsLayer {
+                                        scaleX = scale
+                                        scaleY = scale
+                                        transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0f)
+                                    }
+                                    .onSizeChanged { measuredCardHeightPx = it.height },
                                 shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                                 color = androidx.compose.ui.graphics.Color(resultCardColor),
                                 border = androidx.compose.foundation.BorderStroke(
@@ -702,6 +735,8 @@ fun PrimeSearchPreference() {
                                             }
                                         }
                                     }
+                                }
+                            }
                                 }
                             }
                         } else if (selected == PrimeSearchResultPreferences.Category.NOTIFICATIONS) {
