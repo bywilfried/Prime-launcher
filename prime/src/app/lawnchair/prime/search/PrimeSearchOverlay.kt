@@ -979,7 +979,7 @@ object PrimeSearchOverlay {
         }
         // Independent category filter: never edits the main search query.
         val detailFilter = EditText(launcher).apply {
-            singleLine = true
+            setSingleLine(true)
             hint = "Affiner cette catégorie"
             setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
             setHintTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
