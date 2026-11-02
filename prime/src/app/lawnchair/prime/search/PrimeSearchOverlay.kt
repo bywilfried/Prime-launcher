@@ -1159,6 +1159,11 @@ object PrimeSearchOverlay {
                 val searchIconSize = PrimeAppGridGeometry.iconPx(launcher, searchIconPercent)
                 val searchRowHeight = PrimeAppGridGeometry.rowHeightPx(
                     launcher, searchIconPercent, searchLabelLines)
+                val searchCellTopPadding = (PrimeAppGridGeometry.TOP_DP * density).toInt()
+                val searchRowBottomPadding = (PrimeAppGridGeometry.BOTTOM_DP * density).toInt()
+                val searchIconLabelGap = (PrimeAppGridGeometry.ICON_LABEL_GAP_DP * density).toInt()
+                val iconViewHeight = searchIconSize
+                val searchLabelHeight = PrimeAppGridGeometry.labelHeightPx(launcher, searchLabelLines)
                 var appRow: LinearLayout? = null
                 var appsInRow = 0
                 val nativeSections = mutableListOf<Pair<PrimeSearchResultPreferences.Category, LinearLayout>>()
