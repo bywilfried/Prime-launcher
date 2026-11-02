@@ -1045,7 +1045,15 @@ object PrimeSearchOverlay {
             input.setText(originalDetailQuery)
             input.setSelection(input.text.length)
             scroll.visibility = View.VISIBLE
-            scroll.post { scroll.scrollTo(0, returnCardScrollY) }
+            // Wait for the restored category card to be measured again before
+            // positioning it. Scrolling while the viewport is still laid out
+            // as GONE can clamp the requested offset to the wrong position.
+            scroll.post {
+                scroll.requestLayout()
+                scroll.postOnAnimation {
+                    scroll.scrollTo(0, returnCardScrollY)
+                }
+            }
             detailClosing = false
             container.requestLayout()
         }
@@ -1075,7 +1083,9 @@ object PrimeSearchOverlay {
             val parent = card.parent as? ViewGroup ?: return
             savedScrollY = scroll.scrollY
             val wrapper = (parent.parent as? ViewGroup)
-            returnCardScrollY = (wrapper?.top ?: savedScrollY).coerceAtLeast(0)
+            // Align the compact card with the expanded card below the search bar.
+            // Both use the same top gap, so the card appears to collapse in place.
+            returnCardScrollY = ((wrapper?.top ?: savedScrollY) - (16 * density).toInt()).coerceAtLeast(0)
             detailIndex = parent.indexOfChild(card)
             detailParent = parent
             detailCard = card
