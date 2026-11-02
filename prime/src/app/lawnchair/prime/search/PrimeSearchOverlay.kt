@@ -1126,6 +1126,8 @@ object PrimeSearchOverlay {
                             launcher, PrimeSearchResultPreferences.appResultsIconSizePercent(launcher),
                             if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
                         ) * 2 + (52 * density).toInt()
+                    } else if (category == PrimeSearchResultPreferences.Category.APP_SHORTCUTS) {
+                        (174 * density).toInt()
                     } else (190 * density).toInt()
                     // Cards are cached across asynchronous contact/web refreshes.
                     // Detach from the previous clipped holder before reparenting.
@@ -1668,9 +1670,10 @@ object PrimeSearchOverlay {
                             }
                             val iconSize = (24 * density).toInt()
                             container.addView(appIcon, android.widget.FrameLayout.LayoutParams(
-                                iconSize, iconSize, Gravity.END or Gravity.CENTER_VERTICAL,
+                                iconSize, iconSize, Gravity.END or Gravity.TOP,
                             ).apply {
                                 marginEnd = (12 * density).toInt()
+                                topMargin = (12 * density).toInt()
                             })
                             // Reserve room so long shortcut names cannot run under the icon.
                             view.setPadding(
@@ -1692,12 +1695,12 @@ object PrimeSearchOverlay {
                                 gravity = Gravity.CENTER_VERTICAL
                                 // Align subtitle with the shortcut action label,
                                 // not with the leading shortcut icon.
-                                setPadding((58 * density).toInt(), 0, (48 * density).toInt(), 0)
+                                setPadding((68 * density).toInt(), 0, (48 * density).toInt(), 0)
                             }
                             container.addView(subtitle, FrameLayout.LayoutParams(
                                 -1, (24 * density).toInt(), Gravity.TOP,
                             ).apply {
-                                topMargin = (34 * density).toInt()
+                                topMargin = (30 * density).toInt()
                             })
                             parent.addView(container, index, (originalParams as? LinearLayout.LayoutParams
                                 ?: LinearLayout.LayoutParams(-1, -2)).apply {
