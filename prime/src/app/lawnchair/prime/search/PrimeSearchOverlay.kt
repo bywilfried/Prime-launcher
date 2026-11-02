@@ -938,6 +938,10 @@ object PrimeSearchOverlay {
             sections.sortedBy { (category, _) -> order.indexOf(category) }
                 .forEach { (_, views) -> views.forEach(webPanel::addView) }
         }
+        // During one query, preserve the first visible position of a category.
+        // New provider sections append instead of pushing existing results around.
+        var stableOrderQuery = ""
+        val stableCategories = mutableListOf<PrimeSearchResultPreferences.Category>()
         fun reorderSearchSections() {
             val priorities = PrimeSearchResultPreferences.order(launcher)
             val headingCategories = mapOf(
@@ -1010,7 +1014,19 @@ object PrimeSearchOverlay {
             }
             // Reconcile the section containers rather than removing every
             // result view on each asynchronous provider update.
-            val desired = priorities.mapNotNull { category ->
+            val currentQuery = input.text.toString()
+            if (stableOrderQuery != currentQuery) {
+                stableOrderQuery = currentQuery
+                stableCategories.clear()
+            }
+            val available = grouped.filterValues { it.childCount > 0 }.keys
+            if (stableCategories.isEmpty()) {
+                stableCategories.addAll(priorities.filter { it in available })
+            } else {
+                priorities.filter { it in available && it !in stableCategories }
+                    .forEach(stableCategories::add)
+            }
+            val desired = stableCategories.mapNotNull { category ->
                 grouped[category]?.takeIf { it.childCount > 0 }
             } + webPanel
             desired.forEachIndexed { index, view ->

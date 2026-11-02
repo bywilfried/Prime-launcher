@@ -4,6 +4,11 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.provider.ContactsContract
+import android.database.ContentObserver
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
+import java.util.Locale
 import android.util.Log
 import app.lawnchair.preferences.PreferenceManager
 import app.lawnchair.preferences2.PreferenceManager2
@@ -24,6 +29,34 @@ import kotlinx.serialization.json.put
 object ContactsSearchProvider : SearchProvider, SearchPermission {
     override val id: String = "contacts"
 
+    // A short-lived snapshot of the provider's matching rows. Repeated queries
+    // (IME refreshes, returning to the overlay) avoid a second database scan.
+    // Observe the contacts provider so edits invalidate the cached results.
+    private val cacheLock = Any()
+    private const val CACHE_TTL_MS = 60_000L
+    private const val CACHE_LIMIT = 32
+    private val queryCache = object : LinkedHashMap<String, Pair<Long, List<ContactInfo>>>(CACHE_LIMIT, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Pair<Long, List<ContactInfo>>>?): Boolean =
+            size > CACHE_LIMIT
+    }
+    private var observedResolver: android.content.ContentResolver? = null
+    private val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
+        override fun onChange(selfChange: Boolean) {
+            synchronized(cacheLock) { queryCache.clear() }
+        }
+    }
+    private fun ensureObserver(context: Context) {
+        synchronized(cacheLock) {
+            if (observedResolver != null) return
+            runCatching {
+                context.applicationContext.contentResolver.registerContentObserver(
+                    ContactsContract.Contacts.CONTENT_URI, true, observer
+                )
+                observedResolver = context.applicationContext.contentResolver
+            }
+        }
+    }
+
     override fun search(
         context: Context,
         query: String,
@@ -43,9 +76,12 @@ object ContactsSearchProvider : SearchProvider, SearchPermission {
         }
 
         val maxResults = prefs2.maxPeopleResultCount.firstCached()
-
-        // Call the newly encapsulated, private function.
+        ensureObserver(context)
+        val started = SystemClock.elapsedRealtime()
         val contactInfoList = findContactsByName(context, query, maxResults)
+        app.lawnchair.search.PrimeSearchTrace.record(
+            "contacts query len=${query.length} count=${contactInfoList.size} ms=${SystemClock.elapsedRealtime() - started}"
+        )
 
         val surface = if (primeSearch)
             app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.PRIME_SEARCH
@@ -84,6 +120,11 @@ object ContactsSearchProvider : SearchProvider, SearchPermission {
                 Log.e("ContactSearch", "Something went wrong ", e)
             }
             return withContext(Dispatchers.IO + exceptionHandler) {
+                val key = query.lowercase(Locale.getDefault()) + "|" + max
+                val now = SystemClock.elapsedRealtime()
+                synchronized(cacheLock) {
+                    queryCache[key]?.takeIf { now - it.first in 0 until CACHE_TTL_MS }?.second
+                }?.let { return@withContext it }
                 val contactMap = HashMap<String, ContactInfo>()
 
                 val projection = arrayOf(
@@ -151,7 +192,11 @@ object ContactsSearchProvider : SearchProvider, SearchPermission {
                         }
                     }
                 }
-                contactMap.values.toList()
+                contactMap.values.toList().also { matches ->
+                    synchronized(cacheLock) {
+                        queryCache[key] = SystemClock.elapsedRealtime() to matches
+                    }
+                }
             }
         } catch (e: Exception) {
             Log.e("ContactSearch", "Something went wrong ", e)
