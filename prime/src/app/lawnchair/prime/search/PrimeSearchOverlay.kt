@@ -949,13 +949,26 @@ object PrimeSearchOverlay {
         var detailCard: LinearLayout? = null
         var detailParent: ViewGroup? = null
         var detailIndex = 0
-        val detailContent = LinearLayout(launcher).apply { orientation = LinearLayout.VERTICAL }
+        val detailContent = LinearLayout(launcher).apply {
+            orientation = LinearLayout.VERTICAL
+            background = GradientDrawable().apply {
+                cornerRadius = 16 * density
+                setColor(themed(ThemeColorRole.PRIME_SEARCH_CARD_BACKGROUND))
+                setStroke((1 * density).toInt().coerceAtLeast(1),
+                    themed(ThemeColorRole.PRIME_SEARCH_CARD_BORDER))
+            }
+            setPadding((8 * density).toInt(), (8 * density).toInt(),
+                (8 * density).toInt(), (12 * density).toInt())
+        }
         val detailScroll = ScrollView(launcher).apply {
             isFillViewport = false
             // Fade rows as they pass underneath the fixed Back header.
             isVerticalFadingEdgeEnabled = true
             setFadingEdgeLength((32 * density).toInt())
             addView(detailContent)
+            setPadding((4 * density).toInt(), (4 * density).toInt(),
+                (4 * density).toInt(), (8 * density).toInt())
+            clipToPadding = false
         }
         val detailBack = TextView(launcher).apply {
             text = "‹  Retour à la recherche"
@@ -989,6 +1002,8 @@ object PrimeSearchOverlay {
             detailCard = null
             detailParent = null
             detailOpen = false
+            detailPage.animate().cancel()
+            detailPage.translationY = 0f
             detailPage.visibility = View.GONE
             scroll.visibility = View.VISIBLE
             scroll.post { scroll.scrollTo(0, savedScrollY) }
@@ -1016,7 +1031,9 @@ object PrimeSearchOverlay {
             scroll.visibility = View.GONE
             detailPage.visibility = View.VISIBLE
             detailPage.alpha = 0f
-            detailPage.animate().alpha(1f).setDuration(220L).start()
+            detailPage.translationY = (18 * density)
+            detailPage.animate().alpha(1f).translationY(0f)
+                .setDuration(260L).start()
             detailPage.requestFocus()
             container.requestLayout()
         }
@@ -1127,7 +1144,7 @@ object PrimeSearchOverlay {
                             if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
                         ) * 2 + (52 * density).toInt()
                     } else if (category == PrimeSearchResultPreferences.Category.APP_SHORTCUTS) {
-                        (174 * density).toInt()
+                        (250 * density).toInt()
                     } else (190 * density).toInt()
                     // Cards are cached across asynchronous contact/web refreshes.
                     // Detach from the previous clipped holder before reparenting.
@@ -1659,7 +1676,7 @@ object PrimeSearchOverlay {
                                 minimumHeight = (72 * density).toInt()
                             }
                             container.addView(view, android.widget.FrameLayout.LayoutParams(
-                                -1, (48 * density).toInt(), Gravity.TOP,
+                                -1, (56 * density).toInt(), Gravity.TOP,
                             ))
                             val appIcon = ImageView(launcher).apply {
                                 setImageDrawable(appDrawable)
@@ -1700,7 +1717,7 @@ object PrimeSearchOverlay {
                             container.addView(subtitle, FrameLayout.LayoutParams(
                                 -1, (24 * density).toInt(), Gravity.TOP,
                             ).apply {
-                                topMargin = (30 * density).toInt()
+                                topMargin = (40 * density).toInt()
                             })
                             parent.addView(container, index, (originalParams as? LinearLayout.LayoutParams
                                 ?: LinearLayout.LayoutParams(-1, -2)).apply {
