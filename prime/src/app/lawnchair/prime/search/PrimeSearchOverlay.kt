@@ -1164,8 +1164,25 @@ object PrimeSearchOverlay {
                                 clipped.width.coerceAtLeast(1), View.MeasureSpec.EXACTLY)
                             card.measure(widthSpec, View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
                             val overflow = card.measuredHeight > limit
+                            // Stop at a complete row boundary: never crop the last
+                            // contact's avatar, name or call/message actions.
+                            var previewHeight = card.paddingTop
+                            var completeRows = 0
+                            for (index in 0 until card.childCount) {
+                                val child = card.getChildAt(index)
+                                if (child.visibility == View.GONE) continue
+                                val margins = child.layoutParams as? ViewGroup.MarginLayoutParams
+                                val rowHeight = child.measuredHeight +
+                                    (margins?.topMargin ?: 0) + (margins?.bottomMargin ?: 0)
+                                if (previewHeight + rowHeight + card.paddingBottom > limit &&
+                                    completeRows > 0) break
+                                previewHeight += rowHeight
+                                completeRows++
+                            }
+                            val safeHeight = (previewHeight + card.paddingBottom)
+                                .coerceAtMost(limit)
                             clipped.layoutParams = (clipped.layoutParams as LinearLayout.LayoutParams).apply {
-                                height = if (overflow) limit else -2
+                                height = if (overflow) safeHeight else -2
                             }
                             more.visibility = if (overflow) View.VISIBLE else View.GONE
                         }
@@ -1658,11 +1675,15 @@ object PrimeSearchOverlay {
                                 maxLines = 1
                                 ellipsize = android.text.TextUtils.TruncateAt.END
                                 gravity = Gravity.CENTER_VERTICAL
-                                setPadding((16 * density).toInt(), 0, (48 * density).toInt(), 0)
+                                // Align subtitle with the shortcut action label,
+                                // not with the leading shortcut icon.
+                                setPadding((58 * density).toInt(), 0, (48 * density).toInt(), 0)
                             }
                             container.addView(subtitle, FrameLayout.LayoutParams(
-                                -1, (24 * density).toInt(), Gravity.BOTTOM,
-                            ))
+                                -1, (24 * density).toInt(), Gravity.TOP,
+                            ).apply {
+                                topMargin = (34 * density).toInt()
+                            })
                             parent.addView(container, index, (originalParams as? LinearLayout.LayoutParams
                                 ?: LinearLayout.LayoutParams(-1, -2)).apply {
                                 height = (72 * density).toInt()
