@@ -1534,7 +1534,47 @@ object PrimeSearchOverlay {
                 val filteredNativeItems = PrimeSearchResultPreferences.filter(
                     launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(),
                 )
-                filteredNativeItems.forEach { item ->
+                // Rank application results in Prime Search only, without moving
+                // any other category or changing the drawer search algorithm.
+                // Replace app entries at their original positions so category
+                // boundaries and the existing native rendering stay intact.
+                val appCategory = PrimeSearchResultPreferences.Category.APPS
+                val appSlots = filteredNativeItems.filter {
+                    nativeCategoryFor(it) == appCategory
+                }
+                val normalizedQuery = java.text.Normalizer.normalize(
+                    query.trim(), java.text.Normalizer.Form.NFD,
+                ).replace(Regex("\\p{M}+"), "").lowercase(java.util.Locale.ROOT)
+                val appLabels = mutableMapOf<String, String>()
+                fun appLabel(packageName: String): String =
+                    appLabels.getOrPut(packageName) {
+                        runCatching {
+                            launcher.packageManager.getApplicationLabel(
+                                launcher.packageManager.getApplicationInfo(packageName, 0)
+                            ).toString()
+                        }.getOrDefault(packageName)
+                    }
+                fun normalizedLabel(label: String): String =
+                    java.text.Normalizer.normalize(label, java.text.Normalizer.Form.NFD)
+                        .replace(Regex("\\p{M}+"), "")
+                        .lowercase(java.util.Locale.ROOT)
+                val rankedApps = appSlots.sortedWith(
+                    compareBy<SearchAdapterItem> {
+                        val label = normalizedLabel(appLabel(it.searchTarget.packageName))
+                        when {
+                            label == normalizedQuery -> 0
+                            label.startsWith(normalizedQuery) -> 1
+                            label.contains(normalizedQuery) -> 2
+                            else -> 3
+                        }
+                    }.thenBy {
+                        normalizedLabel(appLabel(it.searchTarget.packageName))
+                    }.thenBy { it.searchTarget.packageName }
+                ).iterator()
+                val rankedNativeItems = filteredNativeItems.map {
+                    if (nativeCategoryFor(it) == appCategory) rankedApps.next() else it
+                }
+                rankedNativeItems.forEach { item ->
                     val category = nativeCategoryFor(item) ?: return@forEach
                     // A result is visible only when its corresponding search
                     // category is enabled in the Prime Search settings.
