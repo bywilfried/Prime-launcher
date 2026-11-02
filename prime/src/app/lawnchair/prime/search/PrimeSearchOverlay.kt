@@ -951,24 +951,23 @@ object PrimeSearchOverlay {
         var detailIndex = 0
         val detailContent = LinearLayout(launcher).apply {
             orientation = LinearLayout.VERTICAL
+            setPadding((8 * density).toInt(), (8 * density).toInt(),
+                (8 * density).toInt(), (12 * density).toInt())
+        }
+        // The expanded category is ONE full-height card, not a wrap-content
+        // card sitting inside a transparent scrolling viewport.
+        val detailScroll = ScrollView(launcher).apply {
+            isFillViewport = true
+            isVerticalFadingEdgeEnabled = true
+            setFadingEdgeLength((32 * density).toInt())
             background = GradientDrawable().apply {
                 cornerRadius = 16 * density
                 setColor(themed(ThemeColorRole.PRIME_SEARCH_CARD_BACKGROUND))
                 setStroke((1 * density).toInt().coerceAtLeast(1),
                     themed(ThemeColorRole.PRIME_SEARCH_CARD_BORDER))
             }
-            setPadding((8 * density).toInt(), (8 * density).toInt(),
-                (8 * density).toInt(), (12 * density).toInt())
-        }
-        val detailScroll = ScrollView(launcher).apply {
-            isFillViewport = false
-            // Fade rows as they pass underneath the fixed Back header.
-            isVerticalFadingEdgeEnabled = true
-            setFadingEdgeLength((32 * density).toInt())
+            clipToOutline = true
             addView(detailContent)
-            setPadding((4 * density).toInt(), (4 * density).toInt(),
-                (4 * density).toInt(), (8 * density).toInt())
-            clipToPadding = false
         }
         val detailBack = TextView(launcher).apply {
             text = "‹  Retour à la recherche"
@@ -983,7 +982,11 @@ object PrimeSearchOverlay {
             visibility = View.GONE
             isFocusableInTouchMode = true
             addView(detailBack, LinearLayout.LayoutParams(-1, -2))
-            addView(detailScroll, LinearLayout.LayoutParams(-1, 0, 1f))
+            addView(detailScroll, LinearLayout.LayoutParams(-1, 0, 1f).apply {
+                marginStart = (4 * density).toInt()
+                marginEnd = (4 * density).toInt()
+                bottomMargin = (8 * density).toInt()
+            })
         }
         container.addView(detailPage, LinearLayout.LayoutParams(-1, 0, 1f))
         fun closeDetail() {
