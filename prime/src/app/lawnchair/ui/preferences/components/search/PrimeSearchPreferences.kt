@@ -535,7 +535,104 @@ fun PrimeSearchPreference() {
                 permissionRefresh = permissionRefresh,
                 onDismiss = { categorySettings = null },
             ) {
-                        if (selected == PrimeSearchResultPreferences.Category.NOTIFICATIONS) {
+                        if (selected == PrimeSearchResultPreferences.Category.APPS) {
+                            var followGeneral by remember {
+                                mutableStateOf(PrimeSearchResultPreferences.appResultsFollowGeneral(context))
+                            }
+                            var resultColumns by remember {
+                                mutableStateOf(PrimeSearchResultPreferences.appResultsColumns(context))
+                            }
+                            var resultRows by remember {
+                                mutableStateOf(PrimeSearchResultPreferences.appResultsRows(context))
+                            }
+                            var resultIconPercent by remember {
+                                mutableStateOf(PrimeSearchResultPreferences.appResultsIconSizePercent(context))
+                            }
+                            val effectiveColumns = if (followGeneral)
+                                PrimeSearchResultPreferences.appsPerRow(context) else resultColumns
+                            val effectiveRows = if (followGeneral)
+                                PrimeSearchResultPreferences.zeroStateRows(context) else resultRows
+                            val effectiveIconPercent = if (followGeneral)
+                                PrimeSearchResultPreferences.iconSizePercent(context) else resultIconPercent
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                            ) {
+                                Text("Suivre les paramètres de Prime Search",
+                                    modifier = Modifier.weight(1f))
+                                androidx.compose.material3.Switch(
+                                    checked = followGeneral,
+                                    onCheckedChange = {
+                                        followGeneral = it
+                                        PrimeSearchResultPreferences.setAppResultsFollowGeneral(context, it)
+                                    },
+                                )
+                            }
+                            if (!followGeneral) {
+                                Text("Applications par ligne : $resultColumns")
+                                androidx.compose.material3.Slider(
+                                    value = resultColumns.toFloat(),
+                                    onValueChange = {
+                                        resultColumns = it.roundToInt().coerceIn(3, 5)
+                                        PrimeSearchResultPreferences.setAppResultsColumns(context, resultColumns)
+                                    },
+                                    valueRange = 3f..5f, steps = 1,
+                                )
+                                Text("Nombre maximal de lignes : $resultRows")
+                                androidx.compose.material3.Slider(
+                                    value = resultRows.toFloat(),
+                                    onValueChange = {
+                                        resultRows = it.roundToInt().coerceIn(1, 3)
+                                        PrimeSearchResultPreferences.setAppResultsRows(context, resultRows)
+                                    },
+                                    valueRange = 1f..3f, steps = 1,
+                                )
+                                Text("Taille des icônes : $resultIconPercent %")
+                                androidx.compose.material3.Slider(
+                                    value = resultIconPercent.toFloat(),
+                                    onValueChange = {
+                                        resultIconPercent = (it.roundToInt() / 5 * 5).coerceIn(60, 150)
+                                        PrimeSearchResultPreferences.setAppResultsIconSizePercent(context, resultIconPercent)
+                                    },
+                                    valueRange = 60f..150f,
+                                )
+                            }
+                            Text("Aperçu des résultats d'applications")
+                            androidx.compose.material3.Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant,
+                            ) {
+                                Column(modifier = Modifier.padding(8.dp)) {
+                                    Text("Applications", modifier = Modifier.padding(6.dp),
+                                        style = androidx.compose.material3.MaterialTheme.typography.titleSmall)
+                                    repeat(effectiveRows) { rowIndex ->
+                                        Row(modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceEvenly) {
+                                            repeat(effectiveColumns) { columnIndex ->
+                                                Column(modifier = Modifier.weight(1f),
+                                                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+                                                    androidx.compose.material3.Surface(
+                                                        modifier = Modifier.size((48f * effectiveIconPercent / 100f).dp),
+                                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer,
+                                                    ) {
+                                                        androidx.compose.foundation.layout.Box(
+                                                            contentAlignment = androidx.compose.ui.Alignment.Center) {
+                                                            Text("${rowIndex * effectiveColumns + columnIndex + 1}",
+                                                                style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
+                                                        }
+                                                    }
+                                                    Text("App", maxLines = 1,
+                                                        style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } else                         if (selected == PrimeSearchResultPreferences.Category.NOTIFICATIONS) {
                             val granted = PrimeSearchPermissions.granted(context, selected)
                             Text(if (granted) "Accès aux notifications autorisé" else "Accès aux notifications non autorisé")
                             TextButton(onClick = {
