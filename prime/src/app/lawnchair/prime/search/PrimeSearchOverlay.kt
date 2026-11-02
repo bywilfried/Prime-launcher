@@ -1041,20 +1041,23 @@ object PrimeSearchOverlay {
             detailScroll.scaleY = 1f
             detailScroll.alpha = 1f
             detailPage.translationY = 0f
-            detailPage.visibility = View.GONE
             input.setText(originalDetailQuery)
             input.setSelection(input.text.length)
+            // Keep the detail page visible until the compact list has its
+            // final scroll offset; otherwise an intermediate frame flashes.
             scroll.visibility = View.VISIBLE
-            // Wait for the restored category card to be measured again before
-            // positioning it. Scrolling while the viewport is still laid out
-            // as GONE can clamp the requested offset to the wrong position.
-            scroll.post {
-                scroll.requestLayout()
+            scroll.alpha = 0f
+            scroll.requestLayout()
+            scroll.postOnAnimation {
+                scroll.scrollTo(0, returnCardScrollY)
                 scroll.postOnAnimation {
                     scroll.scrollTo(0, returnCardScrollY)
+                    scroll.alpha = 1f
+                    detailPage.visibility = View.GONE
+                    detailClosing = false
+                    container.requestLayout()
                 }
             }
-            detailClosing = false
             container.requestLayout()
         }
         fun closeDetail() {
@@ -1063,7 +1066,7 @@ object PrimeSearchOverlay {
             dialog.hideKeyboardForSelection()
             detailScroll.animate().cancel()
             detailScroll.pivotY = 0f
-            detailScroll.animate().scaleY(0.72f).alpha(0.25f)
+            detailScroll.animate().scaleY(0.82f).alpha(1f)
                 .setDuration(260L)
                 .setInterpolator(android.view.animation.AccelerateDecelerateInterpolator())
                 .withEndAction { finishCloseDetail() }
@@ -1099,8 +1102,8 @@ object PrimeSearchOverlay {
             detailPage.visibility = View.VISIBLE
             detailPage.alpha = 1f
             detailScroll.pivotY = 0f
-            detailScroll.scaleY = 0.72f
-            detailScroll.alpha = 0.35f
+            detailScroll.scaleY = 0.82f
+            detailScroll.alpha = 1f
             detailScroll.animate().scaleY(1f).alpha(1f)
                 .setDuration(320L)
                 .setInterpolator(android.view.animation.DecelerateInterpolator())
