@@ -343,6 +343,23 @@ fun PrimeSearchPreference() {
                         }
                     }
                 }
+                // The live preview now includes the same themed card background
+                // and outline used for search result sections.
+                val previewCardBackground = ThemeColors.resolve(
+                    context, ThemeProfile.current(context),
+                    ThemeColorRole.PRIME_SEARCH_CARD_BACKGROUND, variant)
+                val previewCardBorder = ThemeColors.resolve(
+                    context, ThemeProfile.current(context),
+                    ThemeColorRole.PRIME_SEARCH_CARD_BORDER, variant)
+                androidx.compose.material3.Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = androidx.compose.ui.graphics.Color(previewCardBackground),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp, androidx.compose.ui.graphics.Color(previewCardBorder)),
+                ) {
+                    Column(modifier = Modifier.padding(8.dp)) {
+                        Text("Applications", style = androidx.compose.material3.MaterialTheme.typography.titleSmall)
                 // PrimeSearchOverlay uses 48dp * percentage, with no 64dp cap.
                 val iconDp = (48f * iconPercent / 100f).dp
                 val offset = previewTab * 2
@@ -381,6 +398,8 @@ fun PrimeSearchPreference() {
                                 )
                             }
                         }
+                    }
+                }
                     }
                 }
             }
