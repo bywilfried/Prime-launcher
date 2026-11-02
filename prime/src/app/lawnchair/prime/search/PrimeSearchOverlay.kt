@@ -1031,7 +1031,12 @@ object PrimeSearchOverlay {
             } + webPanel
             desired.forEachIndexed { index, view ->
                 if (results.getChildAt(index) !== view) {
-                    (view.parent as? ViewGroup)?.removeView(view)
+                    val currentIndex = results.indexOfChild(view)
+                    if (currentIndex >= 0) {
+                        results.removeViewAt(currentIndex)
+                    } else {
+                        (view.parent as? ViewGroup)?.removeView(view)
+                    }
                     results.addView(view, index.coerceAtMost(results.childCount))
                 }
             }
@@ -1620,7 +1625,10 @@ object PrimeSearchOverlay {
 
             override fun clearSearchResult() {
                 results.removeAllViews()
-                results.requestLayout()
+                renderedCategoryIds.clear()
+                stableCategories.clear()
+                lastNativeRenderQuery = null
+                lastNativeRenderSignature = null
             }
         }
         // IME visibility and focus changes must not restart an unchanged query.
