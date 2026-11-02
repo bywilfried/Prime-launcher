@@ -658,18 +658,27 @@ fun PrimeSearchPreference() {
                                 Column(modifier = Modifier.padding(8.dp)) {
                                     Text("Applications", modifier = Modifier.padding(6.dp),
                                         style = androidx.compose.material3.MaterialTheme.typography.titleSmall)
+                                    val previewIconDp = 48f * effectiveIconPercent / 100f
+                                    val previewLabelLines = if (
+                                        PrimeSearchResultPreferences.twoLineAppLabels(context)) 2 else 1
+                                    // The real grid uses 4dp top + icon + 4dp gap +
+                                    // 11sp labels + 4dp bottom for every row.
+                                    val previewRowHeight = (4f + previewIconDp + 4f +
+                                        14f * previewLabelLines + 4f).dp
                                     repeat(effectiveRows) { rowIndex ->
-                                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                        Row(modifier = Modifier.fillMaxWidth().height(previewRowHeight),
                                             horizontalArrangement = Arrangement.SpaceEvenly) {
                                             repeat(effectiveColumns) { columnIndex ->
                                                 val index = rowIndex * effectiveColumns + columnIndex
                                                 val app = installedPreview.getOrNull(index)
                                                 Column(modifier = Modifier.weight(1f),
                                                     horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+                                                    androidx.compose.foundation.layout.Spacer(
+                                                        modifier = Modifier.height(4.dp))
                                                     androidx.compose.foundation.layout.Box(
                                                         modifier = Modifier
                                                             .fillMaxWidth()
-                                                            .height((48f * effectiveIconPercent / 100f).dp),
+                                                            .height(previewIconDp.dp),
                                                         contentAlignment = androidx.compose.ui.Alignment.Center,
                                                     ) {
                                                         if (app != null) {
@@ -681,9 +690,13 @@ fun PrimeSearchPreference() {
                                                             )
                                                         }
                                                     }
-                                                    Text(app?.first.orEmpty(), maxLines = 1,
+                                                    androidx.compose.foundation.layout.Spacer(
+                                                        modifier = Modifier.height(4.dp))
+                                                    Text(app?.first.orEmpty(),
+                                                        maxLines = previewLabelLines,
+                                                        fontSize = androidx.compose.ui.unit.TextUnit(11f, androidx.compose.ui.unit.TextUnitType.Sp),
+                                                        lineHeight = androidx.compose.ui.unit.TextUnit(14f, androidx.compose.ui.unit.TextUnitType.Sp),
                                                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                                        style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
                                                         textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                                                 }
                                             }
