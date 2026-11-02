@@ -1075,11 +1075,23 @@ object PrimeSearchOverlay {
                 if (category != null && PrimeSearchResultPreferences.enabled(launcher, category)) {
                     val section = sectionFor(category)
                     if (view is ViewGroup && view !== section) {
-                        section.removeAllViews()
-                        while (view.childCount > 0) {
-                            val child = view.getChildAt(0)
-                            view.removeViewAt(0)
-                            section.addView(child)
+                        // A compact wrapper already contains the cached section.
+                        // Never move its clipping frame / "Plus de" button into
+                        // the card, which would create a parent cycle.
+                        val alreadyWrapped = (0 until view.childCount).any { index ->
+                            val child = view.getChildAt(index)
+                            child === section ||
+                                (child is ViewGroup && (0 until child.childCount).any {
+                                    child.getChildAt(it) === section
+                                })
+                        }
+                        if (!alreadyWrapped) {
+                            section.removeAllViews()
+                            while (view.childCount > 0) {
+                                val child = view.getChildAt(0)
+                                view.removeViewAt(0)
+                                section.addView(child)
+                            }
                         }
                     }
                 }
@@ -1107,8 +1119,12 @@ object PrimeSearchOverlay {
                             if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
                         ) * 2 + (52 * density).toInt()
                     } else (190 * density).toInt()
+                    // Cards are cached across asynchronous contact/web refreshes.
+                    // Detach from the previous clipped holder before reparenting.
+                    (card.parent as? ViewGroup)?.removeView(card)
                     val wrapper = LinearLayout(launcher).apply {
                         orientation = LinearLayout.VERTICAL
+                        tag = category
                     }
                     val clipped = FrameLayout(launcher).apply {
                         clipChildren = true
