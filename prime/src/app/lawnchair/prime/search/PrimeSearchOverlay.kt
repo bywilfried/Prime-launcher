@@ -1154,6 +1154,18 @@ object PrimeSearchOverlay {
                         setPadding(0, (8 * density).toInt(), 0, (8 * density).toInt())
                         setOnClickListener { openDetail(card) }
                     }
+                    // The action belongs to the card surface, not to the gap
+                    // between adjacent cards. Keep the same themed rounded
+                    // background and border as the category itself.
+                    wrapper.background = GradientDrawable().apply {
+                        cornerRadius = 16 * density
+                        setColor(themed(ThemeColorRole.PRIME_SEARCH_CARD_BACKGROUND))
+                        setStroke((1 * density).toInt().coerceAtLeast(1),
+                            themed(ThemeColorRole.PRIME_SEARCH_CARD_BORDER))
+                    }
+                    wrapper.clipToOutline = true
+                    card.background = null
+                    more.setPadding(0, (10 * density).toInt(), 0, (12 * density).toInt())
                     wrapper.addView(more, LinearLayout.LayoutParams(-1, -2))
                     results.addView(wrapper, LinearLayout.LayoutParams(-1, -2).apply {
                         val margin = (4 * density).toInt()
