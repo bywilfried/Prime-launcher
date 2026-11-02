@@ -1286,7 +1286,7 @@ object PrimeSearchOverlay {
                             if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
                         ) * 2 + (52 * density).toInt()
                     } else if (category == PrimeSearchResultPreferences.Category.APP_SHORTCUTS) {
-                        (188 * density).toInt()
+                        (160 * density).toInt()
                     } else (190 * density).toInt()
                     // Cards are cached across asynchronous contact/web refreshes.
                     // Detach from the previous clipped holder before reparenting.
@@ -1326,7 +1326,7 @@ object PrimeSearchOverlay {
                     }
                     wrapper.clipToOutline = true
                     card.background = null
-                    more.setPadding(0, (10 * density).toInt(), 0, (12 * density).toInt())
+                    more.setPadding(0, (4 * density).toInt(), 0, (6 * density).toInt())
                     wrapper.addView(more, LinearLayout.LayoutParams(-1, -2))
                     results.addView(wrapper, LinearLayout.LayoutParams(-1, -2).apply {
                         val margin = (4 * density).toInt()
@@ -1919,7 +1919,7 @@ object PrimeSearchOverlay {
                             }
                             parent.addView(container, index, (originalParams as? LinearLayout.LayoutParams
                                 ?: LinearLayout.LayoutParams(-1, -2)).apply {
-                                height = (66 * density).toInt()
+                                height = (52 * density).toInt()
                             })
                         }
                     }
