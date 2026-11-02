@@ -1121,10 +1121,25 @@ object PrimeSearchOverlay {
                 child is TextView && child.text?.toString() == heading
             }
             detailHeading.text = heading.orEmpty()
-            detailHeading.visibility = if (heading != null && !existingHeading) View.VISIBLE else View.GONE
+            // The compact card's header can be clipped or hidden by filtering.
+            // Always display the dedicated detail heading, and suppress an
+            // existing identical heading to prevent duplicates.
+            for (index in 0 until card.childCount) {
+                val child = card.getChildAt(index)
+                if (child is TextView && child.text?.toString() == heading) {
+                    child.visibility = View.GONE
+                }
+            }
+            detailHeading.visibility = if (heading != null) View.VISIBLE else View.GONE
             detailContent.addView(card, LinearLayout.LayoutParams(-1, -2))
             originalDetailQuery = input.text.toString()
             applyDetailFilter()
+            // The filter may restore native heading visibility; keep the
+            // category title solely in the fixed detail heading.
+            for (index in 0 until card.childCount) {
+                val child = card.getChildAt(index)
+                if (child is TextView && child.text?.toString() == heading) child.visibility = View.GONE
+            }
             dialog.hideKeyboardForSelection()
             scroll.animate().cancel()
             scroll.alpha = 1f
@@ -1818,7 +1833,7 @@ object PrimeSearchOverlay {
                             if (!shortcutTitle.isNullOrBlank()) {
                                 // Hide native labels only when a replacement can be
                                 // rendered. Preserve the original icon and actions.
-                                nativeLabels.forEach { it.alpha = 0f }
+                                nativeLabels.first().setTextColor(Color.TRANSPARENT)
                                 val alignedTitle = TextView(launcher).apply {
                                     text = shortcutTitle
                                     setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
