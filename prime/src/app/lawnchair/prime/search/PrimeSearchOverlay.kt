@@ -1599,14 +1599,11 @@ object PrimeSearchOverlay {
                     }
                     item.setRippleEffect(view)
                     resultView.bind(item.searchTarget, emptyList())
-                    // Bound drawer results own their click actions. Hide the keyboard
-                    // on a completed tap without replacing those click handlers.
-                    view.setOnTouchListener { _, event ->
-                        if (event.actionMasked == MotionEvent.ACTION_DOWN && view.isClickable) {
-                            dialog.hideKeyboardForSelection()
-                        }
-                        false
-                    }
+                    // Never steal focus on ACTION_DOWN: clearing input focus
+                    // can cancel the very first tap on a newly shown app tile.
+                    // The native SearchResultView must receive DOWN and UP
+                    // uninterrupted so apps launch immediately.
+                    // Keyboard dismissal is handled by the native result action.
                     // The inherited drawer search action has no title property on
                     // SearchTargetCompat. Inspect the actual bound row instead.
                     // This affects Prime Search only, not the app drawer.
