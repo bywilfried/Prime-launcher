@@ -976,7 +976,12 @@ object PrimeSearchOverlay {
             val parent = detailParent
             if (card != null && parent != null) {
                 detailContent.removeView(card)
-                parent.addView(card, detailIndex.coerceIn(0, parent.childCount))
+                val params = if (parent is FrameLayout) {
+                    FrameLayout.LayoutParams(-1, -2)
+                } else {
+                    LinearLayout.LayoutParams(-1, -2)
+                }
+                parent.addView(card, detailIndex.coerceIn(0, parent.childCount), params)
             }
             detailCard = null
             detailParent = null
@@ -1130,6 +1135,7 @@ object PrimeSearchOverlay {
                         clipChildren = true
                         addView(card, FrameLayout.LayoutParams(-1, -2))
                     }
+                    // A fixed preview viewport must not expand with the card's content.
                     wrapper.addView(clipped, LinearLayout.LayoutParams(-1, limit))
                     val more = TextView(launcher).apply {
                         text = "Plus de " + when (category) {
@@ -1153,6 +1159,10 @@ object PrimeSearchOverlay {
                     })
                     clipped.post {
                         if (!detailOpen && card.parent === clipped) {
+                            // Measure the actual card independently of its clipped parent.
+                            val widthSpec = View.MeasureSpec.makeMeasureSpec(
+                                clipped.width.coerceAtLeast(1), View.MeasureSpec.EXACTLY)
+                            card.measure(widthSpec, View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
                             val overflow = card.measuredHeight > limit
                             clipped.layoutParams = (clipped.layoutParams as LinearLayout.LayoutParams).apply {
                                 height = if (overflow) limit else -2
@@ -1612,10 +1622,10 @@ object PrimeSearchOverlay {
                             val originalParams = view.layoutParams
                             parent.removeView(view)
                             val container = android.widget.FrameLayout(launcher).apply {
-                                minimumHeight = (56 * density).toInt()
+                                minimumHeight = (72 * density).toInt()
                             }
                             container.addView(view, android.widget.FrameLayout.LayoutParams(
-                                -1, -1,
+                                -1, (48 * density).toInt(), Gravity.TOP,
                             ))
                             val appIcon = ImageView(launcher).apply {
                                 setImageDrawable(appDrawable)
@@ -1635,7 +1645,28 @@ object PrimeSearchOverlay {
                                 view.paddingLeft, view.paddingTop,
                                 view.paddingRight + (44 * density).toInt(), view.paddingBottom,
                             )
-                            parent.addView(container, index, originalParams)
+                            val appName = runCatching {
+                                launcher.packageManager.getApplicationLabel(
+                                    launcher.packageManager.getApplicationInfo(appPackage, 0)
+                                ).toString()
+                            }.getOrDefault(appPackage)
+                            val subtitle = TextView(launcher).apply {
+                                text = appName
+                                setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+                                alpha = 0.7f
+                                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f)
+                                maxLines = 1
+                                ellipsize = android.text.TextUtils.TruncateAt.END
+                                gravity = Gravity.CENTER_VERTICAL
+                                setPadding((16 * density).toInt(), 0, (48 * density).toInt(), 0)
+                            }
+                            container.addView(subtitle, FrameLayout.LayoutParams(
+                                -1, (24 * density).toInt(), Gravity.BOTTOM,
+                            ))
+                            parent.addView(container, index, (originalParams as? LinearLayout.LayoutParams
+                                ?: LinearLayout.LayoutParams(-1, -2)).apply {
+                                height = (72 * density).toInt()
+                            })
                         }
                     }
                     if (isAppIcon) {
