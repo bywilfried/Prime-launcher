@@ -631,34 +631,21 @@ object PrimeSearchOverlay {
                         // Show the Android contact photo on the left when available.
                         // Keep a neutral avatar placeholder for contacts without a photo.
                         val avatarSize = (36 * density).toInt()
-                        val avatar = ImageView(launcher).apply {
-                            // Clip both contact photos and fallback icons to a circle.
-                            background = android.graphics.drawable.GradientDrawable().apply {
-                                shape = android.graphics.drawable.GradientDrawable.OVAL
-                                setColor(android.graphics.Color.TRANSPARENT)
+                        val initials = contact.name.trim().split(Regex("\\s+"))
+                            .filter { it.isNotBlank() }
+                            .let { parts ->
+                                if (parts.size >= 2) {
+                                    "${parts.first().first().uppercaseChar()}${parts.last().first().uppercaseChar()}"
+                                } else parts.firstOrNull()?.take(2)?.uppercase().orEmpty()
+                            }
+                        val avatarFrame = FrameLayout(launcher).apply {
+                            background = GradientDrawable().apply {
+                                shape = GradientDrawable.OVAL
+                                val hue = (contact.uri.toString().hashCode().toLong() and 0x7fffffffL) % 360L
+                                setColor(Color.HSVToColor(floatArrayOf(hue.toFloat(), 0.34f, 0.66f)))
                             }
                             clipToOutline = true
-                            scaleType = ImageView.ScaleType.CENTER_CROP
-                            contentDescription = "Photo de " + contact.name
-                            setImageResource(android.R.drawable.ic_menu_myplaces)
-                            val photoKey = contact.uri.toString()
-                            val cachedPhoto = photoCache.get(photoKey)
-                            if (cachedPhoto != null) {
-                                setImageBitmap(cachedPhoto)
-                            } else {
-                                val target = this
-                                photoExecutor.execute {
-                                    val photo = runCatching {
-                                        android.provider.ContactsContract.Contacts.openContactPhotoInputStream(
-                                            launcher.contentResolver, contact.uri, true,
-                                        )?.use { android.graphics.BitmapFactory.decodeStream(it) }
-                                    }.getOrNull()
-                                    if (photo != null) {
-                                        photoCache.put(photoKey, photo)
-                                        webHandler.post { target.setImageBitmap(photo) }
-                                    }
-                                }
-                            }
+                            contentDescription = "Contact : " + contact.name
                             setOnClickListener {
                                 dialog.hideKeyboardForSelection()
                                 runCatching {
@@ -667,7 +654,41 @@ object PrimeSearchOverlay {
                                 }
                             }
                         }
-                        contactRow.addView(avatar, LinearLayout.LayoutParams(avatarSize, avatarSize).apply {
+                        val initialsView = TextView(launcher).apply {
+                            text = initials
+                            gravity = Gravity.CENTER
+                            setTextColor(Color.WHITE)
+                            setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 13f)
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                        }
+                        avatarFrame.addView(initialsView, FrameLayout.LayoutParams(-1, -1))
+                        val avatarPhoto = ImageView(launcher).apply {
+                            scaleType = ImageView.ScaleType.CENTER_CROP
+                            visibility = View.GONE
+                        }
+                        avatarFrame.addView(avatarPhoto, FrameLayout.LayoutParams(-1, -1))
+                        val photoKey = contact.uri.toString()
+                        val cachedPhoto = photoCache.get(photoKey)
+                        if (cachedPhoto != null) {
+                            avatarPhoto.setImageBitmap(cachedPhoto)
+                            avatarPhoto.visibility = View.VISIBLE
+                        } else {
+                            photoExecutor.execute {
+                                val photo = runCatching {
+                                    android.provider.ContactsContract.Contacts.openContactPhotoInputStream(
+                                        launcher.contentResolver, contact.uri, true,
+                                    )?.use { android.graphics.BitmapFactory.decodeStream(it) }
+                                }.getOrNull()
+                                if (photo != null) {
+                                    photoCache.put(photoKey, photo)
+                                    webHandler.post {
+                                        avatarPhoto.setImageBitmap(photo)
+                                        avatarPhoto.visibility = View.VISIBLE
+                                    }
+                                }
+                            }
+                        }
+                        contactRow.addView(avatarFrame, LinearLayout.LayoutParams(avatarSize, avatarSize).apply {
                             marginStart = (12 * density).toInt()
                             marginEnd = (8 * density).toInt()
                         })
