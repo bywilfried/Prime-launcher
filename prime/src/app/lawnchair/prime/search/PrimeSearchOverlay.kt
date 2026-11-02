@@ -1043,30 +1043,18 @@ object PrimeSearchOverlay {
             detailPage.translationY = 0f
             input.setText(originalDetailQuery)
             input.setSelection(input.text.length)
-            // Keep the detail page visible until the compact list has its
-            // final scroll offset; otherwise an intermediate frame flashes.
+            // Avoid displaying both weighted pages simultaneously: doing so
+            // makes LinearLayout remeasure them at different heights and flashes.
+            // Restore the compact viewport atomically in the same UI frame.
+            scroll.animate().cancel()
+            detailPage.animate().cancel()
+            detailPage.visibility = View.GONE
+            detailPage.alpha = 1f
+            scroll.alpha = 1f
             scroll.visibility = View.VISIBLE
-            scroll.alpha = 0f
-            scroll.requestLayout()
-            // Crossfade both surfaces only after the compact list has been
-            // measured and scrolled. Never expose a blank intermediate frame.
-            scroll.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
-                override fun onPreDraw(): Boolean {
-                    scroll.viewTreeObserver.removeOnPreDrawListener(this)
-                    scroll.scrollTo(0, returnCardScrollY)
-                    detailPage.animate().cancel()
-                    detailPage.alpha = 1f
-                    scroll.animate().alpha(1f).setDuration(140L)
-                        .setInterpolator(android.view.animation.DecelerateInterpolator()).start()
-                    detailPage.animate().alpha(0f).setDuration(140L)
-                        .withEndAction {
-                            detailPage.visibility = View.GONE
-                            detailPage.alpha = 1f
-                            detailClosing = false
-                        }.start()
-                    return true
-                }
-            })
+            scroll.scrollTo(0, returnCardScrollY)
+            scroll.post { scroll.scrollTo(0, returnCardScrollY) }
+            detailClosing = false
             container.requestLayout()
         }
         fun closeDetail() {
@@ -1784,19 +1772,9 @@ object PrimeSearchOverlay {
                                 view.paddingLeft, view.paddingTop,
                                 view.paddingRight + (44 * density).toInt(), view.paddingBottom,
                             )
-                            // Reposition only the native title, never the shortcut
-                            // icon or its clickable row. No duplicate text overlay.
-                            fun alignNativeShortcutTitle(node: View) {
-                                if (node is TextView && !node.text.isNullOrBlank()) {
-                                    node.translationY = -(10 * density)
-                                    node.gravity = (node.gravity and Gravity.HORIZONTAL_GRAVITY_MASK) or Gravity.TOP
-                                    return
-                                }
-                                if (node is ViewGroup) for (i in 0 until node.childCount) {
-                                    alignNativeShortcutTitle(node.getChildAt(i))
-                                }
-                            }
-                            alignNativeShortcutTitle(view)
+                            // Keep the native shortcut title and icon together.
+                            // Do not translate nested labels: the drawer clips them
+                            // and can produce missing or overlapping text.
                             val appName = runCatching {
                                 launcher.packageManager.getApplicationLabel(
                                     launcher.packageManager.getApplicationInfo(appPackage, 0)
