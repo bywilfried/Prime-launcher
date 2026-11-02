@@ -962,9 +962,9 @@ object PrimeSearchOverlay {
                             tag = category
                             background = GradientDrawable().apply {
                                 cornerRadius = 16 * density
-                                setColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND))
+                                setColor(themed(ThemeColorRole.PRIME_SEARCH_CARD_BACKGROUND))
                                 setStroke((density).toInt().coerceAtLeast(1),
-                                    themed(ThemeColorRole.PRIME_SEARCH_BORDER))
+                                    themed(ThemeColorRole.PRIME_SEARCH_CARD_BORDER))
                             }
                             setPadding((8 * density).toInt(), (8 * density).toInt(),
                                 (8 * density).toInt(), (8 * density).toInt())

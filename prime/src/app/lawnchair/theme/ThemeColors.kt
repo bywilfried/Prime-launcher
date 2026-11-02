@@ -704,6 +704,8 @@ object ThemeColors {
         ThemeColorRole.PRIME_SEARCH_TAB_ACTIVE -> legacy(context, ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT, variant)
         ThemeColorRole.PRIME_SEARCH_TAB_INACTIVE -> legacy(context, ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT, variant)
         ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND -> legacy(context, ThemeColorRole.DRAWER_BACKGROUND, variant)
+        ThemeColorRole.PRIME_SEARCH_CARD_BACKGROUND -> legacy(context, ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND, variant)
+        ThemeColorRole.PRIME_SEARCH_CARD_BORDER -> legacy(context, ThemeColorRole.PRIME_SEARCH_BORDER, variant)
         ThemeColorRole.PRIME_SEARCH_RESULT_TEXT -> legacy(context, ThemeColorRole.DRAWER_TEXT, variant)
         ThemeColorRole.PRIME_SEARCH_APP_LABEL -> legacy(context, ThemeColorRole.DRAWER_ICON_TEXT, variant)
         ThemeColorRole.PRIME_SEARCH_SETTINGS_ICON -> legacy(context, ThemeColorRole.DRAWER_SEARCH_ICON, variant)
