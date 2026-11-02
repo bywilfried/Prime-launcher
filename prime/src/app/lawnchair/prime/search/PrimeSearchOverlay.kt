@@ -1048,16 +1048,25 @@ object PrimeSearchOverlay {
             scroll.visibility = View.VISIBLE
             scroll.alpha = 0f
             scroll.requestLayout()
-            scroll.postOnAnimation {
-                scroll.scrollTo(0, returnCardScrollY)
-                scroll.postOnAnimation {
+            // Crossfade both surfaces only after the compact list has been
+            // measured and scrolled. Never expose a blank intermediate frame.
+            scroll.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
+                override fun onPreDraw(): Boolean {
+                    scroll.viewTreeObserver.removeOnPreDrawListener(this)
                     scroll.scrollTo(0, returnCardScrollY)
-                    scroll.alpha = 1f
-                    detailPage.visibility = View.GONE
-                    detailClosing = false
-                    container.requestLayout()
+                    detailPage.animate().cancel()
+                    detailPage.alpha = 1f
+                    scroll.animate().alpha(1f).setDuration(140L)
+                        .setInterpolator(android.view.animation.DecelerateInterpolator()).start()
+                    detailPage.animate().alpha(0f).setDuration(140L)
+                        .withEndAction {
+                            detailPage.visibility = View.GONE
+                            detailPage.alpha = 1f
+                            detailClosing = false
+                        }.start()
+                    return true
                 }
-            }
+            })
             container.requestLayout()
         }
         fun closeDetail() {
@@ -1098,7 +1107,11 @@ object PrimeSearchOverlay {
             originalDetailQuery = input.text.toString()
             applyDetailFilter()
             dialog.hideKeyboardForSelection()
+            scroll.animate().cancel()
+            scroll.alpha = 1f
             scroll.visibility = View.GONE
+            detailPage.animate().cancel()
+            detailPage.alpha = 1f
             detailPage.visibility = View.VISIBLE
             detailPage.alpha = 1f
             detailScroll.pivotY = 0f
