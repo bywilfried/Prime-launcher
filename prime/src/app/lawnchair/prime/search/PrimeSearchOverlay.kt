@@ -978,46 +978,22 @@ object PrimeSearchOverlay {
             isClickable = true
         }
         // Independent category filter: never edits the main search query.
-        val detailFilter = EditText(launcher).apply {
-            setSingleLine(true)
-            hint = "Affiner cette catégorie"
-            setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
-            setHintTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
-            textSize = 15f
-            setPadding((16 * density).toInt(), (8 * density).toInt(),
-                (16 * density).toInt(), (8 * density).toInt())
-            background = GradientDrawable().apply {
-                cornerRadius = 14 * density
-                setColor(themed(ThemeColorRole.PRIME_SEARCH_CARD_BACKGROUND))
-            }
-        }
+        var originalDetailQuery = ""
         fun applyDetailFilter() {
             val card = detailCard ?: return
-            val filter = detailFilter.text.toString().trim()
+            val filter = input.text.toString().trim()
+            fun containsText(node: View): Boolean {
+                if (node is TextView && node.text?.contains(filter, ignoreCase = true) == true) return true
+                if (node is ViewGroup) for (i in 0 until node.childCount) {
+                    if (containsText(node.getChildAt(i))) return true
+                }
+                return false
+            }
             for (index in 0 until card.childCount) {
                 val child = card.getChildAt(index)
-                if (filter.isEmpty()) {
-                    child.visibility = View.VISIBLE
-                } else {
-                    fun containsText(node: View): Boolean {
-                        if (node is TextView && node.text?.contains(filter, ignoreCase = true) == true) return true
-                        if (node is ViewGroup) for (i in 0 until node.childCount) {
-                            if (containsText(node.getChildAt(i))) return true
-                        }
-                        return false
-                    }
-                    child.visibility = if (containsText(child)) View.VISIBLE else View.GONE
-                }
+                child.visibility = if (filter.isEmpty() || containsText(child)) View.VISIBLE else View.GONE
             }
         }
-        detailFilter.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                applyDetailFilter()
-                detailScroll.scrollTo(0, 0)
-            }
-            override fun afterTextChanged(s: Editable?) = Unit
-        })
         val detailReduce = TextView(launcher).apply {
             text = "⌃  Réduire"
             gravity = Gravity.CENTER
@@ -1029,11 +1005,6 @@ object PrimeSearchOverlay {
             orientation = LinearLayout.VERTICAL
             visibility = View.GONE
             isFocusableInTouchMode = true
-            addView(detailFilter, LinearLayout.LayoutParams(-1, -2).apply {
-                marginStart = (4 * density).toInt()
-                marginEnd = (4 * density).toInt()
-                bottomMargin = (8 * density).toInt()
-            })
             addView(detailScroll, LinearLayout.LayoutParams(-1, 0, 1f).apply {
                 marginStart = (4 * density).toInt()
                 marginEnd = (4 * density).toInt()
@@ -1059,14 +1030,18 @@ object PrimeSearchOverlay {
             if (card != null) for (index in 0 until card.childCount) {
                 card.getChildAt(index).visibility = View.VISIBLE
             }
-            detailFilter.text.clear()
             detailCard = null
             detailParent = null
             detailOpen = false
             detailPage.animate().cancel()
+            detailScroll.animate().cancel()
+            detailScroll.scaleY = 1f
+            detailScroll.alpha = 1f
             detailPage.translationY = 0f
             detailPage.visibility = View.GONE
-            (input.parent as? View)?.visibility = View.VISIBLE
+            input.setText(originalDetailQuery)
+            input.setSelection(input.text.length)
+            lastSubmittedQuery = originalDetailQuery
             scroll.visibility = View.VISIBLE
             scroll.post { scroll.scrollTo(0, savedScrollY) }
             container.requestLayout()
@@ -1090,16 +1065,19 @@ object PrimeSearchOverlay {
             detailOpen = true
             parent.removeView(card)
             detailContent.addView(card, LinearLayout.LayoutParams(-1, -2))
-            detailFilter.setText(input.text)
+            originalDetailQuery = input.text.toString()
             applyDetailFilter()
             dialog.hideKeyboardForSelection()
-            (input.parent as? View)?.visibility = View.GONE
             scroll.visibility = View.GONE
             detailPage.visibility = View.VISIBLE
-            detailPage.alpha = 0f
-            detailPage.translationY = (18 * density)
-            detailPage.animate().alpha(1f).translationY(0f)
-                .setDuration(260L).start()
+            detailPage.alpha = 1f
+            detailScroll.pivotY = 0f
+            detailScroll.scaleY = 0.72f
+            detailScroll.alpha = 0.35f
+            detailScroll.animate().scaleY(1f).alpha(1f)
+                .setDuration(320L)
+                .setInterpolator(android.view.animation.DecelerateInterpolator())
+                .start()
             detailPage.requestFocus()
             container.requestLayout()
         }
@@ -1867,6 +1845,11 @@ object PrimeSearchOverlay {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val query = s?.toString().orEmpty()
+                if (detailOpen) {
+                    applyDetailFilter()
+                    detailScroll.scrollTo(0, 0)
+                    return
+                }
                 if (query == lastSubmittedQuery) return
                 lastSubmittedQuery = query
                 scroll.scrollTo(0, 0)
