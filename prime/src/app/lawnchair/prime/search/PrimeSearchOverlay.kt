@@ -977,16 +977,69 @@ object PrimeSearchOverlay {
                 (16 * density).toInt(), (12 * density).toInt())
             isClickable = true
         }
+        // Independent category filter: never edits the main search query.
+        val detailFilter = EditText(launcher).apply {
+            singleLine = true
+            hint = "Affiner cette catégorie"
+            setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+            setHintTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+            textSize = 15f
+            setPadding((16 * density).toInt(), (8 * density).toInt(),
+                (16 * density).toInt(), (8 * density).toInt())
+            background = GradientDrawable().apply {
+                cornerRadius = 14 * density
+                setColor(themed(ThemeColorRole.PRIME_SEARCH_CARD_BACKGROUND))
+            }
+        }
+        fun applyDetailFilter() {
+            val card = detailCard ?: return
+            val filter = detailFilter.text.toString().trim()
+            for (index in 0 until card.childCount) {
+                val child = card.getChildAt(index)
+                if (filter.isEmpty()) {
+                    child.visibility = View.VISIBLE
+                } else {
+                    fun containsText(node: View): Boolean {
+                        if (node is TextView && node.text?.contains(filter, ignoreCase = true) == true) return true
+                        if (node is ViewGroup) for (i in 0 until node.childCount) {
+                            if (containsText(node.getChildAt(i))) return true
+                        }
+                        return false
+                    }
+                    child.visibility = if (containsText(child)) View.VISIBLE else View.GONE
+                }
+            }
+        }
+        detailFilter.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                applyDetailFilter()
+                detailScroll.scrollTo(0, 0)
+            }
+            override fun afterTextChanged(s: Editable?) = Unit
+        })
+        val detailReduce = TextView(launcher).apply {
+            text = "⌃  Réduire"
+            gravity = Gravity.CENTER
+            textSize = 15f
+            setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+            setPadding(0, (12 * density).toInt(), 0, (12 * density).toInt())
+        }
         val detailPage = LinearLayout(launcher).apply {
             orientation = LinearLayout.VERTICAL
             visibility = View.GONE
             isFocusableInTouchMode = true
-            addView(detailBack, LinearLayout.LayoutParams(-1, -2))
-            addView(detailScroll, LinearLayout.LayoutParams(-1, 0, 1f).apply {
+            addView(detailFilter, LinearLayout.LayoutParams(-1, -2).apply {
                 marginStart = (4 * density).toInt()
                 marginEnd = (4 * density).toInt()
                 bottomMargin = (8 * density).toInt()
             })
+            addView(detailScroll, LinearLayout.LayoutParams(-1, 0, 1f).apply {
+                marginStart = (4 * density).toInt()
+                marginEnd = (4 * density).toInt()
+                bottomMargin = (4 * density).toInt()
+            })
+            addView(detailReduce, LinearLayout.LayoutParams(-1, -2))
         }
         container.addView(detailPage, LinearLayout.LayoutParams(-1, 0, 1f))
         fun closeDetail() {
@@ -1002,17 +1055,24 @@ object PrimeSearchOverlay {
                 }
                 parent.addView(card, detailIndex.coerceIn(0, parent.childCount), params)
             }
+            // Restore all original rows before returning to the compact page.
+            if (card != null) for (index in 0 until card.childCount) {
+                card.getChildAt(index).visibility = View.VISIBLE
+            }
+            detailFilter.text.clear()
             detailCard = null
             detailParent = null
             detailOpen = false
             detailPage.animate().cancel()
             detailPage.translationY = 0f
             detailPage.visibility = View.GONE
+            (input.parent as? View)?.visibility = View.VISIBLE
             scroll.visibility = View.VISIBLE
             scroll.post { scroll.scrollTo(0, savedScrollY) }
             container.requestLayout()
         }
         detailBack.setOnClickListener { closeDetail() }
+        detailReduce.setOnClickListener { closeDetail() }
         detailPage.setOnKeyListener { _, code, event ->
             if (code == android.view.KeyEvent.KEYCODE_BACK &&
                 event.action == android.view.KeyEvent.ACTION_UP) {
@@ -1030,7 +1090,10 @@ object PrimeSearchOverlay {
             detailOpen = true
             parent.removeView(card)
             detailContent.addView(card, LinearLayout.LayoutParams(-1, -2))
+            detailFilter.setText(input.text)
+            applyDetailFilter()
             dialog.hideKeyboardForSelection()
+            (input.parent as? View)?.visibility = View.GONE
             scroll.visibility = View.GONE
             detailPage.visibility = View.VISIBLE
             detailPage.alpha = 0f
