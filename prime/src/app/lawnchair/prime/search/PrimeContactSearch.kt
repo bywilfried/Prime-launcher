@@ -35,7 +35,7 @@ object PrimeContactSearch {
                         arrayOf("%${query.trim()}%"),
                         ContactsContract.Contacts.DISPLAY_NAME_PRIMARY + " ASC"
                     )?.use { cursor ->
-                        while (cursor.moveToNext() && results.size < 30) {
+                        while (cursor.moveToNext() && results.size < 300) {
                             val id = cursor.getLong(0)
                             if (id !in allowedIds) continue
                             val phone = context.contentResolver.query(
@@ -71,6 +71,6 @@ object PrimeContactSearch {
         return results.values.sortedWith(
             compareBy<Result> { rank(it.name) }
                 .thenBy { it.name.lowercase(java.util.Locale.ROOT) }
-        )
+        ).take(30)
     }
 }
