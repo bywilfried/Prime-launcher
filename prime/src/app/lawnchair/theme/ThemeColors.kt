@@ -692,7 +692,29 @@ object ThemeColors {
         if (variant == ThemeVariant.DARK) UiColorMode.Dark else UiColorMode.Light,
     )
 
-    private fun legacy(context: Context, role: ThemeColorRole, variant: ThemeVariant): Int = when (role) {
+    // Official Legacy dark Prime Search surfaces. These are palette recipes,
+    // not stored user overrides, so they continue following wallpaper colors.
+    private fun legacyDarkPrimeSearchSurface(context: Context, role: ThemeColorRole): Int? {
+        val shade = when (role) {
+            ThemeColorRole.PRIME_SEARCH_WINDOW_BACKGROUND,
+            ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND,
+            ThemeColorRole.PRIME_SEARCH_BORDER,
+            ThemeColorRole.PRIME_SEARCH_CARD_BORDER -> 800
+            ThemeColorRole.PRIME_SEARCH_BAR_BACKGROUND,
+            ThemeColorRole.PRIME_SEARCH_CARD_BACKGROUND -> 700
+            else -> return null
+        }
+        return ColorOption.DynamicColor("Accent2", shade).colorPreferenceEntry.darkColor(context)
+    }
+
+    private fun legacy(context: Context, role: ThemeColorRole, variant: ThemeVariant): Int {
+        if (variant == ThemeVariant.DARK) {
+            legacyDarkPrimeSearchSurface(context, role)?.let { return it }
+        }
+        return legacyRoleColor(context, role, variant)
+    }
+
+    private fun legacyRoleColor(context: Context, role: ThemeColorRole, variant: ThemeVariant): Int = when (role) {
         // Match the original Legacy visual palette without reading any drawer
         // overrides. legacy() resolves baseline values, not user customizations.
         ThemeColorRole.PRIME_SEARCH_WINDOW_BACKGROUND -> legacy(context, ThemeColorRole.DRAWER_BACKGROUND, variant)
