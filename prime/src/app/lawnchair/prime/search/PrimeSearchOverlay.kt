@@ -269,8 +269,8 @@ object PrimeSearchOverlay {
         }
         val results = LinearLayout(launcher).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding((12 * density).toInt(), (12 * density).toInt(),
-                (12 * density).toInt(), (8 * density).toInt())
+            setPadding((4 * density).toInt(), (12 * density).toInt(),
+                (4 * density).toInt(), (8 * density).toInt())
             // Search results must not start flush against the search field.
             // This padding belongs only to typed results, not the zero-state tabs.
             setBackgroundColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND))
@@ -289,6 +289,11 @@ object PrimeSearchOverlay {
         zeroState.addView(tabs, LinearLayout.LayoutParams(-1, -2))
         zeroState.addView(zeroApps, LinearLayout.LayoutParams(-1, -2))
         val scroll = ScrollView(launcher).apply {
+            // Native scroll-edge gradients: fade content under the search bar
+            // and at the bottom without expensive real-time bitmap blur.
+            isVerticalFadingEdgeEnabled = true
+            setFadingEdgeLength((24 * density).toInt())
+            isFillViewport = false
             addView(results)
         }
         lateinit var settings: ImageView
@@ -966,8 +971,8 @@ object PrimeSearchOverlay {
                                 setStroke((density).toInt().coerceAtLeast(1),
                                     themed(ThemeColorRole.PRIME_SEARCH_CARD_BORDER))
                             }
-                            setPadding((8 * density).toInt(), (8 * density).toInt(),
-                                (8 * density).toInt(), (8 * density).toInt())
+                            setPadding((6 * density).toInt(), (8 * density).toInt(),
+                                (6 * density).toInt(), (8 * density).toInt())
                         }
                     }
                 }
@@ -1027,7 +1032,7 @@ object PrimeSearchOverlay {
             priorities.forEach { category ->
                 grouped[category]?.takeIf { it.childCount > 0 }?.let { card ->
                     results.addView(card, LinearLayout.LayoutParams(-1, -2).apply {
-                        val margin = (6 * density).toInt()
+                        val margin = (4 * density).toInt()
                         topMargin = margin
                         bottomMargin = margin
                     })
