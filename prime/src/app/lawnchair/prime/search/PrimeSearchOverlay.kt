@@ -1154,22 +1154,11 @@ object PrimeSearchOverlay {
                 val cellWidth = (gridWidth / columns).coerceAtLeast(1)
                 // Match the zero-state Prime Search icon and label settings.
                 // This is local to the Prime overlay; drawer search is untouched.
-                val searchIconSize = (48 * density *
-                    PrimeSearchResultPreferences.appResultsIconSizePercent(launcher) / 100f).toInt().coerceAtLeast(1)
                 val searchLabelLines = if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
-                val searchLabelPaint = android.text.TextPaint().apply {
-                    textSize = 11f * launcher.resources.displayMetrics.scaledDensity
-                }
-                val searchLabelHeight = kotlin.math.ceil(
-                    (searchLabelPaint.fontMetrics.descent - searchLabelPaint.fontMetrics.ascent).toDouble()
-                ).toInt().coerceAtLeast(1) * searchLabelLines
-                // Use the same geometry as the working Fréquentes/Récentes/Nouvelles grid.
-                val searchCellTopPadding = (4 * density).toInt()
-                val searchIconLabelGap = (4 * density).toInt()
-                val searchRowBottomPadding = (4 * density).toInt()
-                val iconViewHeight = searchIconSize
-                val searchRowHeight = searchCellTopPadding + iconViewHeight +
-                    searchIconLabelGap + searchLabelHeight + searchRowBottomPadding
+                val searchIconPercent = PrimeSearchResultPreferences.appResultsIconSizePercent(launcher)
+                val searchIconSize = PrimeAppGridGeometry.iconPx(launcher, searchIconPercent)
+                val searchRowHeight = PrimeAppGridGeometry.rowHeightPx(
+                    launcher, searchIconPercent, searchLabelLines)
                 var appRow: LinearLayout? = null
                 var appsInRow = 0
                 val nativeSections = mutableListOf<Pair<PrimeSearchResultPreferences.Category, LinearLayout>>()

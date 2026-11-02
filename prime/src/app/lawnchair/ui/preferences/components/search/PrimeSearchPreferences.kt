@@ -35,6 +35,7 @@ import androidx.compose.ui.platform.LocalDensity
 import kotlin.math.roundToInt
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -658,33 +659,45 @@ fun PrimeSearchPreference() {
                                 Column(modifier = Modifier.padding(8.dp)) {
                                     Text("Applications", modifier = Modifier.padding(6.dp),
                                         style = androidx.compose.material3.MaterialTheme.typography.titleSmall)
+                                    val geometry = app.lawnchair.prime.search.PrimeAppGridGeometry
+                                    val lines = if (PrimeSearchResultPreferences.twoLineAppLabels(context)) 2 else 1
+                                    val density = context.resources.displayMetrics.density
+                                    val iconDp = (geometry.iconPx(context, effectiveIconPercent) / density).dp
+                                    val rowDp = (geometry.rowHeightPx(context, effectiveIconPercent, lines) / density).dp
+                                    val labelDp = (geometry.labelHeightPx(context, lines) / density).dp
                                     repeat(effectiveRows) { rowIndex ->
-                                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                            horizontalArrangement = Arrangement.SpaceEvenly) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().height(rowDp),
+                                            horizontalArrangement = Arrangement.SpaceEvenly,
+                                        ) {
                                             repeat(effectiveColumns) { columnIndex ->
-                                                val index = rowIndex * effectiveColumns + columnIndex
-                                                val app = installedPreview.getOrNull(index)
-                                                Column(modifier = Modifier.weight(1f),
-                                                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+                                                val app = installedPreview.getOrNull(rowIndex * effectiveColumns + columnIndex)
+                                                Column(
+                                                    modifier = Modifier.weight(1f),
+                                                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+                                                ) {
+                                                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(geometry.TOP_DP.dp))
                                                     androidx.compose.foundation.layout.Box(
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .height((48f * effectiveIconPercent / 100f).dp),
+                                                        modifier = Modifier.fillMaxWidth().height(iconDp),
                                                         contentAlignment = androidx.compose.ui.Alignment.Center,
                                                     ) {
                                                         if (app != null) {
                                                             androidx.compose.foundation.Image(
                                                                 bitmap = app.second,
                                                                 contentDescription = null,
-                                                                modifier = Modifier.size(
-                                                                    (48f * effectiveIconPercent / 100f).dp),
+                                                                modifier = Modifier.size(iconDp),
                                                             )
                                                         }
                                                     }
-                                                    Text(app?.first.orEmpty(), maxLines = 1,
+                                                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(geometry.ICON_LABEL_GAP_DP.dp))
+                                                    Text(
+                                                        app?.first.orEmpty(),
+                                                        modifier = Modifier.height(labelDp),
+                                                        maxLines = lines,
                                                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                                        style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
-                                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                                        fontSize = 11.sp,
+                                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                                    )
                                                 }
                                             }
                                         }
