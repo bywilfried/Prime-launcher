@@ -1741,6 +1741,19 @@ object PrimeSearchOverlay {
                                 view.paddingLeft, view.paddingTop,
                                 view.paddingRight + (44 * density).toInt(), view.paddingBottom,
                             )
+                            // The drawer row centers its label vertically by default.
+                            // Shift only text upward so the shortcut name starts at the
+                            // top of the leading icon, without moving either icon.
+                            fun alignShortcutText(node: View) {
+                                if (node is TextView) {
+                                    node.translationY = -(12 * density)
+                                } else if (node is ViewGroup) {
+                                    for (childIndex in 0 until node.childCount) {
+                                        alignShortcutText(node.getChildAt(childIndex))
+                                    }
+                                }
+                            }
+                            alignShortcutText(view)
                             val appName = runCatching {
                                 launcher.packageManager.getApplicationLabel(
                                     launcher.packageManager.getApplicationInfo(appPackage, 0)
@@ -1761,7 +1774,7 @@ object PrimeSearchOverlay {
                             container.addView(subtitle, FrameLayout.LayoutParams(
                                 -1, (24 * density).toInt(), Gravity.TOP,
                             ).apply {
-                                topMargin = (34 * density).toInt()
+                                topMargin = (29 * density).toInt()
                             })
                             parent.addView(container, index, (originalParams as? LinearLayout.LayoutParams
                                 ?: LinearLayout.LayoutParams(-1, -2)).apply {
