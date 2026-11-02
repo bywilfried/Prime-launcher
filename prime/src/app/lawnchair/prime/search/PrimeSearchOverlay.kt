@@ -938,13 +938,6 @@ object PrimeSearchOverlay {
             sections.sortedBy { (category, _) -> order.indexOf(category) }
                 .forEach { (_, views) -> views.forEach(webPanel::addView) }
         }
-        // During one query, preserve the first visible position of a category.
-        // New provider sections append instead of pushing existing results around.
-        var stableOrderQuery = ""
-        val stableCategories = mutableListOf<PrimeSearchResultPreferences.Category>()
-        // Reuse stable category containers instead of allocating new ones for
-        // every asynchronous provider completion.
-        val sectionCache = mutableMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
         fun reorderSearchSections() {
             val priorities = PrimeSearchResultPreferences.order(launcher)
             val headingCategories = mapOf(
@@ -962,11 +955,9 @@ object PrimeSearchOverlay {
             val grouped = linkedMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
             fun sectionFor(category: PrimeSearchResultPreferences.Category): LinearLayout =
                 grouped.getOrPut(category) {
-                    sectionCache.getOrPut(category) {
-                        LinearLayout(launcher).apply {
-                            orientation = LinearLayout.VERTICAL
-                            tag = category
-                        }
+                    LinearLayout(launcher).apply {
+                        orientation = LinearLayout.VERTICAL
+                        tag = category
                     }
                 }
             // When the dedicated Prime settings provider has results, use it
@@ -997,9 +988,7 @@ object PrimeSearchOverlay {
                     (hasPrimeContacts && category == PrimeSearchResultPreferences.Category.CONTACTS)) return@forEach
                 if (category != null && PrimeSearchResultPreferences.enabled(launcher, category)) {
                     val section = sectionFor(category)
-                    if (view is ViewGroup && view !== section) {
-                        // A category may already be the cached destination.
-                        // Moving its children into itself would loop forever.
+                    if (view is ViewGroup) {
                         while (view.childCount > 0) {
                             val child = view.getChildAt(0)
                             view.removeViewAt(0)
@@ -1009,7 +998,6 @@ object PrimeSearchOverlay {
                 }
             }
             var currentCategory: PrimeSearchResultPreferences.Category? = null
-            val dynamicCategories = mutableSetOf<PrimeSearchResultPreferences.Category>()
             while (webPanel.childCount > 0) {
                 val child = webPanel.getChildAt(0)
                 webPanel.removeViewAt(0)
@@ -1017,51 +1005,16 @@ object PrimeSearchOverlay {
                 if (headingCategory != null) currentCategory = headingCategory
                 val category = currentCategory
                 if (category != null && PrimeSearchResultPreferences.enabled(launcher, category)) {
-                    val section = sectionFor(category)
-                    if (dynamicCategories.add(category)) {
-                        // Replace only this provider category, not all sections.
-                        section.removeAllViews()
-                    }
-                    section.addView(child)
+                    sectionFor(category).addView(child)
                 }
             }
-            // Dynamic categories no longer returned by providers must not
-            // retain stale suggestions or contact rows.
-            listOf(
-                PrimeSearchResultPreferences.Category.WEB,
-                PrimeSearchResultPreferences.Category.WEB_SHORTCUTS,
-            ).filter { it !in dynamicCategories }.forEach { sectionCache[it]?.removeAllViews() }
-            // Reconcile the section containers rather than removing every
-            // result view on each asynchronous provider update.
-            val currentQuery = input.text.toString()
-            if (stableOrderQuery != currentQuery) {
-                stableOrderQuery = currentQuery
-                stableCategories.clear()
+            results.removeAllViews()
+            priorities.forEach { category ->
+                grouped[category]?.takeIf { it.childCount > 0 }?.let(results::addView)
             }
-            val available = grouped.filterValues { it.childCount > 0 }.keys
-            if (stableCategories.isEmpty()) {
-                stableCategories.addAll(priorities.filter { it in available })
-            } else {
-                priorities.filter { it in available && it !in stableCategories }
-                    .forEach(stableCategories::add)
-            }
-            val desired = stableCategories.mapNotNull { category ->
-                grouped[category]?.takeIf { it.childCount > 0 }
-            } + webPanel
-            desired.forEachIndexed { index, view ->
-                if (results.getChildAt(index) !== view) {
-                    val currentIndex = results.indexOfChild(view)
-                    if (currentIndex >= 0) {
-                        results.removeViewAt(currentIndex)
-                    } else {
-                        (view.parent as? ViewGroup)?.removeView(view)
-                    }
-                    results.addView(view, index.coerceAtMost(results.childCount))
-                }
-            }
-            while (results.childCount > desired.size) {
-                results.removeViewAt(results.childCount - 1)
-            }
+            // The panel is a staging area only; it must not become an extra
+            // unconfigured results block.
+            results.addView(webPanel)
         }
 
         reorderAfterContacts = { reorderSearchSections() }
@@ -1143,12 +1096,8 @@ object PrimeSearchOverlay {
         }
         // Avoid tearing down clickable views when an asynchronous provider
         // reports the exact same native results again.
-        var lastRenderedLayoutQuery: String? = null
         var lastNativeRenderQuery: String? = null
         var lastNativeRenderSignature: List<String>? = null
-        // Category-level snapshots let progressive provider updates retain already
-        // bound icons, click listeners and gesture handlers.
-        val renderedCategoryIds = mutableMapOf<PrimeSearchResultPreferences.Category, List<String>>()
         val callback = object : SearchCallback<BaseAllAppsAdapter.AdapterItem> {
             override fun onSearchResult(query: String, items: ArrayList<BaseAllAppsAdapter.AdapterItem>?) {
                 if (!dialog.isShowing || input.text.toString() != query) return
@@ -1159,19 +1108,11 @@ object PrimeSearchOverlay {
                 if (lastNativeRenderQuery == query && lastNativeRenderSignature == signature) return
                 lastNativeRenderQuery = query
                 lastNativeRenderSignature = signature
-                val renderStarted = android.os.SystemClock.elapsedRealtime()
-                // Reuse the existing native section if this category has the same
-                // ordered IDs. It may still move when user-defined priorities change.
-                val previousNativeSections = (0 until results.childCount)
-                    .map { results.getChildAt(it) }
-                    .filterIsInstance<LinearLayout>()
-                    .mapNotNull { view ->
-                        (view.tag as? PrimeSearchResultPreferences.Category)?.let { it to view }
-                    }.toMap()
-                // Keep scroll position stable for progressive provider updates of the same query.
-                val queryChanged = lastRenderedLayoutQuery != query
-                lastRenderedLayoutQuery = query
-                if (queryChanged) scroll.scrollTo(0, 0)
+                results.removeAllViews()
+                scroll.scrollTo(0, 0)
+                scroll.post { if (dialog.isShowing && input.text.toString() == query) scroll.scrollTo(0, 0) }
+                // Re-measure after the search results have changed.
+                results.post { if (dialog.isShowing) container.requestLayout() }
                 // Preserve the algorithm's order and section boundaries. Each item is
                 // inflated with the same layout used by the drawer's adapter provider.
                 val inflater = LayoutInflater.from(launcher)
@@ -1244,25 +1185,12 @@ object PrimeSearchOverlay {
                 val filteredNativeItems = PrimeSearchResultPreferences.filter(
                     launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(),
                 )
-                val newCategoryIds = filteredNativeItems.groupBy { nativeCategoryFor(it) }
-                    .mapNotNull { (category, categoryItems) ->
-                        category?.let { key ->
-                            key to categoryItems.map { item ->
-                                "${item.searchTarget.resultType}:${item.searchTarget.layoutType}:${item.searchTarget.id}"
-                            }
-                        }
-                    }.toMap()
-                val reusableCategories = newCategoryIds.keys.filter { category ->
-                    renderedCategoryIds[category] == newCategoryIds[category] &&
-                        previousNativeSections.containsKey(category)
-                }.toSet()
                 filteredNativeItems.forEach { item ->
                     val category = nativeCategoryFor(item) ?: return@forEach
                     // A result is visible only when its corresponding search
                     // category is enabled in the Prime Search settings.
                     if (!PrimeSearchResultPreferences.enabled(launcher, category)) return@forEach
                     if (category != null && nativeCategory != null && category != nativeCategory) flushNativeSection()
-                    if (category in reusableCategories) return@forEach
                     if (category != null && nativeCategory != category) {
                         nativeCategory = category
                         if (category == PrimeSearchResultPreferences.Category.APP_SHORTCUTS) {
@@ -1608,46 +1536,21 @@ object PrimeSearchOverlay {
                     }
                 }
                 flushNativeSection()
-                // Detach old sections only after building replacements, so unchanged
-                // categories keep their original view instances.
-                val selectedSections = mutableListOf<LinearLayout>()
-                newCategoryIds.keys.forEach { category ->
-                    if (!PrimeSearchResultPreferences.enabled(launcher, category)) return@forEach
-                    val section = if (category in reusableCategories) {
-                        previousNativeSections[category]
-                    } else {
-                        nativeSections.firstOrNull { it.first == category }?.second
-                    }
-                    if (section != null) {
+                nativeSections.forEach { (category, section) ->
+                    if (PrimeSearchResultPreferences.enabled(launcher, category)) {
                         section.tag = category
-                        selectedSections.add(section)
+                        results.addView(section)
                     }
                 }
-                val keep = selectedSections.toSet()
-                (0 until results.childCount).map { results.getChildAt(it) }
-                    .filter { it !== webPanel && it !in keep }
-                    .forEach(results::removeView)
-                selectedSections.forEach { section ->
-                    if (section.parent == null) {
-                        val panelIndex = results.indexOfChild(webPanel)
-                        results.addView(section, if (panelIndex < 0) results.childCount else panelIndex)
-                    }
-                }
-                if (webPanel.parent == null) results.addView(webPanel)
-                renderedCategoryIds.clear()
-                renderedCategoryIds.putAll(newCategoryIds)
+                results.addView(webPanel)
                 renderWebPanel(query)
                 reorderSearchSections()
-                // addView/removeAllViews already schedule layout; avoid another explicit pass.
-                app.lawnchair.search.PrimeSearchTrace.record("overlay render len=${query.length} items=${items?.size ?: 0} ms=${android.os.SystemClock.elapsedRealtime() - renderStarted}")
+                results.requestLayout()
             }
 
             override fun clearSearchResult() {
                 results.removeAllViews()
-                renderedCategoryIds.clear()
-                stableCategories.clear()
-                lastNativeRenderQuery = null
-                lastNativeRenderSignature = null
+                results.requestLayout()
             }
         }
         // IME visibility and focus changes must not restart an unchanged query.
@@ -1681,7 +1584,7 @@ object PrimeSearchOverlay {
                         }
                     }
                     pendingSearch = task
-                    webHandler.post(task)
+                    webHandler.postDelayed(task, 110L)
                 }
             }
             override fun afterTextChanged(s: Editable?) = Unit

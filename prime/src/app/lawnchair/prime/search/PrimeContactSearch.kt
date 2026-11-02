@@ -56,6 +56,21 @@ object PrimeContactSearch {
                 }
             }
         }
-        return results.values.toList()
+        // Prefer an exact name, then names beginning with the query,
+        // then word-boundary matches, and finally parenthetical/substring matches.
+        val needle = query.trim().lowercase(java.util.Locale.ROOT)
+        fun rank(name: String): Int {
+            val value = name.trim().lowercase(java.util.Locale.ROOT)
+            return when {
+                value == needle -> 0
+                value.startsWith(needle) -> 1
+                value.split(Regex("[\\s\\-]+")).any { it.startsWith(needle) } -> 2
+                else -> 3
+            }
+        }
+        return results.values.sortedWith(
+            compareBy<Result> { rank(it.name) }
+                .thenBy { it.name.lowercase(java.util.Locale.ROOT) }
+        )
     }
 }
