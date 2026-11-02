@@ -76,7 +76,9 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
         // IME visibility/focus changes can request the same drawer search again.
         // Keep the current provider flows and displayed results instead of
         // restarting network suggestions for an unchanged query.
-        if (query == lastQuery && lastDeliveredItems != null) {
+        // Prime Search must be able to retry an identical query: the previous
+        // snapshot may have been published before the app model was ready.
+        if (!primeSearch && query == lastQuery && lastDeliveredItems != null) {
             if (callback !== lastCallback) {
                 lastCallback = callback
                 lastDeliveredItems?.let { items ->
@@ -105,6 +107,20 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                 )
                 app.lawnchair.search.PrimeSearchTrace.record("engine appMatch len=${query.length} count=${appResults.size} ms=${SystemClock.elapsedRealtime() - appSearchStarted}")
                 if (generation != searchGeneration) return@launch
+                // Deliver apps independently of slower contacts, shortcuts, files
+                // and network providers. A provider that stalls cannot hide apps.
+                if (primeSearch && appResults.isNotEmpty()) {
+                    val appTargets = translateToSearchTargets(appResults)
+                    setFirstItemQuickLaunch(appTargets)
+                    val appItems = transformSearchResults(appTargets)
+                    withContext(Dispatchers.Main) {
+                        if (generation == searchGeneration) {
+                            val snapshot = ArrayList<BaseAllAppsAdapter.AdapterItem>(appItems)
+                            lastDeliveredItems = ArrayList(snapshot)
+                            lastCallback?.onSearchResult(query, ArrayList(snapshot))
+                        }
+                    }
+                }
                 // Publish application matches immediately. Shortcut discovery
                 // can take much longer on devices with many installed apps.
                 val shortcutResultsFlow = flow {
