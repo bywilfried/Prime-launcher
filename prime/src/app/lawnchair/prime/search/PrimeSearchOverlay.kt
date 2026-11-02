@@ -942,6 +942,9 @@ object PrimeSearchOverlay {
         // New provider sections append instead of pushing existing results around.
         var stableOrderQuery = ""
         val stableCategories = mutableListOf<PrimeSearchResultPreferences.Category>()
+        // Reuse stable category containers instead of allocating new ones for
+        // every asynchronous provider completion.
+        val sectionCache = mutableMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
         fun reorderSearchSections() {
             val priorities = PrimeSearchResultPreferences.order(launcher)
             val headingCategories = mapOf(
@@ -959,9 +962,11 @@ object PrimeSearchOverlay {
             val grouped = linkedMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
             fun sectionFor(category: PrimeSearchResultPreferences.Category): LinearLayout =
                 grouped.getOrPut(category) {
-                    LinearLayout(launcher).apply {
-                        orientation = LinearLayout.VERTICAL
-                        tag = category
+                    sectionCache.getOrPut(category) {
+                        LinearLayout(launcher).apply {
+                            orientation = LinearLayout.VERTICAL
+                            tag = category
+                        }
                     }
                 }
             // When the dedicated Prime settings provider has results, use it
@@ -992,7 +997,9 @@ object PrimeSearchOverlay {
                     (hasPrimeContacts && category == PrimeSearchResultPreferences.Category.CONTACTS)) return@forEach
                 if (category != null && PrimeSearchResultPreferences.enabled(launcher, category)) {
                     val section = sectionFor(category)
-                    if (view is ViewGroup) {
+                    if (view is ViewGroup && view !== section) {
+                        // A category may already be the cached destination.
+                        // Moving its children into itself would loop forever.
                         while (view.childCount > 0) {
                             val child = view.getChildAt(0)
                             view.removeViewAt(0)
@@ -1002,6 +1009,7 @@ object PrimeSearchOverlay {
                 }
             }
             var currentCategory: PrimeSearchResultPreferences.Category? = null
+            val dynamicCategories = mutableSetOf<PrimeSearchResultPreferences.Category>()
             while (webPanel.childCount > 0) {
                 val child = webPanel.getChildAt(0)
                 webPanel.removeViewAt(0)
@@ -1009,9 +1017,20 @@ object PrimeSearchOverlay {
                 if (headingCategory != null) currentCategory = headingCategory
                 val category = currentCategory
                 if (category != null && PrimeSearchResultPreferences.enabled(launcher, category)) {
-                    sectionFor(category).addView(child)
+                    val section = sectionFor(category)
+                    if (dynamicCategories.add(category)) {
+                        // Replace only this provider category, not all sections.
+                        section.removeAllViews()
+                    }
+                    section.addView(child)
                 }
             }
+            // Dynamic categories no longer returned by providers must not
+            // retain stale suggestions or contact rows.
+            listOf(
+                PrimeSearchResultPreferences.Category.WEB,
+                PrimeSearchResultPreferences.Category.WEB_SHORTCUTS,
+            ).filter { it !in dynamicCategories }.forEach { sectionCache[it]?.removeAllViews() }
             // Reconcile the section containers rather than removing every
             // result view on each asynchronous provider update.
             val currentQuery = input.text.toString()
