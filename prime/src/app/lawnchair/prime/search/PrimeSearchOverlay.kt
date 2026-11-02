@@ -943,8 +943,78 @@ object PrimeSearchOverlay {
             sections.sortedBy { (category, _) -> order.indexOf(category) }
                 .forEach { (_, views) -> views.forEach(webPanel::addView) }
         }
+        // Detail navigation retains the existing search result views and query.
+        var detailOpen = false
+        var savedScrollY = 0
+        var detailCard: LinearLayout? = null
+        var detailParent: ViewGroup? = null
+        var detailIndex = 0
+        val detailContent = LinearLayout(launcher).apply { orientation = LinearLayout.VERTICAL }
+        val detailScroll = ScrollView(launcher).apply {
+            isFillViewport = false
+            addView(detailContent)
+        }
+        val detailBack = TextView(launcher).apply {
+            text = "‹  Retour à la recherche"
+            textSize = 16f
+            setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+            setPadding((16 * density).toInt(), (12 * density).toInt(),
+                (16 * density).toInt(), (12 * density).toInt())
+            isClickable = true
+        }
+        val detailPage = LinearLayout(launcher).apply {
+            orientation = LinearLayout.VERTICAL
+            visibility = View.GONE
+            isFocusableInTouchMode = true
+            addView(detailBack, LinearLayout.LayoutParams(-1, -2))
+            addView(detailScroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        }
+        container.addView(detailPage, LinearLayout.LayoutParams(-1, 0, 1f))
+        fun closeDetail() {
+            if (!detailOpen) return
+            val card = detailCard
+            val parent = detailParent
+            if (card != null && parent != null) {
+                detailContent.removeView(card)
+                parent.addView(card, detailIndex.coerceIn(0, parent.childCount))
+            }
+            detailCard = null
+            detailParent = null
+            detailOpen = false
+            detailPage.visibility = View.GONE
+            scroll.visibility = View.VISIBLE
+            scroll.post { scroll.scrollTo(0, savedScrollY) }
+            container.requestLayout()
+        }
+        detailBack.setOnClickListener { closeDetail() }
+        detailPage.setOnKeyListener { _, code, event ->
+            if (code == android.view.KeyEvent.KEYCODE_BACK &&
+                event.action == android.view.KeyEvent.ACTION_UP) {
+                closeDetail()
+                true
+            } else false
+        }
+        fun openDetail(card: LinearLayout) {
+            if (detailOpen) return
+            val parent = card.parent as? ViewGroup ?: return
+            savedScrollY = scroll.scrollY
+            detailIndex = parent.indexOfChild(card)
+            detailParent = parent
+            detailCard = card
+            detailOpen = true
+            parent.removeView(card)
+            detailContent.addView(card, LinearLayout.LayoutParams(-1, -2))
+            dialog.hideKeyboardForSelection()
+            scroll.visibility = View.GONE
+            detailPage.visibility = View.VISIBLE
+            detailPage.alpha = 0f
+            detailPage.animate().alpha(1f).setDuration(220L).start()
+            detailPage.requestFocus()
+            container.requestLayout()
+        }
         val categoryCards = mutableMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
         fun reorderSearchSections() {
+            if (detailOpen) return
             val priorities = PrimeSearchResultPreferences.order(launcher)
             val headingCategories = mapOf(
                 "Suggestions Web" to PrimeSearchResultPreferences.Category.WEB,
@@ -1031,11 +1101,49 @@ object PrimeSearchOverlay {
             results.removeAllViews()
             priorities.forEach { category ->
                 grouped[category]?.takeIf { it.childCount > 0 }?.let { card ->
-                    results.addView(card, LinearLayout.LayoutParams(-1, -2).apply {
+                    val limit = if (category == PrimeSearchResultPreferences.Category.APPS) {
+                        PrimeAppGridGeometry.rowHeightPx(
+                            launcher, PrimeSearchResultPreferences.appResultsIconSizePercent(launcher),
+                            if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
+                        ) * 2 + (52 * density).toInt()
+                    } else (190 * density).toInt()
+                    val wrapper = LinearLayout(launcher).apply {
+                        orientation = LinearLayout.VERTICAL
+                    }
+                    val clipped = FrameLayout(launcher).apply {
+                        clipChildren = true
+                        addView(card, FrameLayout.LayoutParams(-1, -2))
+                    }
+                    wrapper.addView(clipped, LinearLayout.LayoutParams(-1, limit))
+                    val more = TextView(launcher).apply {
+                        text = "Plus de " + when (category) {
+                            PrimeSearchResultPreferences.Category.APPS -> "applications"
+                            PrimeSearchResultPreferences.Category.CONTACTS -> "contacts"
+                            PrimeSearchResultPreferences.Category.FILES -> "fichiers"
+                            PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> "raccourcis"
+                            else -> "résultats"
+                        } + "  ⌄"
+                        gravity = Gravity.CENTER
+                        textSize = 13f
+                        setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+                        setPadding(0, (8 * density).toInt(), 0, (8 * density).toInt())
+                        setOnClickListener { openDetail(card) }
+                    }
+                    wrapper.addView(more, LinearLayout.LayoutParams(-1, -2))
+                    results.addView(wrapper, LinearLayout.LayoutParams(-1, -2).apply {
                         val margin = (4 * density).toInt()
                         topMargin = margin
                         bottomMargin = margin
                     })
+                    clipped.post {
+                        if (!detailOpen && card.parent === clipped) {
+                            val overflow = card.measuredHeight > limit
+                            clipped.layoutParams = (clipped.layoutParams as LinearLayout.LayoutParams).apply {
+                                height = if (overflow) limit else -2
+                            }
+                            more.visibility = if (overflow) View.VISIBLE else View.GONE
+                        }
+                    }
                 }
             }
             // The panel is a staging area only; it must not become an extra
@@ -1126,7 +1234,7 @@ object PrimeSearchOverlay {
         var lastNativeRenderSignature: List<String>? = null
         val callback = object : SearchCallback<BaseAllAppsAdapter.AdapterItem> {
             override fun onSearchResult(query: String, items: ArrayList<BaseAllAppsAdapter.AdapterItem>?) {
-                if (!dialog.isShowing || input.text.toString() != query) return
+                if (!dialog.isShowing || input.text.toString() != query || detailOpen) return
                 val signature = items.orEmpty().map { adapterItem ->
                     val target = (adapterItem as? SearchAdapterItem)?.searchTarget
                     if (target != null) "${target.resultType}:${target.layoutType}:${target.id}" else adapterItem.toString()
@@ -1575,6 +1683,7 @@ object PrimeSearchOverlay {
             }
 
             override fun clearSearchResult() {
+                if (detailOpen) return
                 results.removeAllViews()
                 results.requestLayout()
             }
@@ -1660,8 +1769,10 @@ object PrimeSearchOverlay {
                         if (imeVisible) (8 * density).toInt() else margin)
                         .coerceAtLeast((160 * density).toInt())
                     val barHeight = input.height.coerceAtLeast((64 * density).toInt())
-                    val desiredContent = if (zeroState.visibility == View.VISIBLE) zeroState.measuredHeight else results.measuredHeight
-                    val desired = if (imeVisible && scroll.visibility == View.VISIBLE) {
+                    val desiredContent = if (detailOpen) detailPage.measuredHeight else if (zeroState.visibility == View.VISIBLE) zeroState.measuredHeight else results.measuredHeight
+                    val desired = if (detailOpen) {
+                        maximum
+                    } else if (imeVisible && scroll.visibility == View.VISIBLE) {
                         // With the keyboard visible, fill the space above it;
                         // the ScrollView handles content that exceeds that height.
                         maximum
