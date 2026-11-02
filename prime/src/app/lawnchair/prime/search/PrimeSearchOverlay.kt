@@ -989,6 +989,7 @@ object PrimeSearchOverlay {
             }
             val native = (0 until results.childCount).map { results.getChildAt(it) }
                 .filter { it !== webPanel }
+            val refreshedNative = mutableSetOf<PrimeSearchResultPreferences.Category>()
             native.forEach { view ->
                 val category = view.tag as? PrimeSearchResultPreferences.Category
                 // Dynamic web sections are rebuilt by renderWebPanel on each refresh.
@@ -1000,7 +1001,7 @@ object PrimeSearchOverlay {
                 if (category != null && PrimeSearchResultPreferences.enabled(launcher, category)) {
                     val section = sectionFor(category)
                     if (view is ViewGroup && view !== section) {
-                        section.removeAllViews()
+                        if (refreshedNative.add(category)) section.removeAllViews()
                         while (view.childCount > 0) {
                             val child = view.getChildAt(0)
                             view.removeViewAt(0)
@@ -1023,19 +1024,42 @@ object PrimeSearchOverlay {
                     section.addView(child)
                 }
             }
-            results.removeAllViews()
-            priorities.forEach { category ->
-                grouped[category]?.takeIf { it.childCount > 0 }?.let { card ->
-                    results.addView(card, LinearLayout.LayoutParams(-1, -2).apply {
+            // Dynamic results may disappear between requests. Never leave
+            // previous-query rows inside a cached category card.
+            val dynamicOnly = setOf(
+                PrimeSearchResultPreferences.Category.WEB,
+                PrimeSearchResultPreferences.Category.WEB_SHORTCUTS,
+                PrimeSearchResultPreferences.Category.CALENDAR,
+                PrimeSearchResultPreferences.Category.REMINDERS,
+                PrimeSearchResultPreferences.Category.NOTIFICATIONS,
+            )
+            dynamicOnly.filter { it !in dynamicCategories && it !in refreshedNative }
+                .forEach { categoryCards[it]?.removeAllViews() }
+
+            // One card per category, always in the user's configured order.
+            // Reconcile the root by identity; unchanged cards stay attached.
+            val desired = priorities.distinct().mapNotNull { category ->
+                grouped[category]?.takeIf { it.childCount > 0 }
+            }
+            desired.forEachIndexed { index, card ->
+                if (results.getChildAt(index) !== card) {
+                    (card.parent as? ViewGroup)?.removeView(card)
+                    results.addView(card, index, LinearLayout.LayoutParams(-1, -2).apply {
                         val margin = (6 * density).toInt()
                         topMargin = margin
                         bottomMargin = margin
                     })
                 }
             }
-            // The panel is a staging area only; it must not become an extra
-            // unconfigured results block.
-            results.addView(webPanel)
+            for (index in results.childCount - 1 downTo 0) {
+                val child = results.getChildAt(index)
+                if (child !== webPanel && child !in desired) results.removeViewAt(index)
+            }
+            // webPanel is only a staging area, never an extra result card.
+            if (results.indexOfChild(webPanel) != desired.size) {
+                (webPanel.parent as? ViewGroup)?.removeView(webPanel)
+                results.addView(webPanel, desired.size)
+            }
         }
 
         reorderAfterContacts = { reorderSearchSections() }
