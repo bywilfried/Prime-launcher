@@ -952,6 +952,9 @@ object PrimeSearchOverlay {
         val detailContent = LinearLayout(launcher).apply { orientation = LinearLayout.VERTICAL }
         val detailScroll = ScrollView(launcher).apply {
             isFillViewport = false
+            // Fade rows as they pass underneath the fixed Back header.
+            isVerticalFadingEdgeEnabled = true
+            setFadingEdgeLength((32 * density).toInt())
             addView(detailContent)
         }
         val detailBack = TextView(launcher).apply {
