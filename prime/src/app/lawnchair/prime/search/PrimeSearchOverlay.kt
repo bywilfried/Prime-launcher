@@ -1573,13 +1573,20 @@ object PrimeSearchOverlay {
         var lastNativeRenderSignature: List<String>? = null
         var lastAppGridQuery: String? = null
         var lastAppGridSignature: List<String>? = null
+        var pendingNativeRefresh: Runnable? = null
         // A result refresh must never detach an app tile between DOWN and UP.
         var appTouchInProgress = false
         val callback = object : SearchCallback<BaseAllAppsAdapter.AdapterItem> {
             override fun onSearchResult(query: String, items: ArrayList<BaseAllAppsAdapter.AdapterItem>?) {
                 if (!dialog.isShowing || input.text.toString() != query || detailOpen) return
+                // Keep only the newest deferred update. Replaying every provider
+                // callback after a touch can otherwise cause repeated full rebuilds.
+                pendingNativeRefresh?.let(webHandler::removeCallbacks)
+                pendingNativeRefresh = null
                 if (appTouchInProgress || resultsTouchInProgress) {
-                    webHandler.postDelayed({ onSearchResult(query, items) }, 80L)
+                    val deferred = Runnable { onSearchResult(query, items) }
+                    pendingNativeRefresh = deferred
+                    webHandler.postDelayed(deferred, 80L)
                     return
                 }
                 val signature = items.orEmpty().map { adapterItem ->
@@ -1589,11 +1596,10 @@ object PrimeSearchOverlay {
                 if (lastNativeRenderQuery == query && lastNativeRenderSignature == signature) return
                 lastNativeRenderQuery = query
                 lastNativeRenderSignature = signature
-                results.removeAllViews()
-                scroll.scrollTo(0, 0)
-                scroll.post { if (dialog.isShowing && input.text.toString() == query) scroll.scrollTo(0, 0) }
-                // Re-measure after the search results have changed.
-                results.post { if (dialog.isShowing) container.requestLayout() }
+                // Build the replacement sections before detaching the visible
+                // hierarchy. Keep scroll position for same-query provider updates.
+                val isNewQuery = lastAppGridQuery != query
+                if (isNewQuery) scroll.scrollTo(0, 0)
                 // Preserve the algorithm's order and section boundaries. Each item is
                 // inflated with the same layout used by the drawer's adapter provider.
                 val inflater = LayoutInflater.from(launcher)
@@ -2145,6 +2151,7 @@ object PrimeSearchOverlay {
                 flushNativeSection()
                 lastAppGridQuery = query
                 lastAppGridSignature = appGridSignature
+                results.removeAllViews()
                 nativeSections.forEach { (category, section) ->
                     if (PrimeSearchResultPreferences.enabled(launcher, category)) {
                         section.tag = category
@@ -2159,6 +2166,12 @@ object PrimeSearchOverlay {
 
             override fun clearSearchResult() {
                 if (detailOpen || appTouchInProgress || resultsTouchInProgress) return
+                pendingNativeRefresh?.let(webHandler::removeCallbacks)
+                pendingNativeRefresh = null
+                lastNativeRenderQuery = null
+                lastNativeRenderSignature = null
+                lastAppGridQuery = null
+                lastAppGridSignature = null
                 results.removeAllViews()
                 results.requestLayout()
             }
@@ -2186,6 +2199,8 @@ object PrimeSearchOverlay {
                 settings.visibility = if (query.isBlank()) View.VISIBLE else View.GONE
                 pendingSearch?.let(webHandler::removeCallbacks)
                 pendingSearch = null
+                pendingNativeRefresh?.let(webHandler::removeCallbacks)
+                pendingNativeRefresh = null
                 updateWebSuggestions(query)
                 // Keep current rows visible while the user types. Only the
                 // settled query is sent to the expensive native search engine.
