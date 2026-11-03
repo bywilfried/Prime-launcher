@@ -163,6 +163,7 @@ object PrimeSearchOverlay {
         launcher: LawnchairLauncher,
         surface: PrimeSearchSurface,
         icon: com.android.launcher3.BubbleTextView,
+        onTouchActive: (Boolean) -> Unit = {},
     ) {
         val slop = ViewConfiguration.get(launcher).scaledTouchSlop
         var pressed = false
@@ -187,6 +188,7 @@ object PrimeSearchOverlay {
                     // Let the app icon own the complete tap immediately.
                     // The parent ScrollView must not steal the first gesture.
                     icon.parent?.requestDisallowInterceptTouchEvent(true)
+                    onTouchActive(true)
                     pressed = false
                     dragging = false
                     downX = event.x
@@ -235,6 +237,7 @@ object PrimeSearchOverlay {
                     pressed || dragging
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    onTouchActive(false)
                     val consumed = pressed || dragging
                     pressed = false
                     dragging = false
@@ -1486,9 +1489,15 @@ object PrimeSearchOverlay {
         // reports the exact same native results again.
         var lastNativeRenderQuery: String? = null
         var lastNativeRenderSignature: List<String>? = null
+        // A result refresh must never detach an app tile between DOWN and UP.
+        var appTouchInProgress = false
         val callback = object : SearchCallback<BaseAllAppsAdapter.AdapterItem> {
             override fun onSearchResult(query: String, items: ArrayList<BaseAllAppsAdapter.AdapterItem>?) {
                 if (!dialog.isShowing || input.text.toString() != query || detailOpen) return
+                if (appTouchInProgress) {
+                    webHandler.postDelayed({ onSearchResult(query, items) }, 80L)
+                    return
+                }
                 val signature = items.orEmpty().map { adapterItem ->
                     val target = (adapterItem as? SearchAdapterItem)?.searchTarget
                     if (target != null) "${target.resultType}:${target.layoutType}:${target.id}" else adapterItem.toString()
@@ -2000,14 +2009,20 @@ object PrimeSearchOverlay {
                             cell.isFocusable = true
                             cell.setOnTouchListener { _, event ->
                                 if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                                    appTouchInProgress = true
                                     cell.parent?.requestDisallowInterceptTouchEvent(true)
+                                } else if (event.actionMasked == MotionEvent.ACTION_UP ||
+                                    event.actionMasked == MotionEvent.ACTION_CANCEL) {
+                                    appTouchInProgress = false
                                 }
                                 false
                             }
                             cell.setOnClickListener { icon.performClick() }
                             title.setOnClickListener { icon.performClick() }
                             parent.addView(cell, LinearLayout.LayoutParams(cellWidth, searchRowHeight))
-                            enableNativeAppGestures(launcher, dialog, icon)
+                            enableNativeAppGestures(launcher, dialog, icon) {
+                                appTouchInProgress = it
+                            }
                         }
                     }
                 }
