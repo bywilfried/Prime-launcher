@@ -90,10 +90,24 @@ object PrimeSearchOverlay {
         private val onDismiss: () -> Unit,
     ) {
         private val layer = launcher.dragLayer
-        private val scrim = FrameLayout(launcher).apply {
+        private val scrim = object : FrameLayout(launcher) {
+            override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+                if (event.keyCode == android.view.KeyEvent.KEYCODE_BACK &&
+                    com.android.launcher3.popup.PopupContainerWithArrow.getOpen(launcher) != null) {
+                    if (event.action == android.view.KeyEvent.ACTION_UP) {
+                        com.android.launcher3.popup.PopupContainerWithArrow.getOpen(launcher)?.close(true)
+                    }
+                    return true
+                }
+                return super.dispatchKeyEvent(event)
+            }
+        }.apply {
             isClickable = true
             setBackgroundColor(android.graphics.Color.TRANSPARENT)
-            setOnClickListener { dismiss() }
+            setOnClickListener {
+                val popup = com.android.launcher3.popup.PopupContainerWithArrow.getOpen(launcher)
+                if (popup != null) popup.close(true) else dismiss()
+            }
         }
         val isShowing get() = scrim.parent != null
         fun show() {
@@ -303,7 +317,19 @@ object PrimeSearchOverlay {
             addView(results)
         }
         lateinit var settings: ImageView
-        val container = LinearLayout(launcher).apply {
+        val container = object : LinearLayout(launcher) {
+            override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+                if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                    val popup = com.android.launcher3.popup.PopupContainerWithArrow.getOpen(launcher)
+                    if (popup != null) {
+                        popup.close(true)
+                        // Do not accidentally activate the item under the dismissed popup.
+                        return true
+                    }
+                }
+                return super.dispatchTouchEvent(event)
+            }
+        }.apply {
             orientation = LinearLayout.VERTICAL
             background = GradientDrawable().apply {
                 setColor(themed(ThemeColorRole.PRIME_SEARCH_WINDOW_BACKGROUND))
@@ -1180,6 +1206,11 @@ object PrimeSearchOverlay {
             container.requestLayout()
         }
         fun closeDetail() {
+            val popup = com.android.launcher3.popup.PopupContainerWithArrow.getOpen(launcher)
+            if (popup != null) {
+                popup.close(true)
+                return
+            }
             if (!detailOpen || detailClosing) return
             detailClosing = true
             // Invalidate all outstanding expanded callbacks before the animation.
@@ -1672,6 +1703,18 @@ object PrimeSearchOverlay {
                     val deferred = Runnable { onSearchResult(query, items) }
                     pendingNativeRefresh = deferred
                     webHandler.postDelayed(deferred, 80L)
+                    return
+                }
+                val incoming = items.orEmpty().filterIsInstance<SearchAdapterItem>()
+                // Some providers publish an intermediate partial/empty snapshot.
+                // Do not erase a visible app grid for the unchanged query.
+                val hasApps = incoming.any {
+                    it.searchTarget.resultType == SearchTargetCompat.RESULT_TYPE_APPLICATION
+                }
+                if (!hasApps && lastNativeRenderQuery == query &&
+                    lastNativeRenderSignature?.any {
+                        it.startsWith("${SearchTargetCompat.RESULT_TYPE_APPLICATION}:")
+                    } == true) {
                     return
                 }
                 val signature = items.orEmpty().map { adapterItem ->
@@ -2497,7 +2540,7 @@ object PrimeSearchOverlay {
                 })
             }
             detailSearchTask = task
-            webHandler.postDelayed(task, 110L)
+            webHandler.postDelayed(task, 60L)
         }
         // IME visibility and focus changes must not restart an unchanged query.
         // Only an actual change in the search text starts a new request.
@@ -2537,7 +2580,7 @@ object PrimeSearchOverlay {
                         }
                     }
                     pendingSearch = task
-                    webHandler.postDelayed(task, 110L)
+                    webHandler.postDelayed(task, 60L)
                 }
             }
             override fun afterTextChanged(s: Editable?) = Unit
