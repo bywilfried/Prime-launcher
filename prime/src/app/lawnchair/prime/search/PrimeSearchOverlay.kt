@@ -1302,8 +1302,26 @@ object PrimeSearchOverlay {
                         clipChildren = true
                         addView(card, FrameLayout.LayoutParams(-1, -2))
                     }
-                    // A fixed preview viewport must not expand with the card's content.
-                    wrapper.addView(clipped, LinearLayout.LayoutParams(-1, limit))
+                    // Size the compact app viewport before attaching the wrapper.
+                    val isApps = category == PrimeSearchResultPreferences.Category.APPS
+                    val appRowCount = if (isApps) (0 until card.childCount).count { index ->
+                        val child = card.getChildAt(index)
+                        child is LinearLayout &&
+                            child.orientation == LinearLayout.HORIZONTAL &&
+                            child.childCount > 0
+                    } else 0
+                    val maxVisibleRows = PrimeSearchResultPreferences.appResultsRows(launcher)
+                    val appViewportHeight = if (isApps) {
+                        val rowHeight = PrimeAppGridGeometry.rowHeightPx(
+                            launcher, PrimeSearchResultPreferences.appResultsIconSizePercent(launcher),
+                            if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
+                        )
+                        card.paddingTop + card.paddingBottom +
+                            appRowCount.coerceAtMost(maxVisibleRows) * rowHeight
+                    } else limit
+                    wrapper.addView(clipped, LinearLayout.LayoutParams(
+                        -1, if (isApps) appViewportHeight.coerceAtLeast(1) else limit
+                    ))
                     val more = TextView(launcher).apply {
                         text = "Plus de " + when (category) {
                             PrimeSearchResultPreferences.Category.APPS -> "applications"
@@ -1336,7 +1354,9 @@ object PrimeSearchOverlay {
                         topMargin = margin
                         bottomMargin = margin
                     })
-                    clipped.post {
+                    if (isApps) {
+                        more.visibility = if (appRowCount > maxVisibleRows) View.VISIBLE else View.GONE
+                    } else clipped.post {
                         if (!detailOpen && card.parent === clipped) {
                             // Measure the actual card independently of its clipped parent.
                             val widthSpec = View.MeasureSpec.makeMeasureSpec(
@@ -1624,7 +1644,7 @@ object PrimeSearchOverlay {
                     val isAppIcon = item.searchTarget.resultType ==
                         SearchTargetCompat.RESULT_TYPE_APPLICATION &&
                         item.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT
-                    if (isAppIcon && displayedAppTiles >= maxAppTiles) return@forEach
+                    // Keep all results for expanded view; compact grid is clipped.
                     if (isAppIcon) {
                         displayedAppTiles++
                         if (appRow == null || appsInRow == columns) {
