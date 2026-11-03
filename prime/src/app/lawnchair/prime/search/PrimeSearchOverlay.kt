@@ -1086,9 +1086,6 @@ object PrimeSearchOverlay {
             val card = detailCard
             val parent = detailParent
             if (card != null && parent != null) {
-                if (card.tag == PrimeSearchResultPreferences.Category.APPS && compactAppCellWidth > 0) {
-                    sizeDetailAppGrid(card, compactAppCellWidth)
-                }
                 detailContent.removeView(card)
                 val params = if (parent is FrameLayout) {
                     FrameLayout.LayoutParams(-1, -2)
@@ -1110,6 +1107,9 @@ object PrimeSearchOverlay {
                     card.addView(child)
                     child.visibility = View.VISIBLE
                 }
+            }
+            if (card != null && card.tag == PrimeSearchResultPreferences.Category.APPS && compactAppCellWidth > 0) {
+                sizeDetailAppGrid(card, compactAppCellWidth)
             }
             detailOriginalChildren.clear()
             detailSearchSerial++
