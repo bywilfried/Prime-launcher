@@ -1226,6 +1226,9 @@ object PrimeSearchOverlay {
             detailPage.requestFocus()
             container.requestLayout()
         }
+        // Protect both app icons and the compact card's expansion action from
+        // asynchronous result updates during an active pointer gesture.
+        var resultsTouchInProgress = false
         val categoryCards = mutableMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
         fun reorderSearchSections() {
             if (detailOpen) return
@@ -1390,6 +1393,15 @@ object PrimeSearchOverlay {
                         textSize = 13f
                         setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
                         setPadding(0, (8 * density).toInt(), 0, (8 * density).toInt())
+                        setOnTouchListener { _, event ->
+                            when (event.actionMasked) {
+                                MotionEvent.ACTION_DOWN -> resultsTouchInProgress = true
+                                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                                    resultsTouchInProgress = false
+                                }
+                            }
+                            false
+                        }
                         setOnClickListener { openDetail(card) }
                     }
                     // The action belongs to the card surface, not to the gap
@@ -1547,7 +1559,7 @@ object PrimeSearchOverlay {
         val callback = object : SearchCallback<BaseAllAppsAdapter.AdapterItem> {
             override fun onSearchResult(query: String, items: ArrayList<BaseAllAppsAdapter.AdapterItem>?) {
                 if (!dialog.isShowing || input.text.toString() != query || detailOpen) return
-                if (appTouchInProgress) {
+                if (appTouchInProgress || resultsTouchInProgress) {
                     webHandler.postDelayed({ onSearchResult(query, items) }, 80L)
                     return
                 }
@@ -2107,7 +2119,7 @@ object PrimeSearchOverlay {
             }
 
             override fun clearSearchResult() {
-                if (detailOpen) return
+                if (detailOpen || appTouchInProgress || resultsTouchInProgress) return
                 results.removeAllViews()
                 results.requestLayout()
             }
