@@ -2264,6 +2264,18 @@ object PrimeSearchOverlay {
         // The expanded category has its own search session. Native results are
         // bound to independent views, never to the compact result hierarchy.
         fun searchExpandedCategory(query: String) {
+            // The compact callback's grid geometry is scoped to that callback.
+            // Compute the same settings locally for independent expanded results.
+            val searchLabelLines = if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
+            val searchIconPercent = PrimeSearchResultPreferences.appResultsIconSizePercent(launcher)
+            val searchIconSize = PrimeAppGridGeometry.iconPx(launcher, searchIconPercent)
+            val searchRowHeight = PrimeAppGridGeometry.rowHeightPx(
+                launcher, searchIconPercent, searchLabelLines)
+            val searchCellTopPadding = (PrimeAppGridGeometry.TOP_DP * density).toInt()
+            val searchRowBottomPadding = (PrimeAppGridGeometry.BOTTOM_DP * density).toInt()
+            val searchIconLabelGap = (PrimeAppGridGeometry.ICON_LABEL_GAP_DP * density).toInt()
+            val iconViewHeight = searchIconSize
+            val searchLabelHeight = PrimeAppGridGeometry.labelHeightPx(launcher, searchLabelLines)
             val category = detailSearchCategory ?: return
             val card = detailCard ?: return
             val algorithmForDetail = detailSearchAlgorithm ?: return
