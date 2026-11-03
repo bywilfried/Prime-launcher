@@ -2416,7 +2416,61 @@ object PrimeSearchOverlay {
                             } else parent.addView(view)
                             item.setRippleEffect(view)
                             resultView.bind(item.searchTarget, emptyList())
-                            if (isApp && view is com.android.launcher3.BubbleTextView) {
+                            if (isApp && view is app.lawnchair.allapps.views.SearchResultIcon) {
+                                // Expanded app tiles must keep the same native popup,
+                                // drag and click behavior as compact Prime app icons.
+                                val icon = view
+                                val label = icon.text.toString()
+                                icon.setPrimeIconSize(searchIconSize)
+                                icon.setTextVisibility(false)
+                                icon.setPrimeSearchLabelLayout(true)
+                                icon.setPrimeIconOnlyLayout(true)
+                                icon.setPadding(0, 0, 0, 0)
+                                icon.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                                icon.setCompoundDrawablePadding(0)
+                                val row = parent as LinearLayout
+                                val position = row.indexOfChild(icon)
+                                row.removeView(icon)
+                                val cellWidth = ((card.width - card.paddingLeft - card.paddingRight) /
+                                    columns).coerceAtLeast(1)
+                                val cell = LinearLayout(launcher).apply {
+                                    orientation = LinearLayout.VERTICAL
+                                    gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                                    setPadding(0, searchCellTopPadding, 0, searchRowBottomPadding)
+                                    isClickable = true
+                                    isFocusable = true
+                                    setOnClickListener { icon.performClick() }
+                                    setOnLongClickListener { icon.performLongClick() }
+                                    setOnTouchListener { _, event ->
+                                        when (event.actionMasked) {
+                                            MotionEvent.ACTION_DOWN -> {
+                                                appTouchInProgress = true
+                                                parent.requestDisallowInterceptTouchEvent(true)
+                                            }
+                                            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
+                                                appTouchInProgress = false
+                                        }
+                                        false
+                                    }
+                                }
+                                cell.addView(icon, LinearLayout.LayoutParams(cellWidth, iconViewHeight))
+                                val title = TextView(launcher).apply {
+                                    text = label
+                                    textSize = 11f
+                                    gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                                    maxLines = searchLabelLines
+                                    includeFontPadding = false
+                                    ellipsize = android.text.TextUtils.TruncateAt.END
+                                    setTextColor(themed(ThemeColorRole.PRIME_SEARCH_APP_LABEL))
+                                    setOnClickListener { icon.performClick() }
+                                    setOnLongClickListener { icon.performLongClick() }
+                                }
+                                cell.addView(title, LinearLayout.LayoutParams(-1, searchLabelHeight).apply {
+                                    topMargin = searchIconLabelGap
+                                })
+                                row.addView(cell, position, LinearLayout.LayoutParams(cellWidth, searchRowHeight))
+                                enableNativeAppGestures(launcher, dialog, icon) { appTouchInProgress = it }
+                            } else if (isApp && view is com.android.launcher3.BubbleTextView) {
                                 enableNativeAppGestures(launcher, dialog, view) { appTouchInProgress = it }
                             }
                         }
