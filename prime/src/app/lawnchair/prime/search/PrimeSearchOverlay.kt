@@ -1229,6 +1229,20 @@ object PrimeSearchOverlay {
         // Protect both app icons and the compact card's expansion action from
         // asynchronous result updates during an active pointer gesture.
         var resultsTouchInProgress = false
+        var pendingResultsReorder = false
+        fun scheduleResultsReorder(reorder: () -> Unit) {
+            if (resultsTouchInProgress) {
+                if (!pendingResultsReorder) {
+                    pendingResultsReorder = true
+                    webHandler.postDelayed({
+                        pendingResultsReorder = false
+                        scheduleResultsReorder(reorder)
+                    }, 80L)
+                }
+            } else {
+                reorder()
+            }
+        }
         val categoryCards = mutableMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
         fun reorderSearchSections() {
             if (detailOpen) return
@@ -1402,7 +1416,10 @@ object PrimeSearchOverlay {
                             }
                             false
                         }
-                        setOnClickListener { openDetail(card) }
+                        setOnClickListener {
+                            resultsTouchInProgress = false
+                            openDetail(card)
+                        }
                     }
                     // The action belongs to the card surface, not to the gap
                     // between adjacent cards. Keep the same themed rounded
@@ -1543,7 +1560,7 @@ object PrimeSearchOverlay {
                     if (request == webRequestSerial && input.text.toString() == query && dialog.isShowing) {
                         currentSuggestions = suggestions
                         renderWebPanel(query)
-                        reorderSearchSections()
+                        scheduleResultsReorder(::reorderSearchSections)
                         container.requestLayout()
                     }
                 }
@@ -2114,7 +2131,7 @@ object PrimeSearchOverlay {
                 }
                 results.addView(webPanel)
                 renderWebPanel(query)
-                reorderSearchSections()
+                scheduleResultsReorder(::reorderSearchSections)
                 results.requestLayout()
             }
 
