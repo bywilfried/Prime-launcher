@@ -1023,6 +1023,26 @@ object PrimeSearchOverlay {
         var detailSearchAlgorithm: LawnchairLocalSearchAlgorithm? = null
         val detailOriginalChildren = mutableListOf<View>()
         val detailOriginalVisibility = mutableMapOf<View, Int>()
+        // Preserve exact original layout parameters, not just approximate cell widths.
+        val detailOriginalSizes = mutableMapOf<View, Pair<Int, Int>>()
+        fun rememberDetailSizes(view: View) {
+            view.layoutParams?.let { detailOriginalSizes[view] = it.width to it.height }
+            if (view is ViewGroup) for (index in 0 until view.childCount) {
+                rememberDetailSizes(view.getChildAt(index))
+            }
+        }
+        fun restoreDetailSizes() {
+            detailOriginalSizes.forEach { (view, size) ->
+                view.layoutParams?.let { params ->
+                    if (params.width != size.first || params.height != size.second) {
+                        params.width = size.first
+                        params.height = size.second
+                        view.layoutParams = params
+                    }
+                }
+            }
+            detailOriginalSizes.clear()
+        }
         var restoringDetailQuery = false
         fun applyDetailFilter() {
             val card = detailCard ?: return
@@ -1111,9 +1131,7 @@ object PrimeSearchOverlay {
                 }
             }
             detailOriginalVisibility.clear()
-            if (card != null && card.tag == PrimeSearchResultPreferences.Category.APPS && compactAppCellWidth > 0) {
-                sizeDetailAppGrid(card, compactAppCellWidth)
-            }
+            restoreDetailSizes()
             detailOriginalChildren.clear()
             detailSessionId++
             detailSearchSerial++
@@ -1148,7 +1166,12 @@ object PrimeSearchOverlay {
             scroll.visibility = View.VISIBLE
             scroll.scrollTo(0, savedScrollY)
             val restoredScrollY = savedScrollY
-            scroll.post { if (!detailOpen) scroll.scrollTo(0, restoredScrollY) }
+            val closedSession = detailSessionId
+            scroll.post {
+                if (!detailOpen && detailSessionId == closedSession) {
+                    scroll.scrollTo(0, restoredScrollY)
+                }
+            }
             detailClosing = false
             container.requestLayout()
         }
@@ -1191,10 +1214,12 @@ object PrimeSearchOverlay {
             detailCard = card
             detailOriginalChildren.clear()
             detailOriginalVisibility.clear()
+            detailOriginalSizes.clear()
             for (index in 0 until card.childCount) {
                 val child = card.getChildAt(index)
                 detailOriginalChildren.add(child)
                 detailOriginalVisibility[child] = child.visibility
+                rememberDetailSizes(child)
             }
             detailSearchCategory = card.tag as? PrimeSearchResultPreferences.Category
             detailSearchAlgorithm = LawnchairLocalSearchAlgorithm(launcher, primeSearch = true)
