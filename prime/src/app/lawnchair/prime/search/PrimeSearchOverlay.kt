@@ -1022,6 +1022,9 @@ object PrimeSearchOverlay {
         var detailSearchCategory: PrimeSearchResultPreferences.Category? = null
         var detailSearchAlgorithm: LawnchairLocalSearchAlgorithm? = null
         val detailOriginalChildren = mutableListOf<View>()
+        // Secondary providers can access ContentResolver or local storage.
+        // Keep those queries off the main thread, just like contact searches.
+        val detailProviderExecutor = java.util.concurrent.Executors.newSingleThreadExecutor()
         val detailOriginalVisibility = mutableMapOf<View, Int>()
         // Preserve exact original layout parameters, not just approximate cell widths.
         val detailOriginalSizes = mutableMapOf<View, Pair<Int, Int>>()
@@ -2294,46 +2297,59 @@ object PrimeSearchOverlay {
                         }, LinearLayout.LayoutParams(-1, -2))
                     }
                     when (category) {
-                        PrimeSearchResultPreferences.Category.CALENDAR ->
-                            PrimeCalendarSearch.events(launcher, query).forEach { event ->
-                                addRow("${event.title}\\n${event.detail}") {
-                                    runCatching { launcher.startActivity(Intent(Intent.ACTION_VIEW, event.uri)); dismiss() }
-                                }
-                            }
-                        PrimeSearchResultPreferences.Category.REMINDERS ->
-                            PrimeTasksSearch.search(launcher, query).forEach { task ->
-                                addRow(task.title + task.detail.takeIf { it.isNotBlank() }?.let { "\\n$it" }.orEmpty()) {
-                                    runCatching { launcher.startActivity(Intent(Intent.ACTION_VIEW, task.uri)); dismiss() }
-                                }
-                            }
-                        PrimeSearchResultPreferences.Category.NOTIFICATIONS ->
-                            PrimeNotificationHistory.search(launcher, query).forEach { entry ->
-                                addRow("${entry.app} · ${entry.title}\\n${entry.body.take(180)}") {}
-                            }
-                        PrimeSearchResultPreferences.Category.WEB_SHORTCUTS ->
-                            PrimeSearchResultPreferences.enabledWebEngines(launcher).forEach { engine ->
-                                addRow(engine.title) {
-                                    runCatching { launcher.startActivity(Intent(Intent.ACTION_VIEW,
-                                        Uri.parse(engine.url + Uri.encode(query)))); dismiss() }
-                                }
-                            }
+                        PrimeSearchResultPreferences.Category.CALENDAR,
+                        PrimeSearchResultPreferences.Category.REMINDERS,
+                        PrimeSearchResultPreferences.Category.NOTIFICATIONS,
                         PrimeSearchResultPreferences.Category.CONTACTS -> {
-                            contactExecutor.execute {
-                                val found = PrimeContactSearch.search(launcher, query)
+                            detailProviderExecutor.execute {
+                                val rows: List<Pair<String, Uri?>> = when (category) {
+                                    PrimeSearchResultPreferences.Category.CALENDAR ->
+                                        PrimeCalendarSearch.events(launcher, query).map { event ->
+                                            (event.title + "\n" + event.detail) to event.uri
+                                        }
+                                    PrimeSearchResultPreferences.Category.REMINDERS ->
+                                        PrimeTasksSearch.search(launcher, query).map { entry ->
+                                            (entry.title + entry.detail.takeIf { it.isNotBlank() }
+                                                ?.let { "\n$it" }.orEmpty()) to entry.uri
+                                        }
+                                    PrimeSearchResultPreferences.Category.NOTIFICATIONS ->
+                                        PrimeNotificationHistory.search(launcher, query).map { entry ->
+                                            ("${entry.app} · ${entry.title}\n${entry.body.take(180)}") to null
+                                        }
+                                    PrimeSearchResultPreferences.Category.CONTACTS ->
+                                        PrimeContactSearch.search(launcher, query).map { contact ->
+                                            (contact.name + contact.phone?.let { "\n$it" }.orEmpty()) to contact.uri
+                                        }
+                                    else -> emptyList()
+                                }
                                 webHandler.post {
                                     if (detailOpen && !detailClosing && detailSessionId == session &&
                                         detailSearchSerial == serial && detailSearchQuery == query &&
                                         detailCard === card && input.text.toString() == query) {
                                         card.removeAllViews()
-                                        found.forEach { contact ->
-                                            addRow(contact.name + contact.phone?.let { "\\n$it" }.orEmpty()) {
-                                                runCatching { launcher.startActivity(Intent(Intent.ACTION_VIEW, contact.uri)); dismiss() }
+                                        rows.forEach { (label, uri) ->
+                                            addRow(label) {
+                                                if (uri != null) runCatching {
+                                                    launcher.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                                                    dismiss()
+                                                }
                                             }
                                         }
+                                        detailScroll.scrollTo(0, 0)
                                     }
                                 }
                             }
                         }
+                        PrimeSearchResultPreferences.Category.WEB_SHORTCUTS ->
+                            PrimeSearchResultPreferences.enabledWebEngines(launcher).forEach { engine ->
+                                addRow(engine.title) {
+                                    runCatching {
+                                        launcher.startActivity(Intent(Intent.ACTION_VIEW,
+                                            Uri.parse(engine.url + Uri.encode(query))))
+                                        dismiss()
+                                    }
+                                }
+                            }
                         else -> Unit
                     }
                     detailScroll.scrollTo(0, 0)
