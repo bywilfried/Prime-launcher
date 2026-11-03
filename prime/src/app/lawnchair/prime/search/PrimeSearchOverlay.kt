@@ -1103,7 +1103,7 @@ object PrimeSearchOverlay {
             }
             // Restore the exact compact children, even if the expanded page
             // performed several independent searches.
-            if (card != null && detailOriginalChildren.isNotEmpty()) {
+            if (card != null) {
                 card.removeAllViews()
                 detailOriginalChildren.forEach { child ->
                     (child.parent as? ViewGroup)?.removeView(child)
@@ -1227,7 +1227,9 @@ object PrimeSearchOverlay {
                 }
             }
             originalDetailQuery = input.text.toString()
-            applyDetailFilter()
+            // Opening shows the original category exactly as it appeared.
+            // Editing the query starts an independent search instead of filtering it.
+            detailSearchSerial++
             // The filter may restore native heading visibility; keep the
             // category title solely in the fixed detail heading.
             for (index in 0 until card.childCount) {
@@ -2214,6 +2216,67 @@ object PrimeSearchOverlay {
             val serial = ++detailSearchSerial
             val task = Runnable {
                 if (!detailOpen || detailClosing || detailSearchSerial != serial) return@Runnable
+                if (category == PrimeSearchResultPreferences.Category.CALENDAR ||
+                    category == PrimeSearchResultPreferences.Category.REMINDERS ||
+                    category == PrimeSearchResultPreferences.Category.NOTIFICATIONS ||
+                    category == PrimeSearchResultPreferences.Category.CONTACTS ||
+                    category == PrimeSearchResultPreferences.Category.WEB_SHORTCUTS) {
+                    card.removeAllViews()
+                    fun addRow(title: String, action: () -> Unit) {
+                        card.addView(TextView(launcher).apply {
+                            text = title
+                            textSize = 15f
+                            setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+                            setPadding((18 * density).toInt(), (10 * density).toInt(),
+                                (12 * density).toInt(), (10 * density).toInt())
+                            setOnClickListener { action() }
+                        }, LinearLayout.LayoutParams(-1, -2))
+                    }
+                    when (category) {
+                        PrimeSearchResultPreferences.Category.CALENDAR ->
+                            PrimeCalendarSearch.events(launcher, query).forEach { event ->
+                                addRow("${event.title}\\n${event.detail}") {
+                                    runCatching { launcher.startActivity(Intent(Intent.ACTION_VIEW, event.uri)); dismiss() }
+                                }
+                            }
+                        PrimeSearchResultPreferences.Category.REMINDERS ->
+                            PrimeTasksSearch.search(launcher, query).forEach { task ->
+                                addRow(task.title + task.detail.takeIf { it.isNotBlank() }?.let { "\\n$it" }.orEmpty()) {
+                                    runCatching { launcher.startActivity(Intent(Intent.ACTION_VIEW, task.uri)); dismiss() }
+                                }
+                            }
+                        PrimeSearchResultPreferences.Category.NOTIFICATIONS ->
+                            PrimeNotificationHistory.search(launcher, query).forEach { entry ->
+                                addRow("${entry.app} · ${entry.title}\\n${entry.body.take(180)}") {}
+                            }
+                        PrimeSearchResultPreferences.Category.WEB_SHORTCUTS ->
+                            PrimeSearchResultPreferences.enabledWebEngines(launcher).forEach { engine ->
+                                addRow(engine.title) {
+                                    runCatching { launcher.startActivity(Intent(Intent.ACTION_VIEW,
+                                        Uri.parse(engine.url + Uri.encode(query)))); dismiss() }
+                                }
+                            }
+                        PrimeSearchResultPreferences.Category.CONTACTS -> {
+                            contactExecutor.execute {
+                                val found = PrimeContactSearch.search(launcher, query)
+                                webHandler.post {
+                                    if (detailOpen && !detailClosing && detailSearchSerial == serial &&
+                                        detailCard === card && input.text.toString() == query) {
+                                        card.removeAllViews()
+                                        found.forEach { contact ->
+                                            addRow(contact.name + contact.phone?.let { "\\n$it" }.orEmpty()) {
+                                                runCatching { launcher.startActivity(Intent(Intent.ACTION_VIEW, contact.uri)); dismiss() }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else -> Unit
+                    }
+                    detailScroll.scrollTo(0, 0)
+                    return@Runnable
+                }
                 algorithmForDetail.doSearch(query, object : SearchCallback<BaseAllAppsAdapter.AdapterItem> {
                     override fun onSearchResult(
                         resultQuery: String,
