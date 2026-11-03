@@ -1017,6 +1017,11 @@ object PrimeSearchOverlay {
         }
         // Independent category filter: never edits the main search query.
         var originalDetailQuery = ""
+        var detailSearchSerial = 0
+        var detailSearchTask: Runnable? = null
+        var detailSearchCategory: PrimeSearchResultPreferences.Category? = null
+        var detailSearchAlgorithm: LawnchairLocalSearchAlgorithm? = null
+        val detailOriginalChildren = mutableListOf<View>()
         fun applyDetailFilter() {
             val card = detailCard ?: return
             val filter = input.text.toString().trim()
@@ -1096,6 +1101,22 @@ object PrimeSearchOverlay {
             if (card != null) for (index in 0 until card.childCount) {
                 card.getChildAt(index).visibility = View.VISIBLE
             }
+            // Restore the exact compact children, even if the expanded page
+            // performed several independent searches.
+            if (card != null && detailOriginalChildren.isNotEmpty()) {
+                card.removeAllViews()
+                detailOriginalChildren.forEach { child ->
+                    (child.parent as? ViewGroup)?.removeView(child)
+                    card.addView(child)
+                    child.visibility = View.VISIBLE
+                }
+            }
+            detailOriginalChildren.clear()
+            detailSearchSerial++
+            detailSearchTask?.let(webHandler::removeCallbacks)
+            detailSearchTask = null
+            detailSearchCategory = null
+            detailSearchAlgorithm = null
             compactAppCellWidth = 0
             detailCard = null
             detailParent = null
@@ -1153,6 +1174,11 @@ object PrimeSearchOverlay {
             detailIndex = parent.indexOfChild(card)
             detailParent = parent
             detailCard = card
+            detailOriginalChildren.clear()
+            for (index in 0 until card.childCount) detailOriginalChildren.add(card.getChildAt(index))
+            detailSearchCategory = card.tag as? PrimeSearchResultPreferences.Category
+            detailSearchAlgorithm = LawnchairLocalSearchAlgorithm(launcher, primeSearch = true)
+            detailSearchSerial++
             detailOpen = true
             parent.removeView(card)
             val category = card.tag as? PrimeSearchResultPreferences.Category
@@ -2178,6 +2204,87 @@ object PrimeSearchOverlay {
                 results.requestLayout()
             }
         }
+        // The expanded category has its own search session. Native results are
+        // bound to independent views, never to the compact result hierarchy.
+        fun searchExpandedCategory(query: String) {
+            val category = detailSearchCategory ?: return
+            val card = detailCard ?: return
+            val algorithmForDetail = detailSearchAlgorithm ?: return
+            detailSearchTask?.let(webHandler::removeCallbacks)
+            val serial = ++detailSearchSerial
+            val task = Runnable {
+                if (!detailOpen || detailClosing || detailSearchSerial != serial) return@Runnable
+                algorithmForDetail.doSearch(query, object : SearchCallback<BaseAllAppsAdapter.AdapterItem> {
+                    override fun onSearchResult(
+                        resultQuery: String,
+                        items: ArrayList<BaseAllAppsAdapter.AdapterItem>?,
+                    ) {
+                        if (!detailOpen || detailClosing || detailSearchSerial != serial ||
+                            input.text.toString() != query || detailCard !== card) return
+                        val matched = PrimeSearchResultPreferences.filter(
+                            launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(),
+                        ).filter { item ->
+                            val type = item.searchTarget.resultType
+                            when (category) {
+                                PrimeSearchResultPreferences.Category.APPS -> type == SearchTargetCompat.RESULT_TYPE_APPLICATION
+                                PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> type == SearchTargetCompat.RESULT_TYPE_SHORTCUT
+                                PrimeSearchResultPreferences.Category.FILES -> type == SearchTargetCompat.RESULT_TYPE_FILE_TILE
+                                PrimeSearchResultPreferences.Category.CONTACTS -> type == SearchTargetCompat.RESULT_TYPE_CONTACT_TILE
+                                PrimeSearchResultPreferences.Category.SETTINGS -> type == SearchTargetCompat.RESULT_TYPE_SETTING_TILE
+                                PrimeSearchResultPreferences.Category.CALCULATOR -> type == SearchTargetCompat.RESULT_TYPE_CALCULATOR
+                                PrimeSearchResultPreferences.Category.HISTORY -> type == SearchTargetCompat.RESULT_TYPE_SUGGESTIONS
+                                else -> false
+                            }
+                        }
+                        card.removeAllViews()
+                        val inflater = LayoutInflater.from(launcher)
+                        val columns = PrimeSearchResultPreferences.appResultsColumns(launcher)
+                        var appRow: LinearLayout? = null
+                        var appsInRow = 0
+                        val seenApps = mutableSetOf<String>()
+                        matched.forEach { item ->
+                            val isApp = category == PrimeSearchResultPreferences.Category.APPS
+                            if (isApp && !seenApps.add(item.searchTarget.packageName)) return@forEach
+                            val layout = LawnchairSearchAdapterProvider.layoutForViewType(item.viewType)
+                                ?: return@forEach
+                            val parent = if (isApp) {
+                                if (appRow == null || appsInRow == columns) {
+                                    appRow = LinearLayout(launcher).apply {
+                                        orientation = LinearLayout.HORIZONTAL
+                                        gravity = when (PrimeSearchResultPreferences.appResultsAlignment(launcher)) {
+                                            PrimeSearchResultPreferences.AppResultsAlignment.CENTER -> Gravity.CENTER_HORIZONTAL
+                                            PrimeSearchResultPreferences.AppResultsAlignment.LEFT -> Gravity.START
+                                            PrimeSearchResultPreferences.AppResultsAlignment.RIGHT -> Gravity.END
+                                        }
+                                    }
+                                    card.addView(appRow, LinearLayout.LayoutParams(-1, -2))
+                                    appsInRow = 0
+                                }
+                                appRow!!
+                            } else card
+                            val view = inflater.inflate(layout, parent, false)
+                            val resultView = view as? SearchResultView ?: return@forEach
+                            if (isApp) {
+                                val width = ((card.width - card.paddingLeft - card.paddingRight) / columns).coerceAtLeast(1)
+                                parent.addView(view, LinearLayout.LayoutParams(width, -2))
+                                appsInRow++
+                            } else parent.addView(view)
+                            item.setRippleEffect(view)
+                            resultView.bind(item.searchTarget, emptyList())
+                            if (isApp && view is com.android.launcher3.BubbleTextView) {
+                                enableNativeAppGestures(launcher, dialog, view) { appTouchInProgress = it }
+                            }
+                        }
+                        detailScroll.scrollTo(0, 0)
+                    }
+                    override fun clearSearchResult() {
+                        if (detailOpen && detailSearchSerial == serial && detailCard === card) card.removeAllViews()
+                    }
+                })
+            }
+            detailSearchTask = task
+            webHandler.postDelayed(task, 110L)
+        }
         // IME visibility and focus changes must not restart an unchanged query.
         // Only an actual change in the search text starts a new request.
         var lastSubmittedQuery = input.text?.toString().orEmpty()
@@ -2189,8 +2296,7 @@ object PrimeSearchOverlay {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val query = s?.toString().orEmpty()
                 if (detailOpen) {
-                    applyDetailFilter()
-                    detailScroll.scrollTo(0, 0)
+                    searchExpandedCategory(query)
                     return
                 }
                 if (query == lastSubmittedQuery) return
