@@ -558,6 +558,8 @@ object PrimeSearchOverlay {
         var contactResults = emptyList<PrimeContactSearch.Result>()
         val photoCache = android.util.LruCache<String, android.graphics.Bitmap>(64)
         var reorderAfterContacts: () -> Unit = {}
+        // Shared with compact asynchronous providers; declare before their callbacks.
+        var detailOpen = false
         fun renderWebPanel(query: String) {
             webPanel.removeAllViews()
             if (query.isBlank()) return
@@ -971,7 +973,6 @@ object PrimeSearchOverlay {
                 .forEach { (_, views) -> views.forEach(webPanel::addView) }
         }
         // Detail navigation retains the existing search result views and query.
-        var detailOpen = false
         var savedScrollY = 0
         var returnCardScrollY = 0
         var detailClosing = false
