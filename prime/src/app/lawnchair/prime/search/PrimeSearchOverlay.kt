@@ -1571,6 +1571,8 @@ object PrimeSearchOverlay {
         // reports the exact same native results again.
         var lastNativeRenderQuery: String? = null
         var lastNativeRenderSignature: List<String>? = null
+        var lastAppGridQuery: String? = null
+        var lastAppGridSignature: List<String>? = null
         // A result refresh must never detach an app tile between DOWN and UP.
         var appTouchInProgress = false
         val callback = object : SearchCallback<BaseAllAppsAdapter.AdapterItem> {
@@ -1710,6 +1712,14 @@ object PrimeSearchOverlay {
                 val rankedNativeItems = filteredNativeItems.map {
                     if (nativeCategoryFor(it) == appCategory) rankedApps.next() else it
                 }
+                // Reuse bound app views when another provider updates the same query.
+                // This avoids decoding icons and replacing click targets unnecessarily.
+                val appGridSignature = rankedNativeItems.filter { nativeCategoryFor(it) == appCategory }
+                    .map { "${it.searchTarget.resultType}:${it.searchTarget.layoutType}:${it.searchTarget.id}" }
+                val cachedAppCard = categoryCards[appCategory]
+                val reuseAppGrid = lastAppGridQuery == query &&
+                    lastAppGridSignature == appGridSignature && cachedAppCard != null &&
+                    cachedAppCard.childCount > 0
                 rankedNativeItems.forEach { item ->
                     val category = nativeCategoryFor(item) ?: return@forEach
                     // A result is visible only when its corresponding search
@@ -1718,6 +1728,15 @@ object PrimeSearchOverlay {
                     if (category != null && nativeCategory != null && category != nativeCategory) flushNativeSection()
                     if (category != null && nativeCategory != category) {
                         nativeCategory = category
+                        if (category == appCategory && reuseAppGrid) {
+                            // Transfer existing app rows before the old wrapper is detached.
+                            // The row views retain their native click and long-press handlers.
+                            while (cachedAppCard!!.childCount > 0) {
+                                val row = cachedAppCard.getChildAt(0)
+                                cachedAppCard.removeViewAt(0)
+                                nativeSection.addView(row)
+                            }
+                        }
                         if (category == PrimeSearchResultPreferences.Category.APP_SHORTCUTS) {
                             val heading = TextView(launcher).apply {
                                 text = "Raccourcis d'app"
@@ -1731,6 +1750,7 @@ object PrimeSearchOverlay {
                             nativeSection.addView(heading)
                         }
                     }
+                    if (category == appCategory && reuseAppGrid) return@forEach
                     // The drawer can emit the same application as a grid icon
                     // and again as a text row. Prime Search keeps one app entry.
                     if (category == PrimeSearchResultPreferences.Category.APPS) {
@@ -2123,6 +2143,8 @@ object PrimeSearchOverlay {
                     }
                 }
                 flushNativeSection()
+                lastAppGridQuery = query
+                lastAppGridSignature = appGridSignature
                 nativeSections.forEach { (category, section) ->
                     if (PrimeSearchResultPreferences.enabled(launcher, category)) {
                         section.tag = category
