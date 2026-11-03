@@ -1083,6 +1083,8 @@ object PrimeSearchOverlay {
             }
         }
         var compactAppCellWidth = 0
+        var detailSessionId = 0L
+        var detailSearchQuery = ""
         fun finishCloseDetail() {
             if (!detailOpen) return
             val card = detailCard
@@ -1113,6 +1115,7 @@ object PrimeSearchOverlay {
                 sizeDetailAppGrid(card, compactAppCellWidth)
             }
             detailOriginalChildren.clear()
+            detailSessionId++
             detailSearchSerial++
             detailSearchTask?.let(webHandler::removeCallbacks)
             detailSearchTask = null
@@ -1152,6 +1155,11 @@ object PrimeSearchOverlay {
         fun closeDetail() {
             if (!detailOpen || detailClosing) return
             detailClosing = true
+            // Invalidate all outstanding expanded callbacks before the animation.
+            detailSearchSerial++
+            detailSessionId++
+            detailSearchTask?.let(webHandler::removeCallbacks)
+            detailSearchTask = null
             dialog.hideKeyboardForSelection()
             detailScroll.animate().cancel()
             detailScroll.pivotY = 0f
@@ -1190,6 +1198,8 @@ object PrimeSearchOverlay {
             }
             detailSearchCategory = card.tag as? PrimeSearchResultPreferences.Category
             detailSearchAlgorithm = LawnchairLocalSearchAlgorithm(launcher, primeSearch = true)
+            detailSessionId++
+            detailSearchQuery = input.text.toString()
             detailSearchSerial++
             detailOpen = true
             // Do not allow a delayed compact refresh to rebuild the saved cards.
@@ -1232,7 +1242,8 @@ object PrimeSearchOverlay {
                     .firstOrNull { it.orientation == LinearLayout.HORIZONTAL && it.childCount > 0 }
                 compactAppCellWidth = firstRow?.getChildAt(0)?.layoutParams?.width ?: 0
                 detailContent.post {
-                    if (detailOpen && detailCard === card && card.width > 0) {
+                    if (detailOpen && !detailClosing && detailCard === card &&
+                        detailOriginalChildren.any { it.parent === card } && card.width > 0) {
                         val available = (card.width - card.paddingLeft - card.paddingRight).coerceAtLeast(1)
                         val columns = PrimeSearchResultPreferences.appResultsColumns(launcher)
                         sizeDetailAppGrid(card, (available / columns).coerceAtLeast(1))
@@ -2226,6 +2237,9 @@ object PrimeSearchOverlay {
             val card = detailCard ?: return
             val algorithmForDetail = detailSearchAlgorithm ?: return
             detailSearchTask?.let(webHandler::removeCallbacks)
+            detailSearchTask = null
+            detailSearchQuery = query
+            val session = detailSessionId
             val serial = ++detailSearchSerial
             // An empty editor is a fresh, valid starting point. Do not submit
             // an empty native query, which can clear or repopulate the wrong page.
@@ -2235,7 +2249,9 @@ object PrimeSearchOverlay {
                 return
             }
             val task = Runnable {
-                if (!detailOpen || detailClosing || detailSearchSerial != serial) return@Runnable
+                if (!detailOpen || detailClosing || detailSessionId != session ||
+                    detailSearchSerial != serial || detailSearchQuery != query ||
+                    input.text.toString() != query || detailCard !== card) return@Runnable
                 if (category == PrimeSearchResultPreferences.Category.CALENDAR ||
                     category == PrimeSearchResultPreferences.Category.REMINDERS ||
                     category == PrimeSearchResultPreferences.Category.NOTIFICATIONS ||
@@ -2280,7 +2296,8 @@ object PrimeSearchOverlay {
                             contactExecutor.execute {
                                 val found = PrimeContactSearch.search(launcher, query)
                                 webHandler.post {
-                                    if (detailOpen && !detailClosing && detailSearchSerial == serial &&
+                                    if (detailOpen && !detailClosing && detailSessionId == session &&
+                                        detailSearchSerial == serial && detailSearchQuery == query &&
                                         detailCard === card && input.text.toString() == query) {
                                         card.removeAllViews()
                                         found.forEach { contact ->
@@ -2302,8 +2319,10 @@ object PrimeSearchOverlay {
                         resultQuery: String,
                         items: ArrayList<BaseAllAppsAdapter.AdapterItem>?,
                     ) {
-                        if (!detailOpen || detailClosing || detailSearchSerial != serial ||
-                            input.text.toString() != query || detailCard !== card) return
+                        if (!detailOpen || detailClosing || detailSessionId != session ||
+                            detailSearchSerial != serial || detailSearchQuery != query ||
+                            resultQuery != query || input.text.toString() != query ||
+                            detailCard !== card) return
                         val matched = PrimeSearchResultPreferences.filter(
                             launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(),
                         ).filter { item ->
@@ -2361,7 +2380,9 @@ object PrimeSearchOverlay {
                         detailScroll.scrollTo(0, 0)
                     }
                     override fun clearSearchResult() {
-                        if (detailOpen && detailSearchSerial == serial && detailCard === card) card.removeAllViews()
+                        if (detailOpen && !detailClosing && detailSessionId == session &&
+                            detailSearchSerial == serial && detailSearchQuery == query &&
+                            detailCard === card) card.removeAllViews()
                     }
                 })
             }
