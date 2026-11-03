@@ -559,6 +559,10 @@ fun PrimeSearchPreference() {
                             var followGeneral by remember {
                                 mutableStateOf(PrimeSearchResultPreferences.appResultsFollowGeneral(context))
                             }
+                            var resultAlignment by remember {
+                                mutableStateOf(PrimeSearchResultPreferences.appResultsAlignment(context))
+                            }
+                            var showAlignmentDialog by remember { mutableStateOf(false) }
                             var resultColumns by remember {
                                 mutableStateOf(PrimeSearchResultPreferences.appResultsColumns(context))
                             }
@@ -616,6 +620,43 @@ fun PrimeSearchPreference() {
                                         PrimeSearchResultPreferences.setAppResultsIconSizePercent(context, resultIconPercent)
                                     },
                                     valueRange = 60f..150f,
+                                )
+                            }
+                            Text("Alignement des applications")
+                            androidx.compose.material3.OutlinedButton(
+                                onClick = { showAlignmentDialog = true },
+                            ) {
+                                Text(resultAlignment.label)
+                            }
+                            if (showAlignmentDialog) {
+                                androidx.compose.material3.AlertDialog(
+                                    onDismissRequest = { showAlignmentDialog = false },
+                                    title = { Text("Alignement des applications") },
+                                    text = {
+                                        Column {
+                                            PrimeSearchResultPreferences.AppResultsAlignment.entries.forEach { option ->
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                                                ) {
+                                                    androidx.compose.material3.RadioButton(
+                                                        selected = resultAlignment == option,
+                                                        onClick = {
+                                                            resultAlignment = option
+                                                            PrimeSearchResultPreferences.setAppResultsAlignment(context, option)
+                                                            showAlignmentDialog = false
+                                                        },
+                                                    )
+                                                    Text(option.label)
+                                                }
+                                            }
+                                        }
+                                    },
+                                    confirmButton = {
+                                        TextButton(onClick = { showAlignmentDialog = false }) {
+                                            Text("Fermer")
+                                        }
+                                    },
                                 )
                             }
                             // Real installed icons, built once when opening the dialog.
