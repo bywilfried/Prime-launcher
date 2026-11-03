@@ -360,6 +360,21 @@ object PrimeSearchResultPreferences {
         prefs(context).edit().putBoolean("app_results_follow_general", follow).apply()
     }
 
+    enum class AppResultsAlignment(val label: String) {
+        CENTER("Centré"),
+        LEFT("Aligné à gauche"),
+        RIGHT("Aligné à droite"),
+    }
+
+    fun appResultsAlignment(context: Context): AppResultsAlignment =
+        runCatching {
+            AppResultsAlignment.valueOf(prefs(context).getString("app_results_alignment", "CENTER") ?: "CENTER")
+        }.getOrDefault(AppResultsAlignment.CENTER)
+
+    fun setAppResultsAlignment(context: Context, alignment: AppResultsAlignment) {
+        prefs(context).edit().putString("app_results_alignment", alignment.name).apply()
+    }
+
     fun appResultsColumns(context: Context): Int =
         if (appResultsFollowGeneral(context)) appsPerRow(context)
         else prefs(context).getInt("app_results_columns", 5).coerceIn(3, 5)
