@@ -616,7 +616,7 @@ object PrimeSearchOverlay {
                         if (contactQuery != query) return@execute
                         val found = PrimeContactSearch.search(launcher, query)
                         webHandler.post {
-                            if (contactQuery == query && dialog.isShowing) {
+                            if (contactQuery == query && dialog.isShowing && !detailOpen) {
                                 contactResults = found
                                 renderWebPanel(query)
                                 reorderAfterContacts()
@@ -1022,6 +1022,8 @@ object PrimeSearchOverlay {
         var detailSearchCategory: PrimeSearchResultPreferences.Category? = null
         var detailSearchAlgorithm: LawnchairLocalSearchAlgorithm? = null
         val detailOriginalChildren = mutableListOf<View>()
+        val detailOriginalVisibility = mutableMapOf<View, Int>()
+        var restoringDetailQuery = false
         fun applyDetailFilter() {
             val card = detailCard ?: return
             val filter = input.text.toString().trim()
@@ -1095,9 +1097,7 @@ object PrimeSearchOverlay {
                 parent.addView(card, detailIndex.coerceIn(0, parent.childCount), params)
             }
             // Restore all original rows before returning to the compact page.
-            if (card != null) for (index in 0 until card.childCount) {
-                card.getChildAt(index).visibility = View.VISIBLE
-            }
+            // Expanded rows are disposable; the original children are restored below.
             // Restore the exact compact children, even if the expanded page
             // performed several independent searches.
             if (card != null) {
@@ -1105,9 +1105,10 @@ object PrimeSearchOverlay {
                 detailOriginalChildren.forEach { child ->
                     (child.parent as? ViewGroup)?.removeView(child)
                     card.addView(child)
-                    child.visibility = View.VISIBLE
+                    child.visibility = detailOriginalVisibility[child] ?: View.VISIBLE
                 }
             }
+            detailOriginalVisibility.clear()
             if (card != null && card.tag == PrimeSearchResultPreferences.Category.APPS && compactAppCellWidth > 0) {
                 sizeDetailAppGrid(card, compactAppCellWidth)
             }
@@ -1126,8 +1127,13 @@ object PrimeSearchOverlay {
             detailScroll.scaleY = 1f
             detailScroll.alpha = 1f
             detailPage.translationY = 0f
-            input.setText(originalDetailQuery)
-            input.setSelection(input.text.length)
+            restoringDetailQuery = true
+            try {
+                if (input.text.toString() != originalDetailQuery) input.setText(originalDetailQuery)
+                input.setSelection(input.text.length)
+            } finally {
+                restoringDetailQuery = false
+            }
             // Avoid displaying both weighted pages simultaneously: doing so
             // makes LinearLayout remeasure them at different heights and flashes.
             // Restore the compact viewport atomically in the same UI frame.
@@ -1137,8 +1143,9 @@ object PrimeSearchOverlay {
             detailPage.alpha = 1f
             scroll.alpha = 1f
             scroll.visibility = View.VISIBLE
-            scroll.scrollTo(0, returnCardScrollY)
-            scroll.post { scroll.scrollTo(0, returnCardScrollY) }
+            scroll.scrollTo(0, savedScrollY)
+            val restoredScrollY = savedScrollY
+            scroll.post { if (!detailOpen) scroll.scrollTo(0, restoredScrollY) }
             detailClosing = false
             container.requestLayout()
         }
@@ -1175,11 +1182,17 @@ object PrimeSearchOverlay {
             detailParent = parent
             detailCard = card
             detailOriginalChildren.clear()
-            for (index in 0 until card.childCount) detailOriginalChildren.add(card.getChildAt(index))
+            detailOriginalVisibility.clear()
+            for (index in 0 until card.childCount) {
+                val child = card.getChildAt(index)
+                detailOriginalChildren.add(child)
+                detailOriginalVisibility[child] = child.visibility
+            }
             detailSearchCategory = card.tag as? PrimeSearchResultPreferences.Category
             detailSearchAlgorithm = LawnchairLocalSearchAlgorithm(launcher, primeSearch = true)
             detailSearchSerial++
             detailOpen = true
+            // Do not allow a delayed compact refresh to rebuild the saved cards.
             parent.removeView(card)
             val category = card.tag as? PrimeSearchResultPreferences.Category
             val heading = when (category) {
@@ -2214,6 +2227,13 @@ object PrimeSearchOverlay {
             val algorithmForDetail = detailSearchAlgorithm ?: return
             detailSearchTask?.let(webHandler::removeCallbacks)
             val serial = ++detailSearchSerial
+            // An empty editor is a fresh, valid starting point. Do not submit
+            // an empty native query, which can clear or repopulate the wrong page.
+            if (query.isBlank()) {
+                card.removeAllViews()
+                detailScroll.scrollTo(0, 0)
+                return
+            }
             val task = Runnable {
                 if (!detailOpen || detailClosing || detailSearchSerial != serial) return@Runnable
                 if (category == PrimeSearchResultPreferences.Category.CALENDAR ||
@@ -2358,6 +2378,7 @@ object PrimeSearchOverlay {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val query = s?.toString().orEmpty()
+                if (restoringDetailQuery) return
                 if (detailOpen) {
                     searchExpandedCategory(query)
                     return
