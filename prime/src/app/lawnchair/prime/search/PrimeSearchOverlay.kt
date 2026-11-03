@@ -1052,11 +1052,38 @@ object PrimeSearchOverlay {
             addView(detailReduce, LinearLayout.LayoutParams(-1, -2))
         }
         container.addView(detailPage, LinearLayout.LayoutParams(-1, 0, 1f))
+        // The expanded page has different horizontal insets from the compact card.
+        // Resize both app cells and their nested icon views to its real width.
+        // Restore the original compact geometry when returning.
+        fun sizeDetailAppGrid(card: LinearLayout, cellWidthPx: Int) {
+            for (rowIndex in 0 until card.childCount) {
+                val row = card.getChildAt(rowIndex) as? LinearLayout ?: continue
+                if (row.orientation != LinearLayout.HORIZONTAL) continue
+                for (cellIndex in 0 until row.childCount) {
+                    val cell = row.getChildAt(cellIndex) as? LinearLayout ?: continue
+                    val params = cell.layoutParams as? LinearLayout.LayoutParams ?: continue
+                    if (params.width != cellWidthPx) {
+                        params.width = cellWidthPx
+                        cell.layoutParams = params
+                    }
+                    val icon = cell.getChildAt(0) ?: continue
+                    val iconParams = icon.layoutParams as? LinearLayout.LayoutParams ?: continue
+                    if (iconParams.width != cellWidthPx) {
+                        iconParams.width = cellWidthPx
+                        icon.layoutParams = iconParams
+                    }
+                }
+            }
+        }
+        var compactAppCellWidth = 0
         fun finishCloseDetail() {
             if (!detailOpen) return
             val card = detailCard
             val parent = detailParent
             if (card != null && parent != null) {
+                if (card.tag == PrimeSearchResultPreferences.Category.APPS && compactAppCellWidth > 0) {
+                    sizeDetailAppGrid(card, compactAppCellWidth)
+                }
                 detailContent.removeView(card)
                 val params = if (parent is FrameLayout) {
                     FrameLayout.LayoutParams(-1, -2)
@@ -1069,6 +1096,7 @@ object PrimeSearchOverlay {
             if (card != null) for (index in 0 until card.childCount) {
                 card.getChildAt(index).visibility = View.VISIBLE
             }
+            compactAppCellWidth = 0
             detailCard = null
             detailParent = null
             detailOpen = false
@@ -1159,6 +1187,19 @@ object PrimeSearchOverlay {
             }
             detailHeading.visibility = if (heading != null) View.VISIBLE else View.GONE
             detailContent.addView(card, LinearLayout.LayoutParams(-1, -2))
+            if (category == PrimeSearchResultPreferences.Category.APPS) {
+                val firstRow = (0 until card.childCount).map { card.getChildAt(it) }
+                    .filterIsInstance<LinearLayout>()
+                    .firstOrNull { it.orientation == LinearLayout.HORIZONTAL && it.childCount > 0 }
+                compactAppCellWidth = firstRow?.getChildAt(0)?.layoutParams?.width ?: 0
+                detailContent.post {
+                    if (detailOpen && detailCard === card && card.width > 0) {
+                        val available = (card.width - card.paddingLeft - card.paddingRight).coerceAtLeast(1)
+                        val columns = PrimeSearchResultPreferences.appResultsColumns(launcher)
+                        sizeDetailAppGrid(card, (available / columns).coerceAtLeast(1))
+                    }
+                }
+            }
             originalDetailQuery = input.text.toString()
             applyDetailFilter()
             // The filter may restore native heading visibility; keep the
