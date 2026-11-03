@@ -1659,7 +1659,11 @@ object PrimeSearchOverlay {
                         if (appRow == null || appsInRow == columns) {
                             appRow = LinearLayout(launcher).apply {
                                 orientation = LinearLayout.HORIZONTAL
-                                gravity = Gravity.CENTER_HORIZONTAL
+                                gravity = when (PrimeSearchResultPreferences.appResultsAlignment(launcher)) {
+                                    PrimeSearchResultPreferences.AppResultsAlignment.CENTER -> Gravity.CENTER_HORIZONTAL
+                                    PrimeSearchResultPreferences.AppResultsAlignment.LEFT -> Gravity.START
+                                    PrimeSearchResultPreferences.AppResultsAlignment.RIGHT -> Gravity.END
+                                }
                             }
                             nativeSection.addView(appRow, LinearLayout.LayoutParams(-1, -2))
                             appsInRow = 0
