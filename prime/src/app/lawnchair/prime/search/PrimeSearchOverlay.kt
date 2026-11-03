@@ -1322,6 +1322,18 @@ object PrimeSearchOverlay {
                         card.paddingTop + card.paddingBottom +
                             appRowCount.coerceAtMost(maxVisibleRows) * rowHeight
                     } else limit
+                    if (isApps) {
+                        val heading = TextView(launcher).apply {
+                            text = "Applications"
+                            setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                            setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
+                            includeFontPadding = false
+                            setPadding((12 * density).toInt(), (12 * density).toInt(),
+                                (12 * density).toInt(), (4 * density).toInt())
+                        }
+                        wrapper.addView(heading, LinearLayout.LayoutParams(-1, -2))
+                    }
                     wrapper.addView(clipped, LinearLayout.LayoutParams(
                         -1, if (isApps) appViewportHeight.coerceAtLeast(1) else limit
                     ))
@@ -1522,7 +1534,17 @@ object PrimeSearchOverlay {
                     (launcher.resources.displayMetrics.widthPixels - (24 * density).toInt())
                         .coerceAtMost((600 * density).toInt())
                 } else launcher.resources.displayMetrics.widthPixels) - inset * 2
-                val cellWidth = (gridWidth / columns).coerceAtLeast(1)
+                // START/END align against the card's actual content area, not the
+                // wider overlay width. The results container adds 4dp on each side
+                // and the app card adds another 6dp on each side.
+                // Preserve the existing centered geometry unchanged.
+                val appAlignment = PrimeSearchResultPreferences.appResultsAlignment(launcher)
+                val alignedGridWidth = if (appAlignment == PrimeSearchResultPreferences.AppResultsAlignment.CENTER) {
+                    gridWidth
+                } else {
+                    gridWidth - (20 * density).toInt()
+                }
+                val cellWidth = (alignedGridWidth / columns).coerceAtLeast(1)
                 // Match the zero-state Prime Search icon and label settings.
                 // This is local to the Prime overlay; drawer search is untouched.
                 val searchLabelLines = if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
@@ -1659,7 +1681,7 @@ object PrimeSearchOverlay {
                         if (appRow == null || appsInRow == columns) {
                             appRow = LinearLayout(launcher).apply {
                                 orientation = LinearLayout.HORIZONTAL
-                                gravity = when (PrimeSearchResultPreferences.appResultsAlignment(launcher)) {
+                                gravity = when (appAlignment) {
                                     PrimeSearchResultPreferences.AppResultsAlignment.CENTER -> Gravity.CENTER_HORIZONTAL
                                     PrimeSearchResultPreferences.AppResultsAlignment.LEFT -> Gravity.START
                                     PrimeSearchResultPreferences.AppResultsAlignment.RIGHT -> Gravity.END
