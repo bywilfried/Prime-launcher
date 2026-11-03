@@ -1558,10 +1558,12 @@ object PrimeSearchOverlay {
                 }
                 webHandler.post {
                     if (request == webRequestSerial && input.text.toString() == query && dialog.isShowing) {
-                        currentSuggestions = suggestions
-                        renderWebPanel(query)
-                        scheduleResultsReorder(::reorderSearchSections)
-                        container.requestLayout()
+                        if (currentSuggestions != suggestions) {
+                            currentSuggestions = suggestions
+                            renderWebPanel(query)
+                            scheduleResultsReorder(::reorderSearchSections)
+                            container.requestLayout()
+                        }
                     }
                 }
                 }.start()
