@@ -1184,6 +1184,7 @@ object PrimeSearchOverlay {
             // Invalidate all outstanding expanded callbacks before the animation.
             detailSearchSerial++
             detailSessionId++
+            webRequestSerial++
             detailSearchTask?.let(webHandler::removeCallbacks)
             detailSearchTask = null
             dialog.hideKeyboardForSelection()
@@ -1637,7 +1638,8 @@ object PrimeSearchOverlay {
                     } catch (_: Exception) { emptyList() }
                 }
                 webHandler.post {
-                    if (request == webRequestSerial && input.text.toString() == query && dialog.isShowing) {
+                    if (request == webRequestSerial && !detailOpen && !detailClosing &&
+                        input.text.toString() == query && dialog.isShowing) {
                         if (currentSuggestions != suggestions) {
                             currentSuggestions = suggestions
                             renderWebPanel(query)
