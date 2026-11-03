@@ -184,6 +184,9 @@ object PrimeSearchOverlay {
         icon.setOnTouchListener { _, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
+                    // Let the app icon own the complete tap immediately.
+                    // The parent ScrollView must not steal the first gesture.
+                    icon.parent?.requestDisallowInterceptTouchEvent(true)
                     pressed = false
                     dragging = false
                     downX = event.x
@@ -1339,7 +1342,19 @@ object PrimeSearchOverlay {
                             val widthSpec = View.MeasureSpec.makeMeasureSpec(
                                 clipped.width.coerceAtLeast(1), View.MeasureSpec.EXACTLY)
                             card.measure(widthSpec, View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
-                            val overflow = card.measuredHeight > limit
+                            val overflow = if (category == PrimeSearchResultPreferences.Category.APPS) {
+                                // An app grid with fewer rows than the configured
+                                // maximum must wrap its content. Never show "Plus de"
+                                // merely because a measurement includes extra padding.
+                                val maxRows = PrimeSearchResultPreferences.appResultsRows(launcher)
+                                val actualRows = (0 until card.childCount).count { index ->
+                                    val child = card.getChildAt(index)
+                                    child is LinearLayout &&
+                                        child.orientation == LinearLayout.HORIZONTAL &&
+                                        child.childCount > 0
+                                }
+                                actualRows > maxRows
+                            } else card.measuredHeight > limit
                             // Stop at a complete row boundary: never crop the last
                             // contact's avatar, name or call/message actions.
                             var previewHeight = card.paddingTop
@@ -1963,6 +1978,12 @@ object PrimeSearchOverlay {
                             // the very same app instead of doing nothing.
                             cell.isClickable = true
                             cell.isFocusable = true
+                            cell.setOnTouchListener { _, event ->
+                                if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                                    cell.parent?.requestDisallowInterceptTouchEvent(true)
+                                }
+                                false
+                            }
                             cell.setOnClickListener { icon.performClick() }
                             title.setOnClickListener { icon.performClick() }
                             parent.addView(cell, LinearLayout.LayoutParams(cellWidth, searchRowHeight))
