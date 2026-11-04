@@ -114,6 +114,13 @@ class LawnchairShortcutActivity : ComponentActivity() {
         }
     }
 
+    private fun isAppShortcutAction(config: GestureHandlerConfig): Boolean =
+        config is GestureHandlerConfig.OpenApp &&
+            config.target is app.lawnchair.gestures.handlers.OpenAppTarget.Shortcut
+
+    private fun iconInsetFor(config: GestureHandlerConfig): Float =
+        if (isAppShortcutAction(config)) 0f else 0.20f
+
     private fun isPrimeDefaultLauncher(context: Context): Boolean {
         val roles = context.getSystemService(RoleManager::class.java)
         return roles?.isRoleHeld(RoleManager.ROLE_HOME) == true
@@ -185,7 +192,7 @@ class LawnchairShortcutActivity : ComponentActivity() {
                     if (glyph != null) {
                         val adaptive = android.graphics.drawable.AdaptiveIconDrawable(
                             android.graphics.drawable.ColorDrawable(android.graphics.Color.WHITE),
-                            android.graphics.drawable.InsetDrawable(glyph, 0.20f),
+                            android.graphics.drawable.InsetDrawable(glyph, iconInsetFor(config)),
                         )
                         // Only Prime-generated action shortcuts use icon-shape
                         // foreground fitting. Never modify AppWidgetHostView or
@@ -229,7 +236,7 @@ class LawnchairShortcutActivity : ComponentActivity() {
             LauncherIcons.obtain(context).use { icons ->
                 val adaptive = android.graphics.drawable.AdaptiveIconDrawable(
                     android.graphics.drawable.ColorDrawable(android.graphics.Color.WHITE),
-                    android.graphics.drawable.InsetDrawable(icon, 0.20f),
+                    android.graphics.drawable.InsetDrawable(icon, iconInsetFor(selectedHandler)),
                 )
                 icons.createPrimeIconBitmap(adaptive, Process.myUserHandle(), shape).icon
             }
