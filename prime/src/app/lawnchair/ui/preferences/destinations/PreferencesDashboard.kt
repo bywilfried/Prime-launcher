@@ -203,14 +203,6 @@ fun PreferencesDashboard(
             }
 
             PreferenceCategory(
-                label = "Widget Aperçu",
-                description = stringResource(R.string.smartspace_widget_description),
-                iconResource = R.drawable.ic_smartspace,
-                onNavigate = { onNavigate(Smartspace) },
-                isSelected = currentRoute is Smartspace,
-            )
-
-            PreferenceCategory(
                 label = stringResource(R.string.backup_and_restore_label),
                 description = stringResource(R.string.backup_and_restore_description),
                 iconResource = R.drawable.backup_restore,
