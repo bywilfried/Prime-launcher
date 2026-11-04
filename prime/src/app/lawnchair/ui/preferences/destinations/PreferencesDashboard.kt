@@ -70,6 +70,7 @@ import app.lawnchair.ui.preferences.navigation.Folders
 import app.lawnchair.ui.preferences.navigation.General
 import app.lawnchair.ui.preferences.navigation.Gestures
 import app.lawnchair.ui.preferences.navigation.HomeScreen
+import app.lawnchair.ui.preferences.navigation.Widgets
 import app.lawnchair.ui.preferences.navigation.PreferenceRootRoute
 import app.lawnchair.ui.preferences.navigation.Quickstep
 import app.lawnchair.ui.preferences.navigation.PrimeDevelopmentOptions
@@ -135,6 +136,14 @@ fun PreferencesDashboard(
                 iconResource = R.drawable.ic_dock,
                 onNavigate = { onNavigate(Dock) },
                 isSelected = currentRoute is Dock,
+            )
+
+            PreferenceCategory(
+                label = stringResource(R.string.widgets_settings_label),
+                description = stringResource(R.string.widgets_settings_description),
+                iconResource = R.drawable.widgets_24px,
+                onNavigate = { onNavigate(Widgets) },
+                isSelected = currentRoute is Widgets,
             )
 
             ExpandAndShrink(
