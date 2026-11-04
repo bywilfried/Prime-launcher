@@ -72,4 +72,8 @@
     <string name="gesture_handler_open_app_shortcut_option">Ouvrir un raccourci d’application</string>
     <string name="pick_shortcut_for_gesture">Choisir un raccourci d’application</string>
     <string name="no_app_shortcuts_available">Aucun raccourci d’application disponible</string>
+    <string name="widgets_settings_label">Widgets</string>
+    <string name="widgets_settings_description">Personnaliser les widgets et les suggestions</string>
+    <string name="show_widget_suggestions_label">Afficher les suggestions de widgets</string>
+    <string name="show_widget_suggestions_description">Afficher ou masquer les catégories suggérées dans le sélecteur de widgets</string>
 </resources>
