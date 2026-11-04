@@ -79,7 +79,7 @@ fun WidgetsPreferences(modifier: Modifier = Modifier) {
         PreferenceGroup {
             NavigationActionPreference(
                 label = stringResource(id = R.string.configure_prime_preview_widget),
-                description = stringResource(id = R.string.smartspace_widget_description),
+                subtitle = stringResource(id = R.string.smartspace_widget_description),
                 destination = Smartspace,
             )
         }
