@@ -12,6 +12,8 @@ import androidx.compose.ui.res.stringResource
 import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences2.preferenceManager2
 import app.lawnchair.ui.preferences.LocalIsExpandedScreen
+import app.lawnchair.ui.preferences.navigation.Smartspace
+import app.lawnchair.ui.preferences.components.NavigationActionPreference
 import app.lawnchair.ui.preferences.components.controls.SliderPreference
 import app.lawnchair.ui.preferences.components.controls.SwitchPreference
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
@@ -72,6 +74,13 @@ fun WidgetsPreferences(modifier: Modifier = Modifier) {
                 step = 0.05f,
                 valueRange = 0F..2F,
                 showAsPercentage = true,
+            )
+        }
+        PreferenceGroup {
+            NavigationActionPreference(
+                label = stringResource(id = R.string.configure_prime_preview_widget),
+                description = stringResource(id = R.string.smartspace_widget_description),
+                destination = Smartspace,
             )
         }
     }
