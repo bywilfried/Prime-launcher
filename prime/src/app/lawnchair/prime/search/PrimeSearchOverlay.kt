@@ -1378,6 +1378,9 @@ object PrimeSearchOverlay {
             }
         }
         val categoryCards = mutableMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
+        val compactWrappers = mutableMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
+        val compactClips = mutableMapOf<PrimeSearchResultPreferences.Category, FrameLayout>()
+        val compactMoreButtons = mutableMapOf<PrimeSearchResultPreferences.Category, TextView>()
         fun reorderSearchSections() {
             if (detailOpen || resultGestureBusy()) {
                 if (!detailOpen) scheduleResultsReorder(::reorderSearchSections)
@@ -1478,7 +1481,7 @@ object PrimeSearchOverlay {
                     section.addView(child)
                 }
             }
-            results.removeAllViews()
+            val orderedWrappers = mutableListOf<View>()
             priorities.forEach { category ->
                 grouped[category]?.takeIf { it.childCount > 0 }?.let { card ->
                     val limit = if (category == PrimeSearchResultPreferences.Category.APPS) {
@@ -1492,13 +1495,19 @@ object PrimeSearchOverlay {
                     // Cards are cached across asynchronous contact/web refreshes.
                     // Detach from the previous clipped holder before reparenting.
                     (card.parent as? ViewGroup)?.removeView(card)
-                    val wrapper = LinearLayout(launcher).apply {
-                        orientation = LinearLayout.VERTICAL
-                        tag = category
+                    val wrapper = compactWrappers.getOrPut(category) {
+                        LinearLayout(launcher).apply {
+                            orientation = LinearLayout.VERTICAL
+                            tag = category
+                        }
                     }
-                    val clipped = FrameLayout(launcher).apply {
-                        clipChildren = true
-                        addView(card, FrameLayout.LayoutParams(-1, -2))
+                    val clipped = compactClips.getOrPut(category) {
+                        FrameLayout(launcher).apply { clipChildren = true }
+                    }
+                    if (card.parent !== clipped) {
+                        (card.parent as? ViewGroup)?.removeView(card)
+                        clipped.removeAllViews()
+                        clipped.addView(card, FrameLayout.LayoutParams(-1, -2))
                     }
                     // Size the compact app viewport before attaching the wrapper.
                     val isApps = category == PrimeSearchResultPreferences.Category.APPS
@@ -1529,10 +1538,11 @@ object PrimeSearchOverlay {
                         }
                         wrapper.addView(heading, LinearLayout.LayoutParams(-1, -2))
                     }
-                    wrapper.addView(clipped, LinearLayout.LayoutParams(
-                        -1, if (isApps) appViewportHeight.coerceAtLeast(1) else limit
-                    ))
-                    val more = TextView(launcher).apply {
+                    clipped.layoutParams = (clipped.layoutParams as? LinearLayout.LayoutParams
+                        ?: LinearLayout.LayoutParams(-1, -2)).apply {
+                        height = if (isApps) appViewportHeight.coerceAtLeast(1) else limit
+                    }
+                    val more = compactMoreButtons.getOrPut(category) { TextView(launcher).apply {
                         text = "Plus de " + when (category) {
                             PrimeSearchResultPreferences.Category.APPS -> "applications"
                             PrimeSearchResultPreferences.Category.CONTACTS -> "contacts"
@@ -1557,7 +1567,7 @@ object PrimeSearchOverlay {
                             resultsTouchInProgress = false
                             openDetail(card)
                         }
-                    }
+                    } }
                     // The action belongs to the card surface, not to the gap
                     // between adjacent cards. Keep the same themed rounded
                     // background and border as the category itself.
@@ -1570,12 +1580,16 @@ object PrimeSearchOverlay {
                     wrapper.clipToOutline = true
                     card.background = null
                     more.setPadding(0, (4 * density).toInt(), 0, (6 * density).toInt())
-                    wrapper.addView(more, LinearLayout.LayoutParams(-1, -2))
-                    results.addView(wrapper, LinearLayout.LayoutParams(-1, -2).apply {
-                        val margin = (4 * density).toInt()
-                        topMargin = margin
-                        bottomMargin = margin
-                    })
+                    if (clipped.parent !== wrapper || more.parent !== wrapper) {
+                        (clipped.parent as? ViewGroup)?.removeView(clipped)
+                        (more.parent as? ViewGroup)?.removeView(more)
+                        wrapper.removeAllViews()
+                        wrapper.addView(clipped, LinearLayout.LayoutParams(
+                            -1, if (isApps) appViewportHeight.coerceAtLeast(1) else limit
+                        ))
+                        wrapper.addView(more, LinearLayout.LayoutParams(-1, -2))
+                    }
+                    orderedWrappers.add(wrapper)
                     if (isApps) {
                         more.visibility = if (appRowCount > maxVisibleRows) View.VISIBLE else View.GONE
                     } else clipped.post {
@@ -1621,6 +1635,21 @@ object PrimeSearchOverlay {
                         }
                     }
                 }
+            }
+            // Reorder only when needed: detaching every card on each provider
+            // response cancels clicks and long-press recognition.
+            orderedWrappers.forEachIndexed { index, wrapper ->
+                if (results.getChildAt(index) !== wrapper) {
+                    (wrapper.parent as? ViewGroup)?.removeView(wrapper)
+                    results.addView(wrapper, index, LinearLayout.LayoutParams(-1, -2).apply {
+                        val margin = (4 * density).toInt()
+                        topMargin = margin
+                        bottomMargin = margin
+                    })
+                }
+            }
+            while (results.childCount > orderedWrappers.size) {
+                results.removeViewAt(results.childCount - 1)
             }
             // The panel is a staging area only; it must not become an extra
             // unconfigured results block.
