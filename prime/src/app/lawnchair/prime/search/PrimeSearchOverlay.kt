@@ -600,6 +600,14 @@ object PrimeSearchOverlay {
         // Shared with compact asynchronous providers; declare before their callbacks.
         var detailOpen = false
         fun renderWebPanel(query: String) {
+            if (resultGestureBusy()) {
+                webHandler.postDelayed({
+                    if (dialog.isShowing && !detailOpen && input.text.toString() == query) {
+                        renderWebPanel(query)
+                    }
+                }, 200L)
+                return
+            }
             webPanel.removeAllViews()
             if (query.isBlank()) return
             val foreground = themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT)
@@ -1371,7 +1379,10 @@ object PrimeSearchOverlay {
         }
         val categoryCards = mutableMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
         fun reorderSearchSections() {
-            if (detailOpen) return
+            if (detailOpen || resultGestureBusy()) {
+                if (!detailOpen) scheduleResultsReorder(::reorderSearchSections)
+                return
+            }
             val priorities = PrimeSearchResultPreferences.order(launcher)
             val headingCategories = mapOf(
                 "Suggestions Web" to PrimeSearchResultPreferences.Category.WEB,
