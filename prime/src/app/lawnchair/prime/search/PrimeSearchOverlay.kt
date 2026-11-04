@@ -1526,19 +1526,7 @@ object PrimeSearchOverlay {
                         card.paddingTop + card.paddingBottom +
                             appRowCount.coerceAtMost(maxVisibleRows) * rowHeight
                     } else limit
-                    if (isApps) {
-                        val heading = TextView(launcher).apply {
-                            text = "Applications"
-                            setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
-                            setTypeface(typeface, android.graphics.Typeface.BOLD)
-                            setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
-                            includeFontPadding = false
-                            setPadding((12 * density).toInt(), (12 * density).toInt(),
-                                (12 * density).toInt(), (4 * density).toInt())
-                        }
-                        wrapper.addView(heading, LinearLayout.LayoutParams(-1, -2))
-                    }
-                    clipped.layoutParams = (clipped.layoutParams as? LinearLayout.LayoutParams
+                     clipped.layoutParams = (clipped.layoutParams as? LinearLayout.LayoutParams
                         ?: LinearLayout.LayoutParams(-1, -2)).apply {
                         height = if (isApps) appViewportHeight.coerceAtLeast(1) else limit
                     }
@@ -1584,6 +1572,18 @@ object PrimeSearchOverlay {
                         (clipped.parent as? ViewGroup)?.removeView(clipped)
                         (more.parent as? ViewGroup)?.removeView(more)
                         wrapper.removeAllViews()
+                        if (isApps) {
+                            val heading = TextView(launcher).apply {
+                                text = "Applications"
+                                setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+                                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
+                                includeFontPadding = false
+                                setPadding((12 * density).toInt(), (12 * density).toInt(),
+                                    (12 * density).toInt(), (4 * density).toInt())
+                            }
+                            wrapper.addView(heading, LinearLayout.LayoutParams(-1, -2))
+                        }
                         wrapper.addView(clipped, LinearLayout.LayoutParams(
                             -1, if (isApps) appViewportHeight.coerceAtLeast(1) else limit
                         ))
