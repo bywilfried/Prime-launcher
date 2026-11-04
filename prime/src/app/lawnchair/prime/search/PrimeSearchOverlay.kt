@@ -317,8 +317,21 @@ object PrimeSearchOverlay {
             addView(results)
         }
         lateinit var settings: ImageView
+        // Keep the visible result hierarchy stable throughout a gesture and a
+        // short settling interval; provider updates must not steal DOWN/UP.
+        var resultGestureActive = false
+        var resultGestureSettlesAt = 0L
+        fun resultGestureBusy(): Boolean =
+            resultGestureActive || android.os.SystemClock.uptimeMillis() < resultGestureSettlesAt
         val container = object : LinearLayout(launcher) {
             override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> resultGestureActive = true
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        resultGestureActive = false
+                        resultGestureSettlesAt = android.os.SystemClock.uptimeMillis() + 180L
+                    }
+                }
                 if (event.actionMasked == MotionEvent.ACTION_DOWN) {
                     val popup = com.android.launcher3.popup.PopupContainerWithArrow.getOpen(launcher)
                     if (popup != null) {
@@ -1344,13 +1357,13 @@ object PrimeSearchOverlay {
         var resultsTouchInProgress = false
         var pendingResultsReorder = false
         fun scheduleResultsReorder(reorder: () -> Unit) {
-            if (resultsTouchInProgress) {
+            if (resultsTouchInProgress || resultGestureBusy()) {
                 if (!pendingResultsReorder) {
                     pendingResultsReorder = true
                     webHandler.postDelayed({
                         pendingResultsReorder = false
                         scheduleResultsReorder(reorder)
-                    }, 80L)
+                    }, 200L)
                 }
             } else {
                 reorder()
@@ -1699,10 +1712,10 @@ object PrimeSearchOverlay {
                 // callback after a touch can otherwise cause repeated full rebuilds.
                 pendingNativeRefresh?.let(webHandler::removeCallbacks)
                 pendingNativeRefresh = null
-                if (appTouchInProgress || resultsTouchInProgress) {
+                if (appTouchInProgress || resultsTouchInProgress || resultGestureBusy()) {
                     val deferred = Runnable { onSearchResult(query, items) }
                     pendingNativeRefresh = deferred
-                    webHandler.postDelayed(deferred, 80L)
+                    webHandler.postDelayed(deferred, 200L)
                     return
                 }
                 val incoming = items.orEmpty().filterIsInstance<SearchAdapterItem>()
@@ -2293,7 +2306,8 @@ object PrimeSearchOverlay {
             }
 
             override fun clearSearchResult() {
-                if (detailOpen || appTouchInProgress || resultsTouchInProgress) return
+                if (detailOpen || appTouchInProgress || resultsTouchInProgress ||
+                    resultGestureBusy()) return
                 pendingNativeRefresh?.let(webHandler::removeCallbacks)
                 pendingNativeRefresh = null
                 lastNativeRenderQuery = null
