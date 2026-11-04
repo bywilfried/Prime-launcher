@@ -231,7 +231,7 @@ sealed class GestureHandlerConfig {
             }
         }
 
-        override fun isExternallyInvokable() = target is OpenAppTarget.App
+        override fun isExternallyInvokable() = true
 
         override fun getDisplayLabel(context: Context) = appName
         override fun getLabel(context: Context) = context.getString(R.string.gesture_handler_open_app_config, appName)
