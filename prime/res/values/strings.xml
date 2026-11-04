@@ -1192,4 +1192,8 @@
     <string name="gesture_handler_open_app_shortcut_option">Open app shortcut</string>
     <string name="pick_shortcut_for_gesture">Pick app shortcut</string>
     <string name="no_app_shortcuts_available">No app shortcuts available</string>
+    <string name="widgets_settings_label">Widgets</string>
+    <string name="widgets_settings_description">Configure widgets and suggestions</string>
+    <string name="show_widget_suggestions_label">Show widget suggestions</string>
+    <string name="show_widget_suggestions_description">Show or hide suggested widget categories in the widget picker</string>
 </resources>
