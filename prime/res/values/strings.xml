@@ -1189,4 +1189,7 @@
     <string name="prime_icon_background_brightness_description">Background of non-adaptive icons: 0% is black, 100% is white.</string>
     <string name="prime_clear_home_screen_label">Clear home screen</string>
     <string name="prime_clear_home_screen_description">Removes all shortcuts, folders and widgets from home screen pages without uninstalling apps.</string>
+    <string name="gesture_handler_open_app_shortcut_option">Open app shortcut</string>
+    <string name="pick_shortcut_for_gesture">Pick app shortcut</string>
+    <string name="no_app_shortcuts_available">No app shortcuts available</string>
 </resources>
