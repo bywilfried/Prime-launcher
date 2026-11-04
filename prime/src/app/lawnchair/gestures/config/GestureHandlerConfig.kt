@@ -164,21 +164,22 @@ sealed class GestureHandlerConfig {
         override fun getIcon(context: Context): Icon {
             when (target) {
                 is OpenAppTarget.Shortcut -> {
+                    val shortcutTarget = target
                     val fallback = Icon.createWithResource(context, iconRes)
                     val launcherApps = context.getSystemService(LauncherApps::class.java)
                         ?: return fallback
                     return runCatching {
                         val shortcuts = launcherApps.getShortcuts(
                             LauncherApps.ShortcutQuery().apply {
-                                setPackage(target.packageName)
-                                setShortcutIds(listOf(target.id))
+                                setPackage(shortcutTarget.packageName)
+                                setShortcutIds(listOf(shortcutTarget.id))
                                 setQueryFlags(
                                     LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC or
                                         LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST or
                                         LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED,
                                 )
                             },
-                            target.user,
+                            shortcutTarget.user,
                         )
                         val info = shortcuts?.firstOrNull() ?: return@runCatching fallback
                         val drawable = launcherApps.getShortcutIconDrawable(
