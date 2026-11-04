@@ -14,6 +14,9 @@ import android.content.Context
 import android.content.Intent
 import android.os.Process
 import android.provider.Settings
+import android.os.Build
+import android.os.Environment
+import android.net.Uri
 import androidx.compose.material3.Text
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,6 +35,7 @@ import androidx.compose.ui.platform.LocalDensity
 import kotlin.math.roundToInt
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -166,6 +170,24 @@ fun PrimeSearchPreference() {
         }
     }
     PreferenceGroup(heading = "Fenêtre Prime Search") {
+        var autoKeyboard by remember { mutableStateOf(PrimeSearchResultPreferences.autoShowKeyboard(context)) }
+        PreferenceTemplate(
+            title = { Text("Ouvrir automatiquement le clavier") },
+            description = { Text("Afficher le clavier dès l’ouverture de Prime Search") },
+            endWidget = {
+                androidx.compose.material3.Switch(
+                    checked = autoKeyboard,
+                    onCheckedChange = {
+                        autoKeyboard = it
+                        PrimeSearchResultPreferences.setAutoShowKeyboard(context, it)
+                    },
+                )
+            },
+            onClick = {
+                autoKeyboard = !autoKeyboard
+                PrimeSearchResultPreferences.setAutoShowKeyboard(context, autoKeyboard)
+            },
+        )
         var floating by remember { mutableStateOf(PrimeSearchResultPreferences.floatingWindow(context)) }
         PreferenceTemplate(
             title = { Text("Fenêtre flottante (overlay)") },
@@ -322,6 +344,23 @@ fun PrimeSearchPreference() {
                         }
                     }
                 }
+                // The live preview now includes the same themed card background
+                // and outline used for search result sections.
+                val previewCardBackground = ThemeColors.resolve(
+                    context, ThemeProfile.current(context),
+                    ThemeColorRole.PRIME_SEARCH_CARD_BACKGROUND, variant)
+                val previewCardBorder = ThemeColors.resolve(
+                    context, ThemeProfile.current(context),
+                    ThemeColorRole.PRIME_SEARCH_CARD_BORDER, variant)
+                androidx.compose.material3.Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = androidx.compose.ui.graphics.Color(previewCardBackground),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp, androidx.compose.ui.graphics.Color(previewCardBorder)),
+                ) {
+                    Column(modifier = Modifier.padding(8.dp)) {
+                        Text("Applications", style = androidx.compose.material3.MaterialTheme.typography.titleSmall)
                 // PrimeSearchOverlay uses 48dp * percentage, with no 64dp cap.
                 val iconDp = (48f * iconPercent / 100f).dp
                 val offset = previewTab * 2
@@ -360,6 +399,8 @@ fun PrimeSearchPreference() {
                                 )
                             }
                         }
+                    }
+                }
                     }
                 }
             }
@@ -514,7 +555,197 @@ fun PrimeSearchPreference() {
                 permissionRefresh = permissionRefresh,
                 onDismiss = { categorySettings = null },
             ) {
-                        if (selected == PrimeSearchResultPreferences.Category.NOTIFICATIONS) {
+                        if (selected == PrimeSearchResultPreferences.Category.APPS) {
+                            var followGeneral by remember {
+                                mutableStateOf(PrimeSearchResultPreferences.appResultsFollowGeneral(context))
+                            }
+                            var resultAlignment by remember {
+                                mutableStateOf(PrimeSearchResultPreferences.appResultsAlignment(context))
+                            }
+                            var showAlignmentDialog by remember { mutableStateOf(false) }
+                            var resultColumns by remember {
+                                mutableStateOf(PrimeSearchResultPreferences.appResultsColumns(context))
+                            }
+                            var resultRows by remember {
+                                mutableStateOf(PrimeSearchResultPreferences.appResultsRows(context))
+                            }
+                            var resultIconPercent by remember {
+                                mutableStateOf(PrimeSearchResultPreferences.appResultsIconSizePercent(context))
+                            }
+                            val effectiveColumns = if (followGeneral)
+                                PrimeSearchResultPreferences.appsPerRow(context) else resultColumns
+                            val effectiveRows = if (followGeneral)
+                                PrimeSearchResultPreferences.zeroStateRows(context) else resultRows
+                            val effectiveIconPercent = if (followGeneral)
+                                PrimeSearchResultPreferences.iconSizePercent(context) else resultIconPercent
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                            ) {
+                                Text("Suivre les paramètres de Prime Search",
+                                    modifier = Modifier.weight(1f))
+                                androidx.compose.material3.Switch(
+                                    checked = followGeneral,
+                                    onCheckedChange = {
+                                        followGeneral = it
+                                        PrimeSearchResultPreferences.setAppResultsFollowGeneral(context, it)
+                                    },
+                                )
+                            }
+                            if (!followGeneral) {
+                                Text("Applications par ligne : $resultColumns")
+                                androidx.compose.material3.Slider(
+                                    value = resultColumns.toFloat(),
+                                    onValueChange = {
+                                        resultColumns = it.roundToInt().coerceIn(3, 5)
+                                        PrimeSearchResultPreferences.setAppResultsColumns(context, resultColumns)
+                                    },
+                                    valueRange = 3f..5f, steps = 1,
+                                )
+                                Text("Nombre maximal de lignes : $resultRows")
+                                androidx.compose.material3.Slider(
+                                    value = resultRows.toFloat(),
+                                    onValueChange = {
+                                        resultRows = it.roundToInt().coerceIn(1, 3)
+                                        PrimeSearchResultPreferences.setAppResultsRows(context, resultRows)
+                                    },
+                                    valueRange = 1f..3f, steps = 1,
+                                )
+                                Text("Taille des icônes : $resultIconPercent %")
+                                androidx.compose.material3.Slider(
+                                    value = resultIconPercent.toFloat(),
+                                    onValueChange = {
+                                        resultIconPercent = (it.roundToInt() / 5 * 5).coerceIn(60, 150)
+                                        PrimeSearchResultPreferences.setAppResultsIconSizePercent(context, resultIconPercent)
+                                    },
+                                    valueRange = 60f..150f,
+                                )
+                            }
+                            Text("Alignement des applications")
+                            androidx.compose.material3.OutlinedButton(
+                                onClick = { showAlignmentDialog = true },
+                            ) {
+                                Text(resultAlignment.label)
+                            }
+                            if (showAlignmentDialog) {
+                                androidx.compose.material3.AlertDialog(
+                                    onDismissRequest = { showAlignmentDialog = false },
+                                    title = { Text("Alignement des applications") },
+                                    text = {
+                                        Column {
+                                            PrimeSearchResultPreferences.AppResultsAlignment.entries.forEach { option ->
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                                                ) {
+                                                    androidx.compose.material3.RadioButton(
+                                                        selected = resultAlignment == option,
+                                                        onClick = {
+                                                            resultAlignment = option
+                                                            PrimeSearchResultPreferences.setAppResultsAlignment(context, option)
+                                                            showAlignmentDialog = false
+                                                        },
+                                                    )
+                                                    Text(option.label)
+                                                }
+                                            }
+                                        }
+                                    },
+                                    confirmButton = {
+                                        TextButton(onClick = { showAlignmentDialog = false }) {
+                                            Text("Fermer")
+                                        }
+                                    },
+                                )
+                            }
+                            // Real installed icons, built once when opening the dialog.
+                            // Sliders only recompose the grid, never decode icons again.
+                            val previewShape = app.lawnchair.preferences2.PreferenceManager2
+                                .getInstance(context).iconShape.firstCached()
+                            val installedPreview = remember(context, previewShape.key) {
+                                val pm = context.packageManager
+                                val installed = pm.getInstalledApplications(0)
+                                    .asSequence()
+                                    .filter { pm.getLaunchIntentForPackage(it.packageName) != null }
+                                    .sortedBy { pm.getApplicationLabel(it).toString().lowercase() }
+                                    .take(15).toList()
+                                com.android.launcher3.icons.LauncherIcons.obtain(context).use { factory ->
+                                    installed.mapNotNull { app ->
+                                        runCatching {
+                                            pm.getApplicationLabel(app).toString() to
+                                                factory.createPrimeIconBitmap(
+                                                    pm.getApplicationIcon(app.packageName),
+                                                    android.os.Process.myUserHandle(),
+                                                    previewShape,
+                                                ).icon.asImageBitmap()
+                                        }.getOrNull()
+                                    }
+                                }
+                            }
+                            Text("Aperçu des résultats d'applications")
+                            val resultCardColor = ThemeColors.resolve(
+                                context, ThemeProfile.current(context),
+                                ThemeColorRole.PRIME_SEARCH_CARD_BACKGROUND, variant)
+                            val resultCardBorder = ThemeColors.resolve(
+                                context, ThemeProfile.current(context),
+                                ThemeColorRole.PRIME_SEARCH_CARD_BORDER, variant)
+                            androidx.compose.material3.Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                                color = androidx.compose.ui.graphics.Color(resultCardColor),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp, androidx.compose.ui.graphics.Color(resultCardBorder)),
+                            ) {
+                                Column(modifier = Modifier.padding(8.dp)) {
+                                    Text("Applications", modifier = Modifier.padding(6.dp),
+                                        style = androidx.compose.material3.MaterialTheme.typography.titleSmall)
+                                    val geometry = app.lawnchair.prime.search.PrimeAppGridGeometry
+                                    val lines = if (PrimeSearchResultPreferences.twoLineAppLabels(context)) 2 else 1
+                                    val density = context.resources.displayMetrics.density
+                                    val iconDp = (geometry.iconPx(context, effectiveIconPercent) / density).dp
+                                    val rowDp = (geometry.rowHeightPx(context, effectiveIconPercent, lines) / density).dp
+                                    val labelDp = (geometry.labelHeightPx(context, lines) / density).dp
+                                    repeat(effectiveRows) { rowIndex ->
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().height(rowDp),
+                                            horizontalArrangement = Arrangement.SpaceEvenly,
+                                        ) {
+                                            repeat(effectiveColumns) { columnIndex ->
+                                                val app = installedPreview.getOrNull(rowIndex * effectiveColumns + columnIndex)
+                                                Column(
+                                                    modifier = Modifier.weight(1f),
+                                                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+                                                ) {
+                                                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(geometry.TOP_DP.dp))
+                                                    androidx.compose.foundation.layout.Box(
+                                                        modifier = Modifier.fillMaxWidth().height(iconDp),
+                                                        contentAlignment = androidx.compose.ui.Alignment.Center,
+                                                    ) {
+                                                        if (app != null) {
+                                                            androidx.compose.foundation.Image(
+                                                                bitmap = app.second,
+                                                                contentDescription = null,
+                                                                modifier = Modifier.size(iconDp),
+                                                            )
+                                                        }
+                                                    }
+                                                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(geometry.ICON_LABEL_GAP_DP.dp))
+                                                    Text(
+                                                        app?.first.orEmpty(),
+                                                        modifier = Modifier.height(labelDp),
+                                                        maxLines = lines,
+                                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                                        fontSize = 11.sp,
+                                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } else if (selected == PrimeSearchResultPreferences.Category.NOTIFICATIONS) {
                             val granted = PrimeSearchPermissions.granted(context, selected)
                             Text(if (granted) "Accès aux notifications autorisé" else "Accès aux notifications non autorisé")
                             TextButton(onClick = {
@@ -532,6 +763,26 @@ fun PrimeSearchPreference() {
                                 TextButton(onClick = { requestCategory(selected) }) { Text("Autoriser l'accès") }
                             }
                         } else {
+                            if (selected == PrimeSearchResultPreferences.Category.FILES &&
+                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                                val allFilesGranted = Environment.isExternalStorageManager()
+                                Text(if (allFilesGranted)
+                                    "Accès à tous les fichiers : autorisé"
+                                    else "Accès à tous les fichiers : non autorisé")
+                                Text("Cet accès permet de rechercher les documents, APK, archives et dossiers dans le stockage partagé, dans Prime Search et dans le tiroir.")
+                                TextButton(onClick = {
+                                    val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                                        Uri.parse("package:${context.packageName}"))
+                                    runCatching { context.startActivity(intent) }.onFailure {
+                                        runCatching {
+                                            context.startActivity(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
+                                        }
+                                    }
+                                }) {
+                                    Text(if (allFilesGranted) "Gérer l'accès à tous les fichiers"
+                                        else "Autoriser l'accès à tous les fichiers")
+                                }
+                            }
                             if (PrimeSearchPermissions.required(selected)) {
                                 val granted = PrimeSearchPermissions.granted(context, selected)
                                 Text(if (granted) "Autorisation accordée" else PrimeSearchPermissions.explanation(selected))

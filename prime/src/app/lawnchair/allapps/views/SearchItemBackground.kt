@@ -35,15 +35,10 @@ class SearchItemBackground(
         ThemeColorRole.DRAWER_SEARCH_SELECTED_RESULT_BACKGROUND,
         context.effectiveThemeVariant(),
     )
-    val groupHighlight = if (showBackground) {
-        if (supportBlur) {
-            ColorTokens.GroupHighlightBlur.resolveColor(context)
-        } else {
-            ColorTokens.GroupHighlight.resolveColor(context)
-        }
-    } else {
-        0
-    }
+    // Search results should sit directly on the drawer's configured background.
+    // Keep focusHighlight for keyboard/selection feedback, but never paint an
+    // opaque group card behind an unselected result.
+    val groupHighlight = android.graphics.Color.TRANSPARENT
 
     val cornerRadii: FloatArray
 

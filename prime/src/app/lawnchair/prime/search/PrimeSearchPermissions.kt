@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Environment
 import androidx.core.content.ContextCompat
 
 /** Single permission policy shared by Prime Search results and settings. */
@@ -33,6 +34,13 @@ object PrimeSearchPermissions {
     fun granted(context: Context, category: PrimeSearchResultPreferences.Category): Boolean {
         if (category == PrimeSearchResultPreferences.Category.NOTIFICATIONS) {
             return PrimeNotificationHistory.isGranted(context)
+        }
+        if (category == PrimeSearchResultPreferences.Category.FILES) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+                Environment.isExternalStorageManager()) return true
+            return runtimePermissions(category).any {
+                ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+            }
         }
         return runtimePermissions(category).all {
             ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED

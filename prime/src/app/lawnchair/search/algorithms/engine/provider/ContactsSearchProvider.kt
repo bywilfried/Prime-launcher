@@ -4,6 +4,11 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.provider.ContactsContract
+import android.database.ContentObserver
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
+import java.util.Locale
 import android.util.Log
 import app.lawnchair.preferences.PreferenceManager
 import app.lawnchair.preferences2.PreferenceManager2
@@ -24,6 +29,43 @@ import kotlinx.serialization.json.put
 object ContactsSearchProvider : SearchProvider, SearchPermission {
     override val id: String = "contacts"
 
+    // A short-lived snapshot of the provider's matching rows. Repeated queries
+    // (IME refreshes, returning to the overlay) avoid a second database scan.
+    // Observe the contacts provider so edits invalidate the cached results.
+    private val cacheLock = Any()
+    private const val CACHE_TTL_MS = 60_000L
+    private const val CACHE_LIMIT = 32
+    private val queryCache = object : LinkedHashMap<String, Pair<Long, List<ContactInfo>>>(CACHE_LIMIT, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Pair<Long, List<ContactInfo>>>?): Boolean =
+            size > CACHE_LIMIT
+    }
+    private var observedResolver: android.content.ContentResolver? = null
+    private data class IndexedContact(val normalizedName: String, val info: ContactInfo)
+    private var contactIndex: Pair<Long, List<IndexedContact>>? = null
+    private var indexGeneration = 0L
+    private const val INDEX_TTL_MS = 10L * 60L * 1000L
+    private const val INDEX_MAX_CONTACTS = 5_000
+    private val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
+        override fun onChange(selfChange: Boolean) {
+            synchronized(cacheLock) {
+                queryCache.clear()
+                contactIndex = null
+                indexGeneration++
+            }
+        }
+    }
+    private fun ensureObserver(context: Context) {
+        synchronized(cacheLock) {
+            if (observedResolver != null) return
+            runCatching {
+                context.applicationContext.contentResolver.registerContentObserver(
+                    ContactsContract.Contacts.CONTENT_URI, true, observer
+                )
+                observedResolver = context.applicationContext.contentResolver
+            }
+        }
+    }
+
     override fun search(
         context: Context,
         query: String,
@@ -43,9 +85,12 @@ object ContactsSearchProvider : SearchProvider, SearchPermission {
         }
 
         val maxResults = prefs2.maxPeopleResultCount.firstCached()
-
-        // Call the newly encapsulated, private function.
+        ensureObserver(context)
+        val started = SystemClock.elapsedRealtime()
         val contactInfoList = findContactsByName(context, query, maxResults)
+        app.lawnchair.search.PrimeSearchTrace.record(
+            "contacts query len=${query.length} count=${contactInfoList.size} ms=${SystemClock.elapsedRealtime() - started}"
+        )
 
         val surface = if (primeSearch)
             app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.PRIME_SEARCH
@@ -84,7 +129,25 @@ object ContactsSearchProvider : SearchProvider, SearchPermission {
                 Log.e("ContactSearch", "Something went wrong ", e)
             }
             return withContext(Dispatchers.IO + exceptionHandler) {
-                val contactMap = HashMap<String, ContactInfo>()
+                val key = query.lowercase(Locale.getDefault()) + "|" + max
+                val now = SystemClock.elapsedRealtime()
+                synchronized(cacheLock) {
+                    queryCache[key]?.takeIf { now - it.first in 0 until CACHE_TTL_MS }?.second
+                }?.let { return@withContext it }
+                val normalizedQuery = query.lowercase(Locale.getDefault())
+                val cachedIndex = synchronized(cacheLock) {
+                    contactIndex?.takeIf { now - it.first in 0 until INDEX_TTL_MS }?.second
+                }
+                if (cachedIndex != null) {
+                    val matches = cachedIndex.asSequence()
+                        .filter { it.normalizedName.contains(normalizedQuery) }
+                        .map { it.info }.take(max).toList()
+                    synchronized(cacheLock) { queryCache[key] = now to matches }
+                    return@withContext matches
+                }
+                val generation = synchronized(cacheLock) { indexGeneration }
+                val contactMap = LinkedHashMap<String, ContactInfo>()
+                var indexComplete = true
 
                 val projection = arrayOf(
                     ContactsContract.Data._ID,
@@ -97,8 +160,8 @@ object ContactsSearchProvider : SearchProvider, SearchPermission {
                     ContactsContract.Data.PHOTO_URI,
                 )
 
-                val selection = ContactsContract.Data.DISPLAY_NAME + " LIKE ?"
-                val selectionArgs = arrayOf("%$query%")
+                val selection: String? = null
+                val selectionArgs: Array<String>? = null
 
                 context.contentResolver.query(
                     ContactsContract.Data.CONTENT_URI,
@@ -107,7 +170,11 @@ object ContactsSearchProvider : SearchProvider, SearchPermission {
                     selectionArgs,
                     null,
                 )?.use {
-                    while (it.moveToNext() && contactMap.size < max) {
+                    while (it.moveToNext()) {
+                        if (contactMap.size >= INDEX_MAX_CONTACTS) {
+                            indexComplete = false
+                            break
+                        }
                         val contactIdIndex = it.getColumnIndex(ContactsContract.Data.CONTACT_ID)
                         val displayNameIndex = it.getColumnIndex(ContactsContract.Data.DISPLAY_NAME)
                         val data1Index = it.getColumnIndex(ContactsContract.Data.DATA1)
@@ -151,7 +218,46 @@ object ContactsSearchProvider : SearchProvider, SearchPermission {
                         }
                     }
                 }
-                contactMap.values.toList()
+                if (!indexComplete) {
+                    contactMap.clear()
+                    context.contentResolver.query(
+                        ContactsContract.Data.CONTENT_URI, projection,
+                        ContactsContract.Data.DISPLAY_NAME + " LIKE ?",
+                        arrayOf("%$query%"), null
+                    )?.use { cursor ->
+                        val idIndex = cursor.getColumnIndex(ContactsContract.Data.CONTACT_ID)
+                        val nameIndex = cursor.getColumnIndex(ContactsContract.Data.DISPLAY_NAME)
+                        val dataIndex = cursor.getColumnIndex(ContactsContract.Data.DATA1)
+                        val data3Index = cursor.getColumnIndex(ContactsContract.Data.DATA3)
+                        val data5Index = cursor.getColumnIndex(ContactsContract.Data.DATA5)
+                        val mimeIndex = cursor.getColumnIndex(ContactsContract.Data.MIMETYPE)
+                        val photoIndex = cursor.getColumnIndex(ContactsContract.Data.PHOTO_URI)
+                        while (cursor.moveToNext() && contactMap.size < max) {
+                            val id = cursor.getString(idIndex)
+                            val name = cursor.getString(nameIndex)
+                            val phone = cursor.getString(data3Index) ?: cursor.getString(data5Index) ?: cursor.getString(dataIndex)
+                            val identity = id ?: phone
+                            if (identity != null && !EXCLUDED_MIME_TYPES.contains(cursor.getString(mimeIndex))) {
+                                contactMap[identity] = ContactInfo(id, name, phone,
+                                    cursor.getString(photoIndex).orEmpty(), id + name + phone)
+                            }
+                        }
+                    }
+                }
+                val matches = contactMap.values.asSequence()
+                    .filter { it.name.lowercase(Locale.getDefault()).contains(normalizedQuery) }
+                    .take(max).toList()
+                synchronized(cacheLock) {
+                    if (generation == indexGeneration) {
+                        if (indexComplete) {
+                            contactIndex = SystemClock.elapsedRealtime() to contactMap.values.map { info ->
+                                IndexedContact(info.name.lowercase(Locale.getDefault()), info)
+                            }
+                        }
+                        queryCache[key] = SystemClock.elapsedRealtime() to matches
+                    }
+                }
+                matches
             }
         } catch (e: Exception) {
             Log.e("ContactSearch", "Something went wrong ", e)

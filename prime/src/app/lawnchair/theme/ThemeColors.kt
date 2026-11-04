@@ -314,7 +314,8 @@ object ThemeColors {
         val variant = context.effectiveThemeVariant()
         val profile = ThemeProfile.current(context)
         return when (role) {
-            ThemeColorRole.DRAWER_ICON_TEXT -> resolve(context, profile, ThemeColorRole.DRAWER_BACKGROUND, variant)
+            ThemeColorRole.DRAWER_ICON_TEXT -> liveDrawerBackgroundByVariant[variant]
+                ?: resolve(context, profile, ThemeColorRole.DRAWER_BACKGROUND, variant)
             ThemeColorRole.DOCK_ICON_TEXT -> resolve(context, profile, ThemeColorRole.HOME_HOTSEAT_BACKGROUND, variant)
             else -> Color.TRANSPARENT
         }
@@ -358,6 +359,9 @@ object ThemeColors {
             else resolveTheme(context, profile, role, variant)
         }
     }
+
+    fun adaptiveTextForSurface(backgroundColor: Int, variant: ThemeVariant): Int =
+        adaptiveTextAgainstSurface(backgroundColor, variant)
 
     private fun adaptiveTextAgainstSurface(backgroundColor: Int, variant: ThemeVariant): Int {
         val backdrop = if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE
@@ -437,6 +441,14 @@ object ThemeColors {
             ColorOption.Default -> official
             ColorOption.LegacyBehavior -> legacy(context, role, variant)
             ColorOption.AutomaticBlackWhite -> when (role) {
+                ThemeColorRole.HOME_POPUP_TEXT,
+                ThemeColorRole.HOME_POPUP_ICON -> categoryBlackWhite(
+                    resolveTheme(context, profile, ThemeColorRole.HOME_POPUP_BACKGROUND, variant), variant,
+                )
+                ThemeColorRole.DRAWER_POPUP_TEXT,
+                ThemeColorRole.DRAWER_POPUP_ICON -> categoryBlackWhite(
+                    resolveTheme(context, profile, ThemeColorRole.DRAWER_POPUP_BACKGROUND, variant), variant,
+                )
                 ThemeColorRole.PRIME_SEARCH_TEXT,
                 ThemeColorRole.PRIME_SEARCH_HINT,
                 ThemeColorRole.PRIME_SEARCH_ICON,
@@ -449,6 +461,12 @@ object ThemeColors {
                     val opaque = ColorUtils.compositeColors(surface, if (variant == ThemeVariant.DARK) Color.BLACK else Color.WHITE)
                     if (ColorUtils.calculateContrast(Color.BLACK, opaque) >= ColorUtils.calculateContrast(Color.WHITE, opaque)) Color.BLACK else Color.WHITE
                 }
+                ThemeColorRole.DRAWER_TEXT,
+                ThemeColorRole.DRAWER_ICON_TEXT,
+                ThemeColorRole.DRAWER_FOLDER_ICON_TEXT,
+                ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> categoryBlackWhite(
+                    resolve(context, profile, ThemeColorRole.DRAWER_BACKGROUND, variant), variant,
+                )
                 ThemeColorRole.DRAWER_HANDLE -> categoryBlackWhite(
                     resolveTheme(context, profile, ThemeColorRole.DRAWER_BACKGROUND, variant), variant,
                 )
@@ -470,6 +488,10 @@ object ThemeColors {
             }
             ColorOption.AdaptiveThemeText -> {
                 val backgroundRole = when (role) {
+                    ThemeColorRole.HOME_POPUP_TEXT,
+                    ThemeColorRole.HOME_POPUP_ICON -> ThemeColorRole.HOME_POPUP_BACKGROUND
+                    ThemeColorRole.DRAWER_POPUP_TEXT,
+                    ThemeColorRole.DRAWER_POPUP_ICON -> ThemeColorRole.DRAWER_POPUP_BACKGROUND
                     ThemeColorRole.PRIME_SEARCH_TEXT,
                     ThemeColorRole.PRIME_SEARCH_HINT,
                     ThemeColorRole.PRIME_SEARCH_ICON,
@@ -480,9 +502,11 @@ object ThemeColors {
                     ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND
                     ThemeColorRole.DRAWER_HANDLE,
                     ThemeColorRole.DRAWER_TEXT, ThemeColorRole.DRAWER_ICON_TEXT,
-                    ThemeColorRole.DRAWER_FOLDER_ICON_TEXT -> ThemeColorRole.DRAWER_BACKGROUND
+                    ThemeColorRole.DRAWER_FOLDER_ICON_TEXT,
+                    ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> ThemeColorRole.DRAWER_BACKGROUND
                     ThemeColorRole.DRAWER_SEARCH_TEXT, ThemeColorRole.DRAWER_SEARCH_HINT,
                     ThemeColorRole.DRAWER_SEARCH_ICON -> ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE
+                    ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT -> ThemeColorRole.GLOBAL_NOTIFICATION_DOT
                     else -> null
                 }
                 if (backgroundRole == null) official
@@ -668,7 +692,29 @@ object ThemeColors {
         if (variant == ThemeVariant.DARK) UiColorMode.Dark else UiColorMode.Light,
     )
 
-    private fun legacy(context: Context, role: ThemeColorRole, variant: ThemeVariant): Int = when (role) {
+    // Official Legacy dark Prime Search surfaces. These are palette recipes,
+    // not stored user overrides, so they continue following wallpaper colors.
+    private fun legacyDarkPrimeSearchSurface(context: Context, role: ThemeColorRole): Int? {
+        val shade = when (role) {
+            ThemeColorRole.PRIME_SEARCH_WINDOW_BACKGROUND,
+            ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND,
+            ThemeColorRole.PRIME_SEARCH_BORDER,
+            ThemeColorRole.PRIME_SEARCH_CARD_BORDER -> 800
+            ThemeColorRole.PRIME_SEARCH_BAR_BACKGROUND,
+            ThemeColorRole.PRIME_SEARCH_CARD_BACKGROUND -> 700
+            else -> return null
+        }
+        return ColorOption.DynamicColor("Accent2", shade).colorPreferenceEntry.darkColor(context)
+    }
+
+    private fun legacy(context: Context, role: ThemeColorRole, variant: ThemeVariant): Int {
+        if (variant == ThemeVariant.DARK) {
+            legacyDarkPrimeSearchSurface(context, role)?.let { return it }
+        }
+        return legacyRoleColor(context, role, variant)
+    }
+
+    private fun legacyRoleColor(context: Context, role: ThemeColorRole, variant: ThemeVariant): Int = when (role) {
         // Match the original Legacy visual palette without reading any drawer
         // overrides. legacy() resolves baseline values, not user customizations.
         ThemeColorRole.PRIME_SEARCH_WINDOW_BACKGROUND -> legacy(context, ThemeColorRole.DRAWER_BACKGROUND, variant)
@@ -680,6 +726,8 @@ object ThemeColors {
         ThemeColorRole.PRIME_SEARCH_TAB_ACTIVE -> legacy(context, ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT, variant)
         ThemeColorRole.PRIME_SEARCH_TAB_INACTIVE -> legacy(context, ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT, variant)
         ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND -> legacy(context, ThemeColorRole.DRAWER_BACKGROUND, variant)
+        ThemeColorRole.PRIME_SEARCH_CARD_BACKGROUND -> legacy(context, ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND, variant)
+        ThemeColorRole.PRIME_SEARCH_CARD_BORDER -> legacy(context, ThemeColorRole.PRIME_SEARCH_BORDER, variant)
         ThemeColorRole.PRIME_SEARCH_RESULT_TEXT -> legacy(context, ThemeColorRole.DRAWER_TEXT, variant)
         ThemeColorRole.PRIME_SEARCH_APP_LABEL -> legacy(context, ThemeColorRole.DRAWER_ICON_TEXT, variant)
         ThemeColorRole.PRIME_SEARCH_SETTINGS_ICON -> legacy(context, ThemeColorRole.DRAWER_SEARCH_ICON, variant)

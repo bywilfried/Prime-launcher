@@ -25,6 +25,8 @@ import app.lawnchair.ui.preferences.navigation.PrimeDiagnosticLogs
 import app.lawnchair.util.restartLauncher
 import com.android.launcher3.R
 import com.android.launcher3.allapps.ActivityAllAppsContainerView
+import android.content.Intent
+import com.android.launcher3.PrimeDebugLog
 import android.content.ClipData
 import android.content.ClipboardManager
 
@@ -33,6 +35,11 @@ fun PrimeDevelopmentOptionsPreference() {
     val navController = LocalNavController.current
     val context = LocalContext.current
     var showSwipeDiagnostic by remember { mutableStateOf(false) }
+    var showSearchDiagnostic by remember { mutableStateOf(false) }
+    var searchLog by remember { mutableStateOf("") }
+    var searchTraceEnabled by remember { mutableStateOf(app.lawnchair.search.PrimeSearchTrace.enabled) }
+    var showPopupDiagnostic by remember { mutableStateOf(false) }
+    var popupLog by remember { mutableStateOf("") }
     PreferenceLayout(
         label = stringResource(R.string.prime_development_options),
         backArrowVisible = true,
@@ -53,11 +60,100 @@ fun PrimeDevelopmentOptionsPreference() {
                 onClick = { app.lawnchair.bugreport.PrimeWidgetLogExporter.export(context) },
             )
             ClickablePreference(
+                label = "Diagnostic des menus contextuels",
+                subtitle = "Afficher et partager les couleurs et fonds des menus de l’accueil",
+                onClick = {
+                    popupLog = PrimeDebugLog.getPopupText(context)
+                        .ifBlank { "Aucune trace. Effectuez un appui long sur une zone vide de l’accueil, puis revenez ici." }
+                    showPopupDiagnostic = true
+                },
+            )
+            ClickablePreference(
+                label = "Diagnostic de recherche",
+                subtitle = "Tracer les recherches et le clavier sans Logcat",
+                onClick = { searchLog = app.lawnchair.search.PrimeSearchTrace.dump(); showSearchDiagnostic = true },
+            )
+            ClickablePreference(
                 label = "Diagnostic swipe",
                 subtitle = "Afficher les traces du swipe entre les catégories du tiroir",
                 onClick = { showSwipeDiagnostic = true },
             )
         }
+    }
+
+    if (showPopupDiagnostic) {
+        AlertDialog(
+            onDismissRequest = { showPopupDiagnostic = false },
+            title = { Text("Diagnostic des menus contextuels") },
+            text = {
+                Box(Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState())) {
+                    Text(popupLog)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    context.getSystemService(ClipboardManager::class.java)
+                        ?.setPrimaryClip(ClipData.newPlainText("Prime popup diagnostic", popupLog))
+                }) { Text("Copier") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    val share = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, popupLog)
+                    }
+                    context.startActivity(Intent.createChooser(share, "Partager le diagnostic"))
+                }) { Text("Partager") }
+                TextButton(onClick = {
+                    PrimeDebugLog.clearPopup(context)
+                    popupLog = "Journal effacé. Effectuez un nouvel appui long sur une zone vide."
+                }) { Text("Effacer") }
+            },
+        )
+    }
+
+    if (showSearchDiagnostic) {
+        AlertDialog(
+            onDismissRequest = { showSearchDiagnostic = false },
+            title = { Text("Diagnostic de recherche") },
+            text = {
+                androidx.compose.foundation.layout.Column {
+                    androidx.compose.material3.Switch(
+                        checked = searchTraceEnabled,
+                        onCheckedChange = {
+                            searchTraceEnabled = it
+                            app.lawnchair.search.PrimeSearchTrace.enabled = it
+                        },
+                    )
+                    Text(if (searchTraceEnabled) "Capture activée" else "Capture désactivée")
+                    TextButton(onClick = { searchLog = app.lawnchair.search.PrimeSearchTrace.dump() }) {
+                        Text("Actualiser")
+                    }
+                    Box(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
+                        Text(searchLog)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    context.getSystemService(ClipboardManager::class.java)
+                        ?.setPrimaryClip(ClipData.newPlainText("Prime search diagnostic", searchLog))
+                }) { Text("Copier") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    app.lawnchair.search.PrimeSearchTrace.clear()
+                    searchLog = app.lawnchair.search.PrimeSearchTrace.dump()
+                }) { Text("Effacer") }
+                TextButton(onClick = {
+                    val share = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, searchLog)
+                    }
+                    context.startActivity(Intent.createChooser(share, "Partager le diagnostic"))
+                }) { Text("Partager") }
+            },
+        )
     }
 
     if (showSwipeDiagnostic) {

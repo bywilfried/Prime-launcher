@@ -5,7 +5,7 @@ import android.net.Uri
 import android.provider.ContactsContract
 
 object PrimeContactSearch {
-    data class Result(val name: String, val uri: Uri)
+    data class Result(val name: String, val uri: Uri, val phone: String?)
     fun search(context: Context, query: String): List<Result> =
         search(context, query, PrimeSearchResultPreferences.Surface.PRIME_SEARCH)
 
@@ -35,16 +35,42 @@ object PrimeContactSearch {
                         arrayOf("%${query.trim()}%"),
                         ContactsContract.Contacts.DISPLAY_NAME_PRIMARY + " ASC"
                     )?.use { cursor ->
-                        while (cursor.moveToNext() && results.size < 30) {
+                        while (cursor.moveToNext() && results.size < 300) {
                             val id = cursor.getLong(0)
                             if (id !in allowedIds) continue
+                            val phone = context.contentResolver.query(
+                                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                                arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+                                "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID}=?",
+                                arrayOf(id.toString()),
+                                "${ContactsContract.CommonDataKinds.Phone.IS_SUPER_PRIMARY} DESC, " +
+                                    "${ContactsContract.CommonDataKinds.Phone.IS_PRIMARY} DESC",
+                            )?.use { phones ->
+                                if (phones.moveToFirst()) phones.getString(0) else null
+                            }
                             results[id] = Result(cursor.getString(1).orEmpty(),
-                                android.content.ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, id))
+                                android.content.ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, id),
+                                phone)
                         }
                     }
                 }
             }
         }
-        return results.values.toList()
+        // Prefer an exact name, then names beginning with the query,
+        // then word-boundary matches, and finally parenthetical/substring matches.
+        val needle = query.trim().lowercase(java.util.Locale.ROOT)
+        fun rank(name: String): Int {
+            val value = name.trim().lowercase(java.util.Locale.ROOT)
+            return when {
+                value == needle -> 0
+                value.startsWith(needle) -> 1
+                value.split(Regex("[\\s\\-]+")).any { it.startsWith(needle) } -> 2
+                else -> 3
+            }
+        }
+        return results.values.sortedWith(
+            compareBy<Result> { rank(it.name) }
+                .thenBy { it.name.lowercase(java.util.Locale.ROOT) }
+        ).take(30)
     }
 }

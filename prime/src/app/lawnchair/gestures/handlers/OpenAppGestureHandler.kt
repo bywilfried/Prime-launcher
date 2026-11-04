@@ -30,7 +30,18 @@ class OpenAppGestureHandler(
                 )
             }
 
-            is OpenAppTarget.Shortcut -> Unit
+            is OpenAppTarget.Shortcut -> {
+                val launcherApps = launcher.getSystemService<LauncherApps>() ?: return
+                try {
+                    launcherApps.startShortcut(target.packageName, target.id, null, null, target.user)
+                } catch (_: android.content.ActivityNotFoundException) {
+                    // Shortcut no longer exists.
+                } catch (_: SecurityException) {
+                    // Shortcut host access is unavailable.
+                } catch (_: IllegalStateException) {
+                    // Shortcut is no longer launchable.
+                }
+            }
         }
     }
 }

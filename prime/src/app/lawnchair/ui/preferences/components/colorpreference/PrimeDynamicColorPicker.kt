@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import app.lawnchair.theme.color.ColorOption
 import app.lawnchair.ui.preferences.components.layout.Chip
 
@@ -74,7 +75,7 @@ fun PrimeDynamicColorPicker(
             }
         }
 
-        val shade = shades[shadeIndex.toInt().coerceIn(shades.indices)]
+        val shade = shades[shadeIndex.roundToInt().coerceIn(shades.indices)]
         val context = LocalContext.current
         val previewOption = ColorOption.DynamicColor(
             swatch = swatch,
@@ -98,7 +99,7 @@ fun PrimeDynamicColorPicker(
         Text("Tonalité : $shade")
         Slider(
             value = shadeIndex,
-            onValueChange = { shadeIndex = it },
+            onValueChange = { shadeIndex = it.roundToInt().toFloat() },
             valueRange = 0f..shades.lastIndex.toFloat(),
             steps = shades.size - 2,
         )

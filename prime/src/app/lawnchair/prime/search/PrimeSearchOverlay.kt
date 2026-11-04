@@ -90,10 +90,24 @@ object PrimeSearchOverlay {
         private val onDismiss: () -> Unit,
     ) {
         private val layer = launcher.dragLayer
-        private val scrim = FrameLayout(launcher).apply {
+        private val scrim = object : FrameLayout(launcher) {
+            override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+                if (event.keyCode == android.view.KeyEvent.KEYCODE_BACK &&
+                    com.android.launcher3.popup.PopupContainerWithArrow.getOpen(launcher) != null) {
+                    if (event.action == android.view.KeyEvent.ACTION_UP) {
+                        com.android.launcher3.popup.PopupContainerWithArrow.getOpen(launcher)?.close(true)
+                    }
+                    return true
+                }
+                return super.dispatchKeyEvent(event)
+            }
+        }.apply {
             isClickable = true
             setBackgroundColor(android.graphics.Color.TRANSPARENT)
-            setOnClickListener { dismiss() }
+            setOnClickListener {
+                val popup = com.android.launcher3.popup.PopupContainerWithArrow.getOpen(launcher)
+                if (popup != null) popup.close(true) else dismiss()
+            }
         }
         val isShowing get() = scrim.parent != null
         fun show() {
@@ -109,6 +123,17 @@ object PrimeSearchOverlay {
                 if (floating) topMargin = (12 * density).toInt()
             })
             content.isClickable = true
+        }
+        fun hideKeyboardForSelection() {
+            if (!isShowing) return
+            // Transfer focus away from the editor before launching the target.
+            // This prevents the IME from remaining tied to the launcher during
+            // the destination activity's startup transition.
+            content.findFocus()?.clearFocus()
+            scrim.isFocusableInTouchMode = true
+            scrim.requestFocus()
+            (launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                .hideSoftInputFromWindow(content.windowToken, 0)
         }
         fun dismiss() {
             if (!isShowing) return
@@ -152,6 +177,7 @@ object PrimeSearchOverlay {
         launcher: LawnchairLauncher,
         surface: PrimeSearchSurface,
         icon: com.android.launcher3.BubbleTextView,
+        onTouchActive: (Boolean) -> Unit = {},
     ) {
         val slop = ViewConfiguration.get(launcher).scaledTouchSlop
         var pressed = false
@@ -173,6 +199,10 @@ object PrimeSearchOverlay {
         icon.setOnTouchListener { _, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
+                    // Let the app icon own the complete tap immediately.
+                    // The parent ScrollView must not steal the first gesture.
+                    icon.parent?.requestDisallowInterceptTouchEvent(true)
+                    onTouchActive(true)
                     pressed = false
                     dragging = false
                     downX = event.x
@@ -221,6 +251,7 @@ object PrimeSearchOverlay {
                     pressed || dragging
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    onTouchActive(false)
                     val consumed = pressed || dragging
                     pressed = false
                     dragging = false
@@ -258,13 +289,15 @@ object PrimeSearchOverlay {
         }
         val results = LinearLayout(launcher).apply {
             orientation = LinearLayout.VERTICAL
+            setPadding((4 * density).toInt(), (12 * density).toInt(),
+                (4 * density).toInt(), (8 * density).toInt())
             // Search results must not start flush against the search field.
             // This padding belongs only to typed results, not the zero-state tabs.
-            setPadding(0, (8 * density).toInt(), 0, (6 * density).toInt())
             setBackgroundColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND))
         }
         val zeroState = LinearLayout(launcher).apply {
             orientation = LinearLayout.VERTICAL
+            setPadding((12 * density).toInt(), 0, (12 * density).toInt(), 0)
         }
         val tabs = LinearLayout(launcher).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -276,9 +309,40 @@ object PrimeSearchOverlay {
         zeroState.addView(tabs, LinearLayout.LayoutParams(-1, -2))
         zeroState.addView(zeroApps, LinearLayout.LayoutParams(-1, -2))
         val scroll = ScrollView(launcher).apply {
+            // Native scroll-edge gradients: fade content under the search bar
+            // and at the bottom without expensive real-time bitmap blur.
+            isVerticalFadingEdgeEnabled = true
+            setFadingEdgeLength((24 * density).toInt())
+            isFillViewport = false
             addView(results)
         }
-        val container = LinearLayout(launcher).apply {
+        lateinit var settings: ImageView
+        // Keep the visible result hierarchy stable throughout a gesture and a
+        // short settling interval; provider updates must not steal DOWN/UP.
+        var resultGestureActive = false
+        var resultGestureSettlesAt = 0L
+        fun resultGestureBusy(): Boolean =
+            resultGestureActive || android.os.SystemClock.uptimeMillis() < resultGestureSettlesAt
+        val container = object : LinearLayout(launcher) {
+            override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> resultGestureActive = true
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        resultGestureActive = false
+                        resultGestureSettlesAt = android.os.SystemClock.uptimeMillis() + 180L
+                    }
+                }
+                if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                    val popup = com.android.launcher3.popup.PopupContainerWithArrow.getOpen(launcher)
+                    if (popup != null) {
+                        popup.close(true)
+                        // Do not accidentally activate the item under the dismissed popup.
+                        return true
+                    }
+                }
+                return super.dispatchTouchEvent(event)
+            }
+        }.apply {
             orientation = LinearLayout.VERTICAL
             background = GradientDrawable().apply {
                 setColor(themed(ThemeColorRole.PRIME_SEARCH_WINDOW_BACKGROUND))
@@ -286,7 +350,9 @@ object PrimeSearchOverlay {
             }
             clipToOutline = floating
             setPadding(inset, inset, inset, 0)
-            addView(input, LinearLayout.LayoutParams(-1, -2))
+            val searchBar = FrameLayout(launcher)
+            searchBar.addView(input, FrameLayout.LayoutParams(-1, -2))
+            addView(searchBar, LinearLayout.LayoutParams(-1, -2))
             addView(zeroState, LinearLayout.LayoutParams(-1, -2))
             addView(scroll, LinearLayout.LayoutParams(-1, -2))
             // Use a real outlined vector-like gear instead of the platform
@@ -330,7 +396,7 @@ object PrimeSearchOverlay {
                 @Deprecated("Deprecated in Java")
                 override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
             }
-            val settings = ImageView(launcher).apply {
+            settings = ImageView(launcher).apply {
                 setImageDrawable(settingsIcon)
                 scaleType = ImageView.ScaleType.CENTER_INSIDE
                 setPadding((10 * density).toInt(), (10 * density).toInt(),
@@ -343,13 +409,11 @@ object PrimeSearchOverlay {
                     )
                 }
             }
-            val settingsFooter = LinearLayout(launcher).apply {
-                gravity = Gravity.END or Gravity.CENTER_VERTICAL
-                addView(settings, LinearLayout.LayoutParams(
-                    (40 * density).toInt(), (40 * density).toInt(),
-                ))
-            }
-            addView(settingsFooter, LinearLayout.LayoutParams(-1, (40 * density).toInt()))
+            searchBar.addView(settings, FrameLayout.LayoutParams(
+                (40 * density).toInt(), (40 * density).toInt(),
+                Gravity.END or Gravity.CENTER_VERTICAL,
+            ).apply { marginEnd = (8 * density).toInt() })
+            input.setPadding(inset, 0, (56 * density).toInt(), 0)
         }
         lateinit var dialog: PrimeSearchSurface
         dialog = PrimeSearchSurface(launcher, container, floating, density) {
@@ -418,9 +482,11 @@ object PrimeSearchOverlay {
             }
             val columns = PrimeSearchResultPreferences.appsPerRow(launcher)
             val maxCount = columns * PrimeSearchResultPreferences.zeroStateRows(launcher)
-            val usableWidth = launcher.resources.displayMetrics.widthPixels -
-                (if (floating) (48 * density).toInt() else 0) - inset * 2
-            val cellWidth = (usableWidth.coerceAtMost((600 * density).toInt() - inset * 2) / columns)
+            val usableWidth = (if (floating) {
+                (launcher.resources.displayMetrics.widthPixels - (24 * density).toInt())
+                    .coerceAtMost((600 * density).toInt())
+            } else launcher.resources.displayMetrics.widthPixels) - inset * 2
+            val cellWidth = (usableWidth / columns)
                 .coerceAtLeast(1)
             // Always allocate the configured number of rows, even if a tab
             // has fewer apps (or none). This keeps the overlay height stable
@@ -457,6 +523,7 @@ object PrimeSearchOverlay {
                         setPadding(2, cellTopPadding, 2, cellBottomPadding)
                         setOnClickListener {
                             packageManager.getLaunchIntentForPackage(app.packageName)?.let { intent ->
+                                dialog.hideKeyboardForSelection()
                                 dialog.dismiss()
                                 launcher.startActivity(intent)
                             }
@@ -522,24 +589,59 @@ object PrimeSearchOverlay {
         var webRequestSerial = 0
         var currentSuggestions = emptyList<String>()
         val webPanel = LinearLayout(launcher).apply { orientation = LinearLayout.VERTICAL }
+        // ContactsProvider and photo decoding use ContentResolver/disk I/O.
+        // Never perform either operation on the keyboard/UI thread.
+        val contactExecutor = java.util.concurrent.Executors.newSingleThreadExecutor()
+        val photoExecutor = java.util.concurrent.Executors.newFixedThreadPool(2)
+        var contactQuery = ""
+        var contactResults = emptyList<PrimeContactSearch.Result>()
+        val photoCache = android.util.LruCache<String, android.graphics.Bitmap>(64)
+        var reorderAfterContacts: () -> Unit = {}
+        // Shared with compact asynchronous providers; declare before their callbacks.
+        var detailOpen = false
         fun renderWebPanel(query: String) {
+            if (resultGestureBusy()) {
+                webHandler.postDelayed({
+                    if (dialog.isShowing && !detailOpen && input.text.toString() == query) {
+                        renderWebPanel(query)
+                    }
+                }, 200L)
+                return
+            }
             webPanel.removeAllViews()
             if (query.isBlank()) return
             val foreground = themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT)
             fun row(title: String, action: () -> Unit) {
+                val isHeading = title in setOf(
+                    "Suggestions Web", "Raccourcis Web", "Contacts",
+                    "Événements de l'agenda", "Tâches · Tasks.org",
+                    "Historique des notifications", "Paramètres de l'appareil",
+                    "Device settings",
+                )
                 val label = TextView(launcher).apply {
                     text = title
-                    textSize = 14f
+                    textSize = 15f
                     setTextColor(foreground)
-                    setPadding(inset, (6 * density).toInt(), inset, (6 * density).toInt())
-                    setOnClickListener { action() }
+                    if (isHeading) setTypeface(typeface, android.graphics.Typeface.BOLD)
+                    // These are plain text rows, not the large icon/file tiles.
+                    // Keep them content-sized with a compact, consistent rhythm.
+                    val top = ((if (isHeading) 10 else 3) * density).toInt()
+                    val bottom = ((if (isHeading) 2 else 3) * density).toInt()
+                    val left = (12 * density).toInt() + (if (isHeading) 0 else (8 * density).toInt())
+                    setPadding(left, top, (12 * density).toInt(), bottom)
+                    includeFontPadding = false
+                    if (!isHeading) minimumHeight = (30 * density).toInt()
+                    setOnClickListener {
+                        if (title != "Suggestions Web" && title != "Raccourcis Web") dialog.hideKeyboardForSelection()
+                        action()
+                    }
                 }
                 webPanel.addView(label, LinearLayout.LayoutParams(-1, -2))
             }
             if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB) && currentSuggestions.isNotEmpty()) {
                 row("Suggestions Web") {}
                 currentSuggestions.forEach { suggestion ->
-                    row("⌕  $suggestion") {
+                    row(suggestion) {
                         val provider = PrimeSearchResultPreferences.suggestionProvider(launcher)
                         val engine = when (provider) {
                             PrimeSearchResultPreferences.SuggestionProvider.GOOGLE -> PrimeSearchResultPreferences.WebEngine.GOOGLE
@@ -556,16 +658,139 @@ object PrimeSearchOverlay {
                 }
             }
             if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.CONTACTS)) {
-                val contacts = PrimeContactSearch.search(launcher, query)
+                if (contactQuery != query) {
+                    contactQuery = query
+                    contactResults = emptyList()
+                    contactExecutor.execute {
+                        if (contactQuery != query) return@execute
+                        val found = PrimeContactSearch.search(launcher, query)
+                        webHandler.post {
+                            if (contactQuery == query && dialog.isShowing && !detailOpen) {
+                                contactResults = found
+                                renderWebPanel(query)
+                                reorderAfterContacts()
+                                results.requestLayout()
+                            }
+                        }
+                    }
+                }
+                val contacts = contactResults
                 if (contacts.isNotEmpty()) {
                     row("Contacts") {}
                     contacts.forEach { contact ->
-                        row("👤  ${contact.name}") {
-                            runCatching {
-                                launcher.startActivity(Intent(Intent.ACTION_VIEW, contact.uri))
-                                dismiss()
+                        val contactRow = LinearLayout(launcher).apply {
+                            orientation = LinearLayout.HORIZONTAL
+                            gravity = Gravity.CENTER_VERTICAL
+                            minimumHeight = (44 * density).toInt()
+                        }
+                        // Show the Android contact photo on the left when available.
+                        // Keep a neutral avatar placeholder for contacts without a photo.
+                        val avatarSize = (36 * density).toInt()
+                        val initials = contact.name.trim().split(Regex("\\s+"))
+                            .filter { it.isNotBlank() }
+                            .let { parts ->
+                                if (parts.size >= 2) {
+                                    "${parts.first().first().uppercaseChar()}${parts.last().first().uppercaseChar()}"
+                                } else parts.firstOrNull()?.take(2)?.uppercase().orEmpty()
+                            }
+                        val avatarFrame = FrameLayout(launcher).apply {
+                            background = GradientDrawable().apply {
+                                shape = GradientDrawable.OVAL
+                                val hue = (contact.uri.toString().hashCode().toLong() and 0x7fffffffL) % 360L
+                                setColor(Color.HSVToColor(floatArrayOf(hue.toFloat(), 0.34f, 0.66f)))
+                            }
+                            clipToOutline = true
+                            contentDescription = "Contact : " + contact.name
+                            setOnClickListener {
+                                dialog.hideKeyboardForSelection()
+                                runCatching {
+                                    launcher.startActivity(Intent(Intent.ACTION_VIEW, contact.uri))
+                                    dismiss()
+                                }
                             }
                         }
+                        val initialsView = TextView(launcher).apply {
+                            text = initials
+                            gravity = Gravity.CENTER
+                            setTextColor(Color.WHITE)
+                            setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 13f)
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                        }
+                        avatarFrame.addView(initialsView, FrameLayout.LayoutParams(-1, -1))
+                        val avatarPhoto = ImageView(launcher).apply {
+                            scaleType = ImageView.ScaleType.CENTER_CROP
+                            visibility = View.GONE
+                        }
+                        avatarFrame.addView(avatarPhoto, FrameLayout.LayoutParams(-1, -1))
+                        val photoKey = contact.uri.toString()
+                        val cachedPhoto = photoCache.get(photoKey)
+                        if (cachedPhoto != null) {
+                            avatarPhoto.setImageBitmap(cachedPhoto)
+                            avatarPhoto.visibility = View.VISIBLE
+                        } else {
+                            photoExecutor.execute {
+                                val photo = runCatching {
+                                    android.provider.ContactsContract.Contacts.openContactPhotoInputStream(
+                                        launcher.contentResolver, contact.uri, true,
+                                    )?.use { android.graphics.BitmapFactory.decodeStream(it) }
+                                }.getOrNull()
+                                if (photo != null) {
+                                    photoCache.put(photoKey, photo)
+                                    webHandler.post {
+                                        avatarPhoto.setImageBitmap(photo)
+                                        avatarPhoto.visibility = View.VISIBLE
+                                    }
+                                }
+                            }
+                        }
+                        contactRow.addView(avatarFrame, LinearLayout.LayoutParams(avatarSize, avatarSize).apply {
+                            marginStart = (12 * density).toInt()
+                            marginEnd = (8 * density).toInt()
+                        })
+                        val name = TextView(launcher).apply {
+                            text = contact.name
+                            textSize = 15f
+                            includeFontPadding = false
+                            setTextColor(foreground)
+                            setPadding(0, (5 * density).toInt(),
+                                (4 * density).toInt(), (5 * density).toInt())
+                            gravity = Gravity.CENTER_VERTICAL
+                            setOnClickListener {
+                                dialog.hideKeyboardForSelection()
+                                runCatching {
+                                    launcher.startActivity(Intent(Intent.ACTION_VIEW, contact.uri))
+                                    dismiss()
+                                }
+                            }
+                        }
+                        contactRow.addView(name, LinearLayout.LayoutParams(0, -1, 1f))
+                        contact.phone?.takeIf { it.isNotBlank() }?.let { phone ->
+                            fun actionIcon(drawableId: Int, description: String, uri: Uri) {
+                                val button = ImageView(launcher).apply {
+                                    setImageResource(drawableId)
+                                    imageTintList = android.content.res.ColorStateList.valueOf(foreground)
+                                    scaleType = ImageView.ScaleType.CENTER_INSIDE
+                                    setPadding((12 * density).toInt(), (10 * density).toInt(),
+                                        (12 * density).toInt(), (10 * density).toInt())
+                                    contentDescription = description
+                                    setOnClickListener {
+                                        dialog.hideKeyboardForSelection()
+                                        runCatching {
+                                            launcher.startActivity(Intent(
+                                                if (uri.scheme == "tel") Intent.ACTION_DIAL else Intent.ACTION_SENDTO,
+                                                uri,
+                                            ))
+                                            dismiss()
+                                        }
+                                    }
+                                }
+                                contactRow.addView(button, LinearLayout.LayoutParams(
+                                    (48 * density).toInt(), (44 * density).toInt()))
+                            }
+                            actionIcon(android.R.drawable.ic_dialog_email, "Envoyer un SMS à ${contact.name}", Uri.fromParts("smsto", phone, null))
+                            actionIcon(android.R.drawable.ic_menu_call, "Appeler ${contact.name}", Uri.fromParts("tel", phone, null))
+                        }
+                        webPanel.addView(contactRow, LinearLayout.LayoutParams(-1, -2))
                     }
                 }
             }
@@ -574,7 +799,7 @@ object PrimeSearchOverlay {
                 if (events.isNotEmpty()) {
                     row("Événements de l'agenda") {}
                     events.forEach { event ->
-                        row("📅  ${event.title}\n${event.detail}") {
+                        row("${event.title}\n${event.detail}") {
                             runCatching {
                                 launcher.startActivity(Intent(Intent.ACTION_VIEW, event.uri))
                                 dismiss()
@@ -588,7 +813,7 @@ object PrimeSearchOverlay {
                 if (tasks.isNotEmpty()) {
                     row("Tâches · Tasks.org") {}
                     tasks.forEach { task ->
-                        row("☑  ${task.title}\n${task.detail}") {
+                        row(task.title + task.detail.takeIf { it.isNotBlank() }?.let { "\n$it" }.orEmpty()) {
                             runCatching {
                                 launcher.startActivity(Intent(Intent.ACTION_VIEW, task.uri))
                                 dismiss()
@@ -598,21 +823,27 @@ object PrimeSearchOverlay {
                 }
             }
             if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.NOTIFICATIONS)) {
-                if (PrimeNotificationHistory.isGranted(launcher)) {
-                    val matches = runCatching { PrimeNotificationHistory.search(launcher, query) }
-                        .getOrDefault(emptyList())
-                    if (matches.isNotEmpty()) {
-                        row("Historique des notifications") {}
-                        val formatter = java.text.DateFormat.getDateTimeInstance(
-                            java.text.DateFormat.SHORT, java.text.DateFormat.SHORT
-                        )
-                        matches.forEach { entry ->
-                            row("🔔  ${entry.app} · ${entry.title}\n${entry.body.take(180)}\n${formatter.format(java.util.Date(entry.posted))}") {}
-                        }
+                // Stored history is searchable even after notification access is revoked.
+                val matches = runCatching { PrimeNotificationHistory.search(launcher, query) }
+                    .getOrDefault(emptyList())
+                if (matches.isNotEmpty()) {
+                    row("Historique des notifications") {}
+                    val formatter = java.text.DateFormat.getDateTimeInstance(
+                        java.text.DateFormat.SHORT, java.text.DateFormat.SHORT
+                    )
+                    matches.forEach { entry ->
+                        row("${entry.app} · ${entry.title}\n${entry.body.take(180)}\n${formatter.format(java.util.Date(entry.posted))}") {}
                     }
                 } else if (query.contains("notif", ignoreCase = true)) {
-                    row("Autoriser l'accès aux notifications") {
-                        launcher.startActivity(PrimeNotificationHistory.accessIntent(launcher))
+                    row("Historique des notifications") {}
+                    if (!PrimeNotificationHistory.isGranted(launcher)) {
+                        row("Accès aux notifications désactivé · toucher pour autoriser") {
+                            launcher.startActivity(PrimeNotificationHistory.accessIntent(launcher))
+                        }
+                    } else {
+                        row("Aucune notification correspondante enregistrée") {}
+                        row(runCatching { PrimeNotificationHistory.diagnostic(launcher) }
+                            .getOrElse { "Diagnostic indisponible : " + it.javaClass.simpleName }) {}
                     }
                 }
             }
@@ -649,7 +880,7 @@ object PrimeSearchOverlay {
                 if (term.length >= 2 && matches.isNotEmpty()) {
                     row(if (locale == "fr") "Paramètres de l'appareil" else "Device settings") {}
                     matches.forEach { (name, action, _) ->
-                        row("⚙  $name") {
+                        row(name) {
                             runCatching {
                                 launcher.startActivity(Intent(action))
                                 dismiss()
@@ -676,6 +907,7 @@ object PrimeSearchOverlay {
                                 (4 * density).toInt(), (8 * density).toInt())
                             contentDescription = "Rechercher sur ${engine.title}"
                             setOnClickListener {
+                                dialog.hideKeyboardForSelection()
                                 val url = engine.url + Uri.encode(query)
                                 val preferredPackages = when (engine) {
                                     PrimeSearchResultPreferences.WebEngine.FDROID ->
@@ -759,7 +991,672 @@ object PrimeSearchOverlay {
                     webPanel.addView(icons, LinearLayout.LayoutParams(-1, -2))
                 }
             }
+            // Sort complete dynamic sections (heading plus rows) by user preference.
+            val order = PrimeSearchResultPreferences.order(launcher)
+            val headings = mapOf(
+                "Suggestions Web" to PrimeSearchResultPreferences.Category.WEB,
+                "Contacts" to PrimeSearchResultPreferences.Category.CONTACTS,
+                "Événements de l'agenda" to PrimeSearchResultPreferences.Category.CALENDAR,
+                "Tâches · Tasks.org" to PrimeSearchResultPreferences.Category.REMINDERS,
+                "Historique des notifications" to PrimeSearchResultPreferences.Category.NOTIFICATIONS,
+                "Paramètres de l'appareil" to PrimeSearchResultPreferences.Category.SETTINGS,
+                "Device settings" to PrimeSearchResultPreferences.Category.SETTINGS,
+                "Raccourcis Web" to PrimeSearchResultPreferences.Category.WEB_SHORTCUTS,
+            )
+            val sections = mutableListOf<Pair<PrimeSearchResultPreferences.Category, MutableList<View>>>()
+            var current: MutableList<View>? = null
+            while (webPanel.childCount > 0) {
+                val child = webPanel.getChildAt(0)
+                webPanel.removeViewAt(0)
+                val category = (child as? TextView)?.text?.toString()?.let(headings::get)
+                if (category != null) {
+                    val group = mutableListOf<View>()
+                    current = group
+                    sections.add(category to group)
+                }
+                current?.add(child)
+            }
+            sections.sortedBy { (category, _) -> order.indexOf(category) }
+                .forEach { (_, views) -> views.forEach(webPanel::addView) }
         }
+        // Detail navigation retains the existing search result views and query.
+        var savedScrollY = 0
+        var returnCardScrollY = 0
+        var detailClosing = false
+        var detailCard: LinearLayout? = null
+        var detailParent: ViewGroup? = null
+        var detailIndex = 0
+        val detailContent = LinearLayout(launcher).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding((8 * density).toInt(), (8 * density).toInt(),
+                (8 * density).toInt(), (12 * density).toInt())
+        }
+        val detailHeading = TextView(launcher).apply {
+            textSize = 16f
+            setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setPadding((18 * density).toInt(), (12 * density).toInt(),
+                (12 * density).toInt(), (8 * density).toInt())
+            visibility = View.GONE
+        }
+        detailContent.addView(detailHeading, LinearLayout.LayoutParams(-1, -2))
+        // The expanded category is ONE full-height card, not a wrap-content
+        // card sitting inside a transparent scrolling viewport.
+        val detailScroll = ScrollView(launcher).apply {
+            isFillViewport = true
+            isVerticalFadingEdgeEnabled = true
+            setFadingEdgeLength((32 * density).toInt())
+            background = GradientDrawable().apply {
+                cornerRadius = 16 * density
+                setColor(themed(ThemeColorRole.PRIME_SEARCH_CARD_BACKGROUND))
+                setStroke((1 * density).toInt().coerceAtLeast(1),
+                    themed(ThemeColorRole.PRIME_SEARCH_CARD_BORDER))
+            }
+            clipToOutline = true
+            addView(detailContent)
+        }
+        val detailBack = TextView(launcher).apply {
+            text = "‹  Retour à la recherche"
+            textSize = 16f
+            setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+            setPadding((16 * density).toInt(), (12 * density).toInt(),
+                (16 * density).toInt(), (12 * density).toInt())
+            isClickable = true
+        }
+        // Independent category filter: never edits the main search query.
+        var originalDetailQuery = ""
+        var detailSearchSerial = 0
+        var detailSearchTask: Runnable? = null
+        var detailSearchCategory: PrimeSearchResultPreferences.Category? = null
+        var detailSearchAlgorithm: LawnchairLocalSearchAlgorithm? = null
+        val detailOriginalChildren = mutableListOf<View>()
+        // Secondary providers can access ContentResolver or local storage.
+        // Keep those queries off the main thread, just like contact searches.
+        val detailProviderExecutor = java.util.concurrent.Executors.newSingleThreadExecutor()
+        val detailOriginalVisibility = mutableMapOf<View, Int>()
+        // Preserve exact original layout parameters, not just approximate cell widths.
+        val detailOriginalSizes = mutableMapOf<View, Pair<Int, Int>>()
+        fun rememberDetailSizes(view: View) {
+            view.layoutParams?.let { detailOriginalSizes[view] = it.width to it.height }
+            if (view is ViewGroup) for (index in 0 until view.childCount) {
+                rememberDetailSizes(view.getChildAt(index))
+            }
+        }
+        fun restoreDetailSizes() {
+            detailOriginalSizes.forEach { (view, size) ->
+                view.layoutParams?.let { params ->
+                    if (params.width != size.first || params.height != size.second) {
+                        params.width = size.first
+                        params.height = size.second
+                        view.layoutParams = params
+                    }
+                }
+            }
+            detailOriginalSizes.clear()
+        }
+        var restoringDetailQuery = false
+        fun applyDetailFilter() {
+            val card = detailCard ?: return
+            val filter = input.text.toString().trim()
+            fun containsText(node: View): Boolean {
+                if (node is TextView && node.text?.contains(filter, ignoreCase = true) == true) return true
+                if (node is ViewGroup) for (i in 0 until node.childCount) {
+                    if (containsText(node.getChildAt(i))) return true
+                }
+                return false
+            }
+            for (index in 0 until card.childCount) {
+                val child = card.getChildAt(index)
+                child.visibility = if (filter.isEmpty() || containsText(child)) View.VISIBLE else View.GONE
+            }
+        }
+        val detailReduce = TextView(launcher).apply {
+            text = "⌃  Réduire"
+            gravity = Gravity.CENTER
+            textSize = 15f
+            setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+            setPadding(0, (12 * density).toInt(), 0, (12 * density).toInt())
+        }
+        val detailPage = LinearLayout(launcher).apply {
+            orientation = LinearLayout.VERTICAL
+            visibility = View.GONE
+            isFocusableInTouchMode = true
+            addView(detailScroll, LinearLayout.LayoutParams(-1, 0, 1f).apply {
+                marginStart = (4 * density).toInt()
+                marginEnd = (4 * density).toInt()
+                topMargin = (16 * density).toInt()
+                bottomMargin = (4 * density).toInt()
+            })
+            addView(detailReduce, LinearLayout.LayoutParams(-1, -2))
+        }
+        container.addView(detailPage, LinearLayout.LayoutParams(-1, 0, 1f))
+        // The expanded page has different horizontal insets from the compact card.
+        // Resize both app cells and their nested icon views to its real width.
+        // Restore the original compact geometry when returning.
+        fun sizeDetailAppGrid(card: LinearLayout, cellWidthPx: Int) {
+            for (rowIndex in 0 until card.childCount) {
+                val row = card.getChildAt(rowIndex) as? LinearLayout ?: continue
+                if (row.orientation != LinearLayout.HORIZONTAL) continue
+                for (cellIndex in 0 until row.childCount) {
+                    val cell = row.getChildAt(cellIndex) as? LinearLayout ?: continue
+                    val params = cell.layoutParams as? LinearLayout.LayoutParams ?: continue
+                    if (params.width != cellWidthPx) {
+                        params.width = cellWidthPx
+                        cell.layoutParams = params
+                    }
+                    val icon = cell.getChildAt(0) ?: continue
+                    val iconParams = icon.layoutParams as? LinearLayout.LayoutParams ?: continue
+                    if (iconParams.width != cellWidthPx) {
+                        iconParams.width = cellWidthPx
+                        icon.layoutParams = iconParams
+                    }
+                }
+            }
+        }
+        var compactAppCellWidth = 0
+        var detailSessionId = 0L
+        var detailSearchQuery = ""
+        fun finishCloseDetail() {
+            if (!detailOpen) return
+            val card = detailCard
+            val parent = detailParent
+            if (card != null && parent != null) {
+                detailContent.removeView(card)
+                val params = if (parent is FrameLayout) {
+                    FrameLayout.LayoutParams(-1, -2)
+                } else {
+                    LinearLayout.LayoutParams(-1, -2)
+                }
+                parent.addView(card, detailIndex.coerceIn(0, parent.childCount), params)
+            }
+            // Restore all original rows before returning to the compact page.
+            // Expanded rows are disposable; the original children are restored below.
+            // Restore the exact compact children, even if the expanded page
+            // performed several independent searches.
+            if (card != null) {
+                card.removeAllViews()
+                detailOriginalChildren.forEach { child ->
+                    (child.parent as? ViewGroup)?.removeView(child)
+                    card.addView(child)
+                    child.visibility = detailOriginalVisibility[child] ?: View.VISIBLE
+                }
+            }
+            detailOriginalVisibility.clear()
+            restoreDetailSizes()
+            detailOriginalChildren.clear()
+            detailSessionId++
+            detailSearchSerial++
+            detailSearchTask?.let(webHandler::removeCallbacks)
+            detailSearchTask = null
+            detailSearchCategory = null
+            detailSearchAlgorithm = null
+            compactAppCellWidth = 0
+            detailCard = null
+            detailParent = null
+            detailOpen = false
+            detailPage.animate().cancel()
+            detailScroll.animate().cancel()
+            detailScroll.scaleY = 1f
+            detailScroll.alpha = 1f
+            detailPage.translationY = 0f
+            restoringDetailQuery = true
+            try {
+                if (input.text.toString() != originalDetailQuery) input.setText(originalDetailQuery)
+                input.setSelection(input.text.length)
+            } finally {
+                restoringDetailQuery = false
+            }
+            // Avoid displaying both weighted pages simultaneously: doing so
+            // makes LinearLayout remeasure them at different heights and flashes.
+            // Restore the compact viewport atomically in the same UI frame.
+            scroll.animate().cancel()
+            detailPage.animate().cancel()
+            detailPage.visibility = View.GONE
+            detailPage.alpha = 1f
+            scroll.alpha = 1f
+            scroll.visibility = View.VISIBLE
+            scroll.scrollTo(0, savedScrollY)
+            val restoredScrollY = savedScrollY
+            val closedSession = detailSessionId
+            scroll.post {
+                if (!detailOpen && detailSessionId == closedSession) {
+                    scroll.scrollTo(0, restoredScrollY)
+                }
+            }
+            detailClosing = false
+            container.requestLayout()
+        }
+        fun closeDetail() {
+            val popup = com.android.launcher3.popup.PopupContainerWithArrow.getOpen(launcher)
+            if (popup != null) {
+                popup.close(true)
+                return
+            }
+            if (!detailOpen || detailClosing) return
+            detailClosing = true
+            // Invalidate all outstanding expanded callbacks before the animation.
+            detailSearchSerial++
+            detailSessionId++
+            webRequestSerial++
+            detailSearchTask?.let(webHandler::removeCallbacks)
+            detailSearchTask = null
+            dialog.hideKeyboardForSelection()
+            detailScroll.animate().cancel()
+            detailScroll.pivotY = 0f
+            detailScroll.animate().scaleY(0.82f).alpha(0.88f)
+                .setDuration(310L)
+                .setInterpolator(android.view.animation.AccelerateDecelerateInterpolator())
+                .withEndAction { finishCloseDetail() }
+                .start()
+        }
+        detailBack.setOnClickListener { closeDetail() }
+        detailReduce.setOnClickListener { closeDetail() }
+        detailPage.setOnKeyListener { _, code, event ->
+            if (code == android.view.KeyEvent.KEYCODE_BACK &&
+                event.action == android.view.KeyEvent.ACTION_UP) {
+                closeDetail()
+                true
+            } else false
+        }
+        fun openDetail(card: LinearLayout) {
+            if (detailOpen) return
+            val parent = card.parent as? ViewGroup ?: return
+            savedScrollY = scroll.scrollY
+            val wrapper = (parent.parent as? ViewGroup)
+            // Align the compact card with the expanded card below the search bar.
+            // Both use the same top gap, so the card appears to collapse in place.
+            returnCardScrollY = ((wrapper?.top ?: savedScrollY) - (16 * density).toInt()).coerceAtLeast(0)
+            detailIndex = parent.indexOfChild(card)
+            detailParent = parent
+            detailCard = card
+            detailOriginalChildren.clear()
+            detailOriginalVisibility.clear()
+            detailOriginalSizes.clear()
+            for (index in 0 until card.childCount) {
+                val child = card.getChildAt(index)
+                detailOriginalChildren.add(child)
+                detailOriginalVisibility[child] = child.visibility
+                rememberDetailSizes(child)
+            }
+            detailSearchCategory = card.tag as? PrimeSearchResultPreferences.Category
+            detailSearchAlgorithm = LawnchairLocalSearchAlgorithm(launcher, primeSearch = true)
+            detailSessionId++
+            detailSearchQuery = input.text.toString()
+            detailSearchSerial++
+            detailOpen = true
+            // Do not allow a delayed compact refresh to rebuild the saved cards.
+            parent.removeView(card)
+            val category = card.tag as? PrimeSearchResultPreferences.Category
+            val heading = when (category) {
+                PrimeSearchResultPreferences.Category.APPS -> "Applications"
+                PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> "Raccourcis d'app"
+                PrimeSearchResultPreferences.Category.CONTACTS -> "Contacts"
+                PrimeSearchResultPreferences.Category.FILES -> "Fichiers"
+                PrimeSearchResultPreferences.Category.WEB -> "Suggestions Web"
+                PrimeSearchResultPreferences.Category.WEB_SHORTCUTS -> "Raccourcis Web"
+                PrimeSearchResultPreferences.Category.CALENDAR -> "Événements de l'agenda"
+                PrimeSearchResultPreferences.Category.REMINDERS -> "Tâches"
+                PrimeSearchResultPreferences.Category.NOTIFICATIONS -> "Historique des notifications"
+                PrimeSearchResultPreferences.Category.SETTINGS -> "Paramètres de l'appareil"
+                else -> null
+            }
+            // Many sections already contain their own heading. Add a matching
+            // header only when one is missing, keeping the compact position.
+            val existingHeading = (0 until card.childCount).any { index ->
+                val child = card.getChildAt(index)
+                child is TextView && child.text?.toString() == heading
+            }
+            detailHeading.text = heading.orEmpty()
+            // The compact card's header can be clipped or hidden by filtering.
+            // Always display the dedicated detail heading, and suppress an
+            // existing identical heading to prevent duplicates.
+            for (index in 0 until card.childCount) {
+                val child = card.getChildAt(index)
+                if (child is TextView && child.text?.toString() == heading) {
+                    child.visibility = View.GONE
+                }
+            }
+            detailHeading.visibility = if (heading != null) View.VISIBLE else View.GONE
+            detailContent.addView(card, LinearLayout.LayoutParams(-1, -2))
+            if (category == PrimeSearchResultPreferences.Category.APPS) {
+                val firstRow = (0 until card.childCount).map { card.getChildAt(it) }
+                    .filterIsInstance<LinearLayout>()
+                    .firstOrNull { it.orientation == LinearLayout.HORIZONTAL && it.childCount > 0 }
+                compactAppCellWidth = firstRow?.getChildAt(0)?.layoutParams?.width ?: 0
+                detailContent.post {
+                    if (detailOpen && !detailClosing && detailCard === card &&
+                        detailOriginalChildren.any { it.parent === card } && card.width > 0) {
+                        val available = (card.width - card.paddingLeft - card.paddingRight).coerceAtLeast(1)
+                        val columns = PrimeSearchResultPreferences.appResultsColumns(launcher)
+                        sizeDetailAppGrid(card, (available / columns).coerceAtLeast(1))
+                    }
+                }
+            }
+            originalDetailQuery = input.text.toString()
+            // Opening shows the original category exactly as it appeared.
+            // Editing the query starts an independent search instead of filtering it.
+            detailSearchSerial++
+            // The filter may restore native heading visibility; keep the
+            // category title solely in the fixed detail heading.
+            for (index in 0 until card.childCount) {
+                val child = card.getChildAt(index)
+                if (child is TextView && child.text?.toString() == heading) child.visibility = View.GONE
+            }
+            dialog.hideKeyboardForSelection()
+            scroll.animate().cancel()
+            scroll.alpha = 1f
+            scroll.visibility = View.GONE
+            detailPage.animate().cancel()
+            detailPage.alpha = 1f
+            detailPage.visibility = View.VISIBLE
+            detailPage.alpha = 1f
+            detailScroll.pivotY = 0f
+            detailScroll.scaleY = 0.82f
+            detailScroll.alpha = 1f
+            detailScroll.animate().scaleY(1f).alpha(1f)
+                .setDuration(320L)
+                .setInterpolator(android.view.animation.DecelerateInterpolator())
+                .start()
+            detailPage.requestFocus()
+            container.requestLayout()
+        }
+        // Protect both app icons and the compact card's expansion action from
+        // asynchronous result updates during an active pointer gesture.
+        var resultsTouchInProgress = false
+        var pendingResultsReorder = false
+        fun scheduleResultsReorder(reorder: () -> Unit) {
+            if (resultsTouchInProgress || resultGestureBusy()) {
+                if (!pendingResultsReorder) {
+                    pendingResultsReorder = true
+                    webHandler.postDelayed({
+                        pendingResultsReorder = false
+                        scheduleResultsReorder(reorder)
+                    }, 200L)
+                }
+            } else {
+                reorder()
+            }
+        }
+        val categoryCards = mutableMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
+        val compactWrappers = mutableMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
+        val compactClips = mutableMapOf<PrimeSearchResultPreferences.Category, FrameLayout>()
+        val compactMoreButtons = mutableMapOf<PrimeSearchResultPreferences.Category, TextView>()
+        fun reorderSearchSections() {
+            if (detailOpen || resultGestureBusy()) {
+                if (!detailOpen) scheduleResultsReorder(::reorderSearchSections)
+                return
+            }
+            val priorities = PrimeSearchResultPreferences.order(launcher)
+            val headingCategories = mapOf(
+                "Suggestions Web" to PrimeSearchResultPreferences.Category.WEB,
+                "Contacts" to PrimeSearchResultPreferences.Category.CONTACTS,
+                "Événements de l'agenda" to PrimeSearchResultPreferences.Category.CALENDAR,
+                "Tâches · Tasks.org" to PrimeSearchResultPreferences.Category.REMINDERS,
+                "Historique des notifications" to PrimeSearchResultPreferences.Category.NOTIFICATIONS,
+                "Paramètres de l'appareil" to PrimeSearchResultPreferences.Category.SETTINGS,
+                "Device settings" to PrimeSearchResultPreferences.Category.SETTINGS,
+                "Raccourcis Web" to PrimeSearchResultPreferences.Category.WEB_SHORTCUTS,
+            )
+            // Exactly one section per enabled category, regardless of how many
+            // separate chunks the drawer provider produced.
+            val grouped = linkedMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
+            fun sectionFor(category: PrimeSearchResultPreferences.Category): LinearLayout =
+                grouped.getOrPut(category) {
+                    categoryCards.getOrPut(category) {
+                        LinearLayout(launcher).apply {
+                            orientation = LinearLayout.VERTICAL
+                            tag = category
+                            background = GradientDrawable().apply {
+                                cornerRadius = 16 * density
+                                setColor(themed(ThemeColorRole.PRIME_SEARCH_CARD_BACKGROUND))
+                                setStroke((density).toInt().coerceAtLeast(1),
+                                    themed(ThemeColorRole.PRIME_SEARCH_CARD_BORDER))
+                            }
+                            setPadding((6 * density).toInt(), (8 * density).toInt(),
+                                (6 * density).toInt(), (8 * density).toInt())
+                        }
+                    }
+                }
+            // When the dedicated Prime settings provider has results, use it
+            // instead of also rendering the drawer's settings section.
+            // Both providers can return the same "Applications" action.
+            val hasPrimeSettings = (0 until webPanel.childCount).any { index ->
+                val child = webPanel.getChildAt(index)
+                child is TextView && (
+                    child.text?.toString() == "Paramètres de l'appareil" ||
+                    child.text?.toString() == "Device settings"
+                )
+            }
+            // Prime's own contact rows include avatars and call/message actions.
+            // Do not also show the drawer's contact tiles for the same query.
+            val hasPrimeContacts = (0 until webPanel.childCount).any { index ->
+                val child = webPanel.getChildAt(index)
+                child is TextView && child.text?.toString() == "Contacts"
+            }
+            val native = (0 until results.childCount).map { results.getChildAt(it) }
+                .filter { it !== webPanel }
+            native.forEach { view ->
+                val category = view.tag as? PrimeSearchResultPreferences.Category
+                // Dynamic web sections are rebuilt by renderWebPanel on each refresh.
+                // Never carry over the previous copy when suggestions arrive asynchronously.
+                if (category == PrimeSearchResultPreferences.Category.WEB ||
+                    category == PrimeSearchResultPreferences.Category.WEB_SHORTCUTS ||
+                    (hasPrimeSettings && category == PrimeSearchResultPreferences.Category.SETTINGS) ||
+                    (hasPrimeContacts && category == PrimeSearchResultPreferences.Category.CONTACTS)) return@forEach
+                if (category != null && PrimeSearchResultPreferences.enabled(launcher, category)) {
+                    val section = sectionFor(category)
+                    if (view is ViewGroup && view !== section) {
+                        // A compact wrapper already contains the cached section.
+                        // Never move its clipping frame / "Plus de" button into
+                        // the card, which would create a parent cycle.
+                        val alreadyWrapped = (0 until view.childCount).any { index ->
+                            val child = view.getChildAt(index)
+                            child === section ||
+                                (child is ViewGroup && (0 until child.childCount).any {
+                                    child.getChildAt(it) === section
+                                })
+                        }
+                        if (!alreadyWrapped) {
+                            section.removeAllViews()
+                            while (view.childCount > 0) {
+                                val child = view.getChildAt(0)
+                                view.removeViewAt(0)
+                                section.addView(child)
+                            }
+                        }
+                    }
+                }
+            }
+            var currentCategory: PrimeSearchResultPreferences.Category? = null
+            val dynamicCategories = mutableSetOf<PrimeSearchResultPreferences.Category>()
+            while (webPanel.childCount > 0) {
+                val child = webPanel.getChildAt(0)
+                webPanel.removeViewAt(0)
+                val headingCategory = (child as? TextView)?.text?.toString()?.let(headingCategories::get)
+                if (headingCategory != null) currentCategory = headingCategory
+                val category = currentCategory
+                if (category != null && PrimeSearchResultPreferences.enabled(launcher, category)) {
+                    val section = sectionFor(category)
+                    if (dynamicCategories.add(category)) section.removeAllViews()
+                    section.addView(child)
+                }
+            }
+            val orderedWrappers = mutableListOf<View>()
+            priorities.forEach { category ->
+                grouped[category]?.takeIf { it.childCount > 0 }?.let { card ->
+                    val limit = if (category == PrimeSearchResultPreferences.Category.APPS) {
+                        PrimeAppGridGeometry.rowHeightPx(
+                            launcher, PrimeSearchResultPreferences.appResultsIconSizePercent(launcher),
+                            if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
+                        ) * 2 + (52 * density).toInt()
+                    } else if (category == PrimeSearchResultPreferences.Category.APP_SHORTCUTS) {
+                        (160 * density).toInt()
+                    } else (190 * density).toInt()
+                    // Cards are cached across asynchronous contact/web refreshes.
+                    // Detach from the previous clipped holder before reparenting.
+                    (card.parent as? ViewGroup)?.removeView(card)
+                    val wrapper = compactWrappers.getOrPut(category) {
+                        LinearLayout(launcher).apply {
+                            orientation = LinearLayout.VERTICAL
+                            tag = category
+                        }
+                    }
+                    val clipped = compactClips.getOrPut(category) {
+                        FrameLayout(launcher).apply { clipChildren = true }
+                    }
+                    if (card.parent !== clipped) {
+                        (card.parent as? ViewGroup)?.removeView(card)
+                        clipped.removeAllViews()
+                        clipped.addView(card, FrameLayout.LayoutParams(-1, -2))
+                    }
+                    // Size the compact app viewport before attaching the wrapper.
+                    val isApps = category == PrimeSearchResultPreferences.Category.APPS
+                    val appRowCount = if (isApps) (0 until card.childCount).count { index ->
+                        val child = card.getChildAt(index)
+                        child is LinearLayout &&
+                            child.orientation == LinearLayout.HORIZONTAL &&
+                            child.childCount > 0
+                    } else 0
+                    val maxVisibleRows = PrimeSearchResultPreferences.appResultsRows(launcher)
+                    val appViewportHeight = if (isApps) {
+                        val rowHeight = PrimeAppGridGeometry.rowHeightPx(
+                            launcher, PrimeSearchResultPreferences.appResultsIconSizePercent(launcher),
+                            if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
+                        )
+                        card.paddingTop + card.paddingBottom +
+                            appRowCount.coerceAtMost(maxVisibleRows) * rowHeight
+                    } else limit
+                     clipped.layoutParams = (clipped.layoutParams as? LinearLayout.LayoutParams
+                        ?: LinearLayout.LayoutParams(-1, -2)).apply {
+                        height = if (isApps) appViewportHeight.coerceAtLeast(1) else limit
+                    }
+                    val more = compactMoreButtons.getOrPut(category) { TextView(launcher).apply {
+                        text = "Plus de " + when (category) {
+                            PrimeSearchResultPreferences.Category.APPS -> "applications"
+                            PrimeSearchResultPreferences.Category.CONTACTS -> "contacts"
+                            PrimeSearchResultPreferences.Category.FILES -> "fichiers"
+                            PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> "raccourcis"
+                            else -> "résultats"
+                        } + "  ⌄"
+                        gravity = Gravity.CENTER
+                        textSize = 13f
+                        setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+                        setPadding(0, (8 * density).toInt(), 0, (8 * density).toInt())
+                        setOnTouchListener { _, event ->
+                            when (event.actionMasked) {
+                                MotionEvent.ACTION_DOWN -> resultsTouchInProgress = true
+                                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                                    resultsTouchInProgress = false
+                                }
+                            }
+                            false
+                        }
+                        setOnClickListener {
+                            resultsTouchInProgress = false
+                            openDetail(card)
+                        }
+                    } }
+                    // The action belongs to the card surface, not to the gap
+                    // between adjacent cards. Keep the same themed rounded
+                    // background and border as the category itself.
+                    wrapper.background = GradientDrawable().apply {
+                        cornerRadius = 16 * density
+                        setColor(themed(ThemeColorRole.PRIME_SEARCH_CARD_BACKGROUND))
+                        setStroke((1 * density).toInt().coerceAtLeast(1),
+                            themed(ThemeColorRole.PRIME_SEARCH_CARD_BORDER))
+                    }
+                    wrapper.clipToOutline = true
+                    card.background = null
+                    more.setPadding(0, (4 * density).toInt(), 0, (6 * density).toInt())
+                    if (clipped.parent !== wrapper || more.parent !== wrapper) {
+                        (clipped.parent as? ViewGroup)?.removeView(clipped)
+                        (more.parent as? ViewGroup)?.removeView(more)
+                        wrapper.removeAllViews()
+                        if (isApps) {
+                            val heading = TextView(launcher).apply {
+                                text = "Applications"
+                                setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+                                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
+                                includeFontPadding = false
+                                setPadding((12 * density).toInt(), (12 * density).toInt(),
+                                    (12 * density).toInt(), (4 * density).toInt())
+                            }
+                            wrapper.addView(heading, LinearLayout.LayoutParams(-1, -2))
+                        }
+                        wrapper.addView(clipped, LinearLayout.LayoutParams(
+                            -1, if (isApps) appViewportHeight.coerceAtLeast(1) else limit
+                        ))
+                        wrapper.addView(more, LinearLayout.LayoutParams(-1, -2))
+                    }
+                    orderedWrappers.add(wrapper)
+                    if (isApps) {
+                        more.visibility = if (appRowCount > maxVisibleRows) View.VISIBLE else View.GONE
+                    } else clipped.post {
+                        if (!detailOpen && card.parent === clipped) {
+                            // Measure the actual card independently of its clipped parent.
+                            val widthSpec = View.MeasureSpec.makeMeasureSpec(
+                                clipped.width.coerceAtLeast(1), View.MeasureSpec.EXACTLY)
+                            card.measure(widthSpec, View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
+                            val overflow = if (category == PrimeSearchResultPreferences.Category.APPS) {
+                                // An app grid with fewer rows than the configured
+                                // maximum must wrap its content. Never show "Plus de"
+                                // merely because a measurement includes extra padding.
+                                val maxRows = PrimeSearchResultPreferences.appResultsRows(launcher)
+                                val actualRows = (0 until card.childCount).count { index ->
+                                    val child = card.getChildAt(index)
+                                    child is LinearLayout &&
+                                        child.orientation == LinearLayout.HORIZONTAL &&
+                                        child.childCount > 0
+                                }
+                                actualRows > maxRows
+                            } else card.measuredHeight > limit
+                            // Stop at a complete row boundary: never crop the last
+                            // contact's avatar, name or call/message actions.
+                            var previewHeight = card.paddingTop
+                            var completeRows = 0
+                            for (index in 0 until card.childCount) {
+                                val child = card.getChildAt(index)
+                                if (child.visibility == View.GONE) continue
+                                val margins = child.layoutParams as? ViewGroup.MarginLayoutParams
+                                val rowHeight = child.measuredHeight +
+                                    (margins?.topMargin ?: 0) + (margins?.bottomMargin ?: 0)
+                                if (previewHeight + rowHeight + card.paddingBottom > limit &&
+                                    completeRows > 0) break
+                                previewHeight += rowHeight
+                                completeRows++
+                            }
+                            val safeHeight = (previewHeight + card.paddingBottom)
+                                .coerceAtMost(limit)
+                            clipped.layoutParams = (clipped.layoutParams as LinearLayout.LayoutParams).apply {
+                                height = if (overflow) safeHeight else -2
+                            }
+                            more.visibility = if (overflow) View.VISIBLE else View.GONE
+                        }
+                    }
+                }
+            }
+            // Reorder only when needed: detaching every card on each provider
+            // response cancels clicks and long-press recognition.
+            orderedWrappers.forEachIndexed { index, wrapper ->
+                if (results.getChildAt(index) !== wrapper) {
+                    (wrapper.parent as? ViewGroup)?.removeView(wrapper)
+                    results.addView(wrapper, index, LinearLayout.LayoutParams(-1, -2).apply {
+                        val margin = (4 * density).toInt()
+                        topMargin = margin
+                        bottomMargin = margin
+                    })
+                }
+            }
+            while (results.childCount > orderedWrappers.size) {
+                results.removeViewAt(results.childCount - 1)
+            }
+            // The panel is a staging area only; it must not become an extra
+            // unconfigured results block.
+            results.addView(webPanel)
+        }
+
+        reorderAfterContacts = { reorderSearchSections() }
         fun updateWebSuggestions(query: String) {
             val request = ++webRequestSerial
             currentSuggestions = emptyList()
@@ -826,71 +1723,255 @@ object PrimeSearchOverlay {
                     } catch (_: Exception) { emptyList() }
                 }
                 webHandler.post {
-                    if (request == webRequestSerial && input.text.toString() == query && dialog.isShowing) {
-                        currentSuggestions = suggestions
-                        renderWebPanel(query)
-                        container.requestLayout()
+                    if (request == webRequestSerial && !detailOpen && !detailClosing &&
+                        input.text.toString() == query && dialog.isShowing) {
+                        if (currentSuggestions != suggestions) {
+                            currentSuggestions = suggestions
+                            renderWebPanel(query)
+                            scheduleResultsReorder(::reorderSearchSections)
+                            container.requestLayout()
+                        }
                     }
                 }
                 }.start()
             }, 250L)
         }
+        // Avoid tearing down clickable views when an asynchronous provider
+        // reports the exact same native results again.
+        var lastNativeRenderQuery: String? = null
+        var lastNativeRenderSignature: List<String>? = null
+        var lastAppGridQuery: String? = null
+        var lastAppGridSignature: List<String>? = null
+        var pendingNativeRefresh: Runnable? = null
+        // A result refresh must never detach an app tile between DOWN and UP.
+        var appTouchInProgress = false
         val callback = object : SearchCallback<BaseAllAppsAdapter.AdapterItem> {
             override fun onSearchResult(query: String, items: ArrayList<BaseAllAppsAdapter.AdapterItem>?) {
-                if (!dialog.isShowing || input.text.toString() != query) return
-                results.removeAllViews()
-                // Re-measure after the search results have changed.
-                results.post { if (dialog.isShowing) container.requestLayout() }
+                if (!dialog.isShowing || input.text.toString() != query || detailOpen) return
+                // Keep only the newest deferred update. Replaying every provider
+                // callback after a touch can otherwise cause repeated full rebuilds.
+                pendingNativeRefresh?.let(webHandler::removeCallbacks)
+                pendingNativeRefresh = null
+                if (appTouchInProgress || resultsTouchInProgress || resultGestureBusy()) {
+                    val deferred = Runnable { onSearchResult(query, items) }
+                    pendingNativeRefresh = deferred
+                    webHandler.postDelayed(deferred, 200L)
+                    return
+                }
+                val incoming = items.orEmpty().filterIsInstance<SearchAdapterItem>()
+                // Some providers publish an intermediate partial/empty snapshot.
+                // Do not erase a visible app grid for the unchanged query.
+                val hasApps = incoming.any {
+                    it.searchTarget.resultType == SearchTargetCompat.RESULT_TYPE_APPLICATION
+                }
+                if (!hasApps && lastNativeRenderQuery == query &&
+                    lastNativeRenderSignature?.any {
+                        it.startsWith("${SearchTargetCompat.RESULT_TYPE_APPLICATION}:")
+                    } == true) {
+                    return
+                }
+                val signature = items.orEmpty().map { adapterItem ->
+                    val target = (adapterItem as? SearchAdapterItem)?.searchTarget
+                    if (target != null) "${target.resultType}:${target.layoutType}:${target.id}" else adapterItem.toString()
+                }
+                if (lastNativeRenderQuery == query && lastNativeRenderSignature == signature) return
+                lastNativeRenderQuery = query
+                lastNativeRenderSignature = signature
+                // Build the replacement sections before detaching the visible
+                // hierarchy. Keep scroll position for same-query provider updates.
+                val isNewQuery = lastAppGridQuery != query
+                if (isNewQuery) scroll.scrollTo(0, 0)
                 // Preserve the algorithm's order and section boundaries. Each item is
                 // inflated with the same layout used by the drawer's adapter provider.
                 val inflater = LayoutInflater.from(launcher)
-                val columns = PrimeSearchResultPreferences.appsPerRow(launcher)
+                val columns = PrimeSearchResultPreferences.appResultsColumns(launcher)
+                val maxAppTiles = columns * PrimeSearchResultPreferences.appResultsRows(launcher)
+                var displayedAppTiles = 0
                 // Each row is centered independently. Fixed-width cells keep
                 // identical spacing whether the row has 1, 2 or 6 apps.
-                val availableWidth = launcher.resources.displayMetrics.widthPixels -
-                    (if (floating) (48 * density).toInt() else 0) - inset * 2
-                val gridWidth = availableWidth.coerceAtMost(
-                    if (floating) (600 * density).toInt() - inset * 2 else availableWidth,
-                )
-                val cellWidth = (gridWidth / columns).coerceAtLeast(1)
+                val gridWidth = (if (floating) {
+                    (launcher.resources.displayMetrics.widthPixels - (24 * density).toInt())
+                        .coerceAtMost((600 * density).toInt())
+                } else launcher.resources.displayMetrics.widthPixels) - inset * 2
+                // START/END align against the card's actual content area, not the
+                // wider overlay width. The results container adds 4dp on each side
+                // and the app card adds another 6dp on each side.
+                // Preserve the existing centered geometry unchanged.
+                val appAlignment = PrimeSearchResultPreferences.appResultsAlignment(launcher)
+                val alignedGridWidth = if (appAlignment == PrimeSearchResultPreferences.AppResultsAlignment.CENTER) {
+                    gridWidth
+                } else {
+                    gridWidth - (20 * density).toInt()
+                }
+                val cellWidth = (alignedGridWidth / columns).coerceAtLeast(1)
                 // Match the zero-state Prime Search icon and label settings.
                 // This is local to the Prime overlay; drawer search is untouched.
-                val searchIconSize = (48 * density *
-                    PrimeSearchResultPreferences.iconSizePercent(launcher) / 100f).toInt().coerceAtLeast(1)
                 val searchLabelLines = if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
-                val searchLabelPaint = android.text.TextPaint().apply {
-                    textSize = 11f * launcher.resources.displayMetrics.scaledDensity
-                }
-                val searchLabelHeight = kotlin.math.ceil(
-                    (searchLabelPaint.fontMetrics.descent - searchLabelPaint.fontMetrics.ascent).toDouble()
-                ).toInt().coerceAtLeast(1) * searchLabelLines
-                // Use the same geometry as the working Fréquentes/Récentes/Nouvelles grid.
-                val searchCellTopPadding = (2 * density).toInt()
-                val searchIconLabelGap = (4 * density).toInt()
-                val searchRowBottomPadding = (5 * density).toInt()
+                val searchIconPercent = PrimeSearchResultPreferences.appResultsIconSizePercent(launcher)
+                val searchIconSize = PrimeAppGridGeometry.iconPx(launcher, searchIconPercent)
+                val searchRowHeight = PrimeAppGridGeometry.rowHeightPx(
+                    launcher, searchIconPercent, searchLabelLines)
+                val searchCellTopPadding = (PrimeAppGridGeometry.TOP_DP * density).toInt()
+                val searchRowBottomPadding = (PrimeAppGridGeometry.BOTTOM_DP * density).toInt()
+                val searchIconLabelGap = (PrimeAppGridGeometry.ICON_LABEL_GAP_DP * density).toInt()
                 val iconViewHeight = searchIconSize
-                val searchRowHeight = searchCellTopPadding + iconViewHeight +
-                    searchIconLabelGap + searchLabelHeight + searchRowBottomPadding
+                val searchLabelHeight = PrimeAppGridGeometry.labelHeightPx(launcher, searchLabelLines)
                 var appRow: LinearLayout? = null
                 var appsInRow = 0
-                PrimeSearchResultPreferences.filter(
+                val nativeSections = mutableListOf<Pair<PrimeSearchResultPreferences.Category, LinearLayout>>()
+                var nativeSection = LinearLayout(launcher).apply { orientation = LinearLayout.VERTICAL }
+                var nativeCategory: PrimeSearchResultPreferences.Category? = null
+                fun nativeCategoryFor(item: SearchAdapterItem): PrimeSearchResultPreferences.Category? =
+                    when (item.searchTarget.resultType) {
+                        SearchTargetCompat.RESULT_TYPE_APPLICATION -> PrimeSearchResultPreferences.Category.APPS
+                        SearchTargetCompat.RESULT_TYPE_SHORTCUT -> PrimeSearchResultPreferences.Category.APP_SHORTCUTS
+                        SearchTargetCompat.RESULT_TYPE_FILE_TILE -> PrimeSearchResultPreferences.Category.FILES
+                        SearchTargetCompat.RESULT_TYPE_CONTACT_TILE -> PrimeSearchResultPreferences.Category.CONTACTS
+                        SearchTargetCompat.RESULT_TYPE_SETTING_TILE -> PrimeSearchResultPreferences.Category.SETTINGS
+                        SearchTargetCompat.RESULT_TYPE_CALCULATOR -> PrimeSearchResultPreferences.Category.CALCULATOR
+                        SearchTargetCompat.RESULT_TYPE_SUGGESTIONS -> PrimeSearchResultPreferences.Category.HISTORY
+                        else -> null
+                    }
+                // Prefer grid application tiles over the drawer's duplicate text rows.
+                // The provider may return both layouts for the same package.
+                val gridApplicationIds = PrimeSearchResultPreferences.filter(
                     launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(),
-                ).forEach { item ->
-                    val isAppIcon = item.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT
+                ).filter {
+                    it.searchTarget.resultType == SearchTargetCompat.RESULT_TYPE_APPLICATION &&
+                        it.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT
+                }.map { it.searchTarget.packageName }.filter { it.isNotBlank() }.toSet()
+                val renderedApplicationIds = mutableSetOf<String>()
+                var renderedFilesInSection = 0
+                fun flushNativeSection() {
+                    val category = nativeCategory
+                    // File entries may be rejected after binding (e.g. file type
+                    // preferences). Never keep a heading without visible files.
+                    if (category != null && nativeSection.childCount > 0 &&
+                        (category != PrimeSearchResultPreferences.Category.FILES ||
+                            renderedFilesInSection > 0)) {
+                        nativeSections.add(category to nativeSection)
+                    }
+                    nativeSection = LinearLayout(launcher).apply { orientation = LinearLayout.VERTICAL }
+                    renderedFilesInSection = 0
+                    appRow = null
+                    appsInRow = 0
+                }
+                val filteredNativeItems = PrimeSearchResultPreferences.filter(
+                    launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(),
+                )
+                // Rank application results in Prime Search only, without moving
+                // any other category or changing the drawer search algorithm.
+                // Replace app entries at their original positions so category
+                // boundaries and the existing native rendering stay intact.
+                val appCategory = PrimeSearchResultPreferences.Category.APPS
+                val appSlots = filteredNativeItems.filter {
+                    nativeCategoryFor(it) == appCategory
+                }
+                val normalizedQuery = java.text.Normalizer.normalize(
+                    query.trim(), java.text.Normalizer.Form.NFD,
+                ).replace(Regex("\\p{M}+"), "").lowercase(java.util.Locale.ROOT)
+                val appLabels = mutableMapOf<String, String>()
+                fun appLabel(packageName: String): String =
+                    appLabels.getOrPut(packageName) {
+                        runCatching {
+                            launcher.packageManager.getApplicationLabel(
+                                launcher.packageManager.getApplicationInfo(packageName, 0)
+                            ).toString()
+                        }.getOrDefault(packageName)
+                    }
+                fun normalizedLabel(label: String): String =
+                    java.text.Normalizer.normalize(label, java.text.Normalizer.Form.NFD)
+                        .replace(Regex("\\p{M}+"), "")
+                        .lowercase(java.util.Locale.ROOT)
+                val rankedApps = appSlots.sortedWith(
+                    compareBy<SearchAdapterItem> {
+                        val label = normalizedLabel(appLabel(it.searchTarget.packageName))
+                        when {
+                            label == normalizedQuery -> 0
+                            label.startsWith(normalizedQuery) -> 1
+                            label.contains(normalizedQuery) -> 2
+                            else -> 3
+                        }
+                    }.thenBy {
+                        normalizedLabel(appLabel(it.searchTarget.packageName))
+                    }.thenBy { it.searchTarget.packageName }
+                ).iterator()
+                val rankedNativeItems = filteredNativeItems.map {
+                    if (nativeCategoryFor(it) == appCategory) rankedApps.next() else it
+                }
+                // Reuse bound app views when another provider updates the same query.
+                // This avoids decoding icons and replacing click targets unnecessarily.
+                val appGridSignature = rankedNativeItems.filter { nativeCategoryFor(it) == appCategory }
+                    .map { "${it.searchTarget.resultType}:${it.searchTarget.layoutType}:${it.searchTarget.id}" }
+                val cachedAppCard = categoryCards[appCategory]
+                val reuseAppGrid = lastAppGridQuery == query &&
+                    lastAppGridSignature == appGridSignature && cachedAppCard != null &&
+                    cachedAppCard.childCount > 0
+                rankedNativeItems.forEach { item ->
+                    val category = nativeCategoryFor(item) ?: return@forEach
+                    // A result is visible only when its corresponding search
+                    // category is enabled in the Prime Search settings.
+                    if (!PrimeSearchResultPreferences.enabled(launcher, category)) return@forEach
+                    if (category != null && nativeCategory != null && category != nativeCategory) flushNativeSection()
+                    if (category != null && nativeCategory != category) {
+                        nativeCategory = category
+                        if (category == appCategory && reuseAppGrid) {
+                            // Transfer existing app rows before the old wrapper is detached.
+                            // The row views retain their native click and long-press handlers.
+                            while (cachedAppCard!!.childCount > 0) {
+                                val row = cachedAppCard.getChildAt(0)
+                                cachedAppCard.removeViewAt(0)
+                                nativeSection.addView(row)
+                            }
+                        }
+                        if (category == PrimeSearchResultPreferences.Category.APP_SHORTCUTS) {
+                            val heading = TextView(launcher).apply {
+                                text = "Raccourcis d'app"
+                                setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+                                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
+                                includeFontPadding = false
+                                setPadding((12 * density).toInt(), (10 * density).toInt(),
+                                    (12 * density).toInt(), (2 * density).toInt())
+                            }
+                            nativeSection.addView(heading)
+                        }
+                    }
+                    if (category == appCategory && reuseAppGrid) return@forEach
+                    // The drawer can emit the same application as a grid icon
+                    // and again as a text row. Prime Search keeps one app entry.
+                    if (category == PrimeSearchResultPreferences.Category.APPS) {
+                        val appId = item.searchTarget.packageName
+                        if (appId.isNotBlank()) {
+                            // Do not show a second, standalone row below the app grid.
+                            if (item.searchTarget.layoutType != LayoutType.ICON_SINGLE_VERTICAL_TEXT &&
+                                appId in gridApplicationIds) return@forEach
+                            if (!renderedApplicationIds.add(appId)) return@forEach
+                        }
+                    }
+                    val isAppIcon = item.searchTarget.resultType ==
+                        SearchTargetCompat.RESULT_TYPE_APPLICATION &&
+                        item.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT
+                    // Keep all results for expanded view; compact grid is clipped.
                     if (isAppIcon) {
+                        displayedAppTiles++
                         if (appRow == null || appsInRow == columns) {
                             appRow = LinearLayout(launcher).apply {
                                 orientation = LinearLayout.HORIZONTAL
-                                gravity = Gravity.CENTER_HORIZONTAL
+                                gravity = when (appAlignment) {
+                                    PrimeSearchResultPreferences.AppResultsAlignment.CENTER -> Gravity.CENTER_HORIZONTAL
+                                    PrimeSearchResultPreferences.AppResultsAlignment.LEFT -> Gravity.START
+                                    PrimeSearchResultPreferences.AppResultsAlignment.RIGHT -> Gravity.END
+                                }
                             }
-                            results.addView(appRow, LinearLayout.LayoutParams(-1, -2))
+                            nativeSection.addView(appRow, LinearLayout.LayoutParams(-1, -2))
                             appsInRow = 0
                         }
                     } else {
                         appRow = null
                         appsInRow = 0
                     }
-                    val parent = if (isAppIcon) appRow!! else results
+                    val parent = if (isAppIcon) appRow!! else nativeSection
                     val layout = LawnchairSearchAdapterProvider.layoutForViewType(item.viewType)
                         ?: return@forEach
                     val view = inflater.inflate(layout, parent, false)
@@ -905,6 +1986,11 @@ object PrimeSearchOverlay {
                     }
                     item.setRippleEffect(view)
                     resultView.bind(item.searchTarget, emptyList())
+                    // Never steal focus on ACTION_DOWN: clearing input focus
+                    // can cancel the very first tap on a newly shown app tile.
+                    // The native SearchResultView must receive DOWN and UP
+                    // uninterrupted so apps launch immediately.
+                    // Keyboard dismissal is handled by the native result action.
                     // The inherited drawer search action has no title property on
                     // SearchTargetCompat. Inspect the actual bound row instead.
                     // This affects Prime Search only, not the app drawer.
@@ -920,6 +2006,26 @@ object PrimeSearchOverlay {
                             }
                         }
                         return false
+                    }
+                    // The drawer emits the file header before its first file tile.
+                    // Do not attach that header to the preceding category (usually Apps).
+                    // A heading is created only after an actual file survives filtering.
+                    fun isDeviceFilesHeading(node: View): Boolean {
+                        if (node is TextView) {
+                            val title = node.text?.toString()?.trim().orEmpty()
+                            if (title == "Fichiers de l'appareil" || title == "Device files" ||
+                                title == "Files on device") return true
+                        }
+                        if (node is ViewGroup) {
+                            for (i in 0 until node.childCount) {
+                                if (isDeviceFilesHeading(node.getChildAt(i))) return true
+                            }
+                        }
+                        return false
+                    }
+                    if (!isAppIcon && isDeviceFilesHeading(view)) {
+                        parent.removeView(view)
+                        return@forEach
                     }
                     if (!isAppIcon && isLegacyGoogleAction(view)) {
                         parent.removeView(view)
@@ -950,8 +2056,8 @@ object PrimeSearchOverlay {
                         val compact = LinearLayout(launcher).apply {
                             orientation = LinearLayout.HORIZONTAL
                             gravity = Gravity.CENTER_VERTICAL
-                            setPadding((12 * density).toInt(), (3 * density).toInt(),
-                                (12 * density).toInt(), (3 * density).toInt())
+                            setPadding((12 * density).toInt(), (2 * density).toInt(),
+                                (12 * density).toInt(), (2 * density).toInt())
                             minimumHeight = (52 * density).toInt()
                             isClickable = true
                             isFocusable = true
@@ -963,20 +2069,33 @@ object PrimeSearchOverlay {
                             scaleType = ImageView.ScaleType.CENTER_INSIDE
                         }
                         compact.addView(icon, LinearLayout.LayoutParams(
-                            (36 * density).toInt(), (36 * density).toInt()).apply {
-                            marginEnd = (12 * density).toInt()
+                            (32 * density).toInt(), (32 * density).toInt()).apply {
+                            marginEnd = (10 * density).toInt()
                         })
                         val title = TextView(launcher).apply {
                             text = filename
                             setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
-                            textSize = 14f
+                            textSize = 15f
                             maxLines = 2
                             ellipsize = android.text.TextUtils.TruncateAt.END
                             gravity = Gravity.CENTER_VERTICAL
                         }
                         compact.addView(title, LinearLayout.LayoutParams(0, -2, 1f))
                         parent.removeView(view)
+                        if (renderedFilesInSection == 0) {
+                            val fileHeading = TextView(launcher).apply {
+                                text = "Fichiers de l'appareil"
+                                setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+                                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                                textSize = 15f
+                                includeFontPadding = false
+                                setPadding((12 * density).toInt(), (14 * density).toInt(),
+                                    (12 * density).toInt(), (3 * density).toInt())
+                            }
+                            parent.addView(fileHeading, LinearLayout.LayoutParams(-1, -2))
+                        }
                         parent.addView(compact)
+                        renderedFilesInSection++
                         return@forEach
                     }
                     // Drawer search result views may apply their own text colors
@@ -995,6 +2114,162 @@ object PrimeSearchOverlay {
                         }
                     }
                     applyPrimeTextColors(view)
+                    // Hide redundant leading pictograms in text-only results.
+                    // App icons and file thumbnails remain untouched.
+                    if (!isAppIcon &&
+                        item.searchTarget.resultType != SearchTargetCompat.RESULT_TYPE_FILE_TILE &&
+                        !item.searchTarget.layoutType.toString().contains("HEADER", ignoreCase = true)) {
+                        fun hideDecorativeIcons(node: View) {
+                            if (node is ImageView) {
+                                node.visibility = View.GONE
+                                return
+                            }
+                            if (node is TextView) {
+                                node.setCompoundDrawables(null, null, null, null)
+                                val original = node.text?.toString().orEmpty()
+                                val cleaned = original.replace(
+                                    Regex("""^\s*[☑✔✓👤👥📅🗓📆🔎🔍]\s*"""),
+                                    "",
+                                )
+                                if (cleaned != original && cleaned.isNotBlank()) node.text = cleaned
+                            }
+                            if (node is ViewGroup) {
+                                for (index in 0 until node.childCount) hideDecorativeIcons(node.getChildAt(index))
+                            }
+                        }
+                        hideDecorativeIcons(view)
+                    }
+                    // Only app shortcuts need compact row geometry.
+                    // Keep every other result category unchanged.
+                    if (category == PrimeSearchResultPreferences.Category.APP_SHORTCUTS && !isAppIcon &&
+                        !item.searchTarget.layoutType.toString().contains("HEADER", ignoreCase = true)) {
+                        view.minimumHeight = 0
+                        view.layoutParams = (view.layoutParams as? LinearLayout.LayoutParams
+                            ?: LinearLayout.LayoutParams(-1, -2)).apply {
+                            height = (56 * density).toInt()
+                            topMargin = 0
+                            bottomMargin = 0
+                        }
+                    }
+                    // Normalize every bound text result after the drawer view has
+                    // finished binding; drawer styles otherwise overwrite Prime's scale.
+                    if (!isAppIcon) {
+                        fun normalizeText(node: View) {
+                            if (node is TextView) {
+                                node.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
+                                node.includeFontPadding = false
+                            }
+                            if (node is ViewGroup) {
+                                for (index in 0 until node.childCount) normalizeText(node.getChildAt(index))
+                            }
+                        }
+                        normalizeText(view)
+                    }
+                    if (!isAppIcon && item.searchTarget.layoutType.toString().contains("HEADER", ignoreCase = true)) {
+                        // Replace the drawer's fixed-height header wrapper with a compact label.
+                        fun headerLabel(node: View): CharSequence? {
+                            if (node is TextView && !node.text.isNullOrBlank()) return node.text
+                            if (node is ViewGroup) for (index in 0 until node.childCount) {
+                                headerLabel(node.getChildAt(index))?.let { return it }
+                            }
+                            return null
+                        }
+                        val heading = headerLabel(view)
+                        if (heading != null) {
+                            val compactHeading = TextView(launcher).apply {
+                                text = heading
+                                setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+                                gravity = Gravity.CENTER_VERTICAL
+                            }
+                            parent.removeView(view)
+                            parent.addView(compactHeading, LinearLayout.LayoutParams(-1, -2))
+                            app.lawnchair.search.SearchResultGeometry.styleHeading(compactHeading, compactHeading)
+                            return@forEach
+                        }
+                    }
+                    // Show the owning application's icon at the far right of each
+                    // Prime app shortcut, without replacing its contact/avatar icon.
+                    if (category == PrimeSearchResultPreferences.Category.APP_SHORTCUTS && !isAppIcon) {
+                        val appPackage = item.searchTarget.packageName
+                        val appDrawable = if (appPackage.isNotBlank()) {
+                            runCatching { launcher.packageManager.getApplicationIcon(appPackage) }.getOrNull()
+                        } else null
+                        if (appDrawable != null) {
+                            val index = parent.indexOfChild(view)
+                            val originalParams = view.layoutParams
+                            parent.removeView(view)
+                            val container = android.widget.FrameLayout(launcher).apply {
+                                minimumHeight = (66 * density).toInt()
+                            }
+                            container.addView(view, android.widget.FrameLayout.LayoutParams(
+                                -1, (56 * density).toInt(), Gravity.TOP,
+                            ))
+                            val appIcon = ImageView(launcher).apply {
+                                setImageDrawable(appDrawable)
+                                scaleType = ImageView.ScaleType.FIT_CENTER
+                                isClickable = false
+                                isFocusable = false
+                                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                            }
+                            val iconSize = (24 * density).toInt()
+                            container.addView(appIcon, android.widget.FrameLayout.LayoutParams(
+                                iconSize, iconSize, Gravity.END or Gravity.TOP,
+                            ).apply {
+                                marginEnd = (12 * density).toInt()
+                                topMargin = (12 * density).toInt()
+                            })
+                            // Reserve room so long shortcut names cannot run under the icon.
+                            view.setPadding(
+                                view.paddingLeft, view.paddingTop,
+                                view.paddingRight + (44 * density).toInt(), view.paddingBottom,
+                            )
+                            // Use the actual drawer title and its text container,
+                            // never the first TextView (SearchResultIcon is also text).
+                            // Keep the native shortcut icon and click target intact.
+                            val nativeTitle = view.findViewById<TextView>(com.android.launcher3.R.id.title)
+                            val textRows = view.findViewById<LinearLayout>(com.android.launcher3.R.id.text_rows)
+                            val appName = runCatching {
+                                launcher.packageManager.getApplicationLabel(
+                                    launcher.packageManager.getApplicationInfo(appPackage, 0)
+                                ).toString()
+                            }.getOrDefault(appPackage)
+                            if (nativeTitle != null && textRows != null) {
+                                textRows.orientation = LinearLayout.VERTICAL
+                                (textRows.layoutParams as? LinearLayout.LayoutParams)?.let { params ->
+                                    params.gravity = Gravity.TOP
+                                    params.topMargin = (8 * density).toInt()
+                                    textRows.layoutParams = params
+                                }
+                                textRows.setPadding(textRows.paddingLeft, 0,
+                                    textRows.paddingRight, 0)
+                                nativeTitle.setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+                                nativeTitle.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
+                                nativeTitle.gravity = Gravity.TOP
+                                nativeTitle.maxLines = 1
+                                nativeTitle.ellipsize = android.text.TextUtils.TruncateAt.END
+                                val nativeSubtitle = view.findViewById<TextView>(com.android.launcher3.R.id.subtitle)
+                                nativeSubtitle?.visibility = View.GONE
+                                val appSubtitle = TextView(launcher).apply {
+                                    text = appName
+                                    setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+                                    alpha = 0.7f
+                                    setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f)
+                                    maxLines = 1
+                                    ellipsize = android.text.TextUtils.TruncateAt.END
+                                    gravity = Gravity.TOP
+                                    isClickable = false
+                                    isFocusable = false
+                                }
+                                textRows.addView(appSubtitle, LinearLayout.LayoutParams(-1, -2).apply {
+                                    topMargin = (4 * density).toInt()
+                                })
+                            }
+                            parent.addView(container, index, (originalParams as? LinearLayout.LayoutParams
+                                ?: LinearLayout.LayoutParams(-1, -2)).apply {
+                                height = (52 * density).toInt()
+                            })
+                        }
+                    }
                     if (isAppIcon) {
                         view.minimumHeight = 0
                         (view as? app.lawnchair.allapps.views.SearchResultIcon)?.let { icon ->
@@ -1030,32 +2305,337 @@ object PrimeSearchOverlay {
                             cell.addView(title, LinearLayout.LayoutParams(-1, searchLabelHeight).apply {
                                 topMargin = searchIconLabelGap
                             })
+                            // The icon keeps its native launcher click and long-press
+                            // behavior; tapping the label or empty cell space launches
+                            // the very same app instead of doing nothing.
+                            cell.isClickable = true
+                            cell.isFocusable = true
+                            cell.setOnTouchListener { _, event ->
+                                if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                                    appTouchInProgress = true
+                                    cell.parent?.requestDisallowInterceptTouchEvent(true)
+                                } else if (event.actionMasked == MotionEvent.ACTION_UP ||
+                                    event.actionMasked == MotionEvent.ACTION_CANCEL) {
+                                    appTouchInProgress = false
+                                }
+                                false
+                            }
+                            cell.setOnClickListener { icon.performClick() }
+                            title.setOnClickListener { icon.performClick() }
                             parent.addView(cell, LinearLayout.LayoutParams(cellWidth, searchRowHeight))
-                            enableNativeAppGestures(launcher, dialog, icon)
+                            enableNativeAppGestures(launcher, dialog, icon) {
+                                appTouchInProgress = it
+                            }
                         }
+                    }
+                }
+                flushNativeSection()
+                lastAppGridQuery = query
+                lastAppGridSignature = appGridSignature
+                results.removeAllViews()
+                nativeSections.forEach { (category, section) ->
+                    if (PrimeSearchResultPreferences.enabled(launcher, category)) {
+                        section.tag = category
+                        results.addView(section)
                     }
                 }
                 results.addView(webPanel)
                 renderWebPanel(query)
+                scheduleResultsReorder(::reorderSearchSections)
                 results.requestLayout()
             }
 
             override fun clearSearchResult() {
+                if (detailOpen || appTouchInProgress || resultsTouchInProgress ||
+                    resultGestureBusy()) return
+                pendingNativeRefresh?.let(webHandler::removeCallbacks)
+                pendingNativeRefresh = null
+                lastNativeRenderQuery = null
+                lastNativeRenderSignature = null
+                lastAppGridQuery = null
+                lastAppGridSignature = null
                 results.removeAllViews()
                 results.requestLayout()
             }
         }
+        // The expanded category has its own search session. Native results are
+        // bound to independent views, never to the compact result hierarchy.
+        fun searchExpandedCategory(query: String) {
+            // The compact callback's grid geometry is scoped to that callback.
+            // Compute the same settings locally for independent expanded results.
+            val searchLabelLines = if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
+            val searchIconPercent = PrimeSearchResultPreferences.appResultsIconSizePercent(launcher)
+            val searchIconSize = PrimeAppGridGeometry.iconPx(launcher, searchIconPercent)
+            val searchRowHeight = PrimeAppGridGeometry.rowHeightPx(
+                launcher, searchIconPercent, searchLabelLines)
+            val searchCellTopPadding = (PrimeAppGridGeometry.TOP_DP * density).toInt()
+            val searchRowBottomPadding = (PrimeAppGridGeometry.BOTTOM_DP * density).toInt()
+            val searchIconLabelGap = (PrimeAppGridGeometry.ICON_LABEL_GAP_DP * density).toInt()
+            val iconViewHeight = searchIconSize
+            val searchLabelHeight = PrimeAppGridGeometry.labelHeightPx(launcher, searchLabelLines)
+            val category = detailSearchCategory ?: return
+            val card = detailCard ?: return
+            val algorithmForDetail = detailSearchAlgorithm ?: return
+            detailSearchTask?.let(webHandler::removeCallbacks)
+            detailSearchTask = null
+            detailSearchQuery = query
+            val session = detailSessionId
+            val serial = ++detailSearchSerial
+            // An empty editor is a fresh, valid starting point. Do not submit
+            // an empty native query, which can clear or repopulate the wrong page.
+            if (query.isBlank()) {
+                card.removeAllViews()
+                detailScroll.scrollTo(0, 0)
+                return
+            }
+            val task = Runnable {
+                if (!detailOpen || detailClosing || detailSessionId != session ||
+                    detailSearchSerial != serial || detailSearchQuery != query ||
+                    input.text.toString() != query || detailCard !== card) return@Runnable
+                if (category == PrimeSearchResultPreferences.Category.CALENDAR ||
+                    category == PrimeSearchResultPreferences.Category.REMINDERS ||
+                    category == PrimeSearchResultPreferences.Category.NOTIFICATIONS ||
+                    category == PrimeSearchResultPreferences.Category.CONTACTS ||
+                    category == PrimeSearchResultPreferences.Category.WEB_SHORTCUTS) {
+                    card.removeAllViews()
+                    fun addRow(title: String, action: () -> Unit) {
+                        card.addView(TextView(launcher).apply {
+                            text = title
+                            textSize = 15f
+                            setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
+                            setPadding((18 * density).toInt(), (10 * density).toInt(),
+                                (12 * density).toInt(), (10 * density).toInt())
+                            setOnClickListener { action() }
+                        }, LinearLayout.LayoutParams(-1, -2))
+                    }
+                    when (category) {
+                        PrimeSearchResultPreferences.Category.CALENDAR,
+                        PrimeSearchResultPreferences.Category.REMINDERS,
+                        PrimeSearchResultPreferences.Category.NOTIFICATIONS,
+                        PrimeSearchResultPreferences.Category.CONTACTS -> {
+                            detailProviderExecutor.execute {
+                                val rows: List<Pair<String, Uri?>> = when (category) {
+                                    PrimeSearchResultPreferences.Category.CALENDAR ->
+                                        PrimeCalendarSearch.events(launcher, query).map { event ->
+                                            (event.title + "\n" + event.detail) to event.uri
+                                        }
+                                    PrimeSearchResultPreferences.Category.REMINDERS ->
+                                        PrimeTasksSearch.search(launcher, query).map { entry ->
+                                            (entry.title + entry.detail.takeIf { it.isNotBlank() }
+                                                ?.let { "\n$it" }.orEmpty()) to entry.uri
+                                        }
+                                    PrimeSearchResultPreferences.Category.NOTIFICATIONS ->
+                                        PrimeNotificationHistory.search(launcher, query).map { entry ->
+                                            ("${entry.app} · ${entry.title}\n${entry.body.take(180)}") to null
+                                        }
+                                    PrimeSearchResultPreferences.Category.CONTACTS ->
+                                        PrimeContactSearch.search(launcher, query).map { contact ->
+                                            (contact.name + contact.phone?.let { "\n$it" }.orEmpty()) to contact.uri
+                                        }
+                                    else -> emptyList()
+                                }
+                                webHandler.post {
+                                    if (detailOpen && !detailClosing && detailSessionId == session &&
+                                        detailSearchSerial == serial && detailSearchQuery == query &&
+                                        detailCard === card && input.text.toString() == query) {
+                                        card.removeAllViews()
+                                        rows.forEach { (label, uri) ->
+                                            addRow(label) {
+                                                if (uri != null) runCatching {
+                                                    launcher.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                                                    dismiss()
+                                                }
+                                            }
+                                        }
+                                        detailScroll.scrollTo(0, 0)
+                                    }
+                                }
+                            }
+                        }
+                        PrimeSearchResultPreferences.Category.WEB_SHORTCUTS ->
+                            PrimeSearchResultPreferences.enabledWebEngines(launcher).forEach { engine ->
+                                addRow(engine.title) {
+                                    runCatching {
+                                        launcher.startActivity(Intent(Intent.ACTION_VIEW,
+                                            Uri.parse(engine.url + Uri.encode(query))))
+                                        dismiss()
+                                    }
+                                }
+                            }
+                        else -> Unit
+                    }
+                    detailScroll.scrollTo(0, 0)
+                    return@Runnable
+                }
+                algorithmForDetail.doSearch(query, object : SearchCallback<BaseAllAppsAdapter.AdapterItem> {
+                    override fun onSearchResult(
+                        resultQuery: String,
+                        items: ArrayList<BaseAllAppsAdapter.AdapterItem>?,
+                    ) {
+                        if (!detailOpen || detailClosing || detailSessionId != session ||
+                            detailSearchSerial != serial || detailSearchQuery != query ||
+                            resultQuery != query || input.text.toString() != query ||
+                            detailCard !== card) return
+                        val matched = PrimeSearchResultPreferences.filter(
+                            launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(),
+                        ).filter { item ->
+                            val type = item.searchTarget.resultType
+                            when (category) {
+                                PrimeSearchResultPreferences.Category.APPS -> type == SearchTargetCompat.RESULT_TYPE_APPLICATION
+                                PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> type == SearchTargetCompat.RESULT_TYPE_SHORTCUT
+                                PrimeSearchResultPreferences.Category.FILES -> type == SearchTargetCompat.RESULT_TYPE_FILE_TILE
+                                PrimeSearchResultPreferences.Category.CONTACTS -> type == SearchTargetCompat.RESULT_TYPE_CONTACT_TILE
+                                PrimeSearchResultPreferences.Category.SETTINGS -> type == SearchTargetCompat.RESULT_TYPE_SETTING_TILE
+                                PrimeSearchResultPreferences.Category.CALCULATOR -> type == SearchTargetCompat.RESULT_TYPE_CALCULATOR
+                                PrimeSearchResultPreferences.Category.HISTORY -> type == SearchTargetCompat.RESULT_TYPE_SUGGESTIONS
+                                else -> false
+                            }
+                        }
+                        card.removeAllViews()
+                        val inflater = LayoutInflater.from(launcher)
+                        val columns = PrimeSearchResultPreferences.appResultsColumns(launcher)
+                        var appRow: LinearLayout? = null
+                        var appsInRow = 0
+                        val seenApps = mutableSetOf<String>()
+                        matched.forEach { item ->
+                            val isApp = category == PrimeSearchResultPreferences.Category.APPS
+                            if (isApp && !seenApps.add(item.searchTarget.packageName)) return@forEach
+                            val layout = LawnchairSearchAdapterProvider.layoutForViewType(item.viewType)
+                                ?: return@forEach
+                            val parent = if (isApp) {
+                                if (appRow == null || appsInRow == columns) {
+                                    appRow = LinearLayout(launcher).apply {
+                                        orientation = LinearLayout.HORIZONTAL
+                                        gravity = when (PrimeSearchResultPreferences.appResultsAlignment(launcher)) {
+                                            PrimeSearchResultPreferences.AppResultsAlignment.CENTER -> Gravity.CENTER_HORIZONTAL
+                                            PrimeSearchResultPreferences.AppResultsAlignment.LEFT -> Gravity.START
+                                            PrimeSearchResultPreferences.AppResultsAlignment.RIGHT -> Gravity.END
+                                        }
+                                    }
+                                    card.addView(appRow, LinearLayout.LayoutParams(-1, -2))
+                                    appsInRow = 0
+                                }
+                                appRow!!
+                            } else card
+                            val view = inflater.inflate(layout, parent, false)
+                            val resultView = view as? SearchResultView ?: return@forEach
+                            if (isApp) {
+                                val width = ((card.width - card.paddingLeft - card.paddingRight) / columns).coerceAtLeast(1)
+                                parent.addView(view, LinearLayout.LayoutParams(width, -2))
+                                appsInRow++
+                            } else parent.addView(view)
+                            item.setRippleEffect(view)
+                            resultView.bind(item.searchTarget, emptyList())
+                            if (isApp && view is app.lawnchair.allapps.views.SearchResultIcon) {
+                                // Expanded app tiles must keep the same native popup,
+                                // drag and click behavior as compact Prime app icons.
+                                val icon = view
+                                val label = icon.text.toString()
+                                icon.setPrimeIconSize(searchIconSize)
+                                icon.setTextVisibility(false)
+                                icon.setPrimeSearchLabelLayout(true)
+                                icon.setPrimeIconOnlyLayout(true)
+                                icon.setPadding(0, 0, 0, 0)
+                                icon.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                                icon.setCompoundDrawablePadding(0)
+                                val row = parent as LinearLayout
+                                val position = row.indexOfChild(icon)
+                                row.removeView(icon)
+                                val cellWidth = ((card.width - card.paddingLeft - card.paddingRight) /
+                                    columns).coerceAtLeast(1)
+                                val cell = LinearLayout(launcher).apply {
+                                    orientation = LinearLayout.VERTICAL
+                                    gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                                    setPadding(0, searchCellTopPadding, 0, searchRowBottomPadding)
+                                    isClickable = true
+                                    isFocusable = true
+                                    setOnClickListener { icon.performClick() }
+                                    setOnLongClickListener { icon.performLongClick() }
+                                    setOnTouchListener { _, event ->
+                                        when (event.actionMasked) {
+                                            MotionEvent.ACTION_DOWN -> {
+                                                appTouchInProgress = true
+                                                parent.requestDisallowInterceptTouchEvent(true)
+                                            }
+                                            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
+                                                appTouchInProgress = false
+                                        }
+                                        false
+                                    }
+                                }
+                                cell.addView(icon, LinearLayout.LayoutParams(cellWidth, iconViewHeight))
+                                val title = TextView(launcher).apply {
+                                    text = label
+                                    textSize = 11f
+                                    gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                                    maxLines = searchLabelLines
+                                    includeFontPadding = false
+                                    ellipsize = android.text.TextUtils.TruncateAt.END
+                                    setTextColor(themed(ThemeColorRole.PRIME_SEARCH_APP_LABEL))
+                                    setOnClickListener { icon.performClick() }
+                                    setOnLongClickListener { icon.performLongClick() }
+                                }
+                                cell.addView(title, LinearLayout.LayoutParams(-1, searchLabelHeight).apply {
+                                    topMargin = searchIconLabelGap
+                                })
+                                row.addView(cell, position, LinearLayout.LayoutParams(cellWidth, searchRowHeight))
+                                enableNativeAppGestures(launcher, dialog, icon) { appTouchInProgress = it }
+                            } else if (isApp && view is com.android.launcher3.BubbleTextView) {
+                                enableNativeAppGestures(launcher, dialog, view) { appTouchInProgress = it }
+                            }
+                        }
+                        detailScroll.scrollTo(0, 0)
+                    }
+                    override fun clearSearchResult() {
+                        if (detailOpen && !detailClosing && detailSessionId == session &&
+                            detailSearchSerial == serial && detailSearchQuery == query &&
+                            detailCard === card) card.removeAllViews()
+                    }
+                })
+            }
+            detailSearchTask = task
+            webHandler.postDelayed(task, 60L)
+        }
+        // IME visibility and focus changes must not restart an unchanged query.
+        // Only an actual change in the search text starts a new request.
+        var lastSubmittedQuery = input.text?.toString().orEmpty()
+        // Coalesce rapid keystrokes rather than rebuilding the entire result
+        // hierarchy for each intermediate prefix.
+        var pendingSearch: Runnable? = null
         input.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val query = s?.toString().orEmpty()
+                if (restoringDetailQuery) return
+                if (detailOpen) {
+                    searchExpandedCategory(query)
+                    return
+                }
+                if (query == lastSubmittedQuery) return
+                lastSubmittedQuery = query
+                scroll.scrollTo(0, 0)
                 zeroState.visibility = if (query.isBlank()) View.VISIBLE else View.GONE
                 scroll.visibility = if (query.isBlank()) View.GONE else View.VISIBLE
+                settings.visibility = if (query.isBlank()) View.VISIBLE else View.GONE
+                pendingSearch?.let(webHandler::removeCallbacks)
+                pendingSearch = null
+                pendingNativeRefresh?.let(webHandler::removeCallbacks)
+                pendingNativeRefresh = null
                 updateWebSuggestions(query)
+                // Keep current rows visible while the user types. Only the
+                // settled query is sent to the expensive native search engine.
                 if (query.isBlank()) {
                     results.removeAllViews()
                     renderZeroState()
-                } else algorithm.doSearch(query, callback)
+                } else {
+                    val task = Runnable {
+                        if (dialog.isShowing && input.text.toString() == query) {
+                            algorithm.doSearch(query, callback)
+                        }
+                    }
+                    pendingSearch = task
+                    webHandler.postDelayed(task, 60L)
+                }
             }
             override fun afterTextChanged(s: Editable?) = Unit
         })
@@ -1075,14 +2655,46 @@ object PrimeSearchOverlay {
                     }
                     val visible = Rect()
                     decor.getWindowVisibleDisplayFrame(visible)
-                    val available = visible.height().coerceAtMost(screenHeight)
-                    val maximum = (available - margin).coerceAtLeast((160 * density).toInt())
+                    val insets = androidx.core.view.ViewCompat.getRootWindowInsets(decor)
+                    val imeVisible = insets?.isVisible(
+                        androidx.core.view.WindowInsetsCompat.Type.ime()
+                    ) == true
+                    val root = launcher.window?.decorView ?: decor.rootView
+                    val rootLocation = IntArray(2)
+                    val contentLocation = IntArray(2)
+                    root.getLocationOnScreen(rootLocation)
+                    decor.getLocationOnScreen(contentLocation)
+                    val rootBottom = rootLocation[1] + root.height
+                    val imeBottomInset = if (imeVisible) {
+                        insets?.getInsets(androidx.core.view.WindowInsetsCompat.Type.ime())?.bottom ?: 0
+                    } else 0
+                    // adjustResize already moves the visible frame above the keyboard.
+                    // On adjustNothing/adjustPan the window stays full height, so use
+                    // the IME top instead. Never subtract the keyboard height twice.
+                    val keyboardTop = if (imeVisible && imeBottomInset > 0) {
+                        if (rootBottom < screenHeight - (48 * density).toInt()) {
+                            visible.bottom
+                        } else {
+                            minOf(visible.bottom, rootBottom - imeBottomInset)
+                        }
+                    } else {
+                        visible.bottom
+                    }
+                    val maximum = (keyboardTop - contentLocation[1] -
+                        if (imeVisible) (8 * density).toInt() else margin)
+                        .coerceAtLeast((160 * density).toInt())
                     val barHeight = input.height.coerceAtLeast((64 * density).toInt())
-                    val desiredContent = if (zeroState.visibility == View.VISIBLE) zeroState.measuredHeight else results.measuredHeight
-                    val footerHeight = container.getChildAt(container.childCount - 1).measuredHeight
-                        .coerceAtLeast((40 * density).toInt())
-                    val desired = (barHeight + desiredContent + footerHeight + inset)
-                        .coerceIn((120 * density).toInt(), maximum)
+                    val desiredContent = if (detailOpen) detailPage.measuredHeight else if (zeroState.visibility == View.VISIBLE) zeroState.measuredHeight else results.measuredHeight
+                    val desired = if (detailOpen) {
+                        maximum
+                    } else if (imeVisible && scroll.visibility == View.VISIBLE) {
+                        // With the keyboard visible, fill the space above it;
+                        // the ScrollView handles content that exceeds that height.
+                        maximum
+                    } else {
+                        (barHeight + desiredContent + inset)
+                            .coerceIn((120 * density).toInt(), maximum)
+                    }
                     if (desired != lastHeight) {
                         lastHeight = desired
                         dialog.updateHeight(desired)
@@ -1121,13 +2733,29 @@ object PrimeSearchOverlay {
         }.start()
         container.translationY = -120 * density
         container.animate().translationY(0f).setDuration(220).start()
-        input.post {
-            if (activeDialog !== dialog || !dialog.isShowing) return@post
-            (launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
-                .showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
-            zeroState.visibility = View.VISIBLE
-            scroll.visibility = View.GONE
+        // Request the IME as soon as the search field is attached, rather than
+        // waiting for the next posted UI task. Keep the existing Prime Search
+        // entrance animation and its 220 ms duration unchanged.
+        val keyboard = launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        if (!PrimeSearchResultPreferences.autoShowKeyboard(launcher)) {
+            // Keep the field usable: tapping it still opens the keyboard normally.
+        } else if (input.isAttachedToWindow) {
+            keyboard.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
+        } else {
+            input.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: View) {
+                    input.removeOnAttachStateChangeListener(this)
+                    if (activeDialog === dialog && dialog.isShowing) {
+                        keyboard.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
+                    }
+                }
+                override fun onViewDetachedFromWindow(v: View) {
+                    input.removeOnAttachStateChangeListener(this)
+                }
+            })
         }
+        zeroState.visibility = View.VISIBLE
+        scroll.visibility = View.GONE
     }
 
     fun dismiss() {

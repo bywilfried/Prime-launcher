@@ -467,7 +467,9 @@ public class GridSizeMigrationDBController {
 
         final boolean[] occupied = new boolean[dstHotseatSize];
         for (DbEntry entry : placedHotseatItems) {
-            occupied[entry.screenId] = true;
+            if (entry.screenId >= 0 && entry.screenId < occupied.length) {
+                occupied[entry.screenId] = true;
+            }
         }
 
         for (int i = 0; i < occupied.length; i++) {
@@ -509,7 +511,13 @@ public class GridSizeMigrationDBController {
                             LauncherSettings.Favorites._ID,                  // 0
                             LauncherSettings.Favorites.ITEM_TYPE,            // 1
                             LauncherSettings.Favorites.INTENT,               // 2
-                            LauncherSettings.Favorites.SCREEN},              // 3
+                            LauncherSettings.Favorites.SCREEN,               // 3
+                            LauncherSettings.Favorites.APPWIDGET_PROVIDER,   // 4
+                            LauncherSettings.Favorites.APPWIDGET_ID,         // 5
+                            LauncherSettings.Favorites.CELLX,                // 6
+                            LauncherSettings.Favorites.CELLY,                // 7
+                            LauncherSettings.Favorites.SPANX,                // 8
+                            LauncherSettings.Favorites.SPANY},               // 9
                     LauncherSettings.Favorites.CONTAINER + " = "
                             + LauncherSettings.Favorites.CONTAINER_HOTSEAT);
 
@@ -517,6 +525,12 @@ public class GridSizeMigrationDBController {
             final int indexItemType = c.getColumnIndexOrThrow(LauncherSettings.Favorites.ITEM_TYPE);
             final int indexIntent = c.getColumnIndexOrThrow(LauncherSettings.Favorites.INTENT);
             final int indexScreen = c.getColumnIndexOrThrow(LauncherSettings.Favorites.SCREEN);
+            final int indexProvider = c.getColumnIndexOrThrow(LauncherSettings.Favorites.APPWIDGET_PROVIDER);
+            final int indexWidgetId = c.getColumnIndexOrThrow(LauncherSettings.Favorites.APPWIDGET_ID);
+            final int indexCellX = c.getColumnIndexOrThrow(LauncherSettings.Favorites.CELLX);
+            final int indexCellY = c.getColumnIndexOrThrow(LauncherSettings.Favorites.CELLY);
+            final int indexSpanX = c.getColumnIndexOrThrow(LauncherSettings.Favorites.SPANX);
+            final int indexSpanY = c.getColumnIndexOrThrow(LauncherSettings.Favorites.SPANY);
 
             IntArray entriesToRemove = new IntArray();
             while (c.moveToNext()) {
@@ -524,6 +538,10 @@ public class GridSizeMigrationDBController {
                 entry.id = c.getInt(indexId);
                 entry.itemType = c.getInt(indexItemType);
                 entry.screenId = c.getInt(indexScreen);
+                entry.cellX = c.getInt(indexCellX);
+                entry.cellY = c.getInt(indexCellY);
+                entry.spanX = c.getInt(indexSpanX);
+                entry.spanY = c.getInt(indexSpanY);
 
                 try {
                     // calculate weight
@@ -531,6 +549,15 @@ public class GridSizeMigrationDBController {
                         case LauncherSettings.Favorites.ITEM_TYPE_DEEP_SHORTCUT:
                         case LauncherSettings.Favorites.ITEM_TYPE_APPLICATION: {
                             entry.mIntent = c.getString(indexIntent);
+                            break;
+                        }
+                        case LauncherSettings.Favorites.ITEM_TYPE_APPWIDGET: {
+                            // Dock widgets (including Prime's 1x1 widgets) are valid
+                            // migration entries. Never delete them as unknown items.
+                            entry.mProvider = c.getString(indexProvider);
+                            entry.appWidgetId = c.getInt(indexWidgetId);
+                            entry.minSpanX = Math.max(1, entry.spanX);
+                            entry.minSpanY = Math.max(1, entry.spanY);
                             break;
                         }
                         case LauncherSettings.Favorites.ITEM_TYPE_FOLDER: {

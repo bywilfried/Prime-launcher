@@ -13,6 +13,8 @@ import android.os.Bundle
 import android.os.Process
 import android.provider.ContactsContract
 import android.provider.MediaStore
+import android.webkit.MimeTypeMap
+import androidx.core.content.FileProvider
 import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
@@ -301,16 +303,19 @@ class SearchTargetFactory(
 
     fun createFilesTarget(info: IFileInfo): SearchTargetCompat {
         val fileUri = when (info) {
-            is FileInfo -> Uri.withAppendedPath(
-                MediaStore.Files.getContentUri("external"),
-                info.fileId,
-            )
+            is FileInfo -> if (info.fileId.isNotBlank()) {
+                Uri.withAppendedPath(MediaStore.Files.getContentUri("external"), info.fileId)
+            } else {
+                FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", File(info.path))
+            }
 
             is FolderInfo -> File(info.path).file2Uri()
         }
 
         val mimeType = when (info) {
-            is FileInfo -> info.mimeType.mimeCompat
+            is FileInfo -> (info.mimeType ?: MimeTypeMap.getSingleton()
+                .getMimeTypeFromExtension(info.name.substringAfterLast('.', "").lowercase(java.util.Locale.ROOT)))
+                .mimeCompat
             is FolderInfo -> "resource/folder"
         }
 

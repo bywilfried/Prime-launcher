@@ -1,6 +1,9 @@
 package app.lawnchair.search.algorithms.engine.provider
 
 import android.content.Context
+import android.os.Environment
+import java.io.File
+import java.text.Normalizer
 import android.database.Cursor
 import android.net.Uri
 import android.provider.MediaStore
@@ -45,6 +48,21 @@ object FileSearchProvider : SearchProvider {
     fun searchForPrime(context: Context, query: String): Flow<List<SearchResult>> =
         searchWithLimit(context, query, app.lawnchair.prime.search.PrimeSearchResultPreferences.maxFileResults(context), false)
 
+    // Treat spaces, underscores, hyphens and dots as equivalent word separators.
+    // The SQL wildcard form also works for MediaStore entries without filesystem access.
+    private fun flexiblePattern(query: String): String {
+        val terms = query.trim().split(Regex("[\\s_.-]+")).filter { it.isNotBlank() }
+        return "%" + terms.joinToString("%") + "%"
+    }
+
+    private fun matchesFilename(name: String, query: String): Boolean {
+        fun normalized(value: String) = Normalizer.normalize(value, Normalizer.Form.NFD)
+            .replace(Regex("\\p{M}+"), "")
+            .lowercase(java.util.Locale.ROOT)
+            .replace(Regex("[\\s_.-]+"), "")
+        return normalized(name).contains(normalized(query))
+    }
+
     private fun searchWithLimit(context: Context, query: String, overrideLimit: Int?, drawer: Boolean): Flow<List<SearchResult>> = flow {
         val prefs = PreferenceManager.getInstance(context)
 
@@ -54,7 +72,15 @@ object FileSearchProvider : SearchProvider {
 
         val fileSearchEnabled = prefs.searchResultFilesToggle.get()
         val anyProviderEnabled = searchAllFiles || searchAudio || searchVisualMedia
-        if (query.isBlank() || !fileSearchEnabled || !anyProviderEnabled) {
+        // The drawer has its own search-category and file-type preferences.
+        // Legacy all-apps file toggles must not suppress a drawer category that
+        // the user explicitly enabled in the search settings.
+        val drawerFilesEnabled = app.lawnchair.prime.search.PrimeSearchResultPreferences.enabled(
+            context,
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.FILES,
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER,
+        )
+        if (query.isBlank() || (drawer && !drawerFilesEnabled)) {
             // do nothing if query is empty, file search is disabled, or none of the providers are enabled
             emit(emptyList())
             return@flow
@@ -70,20 +96,20 @@ object FileSearchProvider : SearchProvider {
         val visualMediaGranted = fileAccessManager.visualMediaAccessState.value != FileAccessState.Denied
 
         val results = coroutineScope {
-            val allFilesDeferred = if (allFilesGranted && searchAllFiles) {
+            val allFilesDeferred = if (allFilesGranted && (drawerFilesEnabled || !drawer)) {
                 async { searchAllFiles(context, query, maxResults).first() }
             } else {
                 null
             }
 
             // Only launch visual media and audio if allFiles search isn't happening
-            val visualMediaDeferred = if (allFilesDeferred == null && visualMediaGranted && searchVisualMedia) {
+            val visualMediaDeferred = if (allFilesDeferred == null && visualMediaGranted && (drawerFilesEnabled || !drawer)) {
                 async { searchVisualMedia(context, query, maxResults).first() }
             } else {
                 null
             }
 
-            val audioDeferred = if (allFilesDeferred == null && audioGranted && searchAudio) {
+            val audioDeferred = if (allFilesDeferred == null && audioGranted && (drawerFilesEnabled || !drawer)) {
                 async { searchAudio(context, query, maxResults).first() }
             } else {
                 null
@@ -100,7 +126,23 @@ object FileSearchProvider : SearchProvider {
             }
         }
 
-        val uniqueResults = results.distinctBy { it.path }.filter { file ->
+        // Show indexed matches immediately; a full filesystem walk may take longer.
+        // Never hold MediaStore results hostage to a slow scan.
+        if (results.isNotEmpty()) {
+            emit(results.distinctBy { it.path }.filter { file ->
+                if (!drawer) true else {
+                    app.lawnchair.prime.search.PrimeSearchResultPreferences.fileAllowed(
+                        context, file.path.substringAfterLast('/'), null,
+                        app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER,
+                    )
+                }
+            }.take(maxResults).map { SearchResult.File(it) })
+        }
+        val scanned = if (allFilesGranted && (searchAllFiles || !drawer)) {
+            scanAccessibleFiles(query, maxResults)
+        } else emptyList()
+        val primeResults = (results + scanned).distinctBy { it.path }
+        val uniqueResults = primeResults.filter { file ->
             if (!drawer) true else {
                 val settings = app.lawnchair.prime.search.PrimeSearchResultPreferences
                 val surface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
@@ -110,6 +152,61 @@ object FileSearchProvider : SearchProvider {
         }.take(maxResults)
         emit(uniqueResults.map { SearchResult.File(it) })
     }
+
+    /**
+     * MediaStore does not index every document or folder. When the user has
+     * explicitly granted All files access, supplement indexed results with a
+     * bounded filesystem walk of shared storage (never private app data).
+     */
+    private suspend fun scanAccessibleFiles(query: String, maxResults: Int): List<IFileInfo> =
+        withContext(Dispatchers.IO) {
+            val files = mutableListOf<IFileInfo>()
+            val folders = mutableListOf<IFileInfo>()
+            val root = Environment.getExternalStorageDirectory()
+            val pending = java.util.ArrayDeque<File>()
+            // Check common user folders first, including Download (PDFs, APKs, archives).
+            listOf("Download", "Documents", "DCIM", "Pictures", "Movies", "Music").forEach {
+                val dir = File(root, it)
+                if (dir.isDirectory && dir.canRead()) pending.add(dir)
+            }
+            if (root.isDirectory && root.canRead()) pending.add(root)
+            val seen = HashSet<String>()
+            var visited = 0
+            while (pending.isNotEmpty() && visited < 60000) {
+                val dir = pending.removeFirst()
+                if (!seen.add(dir.absolutePath)) continue
+                val children = runCatching { dir.listFiles() }.getOrNull() ?: continue
+                for (child in children) {
+                    if (++visited > 60000) break
+                    if (child.name.startsWith(".") || !child.canRead()) continue
+                    if (child.isDirectory) {
+                        if (matchesFilename(child.name, query)) {
+                            folders.add(FolderInfo(child.absolutePath, child.name, 0L, child.lastModified()))
+                        }
+                        pending.add(child)
+                    } else if (child.isFile && matchesFilename(child.name, query)) {
+                        files.add(FileInfo("", child.absolutePath, child.name, child.length(), child.lastModified(), null))
+                    }
+                }
+            }
+            (files + folders).distinctBy { it.path }
+                .sortedWith(compareBy<IFileInfo> {
+                    val name = it.path.substringAfterLast('/')
+                    val normalizedName = Normalizer.normalize(name, Normalizer.Form.NFD)
+                        .replace(Regex("\\p{M}+"), "")
+                        .lowercase(java.util.Locale.ROOT)
+                        .replace(Regex("[\\s_.-]+"), "")
+                    val normalizedQuery = Normalizer.normalize(query, Normalizer.Form.NFD)
+                        .replace(Regex("\\p{M}+"), "")
+                        .lowercase(java.util.Locale.ROOT)
+                        .replace(Regex("[\\s_.-]+"), "")
+                    when {
+                        normalizedName.startsWith(normalizedQuery) -> 0
+                        normalizedName.contains(normalizedQuery) -> 1
+                        else -> 2
+                    }
+                }).take(maxResults)
+        }
 
     private val IMAGE_MIME_TYPES = imageFileTypes.values.toTypedArray()
     private val VIDEO_MIME_TYPES = videoFileTypes.values.toTypedArray()
@@ -224,7 +321,7 @@ object FileSearchProvider : SearchProvider {
         val selectionArgsList = mutableListOf<String>()
 
         selectionClauses.add("(${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ? OR ${MediaStore.MediaColumns.TITLE} LIKE ?)")
-        selectionArgsList.add("%$keyword%")
+        selectionArgsList.add(flexiblePattern(keyword))
         selectionArgsList.add("%$keyword%")
 
         if (!mimeTypes.isNullOrEmpty()) {

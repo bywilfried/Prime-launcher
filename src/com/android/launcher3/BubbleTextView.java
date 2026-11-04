@@ -1285,6 +1285,11 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
      * @param canvas The canvas to draw to.
      */
     protected void drawDotIfNecessary(Canvas canvas) {
+        // Prime-only visibility preference; notification listener remains connected.
+        if (!getContext().getSharedPreferences("prime_notification_display",
+                android.content.Context.MODE_PRIVATE).getBoolean("show_dots", true)) {
+            return;
+        }
         if (!mForceHideDot && (hasDot() || mDotParams.scale > 0)) {
             getIconBounds(mDotParams.iconBounds);
             Utilities.scaleRectAboutCenter(mDotParams.iconBounds, ICON_VISIBLE_AREA_FACTOR);

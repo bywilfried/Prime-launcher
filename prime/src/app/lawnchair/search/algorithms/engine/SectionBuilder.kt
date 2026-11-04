@@ -238,6 +238,26 @@ data object AppsAndShortcutsSectionBuilder : SectionBuilder {
     }
 }
 
+/**
+ * Prime Search keeps app shortcuts in their own configurable category even when
+ * more than one application matches the query. The drawer retains its existing
+ * single-app shortcut presentation.
+ */
+data object PrimeAppsAndShortcutsSectionBuilder : SectionBuilder {
+    override fun build(
+        context: Context,
+        factory: SearchTargetFactory,
+        results: List<SearchResult>,
+    ): List<SearchTargetCompat> {
+        val apps = results.filterIsInstance<SearchResult.App>()
+        val shortcuts = results.filterIsInstance<SearchResult.Shortcut>()
+        val targets = apps.map { factory.createAppSearchTarget(it.data, asRow = false) }.toMutableList()
+        targets.addAll(shortcuts.map { factory.createShortcutTarget(it.data) })
+        targets.add(factory.createHeaderTarget(SPACE))
+        return targets
+    }
+}
+
 data object EmptyStateSectionBuilder : SectionBuilder {
     override fun build(
         context: Context,

@@ -4,6 +4,10 @@ import android.util.SparseIntArray
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
+import android.graphics.Typeface
+import android.util.TypedValue
+import app.lawnchair.theme.effectiveThemeVariant
 import androidx.core.util.contains
 import app.lawnchair.allapps.views.SearchItemDecorator
 import app.lawnchair.allapps.views.SearchResultView
@@ -59,8 +63,69 @@ class LawnchairSearchAdapterProvider(
             adapterItem.searchTarget,
             emptyList(),
         )
+        // Match Prime Search's compact section headings and non-app result rows.
+        // Applied after bind because individual result views restore their own heights.
+        val density = holder.itemView.resources.displayMetrics.density
+        val dp: (Int) -> Int = { (it * density).toInt() }
+        // Search algorithms also emit structural spacer headers. They are not
+        // user-facing labels and must never render as "space" in the drawer.
+        if (adapterItem.searchTarget.layoutType == LayoutType.TEXT_HEADER) {
+            val label = holder.itemView.findViewById<TextView>(R.id.title)?.text?.toString()?.trim().orEmpty()
+            if (label.equals(app.lawnchair.search.adapter.SPACE, ignoreCase = true) ||
+                label.equals(app.lawnchair.search.adapter.SPACE_MINI, ignoreCase = true)) {
+                holder.itemView.visibility = View.GONE
+                holder.itemView.minimumHeight = 0
+                holder.itemView.layoutParams.height = 0
+                return
+            }
+        }
+        holder.itemView.visibility = View.VISIBLE
+        when (adapterItem.searchTarget.layoutType) {
+            LayoutType.TEXT_HEADER -> {
+                val heading = holder.itemView.findViewById<TextView>(R.id.title)
+                val label = heading?.text?.toString().orEmpty()
+                if (label.isNotBlank() && label != app.lawnchair.search.adapter.SPACE &&
+                    label != app.lawnchair.search.adapter.SPACE_MINI) {
+                    SearchResultGeometry.styleHeading(heading, holder.itemView)
+                }
+            }
+            LayoutType.THUMBNAIL -> {
+                if (adapterItem.searchTarget.resultType ==
+                    app.lawnchair.search.adapter.SearchTargetCompat.RESULT_TYPE_FILE_TILE) {
+                    SearchResultGeometry.styleFileRow(holder.itemView)
+                    holder.itemView.findViewById<TextView>(R.id.title)?.apply {
+                        setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+                        maxLines = 2
+                        isSingleLine = false
+                    }
+                }
+            }
+            LayoutType.HORIZONTAL_MEDIUM_TEXT, LayoutType.SMALL_ICON_HORIZONTAL_TEXT,
+            LayoutType.ICON_HORIZONTAL_TEXT, LayoutType.ICON_SLICE, LayoutType.WIDGET_LIVE -> {
+                SearchResultGeometry.styleTextRow(holder.itemView)
+            }
+        }
+        // Search results inherit the selected drawer/category palette, not the
+        // launcher's default theme or Prime Search's independent palette.
+        val context = holder.itemView.context
+        val profile = app.lawnchair.theme.ThemeProfile.current(context)
+        val variant = context.effectiveThemeVariant()
+        val role = if (adapterItem.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT)
+            app.lawnchair.theme.ThemeColorRole.DRAWER_ICON_TEXT
+        else app.lawnchair.theme.ThemeColorRole.DRAWER_TEXT
+        val textColor = app.lawnchair.theme.ThemeColors.resolve(context, profile, role, variant)
+        applySearchTextColor(holder.itemView, textColor)
         if (itemView.isQuickLaunch) {
             quickLaunchItem = itemView
+        }
+    }
+
+    private fun applySearchTextColor(view: View, color: Int) {
+        if (view is TextView) view.setTextColor(color)
+        if (view is ViewGroup) {
+            for (index in 0 until view.childCount) {
+                applySearchTextColor(view.getChildAt(index), color)
+            }
         }
     }
 

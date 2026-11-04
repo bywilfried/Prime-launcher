@@ -68,6 +68,7 @@ import app.lawnchair.ui.preferences.destinations.IconPackPreferences
 import app.lawnchair.ui.preferences.destinations.IconPickerPreference
 import app.lawnchair.ui.preferences.destinations.LauncherPopupPreference
 import app.lawnchair.ui.preferences.destinations.PickAppForGesture
+import app.lawnchair.ui.preferences.destinations.PickShortcutForGesture
 import app.lawnchair.ui.preferences.destinations.PredictionsPreferences
 import app.lawnchair.ui.preferences.destinations.PrimeDrawerCategoriesPreference
 import app.lawnchair.ui.preferences.destinations.PrimeDrawerCategoryPreference
@@ -223,6 +224,10 @@ fun PreferenceNavigation(
                 defaultDynamicColor = ThemeColors.officialDynamicRecipe(role, variant),
                 themeDefaultDescription = ThemeColors.officialDefaultDescription(profile, role),
                 iconLabelText = role == ThemeColorRole.DRAWER_TEXT ||
+                    role == ThemeColorRole.HOME_POPUP_TEXT ||
+                    role == ThemeColorRole.HOME_POPUP_ICON ||
+                    role == ThemeColorRole.DRAWER_POPUP_TEXT ||
+                    role == ThemeColorRole.DRAWER_POPUP_ICON ||
                     role == ThemeColorRole.HOME_ICON_TEXT ||
                     role == ThemeColorRole.HOME_FOLDER_ICON_TEXT ||
                     role == ThemeColorRole.HOME_FOLDER_CLOSED_TEXT ||
@@ -691,6 +696,7 @@ fun PreferenceNavigation(
             deepLinks = getDeepLink(Gestures),
         ) { GesturePreferences() }
         composable<GesturesPickApp> { PickAppForGesture() }
+        composable<GesturesPickShortcut> { PickShortcutForGesture() }
 
         composable<Quickstep>(
             deepLinks = getDeepLink(Quickstep),

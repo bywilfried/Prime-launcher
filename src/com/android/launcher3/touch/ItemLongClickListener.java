@@ -24,7 +24,10 @@ import static com.android.launcher3.LauncherState.NORMAL;
 import static com.android.launcher3.LauncherState.OVERVIEW;
 import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCHER_ALLAPPS_ITEM_LONG_PRESSED;
 
-import android.graphics.Color;
+import app.lawnchair.theme.ThemeColors;
+import app.lawnchair.theme.ThemeColorRole;
+import app.lawnchair.theme.ThemeProfile;
+import app.lawnchair.theme.ThemeAppearanceModeKt;
 import android.graphics.drawable.GradientDrawable;
 import android.widget.PopupWindow;
 import android.graphics.Point;
@@ -34,6 +37,9 @@ import android.widget.TextView;
 import android.view.Gravity;
 
 import com.android.launcher3.AppWidgetResizeFrame;
+import com.android.launcher3.R;
+import com.android.launcher3.LauncherConstants.ActivityCodes;
+import com.android.launcher3.util.PendingRequestArgs;
 import com.android.launcher3.model.data.LauncherAppWidgetInfo;
 import android.graphics.Rect;
 import android.view.View;
@@ -106,31 +112,50 @@ public class ItemLongClickListener {
         int padding = Math.round(16 * density);
         column.setPadding(padding / 2, padding / 2, padding / 2, padding / 2);
         GradientDrawable background = new GradientDrawable();
-        background.setColor(Color.rgb(45, 48, 69));
+        final ThemeProfile profile = ThemeProfile.Companion.current(launcher);
+        final app.lawnchair.theme.ThemeVariant variant =
+                ThemeAppearanceModeKt.effectiveThemeVariant(launcher);
+        background.setColor(ThemeColors.INSTANCE.resolve(launcher, profile,
+                ThemeColorRole.HOME_POPUP_BACKGROUND, variant));
         background.setCornerRadius(Math.round(26 * density));
         column.setBackground(background);
         column.setElevation(Math.round(8 * density));
 
-        String[] labels = {"Redimensionner", "Marges du widget"};
-        int[] icons = {android.R.drawable.ic_menu_crop,
-                android.R.drawable.ic_menu_edit};
+        // Reuse Prime's existing edit icon; show configuration only when Android
+        // declares that this particular widget can be reconfigured.
+        final boolean reconfigurable = widget.getAppWidgetInfo() instanceof
+                com.android.launcher3.widget.LauncherAppWidgetProviderInfo
+                && ((com.android.launcher3.widget.LauncherAppWidgetProviderInfo)
+                        widget.getAppWidgetInfo()).isReconfigurable();
+        String[] labels = reconfigurable
+                ? new String[]{"Redimensionner", "Marges du widget", "Personnaliser le widget"}
+                : new String[]{"Redimensionner", "Marges du widget"};
+        int[] icons = reconfigurable
+                ? new int[]{R.drawable.ic_widget_resize_outline,
+                        R.drawable.ic_widget_margins_dashed, R.drawable.ic_edit}
+                : new int[]{R.drawable.ic_widget_resize_outline,
+                        R.drawable.ic_widget_margins_dashed};
         for (int i = 0; i < labels.length; i++) {
             final int action = i;
             LinearLayout row = new LinearLayout(launcher);
             row.setGravity(Gravity.CENTER_VERTICAL);
-            row.setPadding(padding / 2, padding / 2, padding / 2, padding / 2);
-            row.setMinimumHeight(Math.round(52 * density));
+            row.setPadding(padding / 2, 0, padding / 2, 0);
+            row.setMinimumHeight(launcher.getResources().getDimensionPixelSize(
+                    R.dimen.bg_popup_item_height));
             ImageView image = new ImageView(launcher);
             image.setImageResource(icons[i]);
-            image.setColorFilter(Color.rgb(205, 203, 222));
+            image.setColorFilter(ThemeColors.INSTANCE.resolve(launcher, profile,
+                    ThemeColorRole.HOME_POPUP_ICON, variant));
             LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(
-                    Math.round(24 * density), Math.round(24 * density));
+                    launcher.getResources().getDimensionPixelSize(R.dimen.system_shortcut_icon_size),
+                    launcher.getResources().getDimensionPixelSize(R.dimen.system_shortcut_icon_size));
             iconParams.rightMargin = padding;
             row.addView(image, iconParams);
             TextView label = new TextView(launcher);
             label.setText(labels[i]);
-            label.setTextSize(15);
-            label.setTextColor(Color.WHITE);
+            label.setTextSize(14);
+            label.setTextColor(ThemeColors.INSTANCE.resolve(launcher, profile,
+                    ThemeColorRole.HOME_POPUP_TEXT, variant));
             row.addView(label);
             row.setOnClickListener(clicked -> {
                 popup.dismiss();
@@ -142,8 +167,12 @@ public class ItemLongClickListener {
                         AppWidgetResizeFrame.showForWidget(widget,
                                 (com.android.launcher3.CellLayout) widget.getParent().getParent());
                     }
-                } else {
-                    beginDrag(widget, launcher, info, new DragOptions());
+                } else if (action == 2 && reconfigurable) {
+                    launcher.setWaitingForResult(PendingRequestArgs.forWidgetInfo(
+                            widget.getAppWidgetId(), null, info));
+                    launcher.getAppWidgetHolder().startConfigActivity(
+                            launcher, widget.getAppWidgetId(),
+                            ActivityCodes.REQUEST_RECONFIGURE_APPWIDGET);
                 }
             });
             column.addView(row);
@@ -153,11 +182,38 @@ public class ItemLongClickListener {
         popup.setHeight(android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
         popup.setBackgroundDrawable(background);
         popup.setOutsideTouchable(true);
-        // Keep the original touch stream in DragLayer, as for icon pre-drag popups.
-        popup.setFocusable(false);
+        // A focusable popup consumes Android Back and dismisses itself.
+        popup.setFocusable(true);
         popup.setTouchable(true);
         popup.setElevation(Math.round(10 * density));
-        popup.showAsDropDown(widget, 0, -widget.getHeight());
+        // Anchor to the actual long-press point, like workspace icon menus.
+        // Clamp the popup inside the visible display frame (including system bars).
+        column.measure(
+                View.MeasureSpec.makeMeasureSpec(Math.round(250 * density),
+                        View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        final int menuWidth = Math.round(250 * density);
+        final int menuHeight = column.getMeasuredHeight();
+        final int[] widgetLocation = new int[2];
+        widget.getLocationOnScreen(widgetLocation);
+        final Rect visibleFrame = new Rect();
+        widget.getWindowVisibleDisplayFrame(visibleFrame);
+        final float touchX = Float.isNaN(widget.getPrimeLongPressX())
+                ? widget.getWidth() / 2f : widget.getPrimeLongPressX();
+        final float touchY = Float.isNaN(widget.getPrimeLongPressY())
+                ? widget.getHeight() / 2f : widget.getPrimeLongPressY();
+        final int gap = Math.round(12 * density);
+        final int anchorX = widgetLocation[0] + Math.round(touchX);
+        final int anchorY = widgetLocation[1] + Math.round(touchY);
+        final int x = Math.max(visibleFrame.left,
+                Math.min(anchorX, visibleFrame.right - menuWidth));
+        final int below = anchorY + gap;
+        final int above = anchorY - menuHeight - gap;
+        final int desiredY = below + menuHeight <= visibleFrame.bottom
+                ? below : above;
+        final int y = Math.max(visibleFrame.top,
+                Math.min(desiredY, visibleFrame.bottom - menuHeight));
+        popup.showAtLocation(widget.getRootView(), Gravity.TOP | Gravity.LEFT, x, y);
         return popup;
     }
 

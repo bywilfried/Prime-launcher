@@ -164,8 +164,34 @@ sealed class GestureHandlerConfig {
         override fun getIcon(context: Context): Icon {
             when (target) {
                 is OpenAppTarget.Shortcut -> {
-                    // fallback
-                    return Icon.createWithResource(context, iconRes)
+                    val shortcutTarget = target
+                    val fallback = Icon.createWithResource(context, iconRes)
+                    val launcherApps = context.getSystemService(LauncherApps::class.java)
+                        ?: return fallback
+                    return runCatching {
+                        val shortcuts = launcherApps.getShortcuts(
+                            LauncherApps.ShortcutQuery().apply {
+                                setPackage(shortcutTarget.packageName)
+                                setShortcutIds(listOf(shortcutTarget.id))
+                                setQueryFlags(
+                                    LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC or
+                                        LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST or
+                                        LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED,
+                                )
+                            },
+                            shortcutTarget.user,
+                        )
+                        val info = shortcuts?.firstOrNull() ?: return@runCatching fallback
+                        val drawable = launcherApps.getShortcutIconDrawable(
+                            info,
+                            context.resources.displayMetrics.densityDpi,
+                        ) ?: return@runCatching fallback
+                        val size = maxOf(drawable.intrinsicWidth, drawable.intrinsicHeight, 96)
+                        val bitmap = createBitmap(size, size)
+                        drawable.setBounds(0, 0, size, size)
+                        drawable.draw(Canvas(bitmap))
+                        Icon.createWithBitmap(bitmap)
+                    }.getOrDefault(fallback)
                 }
 
                 is OpenAppTarget.App -> {
@@ -205,7 +231,7 @@ sealed class GestureHandlerConfig {
             }
         }
 
-        override fun isExternallyInvokable() = target is OpenAppTarget.App
+        override fun isExternallyInvokable() = true
 
         override fun getDisplayLabel(context: Context) = appName
         override fun getLabel(context: Context) = context.getString(R.string.gesture_handler_open_app_config, appName)

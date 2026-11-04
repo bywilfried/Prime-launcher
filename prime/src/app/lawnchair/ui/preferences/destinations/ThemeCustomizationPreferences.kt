@@ -483,6 +483,8 @@ private fun roleLabel(role: ThemeColorRole): String = when (role) {
     ThemeColorRole.PRIME_SEARCH_TAB_ACTIVE -> "Onglets — actif"
     ThemeColorRole.PRIME_SEARCH_TAB_INACTIVE -> "Onglets — inactif"
     ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND -> "Résultats — fond"
+    ThemeColorRole.PRIME_SEARCH_CARD_BACKGROUND -> "Cartes — fond"
+    ThemeColorRole.PRIME_SEARCH_CARD_BORDER -> "Cartes — bordure"
     ThemeColorRole.PRIME_SEARCH_RESULT_TEXT -> "Résultats — texte"
     ThemeColorRole.PRIME_SEARCH_APP_LABEL -> "Applications — noms"
     ThemeColorRole.PRIME_SEARCH_SETTINGS_ICON -> "Paramètres — engrenage"

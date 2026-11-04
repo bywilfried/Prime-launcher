@@ -504,6 +504,18 @@ public class InvariantDeviceProfile {
                         ? closestProfile.numHotseatIcons : dbGridInfo.getNumHotseatColumns();
         numDatabaseHotseatIcons = deviceType == TYPE_MULTI_DISPLAY
                         ? closestProfile.numDatabaseHotseatIcons : numShownHotseatIcons;
+        // Dock ranks are global across pages. The database must be able to load the
+        // entire open-dock layout, even while the foldable cover display is active.
+        // Never shrink the database capacity to the visible cover page width.
+        app.lawnchair.preferences.PreferenceManager dockPrefs =
+                app.lawnchair.preferences.PreferenceManager.getInstance(context);
+        int configuredPages = Math.max(1, Math.min(5, dockPrefs.getDockPages().get()));
+        int configuredRows = Math.max(1, Math.min(2, dockPrefs.getHotseatRows().get()));
+        int openColumns = deviceType == TYPE_MULTI_DISPLAY
+                ? Math.max(1, dockPrefs.getHotseatColumnsUnfolded().get())
+                : Math.max(1, numShownHotseatIcons);
+        numDatabaseHotseatIcons = Math.max(numDatabaseHotseatIcons,
+                openColumns * configuredRows * configuredPages);
         hotseatBarBottomSpace = displayOption.hotseatBarBottomSpace;
         hotseatQsbSpace = displayOption.hotseatQsbSpace;
 

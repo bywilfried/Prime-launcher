@@ -114,6 +114,46 @@ class LawnchairShortcutActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Preserve an app-provided adaptive shortcut icon when Android exposes one.
+     * Other shortcut drawables keep the existing Prime rendering path.
+     */
+    private fun nativeAdaptiveShortcutIcon(
+        context: Context,
+        config: GestureHandlerConfig,
+    ): android.graphics.drawable.AdaptiveIconDrawable? {
+        val openApp = config as? GestureHandlerConfig.OpenApp ?: return null
+        val target = openApp.target as?
+            app.lawnchair.gestures.handlers.OpenAppTarget.Shortcut ?: return null
+        val launcherApps = context.getSystemService(android.content.pm.LauncherApps::class.java)
+            ?: return null
+        return runCatching {
+            val info = launcherApps.getShortcuts(
+                android.content.pm.LauncherApps.ShortcutQuery().apply {
+                    setPackage(target.packageName)
+                    setShortcutIds(listOf(target.id))
+                    setQueryFlags(
+                        android.content.pm.LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC or
+                            android.content.pm.LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST or
+                            android.content.pm.LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED,
+                    )
+                },
+                target.user,
+            )?.firstOrNull() ?: return@runCatching null
+            launcherApps.getShortcutIconDrawable(
+                info,
+                context.resources.displayMetrics.densityDpi,
+            ) as? android.graphics.drawable.AdaptiveIconDrawable
+        }.getOrNull()
+    }
+
+    private fun isAppShortcutAction(config: GestureHandlerConfig): Boolean =
+        config is GestureHandlerConfig.OpenApp &&
+            config.target is app.lawnchair.gestures.handlers.OpenAppTarget.Shortcut
+
+    private fun iconInsetFor(config: GestureHandlerConfig): Float =
+        if (isAppShortcutAction(config)) 0f else 0.20f
+
     private fun isPrimeDefaultLauncher(context: Context): Boolean {
         val roles = context.getSystemService(RoleManager::class.java)
         return roles?.isRoleHeld(RoleManager.ROLE_HOME) == true
@@ -183,10 +223,11 @@ class LawnchairShortcutActivity : ComponentActivity() {
                 LauncherIcons.obtain(appContext).use { icons ->
                     val glyph = config.getIcon(appContext).loadDrawable(appContext)
                     if (glyph != null) {
-                        val adaptive = android.graphics.drawable.AdaptiveIconDrawable(
-                            android.graphics.drawable.ColorDrawable(android.graphics.Color.WHITE),
-                            android.graphics.drawable.InsetDrawable(glyph, 0.20f),
-                        )
+                        val adaptive = nativeAdaptiveShortcutIcon(appContext, config)
+                            ?: android.graphics.drawable.AdaptiveIconDrawable(
+                                android.graphics.drawable.ColorDrawable(android.graphics.Color.WHITE),
+                                android.graphics.drawable.InsetDrawable(glyph, iconInsetFor(config)),
+                            )
                         // Only Prime-generated action shortcuts use icon-shape
                         // foreground fitting. Never modify AppWidgetHostView or
                         // third-party RemoteViews, even for 1x1 widgets.
@@ -227,10 +268,11 @@ class LawnchairShortcutActivity : ComponentActivity() {
             // Legacy ACTION_CREATE_SHORTCUT results also need the same fitted
             // foreground as directly added Prime actions.
             LauncherIcons.obtain(context).use { icons ->
-                val adaptive = android.graphics.drawable.AdaptiveIconDrawable(
-                    android.graphics.drawable.ColorDrawable(android.graphics.Color.WHITE),
-                    android.graphics.drawable.InsetDrawable(icon, 0.20f),
-                )
+                val adaptive = nativeAdaptiveShortcutIcon(context, selectedHandler)
+                    ?: android.graphics.drawable.AdaptiveIconDrawable(
+                        android.graphics.drawable.ColorDrawable(android.graphics.Color.WHITE),
+                        android.graphics.drawable.InsetDrawable(icon, iconInsetFor(selectedHandler)),
+                    )
                 icons.createPrimeIconBitmap(adaptive, Process.myUserHandle(), shape).icon
             }
         } else {

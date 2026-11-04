@@ -259,6 +259,8 @@ public class WorkspaceTouchListener extends GestureDetector.SimpleOnGestureListe
                             12L);
                 }
                 mLauncher.getStatsLogManager().logger().log(LAUNCHER_WORKSPACE_LONGPRESS);
+                com.android.launcher3.PrimeDebugLog.popup(mWorkspace.getContext(),
+                        "workspace long press -> Launcher.showDefaultOptions");
                 mLauncher.showDefaultOptions(mTouchDownPoint.x, mTouchDownPoint.y);
                 if (mLauncher.isSplitSelectionActive()) {
                     mLauncher.dismissSplitSelection(LAUNCHER_SPLIT_SELECTION_EXIT_INTERRUPTED);

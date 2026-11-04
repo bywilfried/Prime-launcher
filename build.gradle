@@ -229,7 +229,7 @@ android {
             versionNameSuffix "-debug"
             buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${primeDebugVersion}\""
             applicationIdSuffix ".debug"
-            resValue("string", "derived_app_name", "Prime Launcher (Debug)")
+            resValue("string", "derived_app_name", "Prime Launcher (Dev)")
 
             manifestPlaceholders.quickstepMinSdk = "0"
             manifestPlaceholders.quickstepMaxSdk = "100000"

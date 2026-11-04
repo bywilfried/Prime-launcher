@@ -207,6 +207,27 @@ public abstract class ArrowPopup<T extends Context & ActivityContext>
     public int getPrimePopupTextColor() { return resolvePrimePopupColor(mPrimePopupTextRole); }
     public int getPrimePopupIconColor() { return resolvePrimePopupColor(mPrimePopupIconRole); }
 
+    /** Apply the chosen text/icon roles to inflated shortcut rows. */
+    public void applyPrimePopupContentColors(View root) {
+        if (root instanceof com.android.launcher3.shortcuts.DeepShortcutView) {
+            com.android.launcher3.shortcuts.DeepShortcutView shortcut =
+                    (com.android.launcher3.shortcuts.DeepShortcutView) root;
+            shortcut.getBubbleText().setTextColor(getPrimePopupTextColor());
+            View icon = shortcut.getIconView();
+            if (icon != null && icon.getBackground() != null) {
+                icon.getBackground().mutate().setTint(getPrimePopupIconColor());
+            }
+        } else if (root instanceof android.widget.TextView) {
+            ((android.widget.TextView) root).setTextColor(getPrimePopupTextColor());
+        }
+        if (root instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) root;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                applyPrimePopupContentColors(group.getChildAt(i));
+            }
+        }
+    }
+
     public ArrowPopup(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
     }
@@ -296,20 +317,26 @@ public abstract class ArrowPopup<T extends Context & ActivityContext>
                 if (isShortcutOrWrapper(view)) {
                     if (totalVisibleShortcuts == 1) {
                         // Lawnchair-TODO-High: view.setBackgroundResource is use instead
-                        view.setBackground(DrawableTokens.SingleItemPrimary.resolve(getContext()));
+                        GradientDrawable singleBackground = new GradientDrawable();
+                        singleBackground.setColor(mColors[0]);
+                        singleBackground.setCornerRadius(mOutlineRadius);
+                        view.setBackground(singleBackground);
                     } else if (totalVisibleShortcuts > 1) {
                         if (numVisibleShortcut == 0) {
                             view.setBackground(mRoundedTop.getConstantState().newDrawable());
                         } else if (numVisibleShortcut == (totalVisibleShortcuts - 1)) {
                             view.setBackground(mRoundedBottom.getConstantState().newDrawable());
                         } else {
-                            view.setBackground(DrawableTokens.MiddleItemPrimary.resolve(getContext()));
+                            GradientDrawable middleBackground = new GradientDrawable();
+                            middleBackground.setColor(mColors[0]);
+                            view.setBackground(middleBackground);
                         }
                         numVisibleShortcut++;
                     }
                 }
 
-                setChildColor(view, backgroundColor, colorAnimator);
+                setChildColor(view, backgroundColor == Color.TRANSPARENT
+                        ? mColors[0] : backgroundColor, colorAnimator);
             }
         }
 

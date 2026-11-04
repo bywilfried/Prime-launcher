@@ -26,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import app.lawnchair.LawnchairApp
-import app.lawnchair.data.iconoverride.IconOverrideRepository
 import app.lawnchair.nexuslauncher.OverlayCallbackImpl
 import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences.preferenceManager
@@ -46,7 +45,6 @@ import app.lawnchair.ui.preferences.components.layout.ExpandAndShrink
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
 import app.lawnchair.ui.preferences.navigation.HomeScreenGrid
-import app.lawnchair.util.collectAsStateBlocking
 import com.android.launcher3.LauncherAppState
 import com.android.launcher3.LauncherSettings
 import com.android.launcher3.R
@@ -106,24 +104,13 @@ fun HomeScreenPreferences(
                 description = stringResource(id = R.string.return_to_main_home_page_description),
             )
         }
-        PreferenceGroup(heading = stringResource(id = R.string.home_screen_actions)) {
-            ClickablePreference(
-                label = stringResource(id = R.string.remove_all_views_from_home_screen),
-                confirmationText = stringResource(id = R.string.remove_all_views_from_home_screen_desc),
-                onClick = {
-                    scope.launch {
-                        clearAllViewsFromHomeScreen(context, LauncherSettings.Favorites.CONTAINER_DESKTOP)
-                    }
-                },
-            )
-        }
         val feedAvailable = OverlayCallbackImpl.minusOneAvailable(LocalContext.current)
         val enableFeedAdapter = prefs2.enableFeed.getAdapter()
         PreferenceGroup(heading = stringResource(id = R.string.minus_one)) {
             SwitchPreference(
                 adapter = enableFeedAdapter,
-                label = stringResource(id = R.string.minus_one_enable),
-                description = if (feedAvailable) null else stringResource(id = R.string.minus_one_unavailable),
+                label = stringResource(id = R.string.prime_feed_panel_label),
+                description = stringResource(id = if (feedAvailable) R.string.prime_feed_panel_description else R.string.minus_one_unavailable),
                 enabled = feedAvailable,
             )
             ExpandAndShrink(visible = feedAvailable && enableFeedAdapter.state.value) {
@@ -228,17 +215,6 @@ fun HomeScreenPreferences(
                 )
             }
         }
-        val overrideRepo = IconOverrideRepository.INSTANCE.get(LocalContext.current)
-        val customIconsCount by remember { overrideRepo.observeCount() }.collectAsStateBlocking()
-        if (customIconsCount > 0) {
-            PreferenceGroup {
-                ClickablePreference(
-                    label = stringResource(id = R.string.reset_custom_icons),
-                    confirmationText = stringResource(id = R.string.reset_custom_icons_confirmation),
-                    onClick = { scope.launch { overrideRepo.deleteAll() } },
-                )
-            }
-        }
         PreferenceGroup(heading = stringResource(id = R.string.widget_button_text)) {
             SwitchPreference(
                 adapter = prefs2.roundedWidgets.getAdapter(),
@@ -264,6 +240,18 @@ fun HomeScreenPreferences(
                 step = 0.05f,
                 valueRange = 0F..2F,
                 showAsPercentage = true,
+            )
+        }
+        PreferenceGroup {
+            ClickablePreference(
+                label = stringResource(id = R.string.prime_clear_home_screen_label),
+                subtitle = stringResource(id = R.string.prime_clear_home_screen_description),
+                confirmationText = stringResource(id = R.string.remove_all_views_from_home_screen_desc),
+                onClick = {
+                    scope.launch {
+                        clearAllViewsFromHomeScreen(context, LauncherSettings.Favorites.CONTAINER_DESKTOP)
+                    }
+                },
             )
         }
     }
