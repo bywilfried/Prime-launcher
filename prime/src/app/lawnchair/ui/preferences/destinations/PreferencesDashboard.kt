@@ -141,7 +141,7 @@ fun PreferencesDashboard(
             PreferenceCategory(
                 label = stringResource(R.string.widgets_settings_label),
                 description = stringResource(R.string.widgets_settings_description),
-                iconResource = R.drawable.widgets_24px,
+                iconResource = R.drawable.ic_smartspace,
                 onNavigate = { onNavigate(Widgets) },
                 isSelected = currentRoute is Widgets,
             )
