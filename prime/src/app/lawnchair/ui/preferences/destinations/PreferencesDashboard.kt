@@ -70,6 +70,7 @@ import app.lawnchair.ui.preferences.navigation.Folders
 import app.lawnchair.ui.preferences.navigation.General
 import app.lawnchair.ui.preferences.navigation.Gestures
 import app.lawnchair.ui.preferences.navigation.HomeScreen
+import app.lawnchair.ui.preferences.navigation.Widgets
 import app.lawnchair.ui.preferences.navigation.PreferenceRootRoute
 import app.lawnchair.ui.preferences.navigation.Quickstep
 import app.lawnchair.ui.preferences.navigation.PrimeDevelopmentOptions
@@ -137,6 +138,14 @@ fun PreferencesDashboard(
                 isSelected = currentRoute is Dock,
             )
 
+            PreferenceCategory(
+                label = stringResource(R.string.widgets_settings_label),
+                description = stringResource(R.string.widgets_settings_description),
+                iconResource = R.drawable.ic_smartspace,
+                onNavigate = { onNavigate(Widgets) },
+                isSelected = currentRoute is Widgets,
+            )
+
             ExpandAndShrink(
                 visible = !deckLayout.state.value,
             ) {
@@ -192,14 +201,6 @@ fun PreferencesDashboard(
                     isSelected = currentRoute is Quickstep,
                 )
             }
-
-            PreferenceCategory(
-                label = "Widget Aperçu",
-                description = stringResource(R.string.smartspace_widget_description),
-                iconResource = R.drawable.ic_smartspace,
-                onNavigate = { onNavigate(Smartspace) },
-                isSelected = currentRoute is Smartspace,
-            )
 
             PreferenceCategory(
                 label = stringResource(R.string.backup_and_restore_label),

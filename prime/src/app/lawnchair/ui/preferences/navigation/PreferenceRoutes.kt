@@ -55,6 +55,11 @@ data object Dock : PreferenceRootRoute, PreferenceDeepLink {
 }
 
 @Serializable
+data object Widgets : PreferenceRootRoute, PreferenceDeepLink {
+    override val deepLink = "$URI/widgets"
+}
+
+@Serializable
 data object AppDrawer : PreferenceRootRoute, PreferenceDeepLink {
     override val deepLink = "$URI/app-drawer"
 }
