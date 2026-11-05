@@ -36,6 +36,7 @@ import static com.android.launcher3.states.StateAnimationConfig.ANIM_WORKSPACE_S
 
 import android.view.MotionEvent;
 import android.view.animation.Interpolator;
+import android.view.animation.PathInterpolator;
 
 import com.android.app.animation.Interpolators;
 import com.android.launcher3.AbstractFloatingView;
@@ -62,6 +63,10 @@ public class AllAppsSwipeController extends AbstractStateChangeTouchController {
                     LINEAR,
                     1 - ALL_APPS_CONTENT_FADE_MAX_CLAMPING_THRESHOLD,
                     1 - ALL_APPS_CONTENT_FADE_MIN_CLAMPING_THRESHOLD);
+
+    // Ease the sheet itself into view on automatic opening; keep drag tracking linear.
+    private static final Interpolator ALL_APPS_SHEET_OPEN_MOTION =
+            new PathInterpolator(0.4f, 0f, 0.2f, 1f);
 
     // Fade in the sheet's app content during opening instead of showing it immediately.
     private static final Interpolator ALL_APPS_SHEET_OPEN_FADE =
@@ -260,7 +265,7 @@ public class AllAppsSwipeController extends AbstractStateChangeTouchController {
             config.setInterpolator(ANIM_ALL_APPS_FADE, ALL_APPS_SHEET_OPEN_FADE);
             config.setInterpolator(ANIM_SCRIM_FADE, ALL_APPS_SCRIM_RESPONDER);
             if (!config.isUserControlled()) {
-                config.setInterpolator(ANIM_VERTICAL_PROGRESS, EMPHASIZED);
+                config.setInterpolator(ANIM_VERTICAL_PROGRESS, ALL_APPS_SHEET_OPEN_MOTION);
             }
             config.setInterpolator(ANIM_WORKSPACE_SCALE, ALL_APPS_SHEET_DEPTH);
             config.setInterpolator(ANIM_HOTSEAT_SCALE, ALL_APPS_SHEET_DEPTH);
