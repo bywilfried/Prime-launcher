@@ -12,9 +12,9 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 suspend fun Launcher.animateToAllApps() {
     suspendCancellableCoroutine { cont ->
         // Button/shortcut opening is time-driven, unlike the finger-controlled swipe.
-        // Use the same transition duration as the drawer state and let its property
-        // interpolators shape the motion instead of applying a second deceleration.
-        val duration = LauncherState.ALL_APPS.getTransitionDuration(this, true).toLong()
+        // Keep button opening snappy; swipe-driven opening has its own timing.
+        // Property interpolators shape the motion without an extra deceleration.
+        val duration = 450L
         val config = StateAnimationConfig()
         AllAppsSwipeController.applyNormalToAllAppsAnimConfig(this, config)
         config.duration = duration
