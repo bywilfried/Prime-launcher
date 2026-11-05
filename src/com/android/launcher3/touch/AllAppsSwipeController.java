@@ -70,7 +70,7 @@ public class AllAppsSwipeController extends AbstractStateChangeTouchController {
 
     // Fade in the sheet's app content during opening instead of showing it immediately.
     private static final Interpolator ALL_APPS_SHEET_OPEN_FADE =
-            Interpolators.clampToProgress(LINEAR, 0f, ALL_APPS_STAGGERED_FADE_THRESHOLD);
+            Interpolators.clampToProgress(LINEAR, 0f, 0.85f);
 
     // Depth to apply behind All Apps when it's presented on a sheet.
     private static final Interpolator ALL_APPS_SHEET_DEPTH = DECELERATED_EASE;
