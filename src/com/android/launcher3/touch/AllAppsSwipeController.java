@@ -63,6 +63,10 @@ public class AllAppsSwipeController extends AbstractStateChangeTouchController {
                     1 - ALL_APPS_CONTENT_FADE_MAX_CLAMPING_THRESHOLD,
                     1 - ALL_APPS_CONTENT_FADE_MIN_CLAMPING_THRESHOLD);
 
+    // Fade in the sheet's app content during opening instead of showing it immediately.
+    private static final Interpolator ALL_APPS_SHEET_OPEN_FADE =
+            Interpolators.clampToProgress(LINEAR, 0f, ALL_APPS_STAGGERED_FADE_THRESHOLD);
+
     // Depth to apply behind All Apps when it's presented on a sheet.
     private static final Interpolator ALL_APPS_SHEET_DEPTH = DECELERATED_EASE;
 
@@ -253,7 +257,7 @@ public class AllAppsSwipeController extends AbstractStateChangeTouchController {
     public static void applyNormalToAllAppsAnimConfig(
             Launcher launcher, StateAnimationConfig config) {
         if (launcher.getDeviceProfile().shouldShowAllAppsOnSheet()) {
-            config.setInterpolator(ANIM_ALL_APPS_FADE, INSTANT);
+            config.setInterpolator(ANIM_ALL_APPS_FADE, ALL_APPS_SHEET_OPEN_FADE);
             config.setInterpolator(ANIM_SCRIM_FADE, ALL_APPS_SCRIM_RESPONDER);
             if (!config.isUserControlled()) {
                 config.setInterpolator(ANIM_VERTICAL_PROGRESS, EMPHASIZED);
