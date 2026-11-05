@@ -11,7 +11,10 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 
 suspend fun Launcher.animateToAllApps() {
     suspendCancellableCoroutine { cont ->
-        val duration = LauncherState.ALL_APPS.getTransitionDuration(this, true).toLong()
+        // Button/shortcut opening is time-driven, unlike the finger-controlled swipe.
+        // Give the sheet enough time to travel and let its property interpolators
+        // shape the motion instead of applying a second early deceleration.
+        val duration = maxOf(750L, LauncherState.ALL_APPS.getTransitionDuration(this, true).toLong())
         val config = StateAnimationConfig()
         AllAppsSwipeController.applyNormalToAllAppsAnimConfig(this, config)
         config.duration = duration
@@ -21,7 +24,7 @@ suspend fun Launcher.animateToAllApps() {
         val anim = animation.animationPlayer
         anim.setFloatValues(0f, 1f)
         anim.duration = duration
-        anim.interpolator = Interpolators.DECELERATE
+        anim.interpolator = Interpolators.LINEAR
         anim.addListener(forEndCallback(Runnable { cont.resume(Unit) }))
         animation.dispatchOnStart()
         anim.start()
