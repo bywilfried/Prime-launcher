@@ -244,7 +244,7 @@ sealed class LawnchairSearchAlgorithm(
                     context,
                 )
 
-                searchAlgorithm == LOCAL_SEARCH -> LawnchairLocalSearchAlgorithm(context)
+                searchAlgorithm == LOCAL_SEARCH -> LawnchairLocalSearchAlgorithm(context, primeMatching = true)
 
                 else -> LawnchairAppSearchAlgorithm(context)
             }
