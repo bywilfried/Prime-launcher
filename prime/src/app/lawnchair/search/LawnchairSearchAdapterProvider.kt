@@ -285,7 +285,7 @@ class LawnchairSearchAdapterProvider(
             }
             rows.addView(row)
         }
-        scroll.addView(rows, android.widget.ScrollView.LayoutParams(-1, -2))
+        scroll.addView(rows, android.view.ViewGroup.LayoutParams(-1, -2))
         root.addView(scroll, android.widget.LinearLayout.LayoutParams(-1, 0, 1f))
         dialog.setContentView(root)
         dialog.setOnShowListener {
