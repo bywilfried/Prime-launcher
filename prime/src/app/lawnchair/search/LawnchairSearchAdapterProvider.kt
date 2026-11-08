@@ -295,6 +295,13 @@ class LawnchairSearchAdapterProvider(
                 if (label.isNotBlank() && label != app.lawnchair.search.adapter.SPACE &&
                     label != app.lawnchair.search.adapter.SPACE_MINI) {
                     SearchResultGeometry.styleHeading(heading, holder.itemView)
+                    if (label.startsWith("Plus de ") || label.startsWith("Réduire")) {
+                        heading?.gravity = android.view.Gravity.CENTER
+                        heading?.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+                        heading?.setTypeface(heading.typeface, Typeface.NORMAL)
+                        holder.itemView.setPadding(dp(6), dp(4), dp(6), dp(4))
+                        holder.itemView.minimumHeight = dp(40)
+                    }
                 }
             }
             LayoutType.THUMBNAIL -> {
