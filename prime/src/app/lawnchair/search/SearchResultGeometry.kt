@@ -62,10 +62,10 @@ object SearchResultGeometry {
     fun compactRowHeightDp(layoutType: String, isAppShortcut: Boolean = false): Int =
         when {
             isAppShortcut -> 56
-            layoutType == com.android.app.search.LayoutType.THUMBNAIL -> 72
-            layoutType == com.android.app.search.LayoutType.ICON_HORIZONTAL_TEXT -> 60
-            layoutType == com.android.app.search.LayoutType.EMPTY_STATE ||
-                layoutType == com.android.app.search.LayoutType.SEARCH_SETTINGS -> 56
+            layoutType == com.android.app.search.LayoutType.THUMBNAIL.toString() -> 72
+            layoutType == com.android.app.search.LayoutType.ICON_HORIZONTAL_TEXT.toString() -> 60
+            layoutType == com.android.app.search.LayoutType.EMPTY_STATE.toString() ||
+                layoutType == com.android.app.search.LayoutType.SEARCH_SETTINGS.toString() -> 56
             else -> 48
         }
 
