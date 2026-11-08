@@ -105,10 +105,12 @@ class LawnchairLocalSearchAlgorithm(
             currentJob?.cancel()
             currentJob = coroutineScope.launch {
                 val appSearchStarted = SystemClock.elapsedRealtime()
+                val drawerTypoMatching = primeMatching &&
+                    PrimeSearchResultPreferences.fuzzyApps(context, PrimeSearchResultPreferences.Surface.DRAWER)
                 val appResults = appSearchProvider.search(
                     context, query, apps, if (primeMatching) Int.MAX_VALUE else null,
                     if (primeMatching) false else null,
-                    strictTypos = primeMatching,
+                    strictTypos = drawerTypoMatching,
                 )
                 app.lawnchair.search.PrimeSearchTrace.record("engine appMatch len=${query.length} count=${appResults.size} ms=${SystemClock.elapsedRealtime() - appSearchStarted}")
                 if (generation != searchGeneration) return@launch
