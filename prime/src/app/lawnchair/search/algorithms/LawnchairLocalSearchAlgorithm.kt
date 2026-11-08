@@ -1,5 +1,7 @@
 package app.lawnchair.search.algorithms
 
+import app.lawnchair.prime.search.PrimeSearchResultPreferences
+
 import android.content.Context
 import app.lawnchair.preferences.PreferenceManager
 import app.lawnchair.preferences2.PreferenceManager2
