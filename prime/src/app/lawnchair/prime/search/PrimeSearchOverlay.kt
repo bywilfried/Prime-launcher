@@ -2190,14 +2190,10 @@ object PrimeSearchOverlay {
                     // drawer adapter. Category cards may have different clipping,
                     // but their individual result rows must not drift in size.
                     if (!isAppIcon && !item.searchTarget.layoutType.toString().contains("HEADER", ignoreCase = true)) {
-                        val rowHeight = when {
-                            category == PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> 56
-                            item.searchTarget.layoutType == LayoutType.THUMBNAIL -> 72
-                            item.searchTarget.layoutType == LayoutType.ICON_HORIZONTAL_TEXT -> 60
-                            item.searchTarget.layoutType == LayoutType.EMPTY_STATE ||
-                                item.searchTarget.layoutType == LayoutType.SEARCH_SETTINGS -> 56
-                            else -> 48
-                        }
+                        val rowHeight = app.lawnchair.search.SearchResultGeometry.compactRowHeightDp(
+                            item.searchTarget.layoutType,
+                            isAppShortcut = category == PrimeSearchResultPreferences.Category.APP_SHORTCUTS,
+                        )
                         app.lawnchair.search.SearchResultGeometry.styleCompactResultRow(
                             view,
                             rowHeight,
