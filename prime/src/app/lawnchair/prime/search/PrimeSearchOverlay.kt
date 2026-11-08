@@ -286,7 +286,11 @@ object PrimeSearchOverlay {
         val profile = ThemeProfile.current(launcher)
         val variant = launcher.effectiveThemeVariant()
         fun themed(role: ThemeColorRole) = ThemeColors.resolve(launcher, profile, role, variant)
-        val algorithm = LawnchairLocalSearchAlgorithm(launcher, primeSearch = true)
+        val algorithm = LawnchairLocalSearchAlgorithm(
+            launcher,
+            primeSearch = true,
+            preferenceSurface = preferenceSurface,
+        )
         activeAlgorithm = algorithm
         val input = EditText(launcher).apply {
             isSingleLine = true
@@ -339,6 +343,13 @@ object PrimeSearchOverlay {
         fun resultGestureBusy(): Boolean =
             resultGestureActive || android.os.SystemClock.uptimeMillis() < resultGestureSettlesAt
         val container = object : LinearLayout(launcher) {
+            override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+                if (embeddedHost != null && event.keyCode == android.view.KeyEvent.KEYCODE_BACK) {
+                    if (event.action == android.view.KeyEvent.ACTION_UP) dismiss()
+                    return true
+                }
+                return super.dispatchKeyEvent(event)
+            }
             override fun dispatchTouchEvent(event: MotionEvent): Boolean {
                 when (event.actionMasked) {
                     MotionEvent.ACTION_DOWN -> resultGestureActive = true
