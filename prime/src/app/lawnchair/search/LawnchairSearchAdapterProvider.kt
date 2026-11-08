@@ -27,6 +27,82 @@ class LawnchairSearchAdapterProvider(
 ) : DefaultSearchAdapterProvider(launcher) {
 
     private val decorator = SearchItemDecorator(appsView)
+
+    /**
+     * Draw one continuous surface for each category section in the drawer's
+     * existing search adapter. The TEXT_HEADER is part of that surface, so
+     * category titles sit inside their card instead of floating above rows.
+     */
+    private val categoryCards = object : androidx.recyclerview.widget.RecyclerView.ItemDecoration() {
+        private val density = appsView.resources.displayMetrics.density
+        private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+
+        override fun onDraw(
+            canvas: android.graphics.Canvas,
+            parent: androidx.recyclerview.widget.RecyclerView,
+            state: androidx.recyclerview.widget.RecyclerView.State,
+        ) {
+            val children = (0 until parent.childCount).mapNotNull { index ->
+                val child = parent.getChildAt(index)
+                val position = parent.getChildAdapterPosition(child)
+                if (position == androidx.recyclerview.widget.RecyclerView.NO_POSITION) null
+                else Triple(position, child, parent.mApps.adapterItems.getOrNull(position) as? SearchAdapterItem)
+            }.sortedBy { it.first }
+
+            var start: android.view.View? = null
+            var end: android.view.View? = null
+            fun drawSection() {
+                val first = start ?: return
+                val last = end ?: return
+                val top = first.top.toFloat() + first.translationY
+                val bottom = last.bottom.toFloat() + last.translationY
+                if (bottom <= top) return
+                val profile = app.lawnchair.theme.ThemeProfile.current(parent.context)
+                val variant = parent.context.effectiveThemeVariant()
+                val background = app.lawnchair.theme.ThemeColors.resolve(
+                    parent.context, profile,
+                    app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BACKGROUND, variant,
+                )
+                val border = app.lawnchair.theme.ThemeColors.resolve(
+                    parent.context, profile,
+                    app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BORDER, variant,
+                )
+                val inset = 4f * density
+                val rect = android.graphics.RectF(
+                    parent.paddingLeft + inset, top,
+                    parent.width - parent.paddingRight - inset, bottom,
+                )
+                paint.style = android.graphics.Paint.Style.FILL
+                paint.color = background
+                canvas.drawRoundRect(rect, 14f * density, 14f * density, paint)
+                paint.style = android.graphics.Paint.Style.STROKE
+                paint.strokeWidth = density
+                paint.color = border
+                canvas.drawRoundRect(rect, 14f * density, 14f * density, paint)
+            }
+
+            children.forEach { (_, child, item) ->
+                val isHeading = item?.searchTarget?.layoutType == LayoutType.TEXT_HEADER
+                val headingText = if (isHeading) child.findViewById<TextView>(R.id.title)?.text?.toString()?.trim().orEmpty() else ""
+                val structural = headingText.equals(app.lawnchair.search.adapter.SPACE, true) ||
+                    headingText.equals(app.lawnchair.search.adapter.SPACE_MINI, true)
+                if (isHeading && !structural) {
+                    drawSection()
+                    start = child
+                    end = child
+                } else if (start != null && item?.searchTarget?.layoutType != LayoutType.EMPTY_DIVIDER) {
+                    end = child
+                }
+            }
+            drawSection()
+        }
+    }
+
+    init {
+        if (appsView.mSearchRecyclerView.itemDecorationCount == 0) {
+            appsView.mSearchRecyclerView.addItemDecoration(categoryCards)
+        }
+    }
     private val layoutIdMap = SparseIntArray().apply {
         append(SEARCH_RESULT_ICON, R.layout.search_result_icon)
         append(SEARCH_RESULT_ICON_ROW, R.layout.search_result_tall_icon_row)
@@ -115,11 +191,9 @@ class LawnchairSearchAdapterProvider(
         else app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_TEXT
         val textColor = app.lawnchair.theme.ThemeColors.resolve(context, profile, role, variant)
         applySearchTextColor(holder.itemView, textColor)
-        if (adapterItem.searchTarget.layoutType != LayoutType.TEXT_HEADER &&
-            adapterItem.searchTarget.layoutType != LayoutType.EMPTY_DIVIDER
-        ) {
-            SearchResultGeometry.styleDrawerCard(holder.itemView)
-        }
+        // The category-level ItemDecoration draws one shared card behind the
+        // heading and all rows. Individual result rows stay transparent.
+        holder.itemView.background = null
         if (itemView.isQuickLaunch) {
             quickLaunchItem = itemView
         }
