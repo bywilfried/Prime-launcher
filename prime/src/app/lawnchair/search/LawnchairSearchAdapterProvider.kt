@@ -99,9 +99,10 @@ class LawnchairSearchAdapterProvider(
     }
 
     init {
-        if (appsView.mSearchRecyclerView.itemDecorationCount == 0) {
-            appsView.mSearchRecyclerView.addItemDecoration(categoryCards)
-        }
+        // Other launcher decorations (spacing, dividers, etc.) may already be
+        // installed. The category surface is independent and must be layered
+        // behind them rather than silently skipped when one exists.
+        appsView.mSearchRecyclerView.addItemDecoration(categoryCards)
     }
     private val layoutIdMap = SparseIntArray().apply {
         append(SEARCH_RESULT_ICON, R.layout.search_result_icon)
