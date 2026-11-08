@@ -480,7 +480,15 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
     override fun initializeSearch(appsView: ActivityAllAppsContainerView<*>) {
         apps = appsView.searchResultList as LawnchairAlphabeticalAppsList<*>
         this.appsView = appsView
-        val algorithm = LawnchairSearchAlgorithm.create(context, primeMatching = true)
+        // The drawer is a second presentation surface for Prime Search, not a
+        // separate search implementation. Use the exact same local providers,
+        // ranking and result assembly as the floating/standalone Prime Search
+        // surface, while keeping every drawer preference isolated.
+        val algorithm = app.lawnchair.search.algorithms.LawnchairLocalSearchAlgorithm(
+            context,
+            primeSearch = true,
+            preferenceSurface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER,
+        )
         this.searchAlgorithm = algorithm
         searchBarController.initialize(
             algorithm,
