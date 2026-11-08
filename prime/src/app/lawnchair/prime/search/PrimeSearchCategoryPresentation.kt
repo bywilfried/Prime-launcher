@@ -3,6 +3,7 @@ package app.lawnchair.prime.search
 import android.content.Context
 import app.lawnchair.search.algorithms.engine.ActionsSectionBuilder
 import app.lawnchair.search.algorithms.engine.AppsAndShortcutsSectionBuilder
+import app.lawnchair.search.algorithms.engine.AppShortcutsSectionBuilder
 import app.lawnchair.search.algorithms.engine.CalculationSectionBuilder
 import app.lawnchair.search.algorithms.engine.ContactsSectionBuilder
 import app.lawnchair.search.algorithms.engine.FilesSectionBuilder
@@ -25,6 +26,7 @@ object PrimeSearchCategoryPresentation {
 
     private val builderByCategory = mapOf(
         PrimeSearchResultPreferences.Category.APPS to AppsAndShortcutsSectionBuilder,
+        PrimeSearchResultPreferences.Category.APP_SHORTCUTS to AppShortcutsSectionBuilder,
         PrimeSearchResultPreferences.Category.CALCULATOR to CalculationSectionBuilder,
         PrimeSearchResultPreferences.Category.WEB to WebSuggestionsSectionBuilder,
         PrimeSearchResultPreferences.Category.CONTACTS to ContactsSectionBuilder,
@@ -56,6 +58,7 @@ object PrimeSearchCategoryPresentation {
             .distinct()
         return ordered + listOf(
             AppsAndShortcutsSectionBuilder,
+            AppShortcutsSectionBuilder,
             CalculationSectionBuilder,
             WebSuggestionsSectionBuilder,
             ContactsSectionBuilder,
