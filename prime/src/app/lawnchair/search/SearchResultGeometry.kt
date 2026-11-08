@@ -56,6 +56,20 @@ object SearchResultGeometry {
     fun styleFileRow(view: View) = styleResultRow(view, true)
 
     /**
+     * Shared row-height policy for compact native search results.
+     * Grid application tiles have their own configurable geometry.
+     */
+    fun compactRowHeightDp(layoutType: com.android.app.search.LayoutType, isAppShortcut: Boolean = false): Int =
+        when {
+            isAppShortcut -> 56
+            layoutType == com.android.app.search.LayoutType.THUMBNAIL -> 72
+            layoutType == com.android.app.search.LayoutType.ICON_HORIZONTAL_TEXT -> 60
+            layoutType == com.android.app.search.LayoutType.EMPTY_STATE ||
+                layoutType == com.android.app.search.LayoutType.SEARCH_SETTINGS -> 56
+            else -> 48
+        }
+
+    /**
      * One compact row contract for both the embedded drawer and Prime Search.
      * The caller selects the row height from the result type; typography and
      * text-container spacing stay identical on both surfaces.
