@@ -66,8 +66,11 @@ object SearchResultGeometry {
         val cardColor = ThemeColors.resolve(
             context,
             profile,
-            ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE,
+            ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BACKGROUND,
             variant,
+        )
+        val borderColor = ThemeColors.resolve(
+            context, profile, ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BORDER, variant,
         )
         val selectedColor = ThemeColors.resolve(
             context,
@@ -80,6 +83,7 @@ object SearchResultGeometry {
         view.background = GradientDrawable().apply {
             setColor(cardColor)
             cornerRadius = radius
+            setStroke((1 * density).toInt(), borderColor)
         }
         view.foreground = RippleDrawable(
             ColorStateList.valueOf(selectedColor),
