@@ -56,6 +56,34 @@ object SearchResultGeometry {
     fun styleFileRow(view: View) = styleResultRow(view, true)
 
     /**
+     * One compact row contract for both the embedded drawer and Prime Search.
+     * The caller selects the row height from the result type; typography and
+     * text-container spacing stay identical on both surfaces.
+     */
+    fun styleCompactResultRow(view: View, rowHeightDp: Int, file: Boolean = false) {
+        view.minimumHeight = 0
+        view.layoutParams?.height = view.dp(rowHeightDp)
+        view.findViewById<TextView>(R.id.title)?.apply {
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            includeFontPadding = false
+            if (file) {
+                maxLines = 2
+                isSingleLine = false
+            }
+        }
+        view.findViewById<TextView>(R.id.subtitle)?.apply {
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            includeFontPadding = false
+        }
+        view.findViewById<View>(R.id.text_rows)?.setPadding(
+            view.findViewById<View>(R.id.text_rows)?.paddingLeft ?: 0,
+            0,
+            view.findViewById<View>(R.id.text_rows)?.paddingRight ?: 0,
+            0,
+        )
+    }
+
+    /**
      * Drawer-only result card treatment. Prime Search owns its own surface and
      * never calls this method, so its palette and rendering remain untouched.
      */
