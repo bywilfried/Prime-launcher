@@ -287,6 +287,8 @@ object PrimeSearchOverlay {
         launcher: LawnchairLauncher,
         preferenceSurface: PrimeSearchResultPreferences.Surface = PrimeSearchResultPreferences.Surface.PRIME_SEARCH,
         embeddedHost: ViewGroup? = null,
+        initialQuery: String = "",
+        initialCategory: PrimeSearchResultPreferences.Category? = null,
     ) {
         if (activeDialog?.isShowing == true) return
         if (activeDialog != null) dismiss()
@@ -1418,6 +1420,7 @@ object PrimeSearchOverlay {
             }
         }
         val categoryCards = mutableMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
+        var initialCategoryOpened = false
         val compactWrappers = mutableMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
         val compactClips = mutableMapOf<PrimeSearchResultPreferences.Category, FrameLayout>()
         val compactMoreButtons = mutableMapOf<PrimeSearchResultPreferences.Category, TextView>()
@@ -2369,7 +2372,17 @@ object PrimeSearchOverlay {
                 }
                 results.addView(webPanel)
                 renderWebPanel(query)
-                scheduleResultsReorder(::reorderSearchSections)
+                scheduleResultsReorder {
+                    reorderSearchSections()
+                    val requestedCategory = initialCategory
+                    val categoryCard = requestedCategory?.let(categoryCards::get)
+                    if (!initialCategoryOpened && categoryCard != null) {
+                        initialCategoryOpened = true
+                        categoryCard.post {
+                            if (dialog.isShowing && !detailOpen) openDetail(categoryCard)
+                        }
+                    }
+                }
                 results.requestLayout()
             }
 
@@ -2670,6 +2683,7 @@ object PrimeSearchOverlay {
         activeDialog = dialog
         input.requestFocus()
         dialog.show()
+        if (initialQuery.isNotBlank()) input.setText(initialQuery)
         if (floating) {
             val decor = dialog.decorView
             val screenHeight = launcher.resources.displayMetrics.heightPixels
@@ -2793,6 +2807,25 @@ object PrimeSearchOverlay {
      */
     fun showInDrawer(launcher: LawnchairLauncher, host: ViewGroup) {
         show(launcher, PrimeSearchResultPreferences.Surface.DRAWER, host)
+    }
+
+    /**
+     * Open the same expanded category page used by Prime Search, embedded in
+     * the drawer. The query is re-run through the drawer's independent surface.
+     */
+    fun showCategoryInDrawer(
+        launcher: LawnchairLauncher,
+        host: ViewGroup,
+        category: PrimeSearchResultPreferences.Category,
+        query: String,
+    ) {
+        show(
+            launcher = launcher,
+            preferenceSurface = PrimeSearchResultPreferences.Surface.DRAWER,
+            embeddedHost = host,
+            initialQuery = query,
+            initialCategory = category,
+        )
     }
 
     fun dismiss() {
