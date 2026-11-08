@@ -46,7 +46,7 @@ class LawnchairSearchAdapterProvider(
                 val child = parent.getChildAt(index)
                 val position = parent.getChildAdapterPosition(child)
                 if (position == androidx.recyclerview.widget.RecyclerView.NO_POSITION) null
-                else Triple(position, child, parent.mApps.adapterItems.getOrNull(position) as? SearchAdapterItem)
+                else Triple(position, child, appsView.mSearchRecyclerView.mApps.adapterItems.getOrNull(position) as? SearchAdapterItem)
             }.sortedBy { it.first }
 
             var start: android.view.View? = null
