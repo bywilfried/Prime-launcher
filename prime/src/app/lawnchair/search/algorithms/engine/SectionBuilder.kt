@@ -222,6 +222,13 @@ data object AppsAndShortcutsSectionBuilder : SectionBuilder {
         val appResultCount = apps.size
 
         val targets = mutableListOf<SearchTargetCompat>()
+        if (apps.isNotEmpty() || shortcuts.isNotEmpty()) {
+            targets.add(
+                factory.createHeaderTarget(
+                    app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS.title,
+                ),
+            )
+        }
 
         if (appResultCount == 1 && shortcuts.isNotEmpty()) {
             val singleApp = apps.first()
