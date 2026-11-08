@@ -260,59 +260,48 @@ private fun DrawerAdvancedSearchPreferences() {
         var drawerWebCount by remember {
             mutableStateOf(PrimeSearchResultPreferences.webSuggestionCount(context, drawerSurface))
         }
-        /* Les suggestions Web se règlent depuis la carte de leur catégorie. */
-        /* Text("Suggestions Web du tiroir : $drawerWebCount")
-        androidx.compose.material3.Slider(
-            value = drawerWebCount.toFloat(),
-            onValueChange = {
-                drawerWebCount = it.roundToInt().coerceIn(0, 8)
-                PrimeSearchResultPreferences.setWebSuggestionCount(context, drawerWebCount, drawerSurface)
-            },
-            valueRange = 0f..8f,
+        var showDrawerWebSettings by remember { mutableStateOf(false) }
+        PreferenceTemplate(
+            title = { Text("Suggestions Web du tiroir") },
+            description = { Text("Configurer le nombre et le fournisseur, indépendamment de Prime Search") },
+            onClick = { showDrawerWebSettings = true },
         )
-        var drawerSuggestionProvider by remember {
-            mutableStateOf(PrimeSearchResultPreferences.suggestionProvider(context, drawerSurface))
-        }
-        PrimeSearchResultPreferences.SuggestionProvider.entries.forEach { provider ->
-            PreferenceTemplate(
-                title = { Text("Suggestions : ${provider.title}") },
-                endWidget = {
-                    androidx.compose.material3.RadioButton(
-                        selected = drawerSuggestionProvider == provider,
-                        onClick = {
-                            drawerSuggestionProvider = provider
-                            PrimeSearchResultPreferences.setSuggestionProvider(context, provider, drawerSurface)
-                        },
-                    )
+        if (showDrawerWebSettings) {
+            var provider by remember { mutableStateOf(PrimeSearchResultPreferences.suggestionProvider(context, drawerSurface)) }
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { showDrawerWebSettings = false },
+                title = { Text("Suggestions Web du tiroir") },
+                text = {
+                    androidx.compose.foundation.layout.Column {
+                        Text("Nombre de suggestions : $drawerWebCount")
+                        androidx.compose.material3.Slider(
+                            value = drawerWebCount.toFloat(),
+                            onValueChange = {
+                                drawerWebCount = it.roundToInt().coerceIn(0, 8)
+                                PrimeSearchResultPreferences.setWebSuggestionCount(context, drawerWebCount, drawerSurface)
+                            },
+                            valueRange = 0f..8f,
+                            steps = 7,
+                        )
+                        PrimeSearchResultPreferences.SuggestionProvider.entries.forEach { option ->
+                            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                androidx.compose.material3.RadioButton(
+                                    selected = provider == option,
+                                    onClick = {
+                                        provider = option
+                                        PrimeSearchResultPreferences.setSuggestionProvider(context, option, drawerSurface)
+                                    },
+                                )
+                                Text(option.title)
+                            }
+                        }
+                    }
                 },
-                onClick = {
-                    drawerSuggestionProvider = provider
-                    PrimeSearchResultPreferences.setSuggestionProvider(context, provider, drawerSurface)
-                },
-            )
-        }
-        PrimeSearchResultPreferences.WebEngine.entries.forEach { engine ->
-            var active by remember(engine) {
-                mutableStateOf(engine in PrimeSearchResultPreferences.enabledWebEngines(context, drawerSurface))
-            }
-            PreferenceTemplate(
-                title = { Text("Moteur Web : ${engine.title}") },
-                endWidget = {
-                    androidx.compose.material3.Switch(
-                        checked = active,
-                        onCheckedChange = {
-                            active = it
-                            PrimeSearchResultPreferences.setWebEngineEnabled(context, engine, it, drawerSurface)
-                        },
-                    )
-                },
-                onClick = {
-                    active = !active
-                    PrimeSearchResultPreferences.setWebEngineEnabled(context, engine, active, drawerSurface)
+                confirmButton = {
+                    androidx.compose.material3.TextButton(onClick = { showDrawerWebSettings = false }) { Text("Terminé") }
                 },
             )
         }
-        */
         val drawerCategories = PrimeSearchResultPreferences.order(context, drawerSurface)
         var drawerOrder by remember { mutableStateOf(drawerCategories) }
         var categorySettings by remember { mutableStateOf<PrimeSearchResultPreferences.Category?>(null) }
