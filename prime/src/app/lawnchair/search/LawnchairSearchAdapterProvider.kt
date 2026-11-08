@@ -112,7 +112,7 @@ class LawnchairSearchAdapterProvider(
         val variant = context.effectiveThemeVariant()
         val role = if (adapterItem.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT)
             app.lawnchair.theme.ThemeColorRole.DRAWER_ICON_TEXT
-        else app.lawnchair.theme.ThemeColorRole.DRAWER_TEXT
+        else app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_TEXT
         val textColor = app.lawnchair.theme.ThemeColors.resolve(context, profile, role, variant)
         applySearchTextColor(holder.itemView, textColor)
         if (adapterItem.searchTarget.layoutType != LayoutType.TEXT_HEADER &&
