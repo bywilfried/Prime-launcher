@@ -276,9 +276,9 @@ class LawnchairSearchAdapterProvider(
             orientation = android.widget.LinearLayout.VERTICAL
         }
         if (category == app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS) {
-            val columns = app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsColumns(context)
-            val iconPercent = app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsIconSizePercent(context)
-            val labelLines = if (app.lawnchair.prime.search.PrimeSearchResultPreferences.twoLineAppLabels(context)) 2 else 1
+            val columns = app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsColumns(context, PrimeSearchResultPreferences.Surface.DRAWER)
+            val iconPercent = app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsIconSizePercent(context, PrimeSearchResultPreferences.Surface.DRAWER)
+            val labelLines = if (app.lawnchair.prime.search.PrimeSearchResultPreferences.twoLineAppLabels(context, PrimeSearchResultPreferences.Surface.DRAWER)) 2 else 1
             val cellHeight = app.lawnchair.prime.search.PrimeAppGridGeometry.rowHeightPx(context, iconPercent, labelLines)
             val cellWidth = ((context.resources.displayMetrics.widthPixels * 0.94f).toInt() - (48 * density).toInt()) / columns
             var appRow: android.widget.LinearLayout? = null
@@ -488,8 +488,8 @@ class LawnchairSearchAdapterProvider(
         // styleTextRow/styleFileRow restore their 52dp Prime Search baseline, which
         // otherwise silently overrides the earlier drawer sizing.
         if (adapterItem.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT) {
-            val labelLines = if (app.lawnchair.prime.search.PrimeSearchResultPreferences.twoLineAppLabels(holder.itemView.context)) 2 else 1
-            val iconPercent = app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsIconSizePercent(holder.itemView.context)
+            val labelLines = if (app.lawnchair.prime.search.PrimeSearchResultPreferences.twoLineAppLabels(holder.itemView.context, PrimeSearchResultPreferences.Surface.DRAWER)) 2 else 1
+            val iconPercent = app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsIconSizePercent(holder.itemView.context, PrimeSearchResultPreferences.Surface.DRAWER)
             holder.itemView.minimumHeight = 0
             holder.itemView.layoutParams?.height = app.lawnchair.prime.search.PrimeAppGridGeometry.rowHeightPx(
                 holder.itemView.context, iconPercent, labelLines,
