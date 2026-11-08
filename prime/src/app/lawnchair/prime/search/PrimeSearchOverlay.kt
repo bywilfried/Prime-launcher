@@ -1387,16 +1387,7 @@ object PrimeSearchOverlay {
                 return
             }
             val priorities = PrimeSearchResultPreferences.order(launcher)
-            val headingCategories = mapOf(
-                "Suggestions Web" to PrimeSearchResultPreferences.Category.WEB,
-                "Contacts" to PrimeSearchResultPreferences.Category.CONTACTS,
-                "Événements de l'agenda" to PrimeSearchResultPreferences.Category.CALENDAR,
-                "Tâches · Tasks.org" to PrimeSearchResultPreferences.Category.REMINDERS,
-                "Historique des notifications" to PrimeSearchResultPreferences.Category.NOTIFICATIONS,
-                "Paramètres de l'appareil" to PrimeSearchResultPreferences.Category.SETTINGS,
-                "Device settings" to PrimeSearchResultPreferences.Category.SETTINGS,
-                "Raccourcis Web" to PrimeSearchResultPreferences.Category.WEB_SHORTCUTS,
-            )
+            val headingCategories = PrimeSearchCategoryPresentation::categoryForHeading
             // Exactly one section per enabled category, regardless of how many
             // separate chunks the drawer provider produced.
             val grouped = linkedMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
@@ -1484,14 +1475,12 @@ object PrimeSearchOverlay {
             val orderedWrappers = mutableListOf<View>()
             priorities.forEach { category ->
                 grouped[category]?.takeIf { it.childCount > 0 }?.let { card ->
-                    val limit = if (category == PrimeSearchResultPreferences.Category.APPS) {
-                        PrimeAppGridGeometry.rowHeightPx(
+                    val limit = PrimeSearchCategoryPresentation.compactPreviewHeightDp(category)
+                        ?.let { (it * density).toInt() }
+                        ?: (PrimeAppGridGeometry.rowHeightPx(
                             launcher, PrimeSearchResultPreferences.appResultsIconSizePercent(launcher),
                             if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
-                        ) * 2 + (52 * density).toInt()
-                    } else if (category == PrimeSearchResultPreferences.Category.APP_SHORTCUTS) {
-                        (160 * density).toInt()
-                    } else (190 * density).toInt()
+                        ) * 2 + (52 * density).toInt())
                     // Cards are cached across asynchronous contact/web refreshes.
                     // Detach from the previous clipped holder before reparenting.
                     (card.parent as? ViewGroup)?.removeView(card)
