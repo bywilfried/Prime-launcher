@@ -371,10 +371,18 @@ class LawnchairSearchAdapterProvider(
         // otherwise silently overrides the earlier drawer sizing.
         if (adapterItem.searchTarget.layoutType != LayoutType.TEXT_HEADER &&
             adapterItem.searchTarget.layoutType != LayoutType.ICON_SINGLE_VERTICAL_TEXT) {
-            val isFile = adapterItem.searchTarget.resultType ==
-                SearchTargetCompat.RESULT_TYPE_FILE_TILE
-            holder.itemView.minimumHeight = dp(if (isFile) 46 else 38)
-            holder.itemView.layoutParams?.height = ViewGroup.LayoutParams.WRAP_CONTENT
+            // Several platform result XMLs declare fixed 64/92/100dp heights.
+            // WRAP_CONTENT is not compact here: custom SearchResultIconRow children
+            // with MATCH_PARENT sizing can still measure against those large bounds.
+            // Give each drawer row an explicit content-appropriate height instead.
+            val rowHeight = when (adapterItem.searchTarget.layoutType) {
+                LayoutType.THUMBNAIL -> 72
+                LayoutType.ICON_HORIZONTAL_TEXT -> 60
+                LayoutType.EMPTY_STATE, LayoutType.SEARCH_SETTINGS -> 56
+                else -> 48
+            }
+            holder.itemView.minimumHeight = 0
+            holder.itemView.layoutParams?.height = dp(rowHeight)
             holder.itemView.findViewById<View>(R.id.text_rows)?.apply {
                 setPadding(paddingLeft, 0, paddingRight, 0)
             }
