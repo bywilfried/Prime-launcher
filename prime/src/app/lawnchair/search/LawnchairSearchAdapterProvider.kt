@@ -141,12 +141,10 @@ class LawnchairSearchAdapterProvider(
         }
     }
     /**
-     * Categories expand inside the drawer's own RecyclerView. The drawer never
-     * hands its query or results to Prime Search.
+     * Drawer-owned category detail page. It is attached to the drawer container
+     * and renders the selected category's existing result targets locally.
      */
-    private val expandedCategories = mutableSetOf<
-        app.lawnchair.prime.search.PrimeSearchResultPreferences.Category
-    >()
+    private var categoryPage: View? = null
 
     private fun isStructuralHeader(item: SearchAdapterItem): Boolean {
         if (item.searchTarget.layoutType != LayoutType.TEXT_HEADER) return false
@@ -250,13 +248,150 @@ class LawnchairSearchAdapterProvider(
         }
     }
 
-    private fun toggleCategoryExpansion(
+    private fun showCategoryPage(
         category: app.lawnchair.prime.search.PrimeSearchResultPreferences.Category,
+        title: String,
+        results: List<SearchAdapterItem>,
     ) {
-        if (!expandedCategories.add(category)) expandedCategories.remove(category)
-        // Rebind the existing drawer adapter in place. This reveals the hidden
-        // rows in the same category card without opening or launching Prime Search.
-        appsView.mSearchRecyclerView.adapter?.notifyDataSetChanged()
+        categoryPage?.let { old -> (old.parent as? ViewGroup)?.removeView(old) }
+
+        val context = appsView.context
+        val page = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setBackgroundColor(
+                app.lawnchair.theme.ThemeColors.resolve(
+                    context,
+                    app.lawnchair.theme.ThemeProfile.current(context),
+                    app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BACKGROUND,
+                    context.effectiveThemeVariant(),
+                ),
+            )
+            isFocusableInTouchMode = true
+            elevation = 12f * resources.displayMetrics.density
+        }
+
+        val toolbar = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setPadding(dp(12, this), dp(8, this), dp(16, this), dp(8, this))
+            minimumHeight = dp(56, this)
+        }
+        val back = android.widget.TextView(context).apply {
+            text = "‹"
+            textSize = 32f
+            gravity = android.view.Gravity.CENTER
+            contentDescription = "Retour aux résultats"
+            isClickable = true
+            isFocusable = true
+            setPadding(dp(8, this), 0, dp(16, this), 0)
+            setOnClickListener { closeCategoryPage() }
+        }
+        val heading = android.widget.TextView(context).apply {
+            text = title
+            textSize = 18f
+            typeface = Typeface.DEFAULT_BOLD
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            maxLines = 1
+        }
+        toolbar.addView(back, android.widget.LinearLayout.LayoutParams(dp(48, toolbar), dp(48, toolbar)))
+        toolbar.addView(heading, android.widget.LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        page.addView(toolbar, android.widget.LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+        ))
+
+        val list = androidx.recyclerview.widget.RecyclerView(context).apply {
+            layoutManager = androidx.recyclerview.widget.LinearLayoutManager(context)
+            clipToPadding = false
+            setPadding(dp(8, this), dp(4, this), dp(8, this), dp(24, this))
+            adapter = DrawerCategoryResultsAdapter(
+                results.filter {
+                    it.searchTarget.layoutType != LayoutType.TEXT_HEADER &&
+                        it.searchTarget.layoutType != LayoutType.EMPTY_DIVIDER
+                },
+            )
+        }
+        page.addView(list, android.widget.LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f,
+        ))
+        categoryPage = page
+        appsView.addView(page, ViewGroup.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT,
+        ))
+        page.bringToFront()
+        page.requestFocus()
+    }
+
+    private fun closeCategoryPage() {
+        categoryPage?.let { page ->
+            (page.parent as? ViewGroup)?.removeView(page)
+        }
+        categoryPage = null
+    }
+
+    private inner class DrawerCategoryResultsAdapter(
+        private val results: List<SearchAdapterItem>,
+    ) : androidx.recyclerview.widget.RecyclerView.Adapter<DrawerCategoryResultsAdapter.ResultHolder>() {
+
+        inner class ResultHolder(val resultView: View) :
+            androidx.recyclerview.widget.RecyclerView.ViewHolder(resultView)
+
+        override fun getItemCount() = results.size
+
+        override fun getItemViewType(position: Int) = results[position].viewType
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ResultHolder {
+            val layout = layoutForViewType(viewType)
+                ?: throw IllegalArgumentException("Unsupported drawer category result type: $viewType")
+            val view = LayoutInflater.from(parent.context).inflate(layout, parent, false)
+            view.layoutParams = androidx.recyclerview.widget.RecyclerView.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            )
+            return ResultHolder(view)
+        }
+
+        override fun onBindViewHolder(holder: ResultHolder, position: Int) {
+            val item = results[position]
+            val view = holder.resultView
+            (view as? SearchResultView)?.bind(item.searchTarget, emptyList())
+            val context = view.context
+            val density = context.resources.displayMetrics.density
+            val color = app.lawnchair.theme.ThemeColors.resolve(
+                context,
+                app.lawnchair.theme.ThemeProfile.current(context),
+                app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_TEXT,
+                context.effectiveThemeVariant(),
+            )
+            applySearchTextColor(view, color)
+            if (item.searchTarget.layoutType != LayoutType.ICON_SINGLE_VERTICAL_TEXT) {
+                val category = categoryForResult(item)
+                val rowHeight = SearchResultGeometry.compactRowHeightDp(
+                    item.searchTarget.layoutType,
+                    isAppShortcut = category ==
+                        app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS,
+                )
+                app.lawnchair.search.SearchResultGeometry.styleCompactResultRow(
+                    view,
+                    rowHeight,
+                    file = item.searchTarget.layoutType == LayoutType.THUMBNAIL,
+                )
+            } else {
+                view.minimumHeight = (56 * density).toInt()
+            }
+            view.background = null
+        }
+    }
+
+    private fun categoryForResult(item: SearchAdapterItem):
+        app.lawnchair.prime.search.PrimeSearchResultPreferences.Category? = when (item.searchTarget.resultType) {
+        SearchTargetCompat.RESULT_TYPE_APPLICATION -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS
+        SearchTargetCompat.RESULT_TYPE_SHORTCUT -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS
+        SearchTargetCompat.RESULT_TYPE_CONTACT_TILE -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CONTACTS
+        SearchTargetCompat.RESULT_TYPE_FILE_TILE -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.FILES
+        SearchTargetCompat.RESULT_TYPE_SETTING_TILE -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.SETTINGS
+        SearchTargetCompat.RESULT_TYPE_CALCULATOR -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALCULATOR
+        SearchTargetCompat.RESULT_TYPE_SUGGESTIONS -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.HISTORY
+        else -> null
     }
 
     private fun applyDrawerPreview(itemView: View, position: Int, item: SearchAdapterItem) {
@@ -277,7 +412,8 @@ class LawnchairSearchAdapterProvider(
                 target.layoutType != LayoutType.EMPTY_DIVIDER
         }
         val limitPx = previewLimitPx(category, itemView)
-        if (isStructuralHeader(item)) {
+        if (item.searchTarget.layoutType == LayoutType.TEXT_HEADER) {
+            if (isStructuralHeader(item)) return
             val totalHeight = resultPositions.sumOf { index ->
                 resultRowHeightPx(items[index], itemView)
             }
@@ -290,8 +426,7 @@ class LawnchairSearchAdapterProvider(
             } else totalHeight > limitPx
             val title = itemView.findViewById<TextView>(R.id.title)
             if (overflow) {
-                val expanded = category in expandedCategories
-                title?.text = if (expanded) "Réduire  ⌃" else "Plus de " + when (category) {
+                title?.text = "Plus de " + when (category) {
                     app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS -> "applications"
                     app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> "raccourcis"
                     app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CONTACTS -> "contacts"
@@ -308,7 +443,10 @@ class LawnchairSearchAdapterProvider(
                 itemView.layoutParams?.height = dp(40, itemView)
                 itemView.isClickable = true
                 itemView.setOnClickListener {
-                    toggleCategoryExpansion(category)
+                    val heading = items.getOrNull(start - 1)?.searchTarget?.searchAction?.title
+                        ?.toString()?.trim().orEmpty().ifBlank { "Résultats" }
+                    val categoryResults = resultPositions.mapNotNull(items::getOrNull)
+                    showCategoryPage(category, heading, categoryResults)
                 }
             } else {
                 itemView.setOnClickListener(null)
@@ -329,7 +467,7 @@ class LawnchairSearchAdapterProvider(
         ) * app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsColumns(
             itemView.context, app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER,
         )
-        val shouldShow = category in expandedCategories || if (isApps) resultIndex < maxAppItems
+        val shouldShow = if (isApps) resultIndex < maxAppItems
             else previousHeight == 0 || previousHeight + currentHeight <= limitPx
         itemView.visibility = if (shouldShow) View.VISIBLE else View.GONE
         if (shouldShow) itemView.minimumHeight = 0
@@ -374,7 +512,9 @@ class LawnchairSearchAdapterProvider(
             adapterItem.searchTarget,
             emptyList(),
         )
-        if (isStructuralHeader(adapterItem)) applyDrawerPreview(holder.itemView, position, adapterItem)
+        if (adapterItem.searchTarget.layoutType == LayoutType.TEXT_HEADER) {
+            applyDrawerPreview(holder.itemView, position, adapterItem)
+        }
         // Match Prime Search's compact section headings and non-app result rows.
         // Applied after bind because individual result views restore their own heights.
         val density = holder.itemView.resources.displayMetrics.density
