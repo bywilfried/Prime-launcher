@@ -201,27 +201,50 @@ class LawnchairSearchAdapterProvider(
         return start to end
     }
 
-    private fun previewLimit(
+    private fun previewLimitPx(
         category: app.lawnchair.prime.search.PrimeSearchResultPreferences.Category,
         view: View,
     ): Int {
         val context = view.context
+        val density = context.resources.displayMetrics.density
         val surface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
         if (category == app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS) {
-            // Match the Prime Search compact app grid: its visible capacity is
-            // controlled by the drawer's own rows and columns, not a fixed count.
-            return app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsRows(context, surface) *
-                app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsColumns(context, surface)
+            val rows = app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsRows(context, surface)
+            val columns = app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsColumns(context, surface)
+            val rowHeight = app.lawnchair.prime.search.PrimeAppGridGeometry.rowHeightPx(
+                context,
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsIconSizePercent(context, surface),
+                if (app.lawnchair.prime.search.PrimeSearchResultPreferences.twoLineAppLabels(context, surface)) 2 else 1,
+            )
+            return rows * columns * rowHeight
         }
         val heightDp = app.lawnchair.prime.search.PrimeSearchCategoryPresentation
             .compactPreviewHeightDp(category) ?: 190
-        val rowHeightDp = when (category) {
-            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> 48
-            else -> 52
+        return (heightDp * density).toInt().coerceAtLeast(1)
+    }
+
+    /**
+     * Match the overlay's height-based clipping instead of converting its
+     * preview height into a guessed number of rows. This keeps complete contact,
+     * file and shortcut rows visible and avoids cutting a row at the card edge.
+     */
+    private fun resultRowHeightPx(item: SearchAdapterItem, view: View): Int {
+        val density = view.resources.displayMetrics.density
+        return when (item.searchTarget.layoutType) {
+            LayoutType.THUMBNAIL -> dp(72, view)
+            LayoutType.ICON_HORIZONTAL_TEXT -> dp(60, view)
+            LayoutType.EMPTY_STATE, LayoutType.SEARCH_SETTINGS -> dp(56, view)
+            LayoutType.ICON_SINGLE_VERTICAL_TEXT -> app.lawnchair.prime.search.PrimeAppGridGeometry.rowHeightPx(
+                view.context,
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsIconSizePercent(
+                    view.context, app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER,
+                ),
+                if (app.lawnchair.prime.search.PrimeSearchResultPreferences.twoLineAppLabels(
+                    view.context, app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER,
+                )) 2 else 1,
+            )
+            else -> (48 * density).toInt()
         }
-        // Use the shared compact-card height budget so categories do not expose
-        // a different number of rows simply because the drawer uses XML holders.
-        return (heightDp / rowHeightDp).coerceAtLeast(1)
     }
 
     private fun openCategoryDetails(
@@ -263,9 +286,18 @@ class LawnchairSearchAdapterProvider(
             target.layoutType != LayoutType.TEXT_HEADER &&
                 target.layoutType != LayoutType.EMPTY_DIVIDER
         }
-        val limit = previewLimit(category, itemView)
+        val limitPx = previewLimitPx(category, itemView)
         if (isStructuralHeader(item)) {
-            val overflow = resultPositions.size > limit
+            val totalHeight = resultPositions.sumOf { index ->
+                resultRowHeightPx(items[index], itemView)
+            }
+            val overflow = if (category == app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS) {
+                resultPositions.size > app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsRows(
+                    itemView.context, app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER,
+                ) * app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsColumns(
+                    itemView.context, app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER,
+                )
+            } else totalHeight > limitPx
             val title = itemView.findViewById<TextView>(R.id.title)
             if (overflow) {
                 title?.text = "Plus de " + when (category) {
@@ -295,12 +327,21 @@ class LawnchairSearchAdapterProvider(
         }
 
         val resultIndex = resultPositions.indexOf(position)
-        if (resultIndex >= limit) {
-            itemView.visibility = View.GONE
-        } else {
-            itemView.visibility = View.VISIBLE
-            itemView.minimumHeight = 0
+        if (resultIndex < 0) return
+        val previousHeight = resultPositions.take(resultIndex).sumOf { index ->
+            resultRowHeightPx(items[index], itemView)
         }
+        val currentHeight = resultRowHeightPx(item, itemView)
+        val isApps = category == app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS
+        val maxAppItems = app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsRows(
+            itemView.context, app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER,
+        ) * app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsColumns(
+            itemView.context, app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER,
+        )
+        val shouldShow = if (isApps) resultIndex < maxAppItems
+            else previousHeight == 0 || previousHeight + currentHeight <= limitPx
+        itemView.visibility = if (shouldShow) View.VISIBLE else View.GONE
+        if (shouldShow) itemView.minimumHeight = 0
     }
 
     private fun dp(value: Int, view: View): Int =
