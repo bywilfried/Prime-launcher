@@ -1468,7 +1468,7 @@ object PrimeSearchOverlay {
                 val headingCategory = PrimeSearchCategoryPresentation.categoryForHeading((child as? TextView)?.text?.toString())
                 if (headingCategory != null) currentCategory = headingCategory
                 val category = currentCategory
-                if (category != null && PrimeSearchResultPreferences.enabled(launcher, category)) {
+                if (category != null && PrimeSearchResultPreferences.enabled(launcher, category, preferenceSurface)) {
                     val section = sectionFor(category)
                     if (dynamicCategories.add(category)) section.removeAllViews()
                     section.addView(child)
@@ -1902,7 +1902,7 @@ object PrimeSearchOverlay {
                     val category = nativeCategoryFor(item) ?: return@forEach
                     // A result is visible only when its corresponding search
                     // category is enabled in the Prime Search settings.
-                    if (!PrimeSearchResultPreferences.enabled(launcher, category)) return@forEach
+                    if (!PrimeSearchResultPreferences.enabled(launcher, category, preferenceSurface)) return@forEach
                     if (category != null && nativeCategory != null && category != nativeCategory) flushNativeSection()
                     if (category != null && nativeCategory != category) {
                         nativeCategory = category
@@ -2325,7 +2325,7 @@ object PrimeSearchOverlay {
                 lastAppGridSignature = appGridSignature
                 results.removeAllViews()
                 nativeSections.forEach { (category, section) ->
-                    if (PrimeSearchResultPreferences.enabled(launcher, category)) {
+                    if (PrimeSearchResultPreferences.enabled(launcher, category, preferenceSurface)) {
                         section.tag = category
                         results.addView(section)
                     }
