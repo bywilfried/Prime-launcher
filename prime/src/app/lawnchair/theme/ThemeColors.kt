@@ -777,7 +777,6 @@ object ThemeColors {
         // dynamic recipe, not the same semantic value. They therefore evolve together with the
         // accent source/style while remaining independently overridable.
         ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE,
-        ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BACKGROUND,
         ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE,
         ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND ->
             resolveLegacyToken(context, ColorTokens.AllAppsTabBackground, variant)
