@@ -450,21 +450,33 @@ class LawnchairSearchAdapterProvider(
                 holder.itemView.context, iconPercent, labelLines,
             )
         } else if (adapterItem.searchTarget.layoutType != LayoutType.TEXT_HEADER) {
-            // Several platform result XMLs declare fixed 64/92/100dp heights.
-            // WRAP_CONTENT is not compact here: custom SearchResultIconRow children
-            // with MATCH_PARENT sizing can still measure against those large bounds.
-            // Give each drawer row an explicit content-appropriate height instead.
-            val rowHeight = when (adapterItem.searchTarget.layoutType) {
-                LayoutType.THUMBNAIL -> 72
-                LayoutType.ICON_HORIZONTAL_TEXT -> 60
-                LayoutType.EMPTY_STATE, LayoutType.SEARCH_SETTINGS -> 56
+            // Use the same compact row contract as the embedded Prime Search
+            // renderer so files, contacts, suggestions and shortcuts share
+            // typography, spacing and exact row heights.
+            val section = sectionBounds(
+                appsView.mSearchRecyclerView.mApps.adapterItems.mapNotNull { it as? SearchAdapterItem },
+                position,
+            )
+            val category = section?.let { (start, end) ->
+                categoryForSection(
+                    appsView.mSearchRecyclerView.mApps.adapterItems.mapNotNull { it as? SearchAdapterItem },
+                    start,
+                    end,
+                )
+            }
+            val rowHeight = when {
+                category == app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> 56
+                adapterItem.searchTarget.layoutType == LayoutType.THUMBNAIL -> 72
+                adapterItem.searchTarget.layoutType == LayoutType.ICON_HORIZONTAL_TEXT -> 60
+                adapterItem.searchTarget.layoutType == LayoutType.EMPTY_STATE ||
+                    adapterItem.searchTarget.layoutType == LayoutType.SEARCH_SETTINGS -> 56
                 else -> 48
             }
-            holder.itemView.minimumHeight = 0
-            holder.itemView.layoutParams?.height = dp(rowHeight)
-            holder.itemView.findViewById<View>(R.id.text_rows)?.apply {
-                setPadding(paddingLeft, 0, paddingRight, 0)
-            }
+            app.lawnchair.search.SearchResultGeometry.styleCompactResultRow(
+                holder.itemView,
+                rowHeight,
+                file = adapterItem.searchTarget.layoutType == LayoutType.THUMBNAIL,
+            )
         }
         // Search results inherit the selected drawer/category palette, not the
         // launcher's default theme or Prime Search's independent palette.
