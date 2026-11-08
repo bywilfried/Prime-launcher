@@ -218,8 +218,12 @@ class LawnchairSearchAdapterProvider(
                     app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.FILES -> "fichiers"
                     else -> "résultats"
                 } + "  ⌄"
-                title?.gravity = android.view.Gravity.CENTER
-                title?.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+                title?.apply {
+                    gravity = android.view.Gravity.CENTER
+                    textAlignment = View.TEXT_ALIGNMENT_CENTER
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+                    layoutParams = layoutParams.apply { width = ViewGroup.LayoutParams.MATCH_PARENT }
+                }
                 itemView.minimumHeight = dp(40, itemView)
                 itemView.layoutParams?.height = dp(40, itemView)
                 itemView.isClickable = true
@@ -237,10 +241,9 @@ class LawnchairSearchAdapterProvider(
         val resultIndex = resultPositions.indexOf(position)
         if (resultIndex >= 0 && !expanded && resultIndex >= limit) {
             itemView.visibility = View.GONE
-            itemView.minimumHeight = 0
-            itemView.layoutParams?.height = 0
         } else {
             itemView.visibility = View.VISIBLE
+            itemView.minimumHeight = 0
         }
     }
 
@@ -311,6 +314,8 @@ class LawnchairSearchAdapterProvider(
                     if (label.startsWith("Plus de ") || label.startsWith("Réduire")) {
                         heading?.apply {
                             gravity = android.view.Gravity.CENTER
+                            textAlignment = View.TEXT_ALIGNMENT_CENTER
+                            layoutParams = layoutParams.apply { width = ViewGroup.LayoutParams.MATCH_PARENT }
                             setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
                             setTypeface(typeface, Typeface.NORMAL)
                         }
