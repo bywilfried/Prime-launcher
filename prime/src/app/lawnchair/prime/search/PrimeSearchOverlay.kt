@@ -262,12 +262,15 @@ object PrimeSearchOverlay {
         }
     }
 
-    fun show(launcher: LawnchairLauncher) {
+    fun show(
+        launcher: LawnchairLauncher,
+        preferenceSurface: PrimeSearchResultPreferences.Surface = PrimeSearchResultPreferences.Surface.PRIME_SEARCH,
+    ) {
         if (activeDialog?.isShowing == true) return
         if (activeDialog != null) dismiss()
         val density = launcher.resources.displayMetrics.density
         val inset = (16 * density).toInt()
-        val floating = PrimeSearchResultPreferences.floatingWindow(launcher)
+        val floating = PrimeSearchResultPreferences.floatingWindow(launcher, preferenceSurface)
         val profile = ThemeProfile.current(launcher)
         val variant = launcher.effectiveThemeVariant()
         fun themed(role: ThemeColorRole) = ThemeColors.resolve(launcher, profile, role, variant)
@@ -428,8 +431,8 @@ object PrimeSearchOverlay {
         var usage: Map<String, android.app.usage.UsageStats> = cachedUsage.orEmpty()
         var hasUsageAccess = cachedUsageGranted
         val sections = listOf("FRÉQUENTES", "RÉCENTES", "NOUVELLES")
-        var selectedTab = when (PrimeSearchResultPreferences.openingTab(launcher)) {
-            PrimeSearchResultPreferences.OpeningTab.LAST -> PrimeSearchResultPreferences.lastOpenedTab(launcher)
+        var selectedTab = when (PrimeSearchResultPreferences.openingTab(launcher, preferenceSurface)) {
+            PrimeSearchResultPreferences.OpeningTab.LAST -> PrimeSearchResultPreferences.lastOpenedTab(launcher, preferenceSurface)
             PrimeSearchResultPreferences.OpeningTab.FREQUENT -> 0
             PrimeSearchResultPreferences.OpeningTab.RECENT -> 1
             PrimeSearchResultPreferences.OpeningTab.NEW -> 2
@@ -449,7 +452,7 @@ object PrimeSearchOverlay {
                     setPadding((8 * density).toInt(), inset, (8 * density).toInt(), inset)
                     setOnClickListener {
                         selectedTab = index
-                        PrimeSearchResultPreferences.setLastOpenedTab(launcher, index)
+                        PrimeSearchResultPreferences.setLastOpenedTab(launcher, index, preferenceSurface)
                         renderZeroState()
                     }
                 }
@@ -480,8 +483,8 @@ object PrimeSearchOverlay {
                     catch (_: Exception) { 0L }
                 }
             }
-            val columns = PrimeSearchResultPreferences.appsPerRow(launcher)
-            val maxCount = columns * PrimeSearchResultPreferences.zeroStateRows(launcher)
+            val columns = PrimeSearchResultPreferences.appsPerRow(launcher, preferenceSurface)
+            val maxCount = columns * PrimeSearchResultPreferences.zeroStateRows(launcher, preferenceSurface)
             val usableWidth = (if (floating) {
                 (launcher.resources.displayMetrics.widthPixels - (24 * density).toInt())
                     .coerceAtMost((600 * density).toInt())
@@ -491,15 +494,15 @@ object PrimeSearchOverlay {
             // Always allocate the configured number of rows, even if a tab
             // has fewer apps (or none). This keeps the overlay height stable
             // while switching between Fréquentes, Récentes and Nouvelles.
-            val rows = PrimeSearchResultPreferences.zeroStateRows(launcher)
+            val rows = PrimeSearchResultPreferences.zeroStateRows(launcher, preferenceSurface)
             // Derive row height from the actual icon dimension, font metrics
             // and vertical padding instead of a hard-coded 100dp.
-            val iconSize = (48 * density * PrimeSearchResultPreferences.iconSizePercent(launcher) / 100f).toInt()
+            val iconSize = (48 * density * PrimeSearchResultPreferences.iconSizePercent(launcher, preferenceSurface) / 100f).toInt()
             val titleTextSizeSp = 11f
             val titlePaint = android.text.TextPaint().apply {
                 textSize = titleTextSizeSp * launcher.resources.displayMetrics.scaledDensity
             }
-            val labelLines = if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
+            val labelLines = if (PrimeSearchResultPreferences.twoLineAppLabels(launcher, preferenceSurface)) 2 else 1
             val titleHeight = kotlin.math.ceil(
                 (titlePaint.fontMetrics.descent - titlePaint.fontMetrics.ascent).toDouble()
             ).toInt().coerceAtLeast(1) * labelLines
@@ -638,11 +641,11 @@ object PrimeSearchOverlay {
                 }
                 webPanel.addView(label, LinearLayout.LayoutParams(-1, -2))
             }
-            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB) && currentSuggestions.isNotEmpty()) {
+            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB, preferenceSurface) && currentSuggestions.isNotEmpty()) {
                 row("Suggestions Web") {}
                 currentSuggestions.forEach { suggestion ->
                     row(suggestion) {
-                        val provider = PrimeSearchResultPreferences.suggestionProvider(launcher)
+                        val provider = PrimeSearchResultPreferences.suggestionProvider(launcher, preferenceSurface)
                         val engine = when (provider) {
                             PrimeSearchResultPreferences.SuggestionProvider.GOOGLE -> PrimeSearchResultPreferences.WebEngine.GOOGLE
                             PrimeSearchResultPreferences.SuggestionProvider.DUCKDUCKGO -> PrimeSearchResultPreferences.WebEngine.DUCKDUCKGO
@@ -657,7 +660,7 @@ object PrimeSearchOverlay {
                     }
                 }
             }
-            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.CONTACTS)) {
+            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.CONTACTS, preferenceSurface)) {
                 if (contactQuery != query) {
                     contactQuery = query
                     contactResults = emptyList()
@@ -794,7 +797,7 @@ object PrimeSearchOverlay {
                     }
                 }
             }
-            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.CALENDAR)) {
+            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.CALENDAR, preferenceSurface)) {
                 val events = PrimeCalendarSearch.events(launcher, query)
                 if (events.isNotEmpty()) {
                     row("Événements de l'agenda") {}
@@ -808,7 +811,7 @@ object PrimeSearchOverlay {
                     }
                 }
             }
-            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.REMINDERS)) {
+            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.REMINDERS, preferenceSurface)) {
                 val tasks = PrimeTasksSearch.search(launcher, query)
                 if (tasks.isNotEmpty()) {
                     row("Tâches · Tasks.org") {}
@@ -822,7 +825,7 @@ object PrimeSearchOverlay {
                     }
                 }
             }
-            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.NOTIFICATIONS)) {
+            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.NOTIFICATIONS, preferenceSurface)) {
                 // Stored history is searchable even after notification access is revoked.
                 val matches = runCatching { PrimeNotificationHistory.search(launcher, query) }
                     .getOrDefault(emptyList())
@@ -847,7 +850,7 @@ object PrimeSearchOverlay {
                     }
                 }
             }
-            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.SETTINGS)) {
+            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.SETTINGS, preferenceSurface)) {
                 // Use localized labels rather than Android intent action class names.
                 val settingsActions = listOf(
                     Triple("Wi-Fi", android.provider.Settings.ACTION_WIFI_SETTINGS, listOf("wifi", "wi-fi", "réseau", "network")),
@@ -889,8 +892,8 @@ object PrimeSearchOverlay {
                     }
                 }
             }
-            val engines = if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB_SHORTCUTS))
-                PrimeSearchResultPreferences.enabledWebEngines(launcher) else emptyList()
+            val engines = if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB_SHORTCUTS, preferenceSurface))
+                PrimeSearchResultPreferences.enabledWebEngines(launcher, preferenceSurface) else emptyList()
             if (engines.isNotEmpty()) {
                 row("Raccourcis Web") {}
                 val columns = 5
@@ -992,7 +995,7 @@ object PrimeSearchOverlay {
                 }
             }
             // Sort complete dynamic sections (heading plus rows) by user preference.
-            val order = PrimeSearchResultPreferences.order(launcher)
+            val order = PrimeSearchResultPreferences.order(launcher, preferenceSurface)
             val headings = mapOf(
                 "Suggestions Web" to PrimeSearchResultPreferences.Category.WEB,
                 "Contacts" to PrimeSearchResultPreferences.Category.CONTACTS,
@@ -1327,7 +1330,7 @@ object PrimeSearchOverlay {
                     if (detailOpen && !detailClosing && detailCard === card &&
                         detailOriginalChildren.any { it.parent === card } && card.width > 0) {
                         val available = (card.width - card.paddingLeft - card.paddingRight).coerceAtLeast(1)
-                        val columns = PrimeSearchResultPreferences.appResultsColumns(launcher)
+                        val columns = PrimeSearchResultPreferences.appResultsColumns(launcher, preferenceSurface)
                         sizeDetailAppGrid(card, (available / columns).coerceAtLeast(1))
                     }
                 }
@@ -1386,7 +1389,7 @@ object PrimeSearchOverlay {
                 if (!detailOpen) scheduleResultsReorder(::reorderSearchSections)
                 return
             }
-            val priorities = PrimeSearchResultPreferences.order(launcher)
+            val priorities = PrimeSearchResultPreferences.order(launcher, preferenceSurface)
             // Exactly one section per enabled category, regardless of how many
             // separate chunks the drawer provider produced.
             val grouped = linkedMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
@@ -1433,7 +1436,7 @@ object PrimeSearchOverlay {
                     category == PrimeSearchResultPreferences.Category.WEB_SHORTCUTS ||
                     (hasPrimeSettings && category == PrimeSearchResultPreferences.Category.SETTINGS) ||
                     (hasPrimeContacts && category == PrimeSearchResultPreferences.Category.CONTACTS)) return@forEach
-                if (category != null && PrimeSearchResultPreferences.enabled(launcher, category)) {
+                if (category != null && PrimeSearchResultPreferences.enabled(launcher, category, preferenceSurface)) {
                     val section = sectionFor(category)
                     if (view is ViewGroup && view !== section) {
                         // A compact wrapper already contains the cached section.
@@ -1477,8 +1480,8 @@ object PrimeSearchOverlay {
                     val limit = PrimeSearchCategoryPresentation.compactPreviewHeightDp(category)
                         ?.let { (it * density).toInt() }
                         ?: (PrimeAppGridGeometry.rowHeightPx(
-                            launcher, PrimeSearchResultPreferences.appResultsIconSizePercent(launcher),
-                            if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
+                            launcher, PrimeSearchResultPreferences.appResultsIconSizePercent(launcher, preferenceSurface),
+                            if (PrimeSearchResultPreferences.twoLineAppLabels(launcher, preferenceSurface)) 2 else 1
                         ) * 2 + (52 * density).toInt())
                     // Cards are cached across asynchronous contact/web refreshes.
                     // Detach from the previous clipped holder before reparenting.
@@ -1505,11 +1508,11 @@ object PrimeSearchOverlay {
                             child.orientation == LinearLayout.HORIZONTAL &&
                             child.childCount > 0
                     } else 0
-                    val maxVisibleRows = PrimeSearchResultPreferences.appResultsRows(launcher)
+                    val maxVisibleRows = PrimeSearchResultPreferences.appResultsRows(launcher, preferenceSurface)
                     val appViewportHeight = if (isApps) {
                         val rowHeight = PrimeAppGridGeometry.rowHeightPx(
-                            launcher, PrimeSearchResultPreferences.appResultsIconSizePercent(launcher),
-                            if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
+                            launcher, PrimeSearchResultPreferences.appResultsIconSizePercent(launcher, preferenceSurface),
+                            if (PrimeSearchResultPreferences.twoLineAppLabels(launcher, preferenceSurface)) 2 else 1
                         )
                         card.paddingTop + card.paddingBottom +
                             appRowCount.coerceAtMost(maxVisibleRows) * rowHeight
@@ -1590,7 +1593,7 @@ object PrimeSearchOverlay {
                                 // An app grid with fewer rows than the configured
                                 // maximum must wrap its content. Never show "Plus de"
                                 // merely because a measurement includes extra padding.
-                                val maxRows = PrimeSearchResultPreferences.appResultsRows(launcher)
+                                val maxRows = PrimeSearchResultPreferences.appResultsRows(launcher, preferenceSurface)
                                 val actualRows = (0 until card.childCount).count { index ->
                                     val child = card.getChildAt(index)
                                     child is LinearLayout &&
@@ -1648,14 +1651,14 @@ object PrimeSearchOverlay {
         fun updateWebSuggestions(query: String) {
             val request = ++webRequestSerial
             currentSuggestions = emptyList()
-            val count = PrimeSearchResultPreferences.webSuggestionCount(launcher)
+            val count = PrimeSearchResultPreferences.webSuggestionCount(launcher, preferenceSurface)
             if (query.isBlank() || count == 0 ||
-                !PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB)) return
+                !PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB, preferenceSurface)) return
             // Keep network I/O off the main thread; ignore stale responses.
             webHandler.postDelayed({
                 Thread {
                 val suggestions = try {
-                    val provider = PrimeSearchResultPreferences.suggestionProvider(launcher)
+                    val provider = PrimeSearchResultPreferences.suggestionProvider(launcher, preferenceSurface)
                     val endpoint = when (provider) {
                         PrimeSearchResultPreferences.SuggestionProvider.DUCKDUCKGO ->
                             "https://duckduckgo.com/ac/?q="
@@ -1772,8 +1775,8 @@ object PrimeSearchOverlay {
                 // Preserve the algorithm's order and section boundaries. Each item is
                 // inflated with the same layout used by the drawer's adapter provider.
                 val inflater = LayoutInflater.from(launcher)
-                val columns = PrimeSearchResultPreferences.appResultsColumns(launcher)
-                val maxAppTiles = columns * PrimeSearchResultPreferences.appResultsRows(launcher)
+                val columns = PrimeSearchResultPreferences.appResultsColumns(launcher, preferenceSurface)
+                val maxAppTiles = columns * PrimeSearchResultPreferences.appResultsRows(launcher, preferenceSurface)
                 var displayedAppTiles = 0
                 // Each row is centered independently. Fixed-width cells keep
                 // identical spacing whether the row has 1, 2 or 6 apps.
@@ -1785,7 +1788,7 @@ object PrimeSearchOverlay {
                 // wider overlay width. The results container adds 4dp on each side
                 // and the app card adds another 6dp on each side.
                 // Preserve the existing centered geometry unchanged.
-                val appAlignment = PrimeSearchResultPreferences.appResultsAlignment(launcher)
+                val appAlignment = PrimeSearchResultPreferences.appResultsAlignment(launcher, preferenceSurface)
                 val alignedGridWidth = if (appAlignment == PrimeSearchResultPreferences.AppResultsAlignment.CENTER) {
                     gridWidth
                 } else {
@@ -1794,8 +1797,8 @@ object PrimeSearchOverlay {
                 val cellWidth = (alignedGridWidth / columns).coerceAtLeast(1)
                 // Match the zero-state Prime Search icon and label settings.
                 // This is local to the Prime overlay; drawer search is untouched.
-                val searchLabelLines = if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
-                val searchIconPercent = PrimeSearchResultPreferences.appResultsIconSizePercent(launcher)
+                val searchLabelLines = if (PrimeSearchResultPreferences.twoLineAppLabels(launcher, preferenceSurface)) 2 else 1
+                val searchIconPercent = PrimeSearchResultPreferences.appResultsIconSizePercent(launcher, preferenceSurface)
                 val searchIconSize = PrimeAppGridGeometry.iconPx(launcher, searchIconPercent)
                 val searchRowHeight = PrimeAppGridGeometry.rowHeightPx(
                     launcher, searchIconPercent, searchLabelLines)
@@ -2037,7 +2040,7 @@ object PrimeSearchOverlay {
                             return null
                         }
                         val filename = findFileTitle(view).orEmpty()
-                        if (!PrimeSearchResultPreferences.fileAllowed(launcher, filename)) {
+                        if (!PrimeSearchResultPreferences.fileAllowed(launcher, filename, null, preferenceSurface)) {
                             parent.removeView(view)
                             return@forEach
                         }
@@ -2351,8 +2354,8 @@ object PrimeSearchOverlay {
         fun searchExpandedCategory(query: String) {
             // The compact callback's grid geometry is scoped to that callback.
             // Compute the same settings locally for independent expanded results.
-            val searchLabelLines = if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
-            val searchIconPercent = PrimeSearchResultPreferences.appResultsIconSizePercent(launcher)
+            val searchLabelLines = if (PrimeSearchResultPreferences.twoLineAppLabels(launcher, preferenceSurface)) 2 else 1
+            val searchIconPercent = PrimeSearchResultPreferences.appResultsIconSizePercent(launcher, preferenceSurface)
             val searchIconSize = PrimeAppGridGeometry.iconPx(launcher, searchIconPercent)
             val searchRowHeight = PrimeAppGridGeometry.rowHeightPx(
                 launcher, searchIconPercent, searchLabelLines)
@@ -2441,7 +2444,7 @@ object PrimeSearchOverlay {
                             }
                         }
                         PrimeSearchResultPreferences.Category.WEB_SHORTCUTS ->
-                            PrimeSearchResultPreferences.enabledWebEngines(launcher).forEach { engine ->
+                            PrimeSearchResultPreferences.enabledWebEngines(launcher, preferenceSurface).forEach { engine ->
                                 addRow(engine.title) {
                                     runCatching {
                                         launcher.startActivity(Intent(Intent.ACTION_VIEW,
@@ -2481,7 +2484,7 @@ object PrimeSearchOverlay {
                         }
                         card.removeAllViews()
                         val inflater = LayoutInflater.from(launcher)
-                        val columns = PrimeSearchResultPreferences.appResultsColumns(launcher)
+                        val columns = PrimeSearchResultPreferences.appResultsColumns(launcher, preferenceSurface)
                         var appRow: LinearLayout? = null
                         var appsInRow = 0
                         val seenApps = mutableSetOf<String>()
@@ -2494,7 +2497,7 @@ object PrimeSearchOverlay {
                                 if (appRow == null || appsInRow == columns) {
                                     appRow = LinearLayout(launcher).apply {
                                         orientation = LinearLayout.HORIZONTAL
-                                        gravity = when (PrimeSearchResultPreferences.appResultsAlignment(launcher)) {
+                                        gravity = when (PrimeSearchResultPreferences.appResultsAlignment(launcher, preferenceSurface)) {
                                             PrimeSearchResultPreferences.AppResultsAlignment.CENTER -> Gravity.CENTER_HORIZONTAL
                                             PrimeSearchResultPreferences.AppResultsAlignment.LEFT -> Gravity.START
                                             PrimeSearchResultPreferences.AppResultsAlignment.RIGHT -> Gravity.END
@@ -2725,7 +2728,7 @@ object PrimeSearchOverlay {
         // waiting for the next posted UI task. Keep the existing Prime Search
         // entrance animation and its 220 ms duration unchanged.
         val keyboard = launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        if (!PrimeSearchResultPreferences.autoShowKeyboard(launcher)) {
+        if (!PrimeSearchResultPreferences.autoShowKeyboard(launcher, preferenceSurface)) {
             // Keep the field usable: tapping it still opens the keyboard normally.
         } else if (input.isAttachedToWindow) {
             keyboard.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
