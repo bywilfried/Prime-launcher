@@ -1,9 +1,16 @@
 package app.lawnchair.search
 
+import android.content.res.ColorStateList
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.RippleDrawable
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import app.lawnchair.theme.ThemeColorRole
+import app.lawnchair.theme.ThemeColors
+import app.lawnchair.theme.ThemeProfile
+import app.lawnchair.theme.effectiveThemeVariant
 import com.android.launcher3.R
 
 /**
@@ -47,4 +54,46 @@ object SearchResultGeometry {
     fun styleTextRow(view: View) = styleResultRow(view, false)
 
     fun styleFileRow(view: View) = styleResultRow(view, true)
+
+    /**
+     * Drawer-only result card treatment. Prime Search owns its own surface and
+     * never calls this method, so its palette and rendering remain untouched.
+     */
+    fun styleDrawerCard(view: View) {
+        val context = view.context
+        val profile = ThemeProfile.current(context)
+        val variant = context.effectiveThemeVariant()
+        val cardColor = ThemeColors.resolve(
+            context,
+            profile,
+            ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE,
+            variant,
+        )
+        val selectedColor = ThemeColors.resolve(
+            context,
+            profile,
+            ThemeColorRole.DRAWER_SEARCH_SELECTED_RESULT_BACKGROUND,
+            variant,
+        )
+        val density = view.resources.displayMetrics.density
+        val radius = 14f * density
+        view.background = GradientDrawable().apply {
+            setColor(cardColor)
+            cornerRadius = radius
+        }
+        view.foreground = RippleDrawable(
+            ColorStateList.valueOf(selectedColor),
+            null,
+            GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = radius
+                setColor(android.graphics.Color.WHITE)
+            },
+        )
+        view.clipToOutline = true
+        (view.layoutParams as? ViewGroup.MarginLayoutParams)?.apply {
+            leftMargin = (4 * density).toInt()
+            rightMargin = (4 * density).toInt()
+        }
+    }
 }
