@@ -1,6 +1,10 @@
 package app.lawnchair.search
 
 import android.util.SparseIntArray
+import android.app.Activity
+import android.os.Build
+import android.view.KeyEvent
+import android.window.OnBackInvokedCallback
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -166,6 +170,8 @@ class LawnchairSearchAdapterProvider(
      * and renders the selected category's existing result targets locally.
      */
     private var categoryPage: View? = null
+    private var categoryBackActivity: Activity? = null
+    private var categoryBackCallback: OnBackInvokedCallback? = null
 
     private fun isStructuralHeader(item: SearchAdapterItem): Boolean {
         if (item.searchTarget.layoutType != LayoutType.TEXT_HEADER) return false
@@ -274,7 +280,7 @@ class LawnchairSearchAdapterProvider(
         title: String,
         results: List<SearchAdapterItem>,
     ) {
-        categoryPage?.let { old -> (old.parent as? ViewGroup)?.removeView(old) }
+        closeCategoryPage()
 
         val context = appsView.context
         val page = android.widget.LinearLayout(context).apply {
@@ -288,6 +294,14 @@ class LawnchairSearchAdapterProvider(
                 ),
             )
             isFocusableInTouchMode = true
+            setOnKeyListener { _, keyCode, event ->
+                if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
+                    closeCategoryPage()
+                    true
+                } else {
+                    keyCode == KeyEvent.KEYCODE_BACK
+                }
+            }
             elevation = 12f * resources.displayMetrics.density
         }
 
@@ -363,9 +377,29 @@ class LawnchairSearchAdapterProvider(
         ))
         page.bringToFront()
         page.requestFocus()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            (context as? Activity)?.let { activity ->
+                val callback = OnBackInvokedCallback { closeCategoryPage() }
+                activity.onBackInvokedDispatcher.registerOnBackInvokedCallback(
+                    android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                    callback,
+                )
+                categoryBackActivity = activity
+                categoryBackCallback = callback
+            }
+        }
     }
 
     private fun closeCategoryPage() {
+        val activity = categoryBackActivity
+        val callback = categoryBackCallback
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            activity != null && callback != null
+        ) {
+            activity.onBackInvokedDispatcher.unregisterOnBackInvokedCallback(callback)
+        }
+        categoryBackActivity = null
+        categoryBackCallback = null
         categoryPage?.let { page ->
             (page.parent as? ViewGroup)?.removeView(page)
         }
