@@ -59,7 +59,7 @@ object SearchResultGeometry {
      * Shared row-height policy for compact native search results.
      * Grid application tiles have their own configurable geometry.
      */
-    fun compactRowHeightDp(layoutType: com.android.app.search.LayoutType, isAppShortcut: Boolean = false): Int =
+    fun compactRowHeightDp(layoutType: String, isAppShortcut: Boolean = false): Int =
         when {
             isAppShortcut -> 56
             layoutType == com.android.app.search.LayoutType.THUMBNAIL -> 72
