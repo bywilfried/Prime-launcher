@@ -115,6 +115,11 @@ class LawnchairSearchAdapterProvider(
         else app.lawnchair.theme.ThemeColorRole.DRAWER_TEXT
         val textColor = app.lawnchair.theme.ThemeColors.resolve(context, profile, role, variant)
         applySearchTextColor(holder.itemView, textColor)
+        if (adapterItem.searchTarget.layoutType != LayoutType.TEXT_HEADER &&
+            adapterItem.searchTarget.layoutType != LayoutType.EMPTY_DIVIDER
+        ) {
+            SearchResultGeometry.styleDrawerCard(holder.itemView)
+        }
         if (itemView.isQuickLaunch) {
             quickLaunchItem = itemView
         }
