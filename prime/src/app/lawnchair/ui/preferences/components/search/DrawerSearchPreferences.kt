@@ -259,6 +259,24 @@ private fun DrawerAdvancedSearchPreferences() {
     }
     PreferenceGroup(heading = "Recherche du tiroir d'applications") {
         Text("Réglages indépendants de Prime Search. Les résultats du tiroir utilisent des cartes arrondies et les couleurs définies dans Personnalisation → Tiroirs.")
+        var fuzzyEnabled by remember { mutableStateOf(PrimeSearchResultPreferences.fuzzyApps(context, PrimeSearchResultPreferences.Surface.DRAWER)) }
+        PreferenceTemplate(
+            title = { Text("Tolérer les fautes de frappe") },
+            description = { Text("Autoriser les petites erreurs dans les noms d’applications, sans modifier Prime Search") },
+            endWidget = {
+                androidx.compose.material3.Switch(
+                    checked = fuzzyEnabled,
+                    onCheckedChange = {
+                        fuzzyEnabled = it
+                        PrimeSearchResultPreferences.setFuzzyApps(context, it, PrimeSearchResultPreferences.Surface.DRAWER)
+                    },
+                )
+            },
+            onClick = {
+                fuzzyEnabled = !fuzzyEnabled
+                PrimeSearchResultPreferences.setFuzzyApps(context, fuzzyEnabled, PrimeSearchResultPreferences.Surface.DRAWER)
+            },
+        )
         val drawerSurface = PrimeSearchResultPreferences.Surface.DRAWER
         var drawerWebCount by remember {
             mutableStateOf(PrimeSearchResultPreferences.webSuggestionCount(context, drawerSurface))
