@@ -228,6 +228,7 @@ class LawnchairLocalSearchAlgorithm(
                                 is SearchResult.History -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.HISTORY
                                 is SearchResult.Calculation -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALCULATOR
                                 is SearchResult.WebSuggestion -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB
+                                is SearchResult.Action.WebShortcut -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB_SHORTCUTS
                                 else -> null
                             }
                             category == null || prefs.enabled(context, category, surface)
