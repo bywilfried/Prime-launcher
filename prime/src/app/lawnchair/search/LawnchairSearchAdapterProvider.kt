@@ -138,6 +138,26 @@ class LawnchairSearchAdapterProvider(
                     }) {
                     recyclerView.addItemDecoration(categoryCards)
                 }
+                recyclerView.adapter?.registerAdapterDataObserver(
+                    object : androidx.recyclerview.widget.RecyclerView.AdapterDataObserver() {
+                        override fun onChanged() = closeCategoryPage()
+
+                        override fun onItemRangeChanged(positionStart: Int, itemCount: Int) =
+                            closeCategoryPage()
+
+                        override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) =
+                            closeCategoryPage()
+
+                        override fun onItemRangeInserted(positionStart: Int, itemCount: Int) =
+                            closeCategoryPage()
+
+                        override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) =
+                            closeCategoryPage()
+
+                        override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) =
+                            closeCategoryPage()
+                    },
+                )
             }
         }
     }
@@ -300,16 +320,39 @@ class LawnchairSearchAdapterProvider(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
         ))
 
-        val list = androidx.recyclerview.widget.RecyclerView(context).apply {
-            layoutManager = androidx.recyclerview.widget.LinearLayoutManager(context)
-            clipToPadding = false
-            setPadding(dp(8, this), dp(4, this), dp(8, this), dp(24, this))
-            adapter = DrawerCategoryResultsAdapter(
-                results.filter {
-                    it.searchTarget.layoutType != LayoutType.TEXT_HEADER &&
-                        it.searchTarget.layoutType != LayoutType.EMPTY_DIVIDER
-                },
+        val isAppGrid = category ==
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS
+        val drawerSurface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
+        val appColumns = if (isAppGrid) {
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsColumns(context, drawerSurface)
+                .coerceAtLeast(1)
+        } else 1
+        val appRowHeight = if (isAppGrid) {
+            app.lawnchair.prime.search.PrimeAppGridGeometry.rowHeightPx(
+                context,
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsIconSizePercent(
+                    context, drawerSurface,
+                ),
+                if (app.lawnchair.prime.search.PrimeSearchResultPreferences.twoLineAppLabels(
+                    context, drawerSurface,
+                )) 2 else 1,
             )
+        } else 0
+        val categoryItems = results.filter {
+            it.searchTarget.layoutType != LayoutType.TEXT_HEADER &&
+                it.searchTarget.layoutType != LayoutType.EMPTY_DIVIDER
+        }.let { items ->
+            if (isAppGrid) items.distinctBy { it.searchTarget.packageName } else items
+        }
+        val list = androidx.recyclerview.widget.RecyclerView(context).apply {
+            layoutManager = if (isAppGrid) {
+                androidx.recyclerview.widget.GridLayoutManager(context, appColumns)
+            } else {
+                androidx.recyclerview.widget.LinearLayoutManager(context)
+            }
+            clipToPadding = false
+            setPadding(dp(8, this), dp(if (isAppGrid) 8 else 4, this), dp(8, this), dp(24, this))
+            adapter = DrawerCategoryResultsAdapter(categoryItems, isAppGrid, appRowHeight)
         }
         page.addView(list, android.widget.LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f,
@@ -331,6 +374,8 @@ class LawnchairSearchAdapterProvider(
 
     private inner class DrawerCategoryResultsAdapter(
         private val results: List<SearchAdapterItem>,
+        private val appGrid: Boolean,
+        private val appRowHeightPx: Int,
     ) : androidx.recyclerview.widget.RecyclerView.Adapter<DrawerCategoryResultsAdapter.ResultHolder>() {
 
         inner class ResultHolder(val resultView: View) :
@@ -346,7 +391,7 @@ class LawnchairSearchAdapterProvider(
             val view = LayoutInflater.from(parent.context).inflate(layout, parent, false)
             view.layoutParams = androidx.recyclerview.widget.RecyclerView.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
+                if (appGrid) appRowHeightPx else ViewGroup.LayoutParams.WRAP_CONTENT,
             )
             return ResultHolder(view)
         }
@@ -364,7 +409,11 @@ class LawnchairSearchAdapterProvider(
                 context.effectiveThemeVariant(),
             )
             applySearchTextColor(view, color)
-            if (item.searchTarget.layoutType != LayoutType.ICON_SINGLE_VERTICAL_TEXT) {
+            if (appGrid) {
+                view.minimumHeight = 0
+                view.layoutParams?.height = appRowHeightPx
+                view.setPadding(0, 0, 0, 0)
+            } else if (item.searchTarget.layoutType != LayoutType.ICON_SINGLE_VERTICAL_TEXT) {
                 val category = categoryForResult(item)
                 val rowHeight = SearchResultGeometry.compactRowHeightDp(
                     item.searchTarget.layoutType,
