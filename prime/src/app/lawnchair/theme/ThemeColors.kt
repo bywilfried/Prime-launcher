@@ -789,11 +789,14 @@ object ThemeColors {
         // not the multicolour search-provider artwork in the Dock.
         ThemeColorRole.DRAWER_SEARCH_ICON ->
             resolveLegacyToken(context, ColorTokens.ColorAccent, variant)
-        ThemeColorRole.DRAWER_SEARCH_BORDER,
-        ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BORDER ->
+        ThemeColorRole.DRAWER_SEARCH_BORDER ->
             resolveLegacyToken(context, ColorTokens.ColorAccent, variant)
+        // By default, drawer result cards use the exact same palette as Prime Search.
+        // The DRAWER roles remain independently overridable in Personalization.
+        ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BORDER ->
+            legacy(context, ThemeColorRole.PRIME_SEARCH_CARD_BORDER, variant)
         ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BACKGROUND ->
-            resolveLegacyToken(context, ColorTokens.AllAppsTabBackground, variant)
+            legacy(context, ThemeColorRole.PRIME_SEARCH_CARD_BACKGROUND, variant)
         ThemeColorRole.DRAWER_SEARCH_SELECTED_RESULT_BACKGROUND ->
             resolveLegacyToken(
                 context,
