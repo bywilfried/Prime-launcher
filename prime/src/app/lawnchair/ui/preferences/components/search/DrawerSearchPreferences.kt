@@ -302,6 +302,47 @@ private fun DrawerAdvancedSearchPreferences() {
                 },
             )
         }
+        var showDrawerEngineSettings by remember { mutableStateOf(false) }
+        PreferenceTemplate(
+            title = { Text("Moteurs de recherche Web") },
+            description = { Text("Choisir les moteurs proposés dans les résultats du tiroir") },
+            onClick = { showDrawerEngineSettings = true },
+        )
+        if (showDrawerEngineSettings) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { showDrawerEngineSettings = false },
+                title = { Text("Moteurs Web du tiroir") },
+                text = {
+                    androidx.compose.foundation.lazy.LazyColumn {
+                        items(PrimeSearchResultPreferences.WebEngine.entries.size) { index ->
+                            val engine = PrimeSearchResultPreferences.WebEngine.entries[index]
+                            var enabled by remember(engine) {
+                                mutableStateOf(engine in PrimeSearchResultPreferences.enabledWebEngines(context, drawerSurface))
+                            }
+                            PreferenceTemplate(
+                                title = { Text(engine.title) },
+                                endWidget = {
+                                    androidx.compose.material3.Switch(
+                                        checked = enabled,
+                                        onCheckedChange = {
+                                            enabled = it
+                                            PrimeSearchResultPreferences.setWebEngineEnabled(context, engine, it, drawerSurface)
+                                        },
+                                    )
+                                },
+                                onClick = {
+                                    enabled = !enabled
+                                    PrimeSearchResultPreferences.setWebEngineEnabled(context, engine, enabled, drawerSurface)
+                                },
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    androidx.compose.material3.TextButton(onClick = { showDrawerEngineSettings = false }) { Text("Terminé") }
+                },
+            )
+        }
         val drawerCategories = PrimeSearchResultPreferences.order(context, drawerSurface)
         var drawerOrder by remember { mutableStateOf(drawerCategories) }
         var categorySettings by remember { mutableStateOf<PrimeSearchResultPreferences.Category?>(null) }
