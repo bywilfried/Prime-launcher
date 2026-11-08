@@ -1826,7 +1826,7 @@ object PrimeSearchOverlay {
                 // Prefer grid application tiles over the drawer's duplicate text rows.
                 // The provider may return both layouts for the same package.
                 val gridApplicationIds = PrimeSearchResultPreferences.filter(
-                    launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(),
+                    launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(), preferenceSurface,
                 ).filter {
                     it.searchTarget.resultType == SearchTargetCompat.RESULT_TYPE_APPLICATION &&
                         it.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT
@@ -1848,7 +1848,7 @@ object PrimeSearchOverlay {
                     appsInRow = 0
                 }
                 val filteredNativeItems = PrimeSearchResultPreferences.filter(
-                    launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(),
+                    launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(), preferenceSurface,
                 )
                 // Rank application results in Prime Search only, without moving
                 // any other category or changing the drawer search algorithm.
@@ -2468,7 +2468,7 @@ object PrimeSearchOverlay {
                             resultQuery != query || input.text.toString() != query ||
                             detailCard !== card) return
                         val matched = PrimeSearchResultPreferences.filter(
-                            launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(),
+                            launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(), preferenceSurface,
                         ).filter { item ->
                             val type = item.searchTarget.resultType
                             when (category) {
