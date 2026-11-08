@@ -1387,7 +1387,6 @@ object PrimeSearchOverlay {
                 return
             }
             val priorities = PrimeSearchResultPreferences.order(launcher)
-            val headingCategories = PrimeSearchCategoryPresentation::categoryForHeading
             // Exactly one section per enabled category, regardless of how many
             // separate chunks the drawer provider produced.
             val grouped = linkedMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
@@ -1463,7 +1462,7 @@ object PrimeSearchOverlay {
             while (webPanel.childCount > 0) {
                 val child = webPanel.getChildAt(0)
                 webPanel.removeViewAt(0)
-                val headingCategory = (child as? TextView)?.text?.toString()?.let(headingCategories::get)
+                val headingCategory = PrimeSearchCategoryPresentation.categoryForHeading((child as? TextView)?.text?.toString())
                 if (headingCategory != null) currentCategory = headingCategory
                 val category = currentCategory
                 if (category != null && PrimeSearchResultPreferences.enabled(launcher, category)) {
