@@ -102,10 +102,18 @@ class LawnchairSearchAdapterProvider(
     }
 
     init {
-        // Other launcher decorations (spacing, dividers, etc.) may already be
-        // installed. The category surface is independent and must be layered
-        // behind them rather than silently skipped when one exists.
-        appsView.mSearchRecyclerView.addItemDecoration(categoryCards)
+        // The adapter provider is created from ActivityAllAppsContainerView.initContent(),
+        // before mSearchRecyclerView is assigned. Defer decoration installation until
+        // the container has completed inflation to avoid crashing launcher startup.
+        appsView.post {
+            appsView.mSearchRecyclerView?.let { recyclerView ->
+                if ((0 until recyclerView.itemDecorationCount).none {
+                        recyclerView.getItemDecorationAt(it) === categoryCards
+                    }) {
+                    recyclerView.addItemDecoration(categoryCards)
+                }
+            }
+        }
     }
     /**
      * Expanded section is drawer-local. Prime Search keeps its own independent detail page.
