@@ -329,6 +329,19 @@ class LawnchairSearchAdapterProvider(
             }
         }
         holder.itemView.visibility = View.VISIBLE
+        // Drawer cards should wrap their actual content tightly. The shared
+        // heading/row styles are intentionally generous for Prime Search, so
+        // compact only the drawer's non-grid rows here.
+        if (adapterItem.searchTarget.layoutType != LayoutType.TEXT_HEADER &&
+            adapterItem.searchTarget.layoutType != LayoutType.ICON_SINGLE_VERTICAL_TEXT) {
+            val isFile = adapterItem.searchTarget.resultType ==
+                SearchTargetCompat.RESULT_TYPE_FILE_TILE
+            holder.itemView.minimumHeight = dp(if (isFile) 54 else 42)
+            holder.itemView.layoutParams?.height = ViewGroup.LayoutParams.WRAP_CONTENT
+            holder.itemView.findViewById<View>(R.id.text_rows)?.apply {
+                setPadding(paddingLeft, dp(2), paddingRight, dp(2))
+            }
+        }
         when (adapterItem.searchTarget.layoutType) {
             LayoutType.TEXT_HEADER -> {
                 val heading = holder.itemView.findViewById<TextView>(R.id.title)
@@ -336,6 +349,7 @@ class LawnchairSearchAdapterProvider(
                 if (label.isNotBlank() && label != app.lawnchair.search.adapter.SPACE &&
                     label != app.lawnchair.search.adapter.SPACE_MINI) {
                     SearchResultGeometry.styleHeading(heading, holder.itemView)
+                    holder.itemView.setPadding(dp(6), dp(9), dp(6), dp(1))
                     if (label.startsWith("Plus de ") || label.startsWith("Réduire")) {
                         heading?.apply {
                             gravity = android.view.Gravity.CENTER
