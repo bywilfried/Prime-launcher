@@ -197,8 +197,8 @@ class LawnchairSearchAdapterProvider(
         if (isStructural) {
             val overflow = resultPositions.size > limit
             val title = itemView.findViewById<TextView>(R.id.title)
-            if (overflow && !expanded) {
-                title?.text = "Plus de " + when (category) {
+            if (overflow) {
+                title?.text = if (expanded) "Réduire  ⌃" else "Plus de " + when (category) {
                     app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS -> "applications"
                     app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> "raccourcis"
                     app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CONTACTS -> "contacts"
@@ -211,7 +211,7 @@ class LawnchairSearchAdapterProvider(
                 itemView.layoutParams?.height = dp(40, itemView)
                 itemView.isClickable = true
                 itemView.setOnClickListener {
-                    expandedCategory = category
+                    expandedCategory = if (expanded) null else category
                     appsView.mSearchRecyclerView.adapter?.notifyDataSetChanged()
                 }
             } else {
