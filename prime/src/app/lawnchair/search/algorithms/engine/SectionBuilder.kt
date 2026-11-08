@@ -218,30 +218,34 @@ data object AppsAndShortcutsSectionBuilder : SectionBuilder {
         results: List<SearchResult>,
     ): List<SearchTargetCompat> {
         val apps = results.filterIsInstance<SearchResult.App>()
-        val shortcuts = results.filterIsInstance<SearchResult.Shortcut>()
-        val appResultCount = apps.size
-
         val targets = mutableListOf<SearchTargetCompat>()
-        if (apps.isNotEmpty() || shortcuts.isNotEmpty()) {
+        if (apps.isNotEmpty()) {
             targets.add(
                 factory.createHeaderTarget(
                     app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS.title,
                 ),
             )
-        }
-
-        if (appResultCount == 1 && shortcuts.isNotEmpty()) {
-            val singleApp = apps.first()
-            targets.add(factory.createAppSearchTarget(singleApp.data, asRow = false))
-            targets.add(factory.createHeaderTarget(SPACE))
-            targets.add(factory.createAppSearchTarget(singleApp.data, asRow = true))
-            targets.addAll(shortcuts.map { factory.createShortcutTarget(it.data) })
-        } else {
             targets.addAll(apps.map { factory.createAppSearchTarget(it.data, asRow = false) })
+            targets.add(factory.createHeaderTarget(SPACE))
         }
-        targets.add(factory.createHeaderTarget(SPACE))
-
         return targets
+    }
+}
+
+/** Drawer shortcut results are a separate category, matching Prime Search ordering. */
+data object AppShortcutsSectionBuilder : SectionBuilder {
+    override fun build(
+        context: Context,
+        factory: SearchTargetFactory,
+        results: List<SearchResult>,
+    ): List<SearchTargetCompat> {
+        val shortcuts = results.filterIsInstance<SearchResult.Shortcut>()
+        if (shortcuts.isEmpty()) return emptyList()
+        return listOf(
+            factory.createHeaderTarget(
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS.title,
+            ),
+        ) + shortcuts.map { factory.createShortcutTarget(it.data) } + listOf(factory.createHeaderTarget(SPACE))
     }
 }
 
