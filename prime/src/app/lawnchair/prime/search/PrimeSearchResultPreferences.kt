@@ -350,6 +350,13 @@ object PrimeSearchResultPreferences {
         prefs(context).edit().putBoolean("fuzzy_apps", enabled).apply()
     }
 
+    fun fuzzyApps(context: Context, surface: Surface): Boolean =
+        surfacePrefs(context, surface).getBoolean("fuzzy_apps", true)
+
+    fun setFuzzyApps(context: Context, enabled: Boolean, surface: Surface) {
+        surfacePrefs(context, surface).edit().putBoolean("fuzzy_apps", enabled).apply()
+    }
+
     fun twoLineAppLabels(context: Context): Boolean =
         prefs(context).getBoolean("two_line_app_labels", false)
 
