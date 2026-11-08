@@ -464,14 +464,10 @@ class LawnchairSearchAdapterProvider(
                     end,
                 )
             }
-            val rowHeight = when {
-                category == app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> 56
-                adapterItem.searchTarget.layoutType == LayoutType.THUMBNAIL -> 72
-                adapterItem.searchTarget.layoutType == LayoutType.ICON_HORIZONTAL_TEXT -> 60
-                adapterItem.searchTarget.layoutType == LayoutType.EMPTY_STATE ||
-                    adapterItem.searchTarget.layoutType == LayoutType.SEARCH_SETTINGS -> 56
-                else -> 48
-            }
+            val rowHeight = SearchResultGeometry.compactRowHeightDp(
+                adapterItem.searchTarget.layoutType,
+                isAppShortcut = category == app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS,
+            )
             app.lawnchair.search.SearchResultGeometry.styleCompactResultRow(
                 holder.itemView,
                 rowHeight,
