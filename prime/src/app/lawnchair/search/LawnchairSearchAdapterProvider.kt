@@ -270,7 +270,7 @@ class LawnchairSearchAdapterProvider(
             adapterItem.searchTarget,
             emptyList(),
         )
-        applyDrawerPreview(holder.itemView, position, adapterItem)
+        if (isStructuralHeader(adapterItem)) applyDrawerPreview(holder.itemView, position, adapterItem)
         // Match Prime Search's compact section headings and non-app result rows.
         // Applied after bind because individual result views restore their own heights.
         val density = holder.itemView.resources.displayMetrics.density
@@ -323,6 +323,9 @@ class LawnchairSearchAdapterProvider(
         else app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_TEXT
         val textColor = app.lawnchair.theme.ThemeColors.resolve(context, profile, role, variant)
         applySearchTextColor(holder.itemView, textColor)
+        if (adapterItem.searchTarget.layoutType != LayoutType.TEXT_HEADER) {
+            applyDrawerPreview(holder.itemView, position, adapterItem)
+        }
         // The category-level ItemDecoration draws one shared card behind the
         // heading and all rows. Individual result rows stay transparent.
         holder.itemView.background = null
