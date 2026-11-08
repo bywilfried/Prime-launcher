@@ -164,20 +164,10 @@ class LawnchairSearchAdapterProvider(
                 SearchTargetCompat.RESULT_TYPE_FILE_TILE -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.FILES
                 SearchTargetCompat.RESULT_TYPE_SETTING_TILE -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.SETTINGS
                 SearchTargetCompat.RESULT_TYPE_CALCULATOR -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALCULATOR
-                SearchTargetCompat.RESULT_TYPE_SUGGESTIONS -> when {
-                    target.id.startsWith("browser:") ->
-                        app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB_SHORTCUTS
-                    target.packageName == app.lawnchair.search.adapter.HISTORY ->
-
-                        app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.HISTORY
-                    target.packageName in setOf("Agenda", "Événements de l'agenda") ->
-                        app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALENDAR
-                    target.packageName in setOf("Tâches", "Tâches · Tasks.org") ->
-                        app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.REMINDERS
-                    target.packageName in setOf("Notifications", "Historique des notifications") ->
-                        app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.NOTIFICATIONS
-                    else -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB
-                }
+                // Match PrimeSearchOverlay.nativeCategoryFor(): suggestion tiles
+                // are a single HISTORY section in the shared result renderer.
+                SearchTargetCompat.RESULT_TYPE_SUGGESTIONS ->
+                    app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.HISTORY
                 else -> null
             }
         }
