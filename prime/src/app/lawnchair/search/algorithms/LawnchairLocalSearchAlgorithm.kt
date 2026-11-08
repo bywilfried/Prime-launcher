@@ -178,7 +178,7 @@ class LawnchairLocalSearchAlgorithm(
                         val surface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
                         if (settings.enabled(context, app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB_SHORTCUTS, surface)) {
                             settings.enabledWebEngines(context, surface).map { engine ->
-                                SearchResult.Action.WebSearch(
+                                SearchResult.Action.WebShortcut(
                                     query = query,
                                     providerName = engine.title,
                                     searchUrl = engine.url + android.net.Uri.encode(query),
