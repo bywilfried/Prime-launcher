@@ -91,6 +91,14 @@ object PrimeSearchOverlay {
         private val embeddedHost: ViewGroup? = null,
     ) {
         private val layer = launcher.dragLayer
+        private val hostAttachListener = object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(view: View) = Unit
+            override fun onViewDetachedFromWindow(view: View) {
+                if (embeddedHost != null && content.parent === embeddedHost) dismiss()
+            }
+        }.also { listener ->
+            embeddedHost?.addOnAttachStateChangeListener(listener)
+        }
         private val scrim = object : FrameLayout(launcher) {
             override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
                 if (event.keyCode == android.view.KeyEvent.KEYCODE_BACK &&
@@ -148,6 +156,8 @@ object PrimeSearchOverlay {
             if (embeddedHost == null) {
                 layer.removeView(scrim)
                 layer.setPrimeSearchOpen(false)
+            } else {
+                embeddedHost.removeOnAttachStateChangeListener(hostAttachListener)
             }
             onDismiss()
         }
