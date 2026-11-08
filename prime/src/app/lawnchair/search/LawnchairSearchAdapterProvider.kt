@@ -155,6 +155,12 @@ class LawnchairSearchAdapterProvider(
 
     private fun categoryForSection(items: List<SearchAdapterItem>, start: Int, end: Int):
         app.lawnchair.prime.search.PrimeSearchResultPreferences.Category? {
+        // Prefer the same heading-to-category registry used by Prime Search.
+        // This preserves distinct sections such as Web, Calendar, Reminders and
+        // Notifications instead of guessing from a provider package name.
+        val heading = items.getOrNull(start - 1)?.searchTarget?.searchAction?.title?.toString()
+        app.lawnchair.prime.search.PrimeSearchCategoryPresentation
+            .categoryForHeading(heading)?.let { return it }
         for (index in start until end) {
             val target = items[index].searchTarget
             return when (target.resultType) {
