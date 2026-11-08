@@ -88,6 +88,7 @@ object PrimeSearchOverlay {
         private val floating: Boolean,
         private val density: Float,
         private val onDismiss: () -> Unit,
+        private val embeddedHost: ViewGroup? = null,
     ) {
         private val layer = launcher.dragLayer
         private val scrim = object : FrameLayout(launcher) {
@@ -109,9 +110,15 @@ object PrimeSearchOverlay {
                 if (popup != null) popup.close(true) else dismiss()
             }
         }
-        val isShowing get() = scrim.parent != null
+        val isShowing get() = if (embeddedHost != null) content.parent === embeddedHost else scrim.parent != null
         fun show() {
             if (isShowing) return
+            if (embeddedHost != null) {
+                (content.parent as? ViewGroup)?.removeView(content)
+                embeddedHost.addView(content, FrameLayout.LayoutParams(-1, -1))
+                content.isClickable = true
+                return
+            }
             layer.setPrimeSearchOpen(true)
             layer.addView(scrim, FrameLayout.LayoutParams(-1, -1))
             val width = if (floating) {
@@ -138,15 +145,19 @@ object PrimeSearchOverlay {
         fun dismiss() {
             if (!isShowing) return
             (content.parent as? ViewGroup)?.removeView(content)
-            layer.removeView(scrim)
-            layer.setPrimeSearchOpen(false)
+            if (embeddedHost == null) {
+                layer.removeView(scrim)
+                layer.setPrimeSearchOpen(false)
+            }
             onDismiss()
         }
         fun hideForDrag() {
+            if (embeddedHost != null) return
             scrim.visibility = View.INVISIBLE
             layer.setPrimeSearchDrag(true)
         }
         fun restoreAfterDrag() {
+            if (embeddedHost != null) return
             layer.setPrimeSearchDrag(false)
             if (isShowing) scrim.visibility = View.VISIBLE
         }
@@ -265,12 +276,13 @@ object PrimeSearchOverlay {
     fun show(
         launcher: LawnchairLauncher,
         preferenceSurface: PrimeSearchResultPreferences.Surface = PrimeSearchResultPreferences.Surface.PRIME_SEARCH,
+        embeddedHost: ViewGroup? = null,
     ) {
         if (activeDialog?.isShowing == true) return
         if (activeDialog != null) dismiss()
         val density = launcher.resources.displayMetrics.density
         val inset = (16 * density).toInt()
-        val floating = PrimeSearchResultPreferences.floatingWindow(launcher, preferenceSurface)
+        val floating = embeddedHost == null && PrimeSearchResultPreferences.floatingWindow(launcher, preferenceSurface)
         val profile = ThemeProfile.current(launcher)
         val variant = launcher.effectiveThemeVariant()
         fun themed(role: ThemeColorRole) = ThemeColors.resolve(launcher, profile, role, variant)
@@ -357,7 +369,11 @@ object PrimeSearchOverlay {
             searchBar.addView(input, FrameLayout.LayoutParams(-1, -2))
             addView(searchBar, LinearLayout.LayoutParams(-1, -2))
             addView(zeroState, LinearLayout.LayoutParams(-1, -2))
-            addView(scroll, LinearLayout.LayoutParams(-1, -2))
+            addView(scroll, if (embeddedHost != null) {
+                LinearLayout.LayoutParams(-1, 0, 1f)
+            } else {
+                LinearLayout.LayoutParams(-1, -2)
+            })
             // Use a real outlined vector-like gear instead of the platform
             // Unicode gear glyph, whose filled appearance varies by font.
             val settingsIcon = object : Drawable() {
@@ -419,11 +435,11 @@ object PrimeSearchOverlay {
             input.setPadding(inset, 0, (56 * density).toInt(), 0)
         }
         lateinit var dialog: PrimeSearchSurface
-        dialog = PrimeSearchSurface(launcher, container, floating, density) {
+        dialog = PrimeSearchSurface(launcher, container, floating, density, onDismiss = {
             algorithm.cancel(true)
             if (activeAlgorithm === algorithm) activeAlgorithm = null
             if (activeDialog === dialog) activeDialog = null
-        }
+        }, embeddedHost = embeddedHost)
         val packageManager = launcher.packageManager
         // Do not enumerate installed apps or query usage stats on the UI thread
         // before the search window and its keyboard can appear.
@@ -2747,6 +2763,15 @@ object PrimeSearchOverlay {
         }
         zeroState.visibility = View.VISIBLE
         scroll.visibility = View.GONE
+    }
+
+    /**
+     * Mount the same Prime Search screen inside the app drawer's view hierarchy.
+     * The host owns its bounds and lifecycle; no DragLayer scrim or floating
+     * window is created. Pass the drawer's content container as [host].
+     */
+    fun showInDrawer(launcher: LawnchairLauncher, host: ViewGroup) {
+        show(launcher, PrimeSearchResultPreferences.Surface.DRAWER, host)
     }
 
     fun dismiss() {
