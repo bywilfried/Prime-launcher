@@ -137,11 +137,11 @@ class LawnchairSearchAdapterProvider(
                     target.packageName == app.lawnchair.search.adapter.HISTORY ->
 
                         app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.HISTORY
-                    "Agenda", "Événements de l'agenda" ->
+                    target.packageName in setOf("Agenda", "Événements de l'agenda") ->
                         app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALENDAR
-                    "Tâches", "Tâches · Tasks.org" ->
+                    target.packageName in setOf("Tâches", "Tâches · Tasks.org") ->
                         app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.REMINDERS
-                    "Notifications", "Historique des notifications" ->
+                    target.packageName in setOf("Notifications", "Historique des notifications") ->
                         app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.NOTIFICATIONS
                     else -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB
                 }
