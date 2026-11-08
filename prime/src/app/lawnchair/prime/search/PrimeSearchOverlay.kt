@@ -1321,7 +1321,11 @@ object PrimeSearchOverlay {
                 rememberDetailSizes(child)
             }
             detailSearchCategory = card.tag as? PrimeSearchResultPreferences.Category
-            detailSearchAlgorithm = LawnchairLocalSearchAlgorithm(launcher, primeSearch = true)
+            detailSearchAlgorithm = LawnchairLocalSearchAlgorithm(
+                launcher,
+                primeSearch = true,
+                preferenceSurface = preferenceSurface,
+            )
             detailSessionId++
             detailSearchQuery = input.text.toString()
             detailSearchSerial++
