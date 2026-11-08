@@ -275,15 +275,41 @@ class LawnchairSearchAdapterProvider(
         val rows = android.widget.LinearLayout(context).apply {
             orientation = android.widget.LinearLayout.VERTICAL
         }
-        results.forEach { result ->
-            val layoutId = layoutForViewType(result.viewType) ?: return@forEach
-            val row = android.view.LayoutInflater.from(context).inflate(layoutId, rows, false)
-            val resultView = row as? SearchResultView ?: return@forEach
-            resultView.bind(result.searchTarget, emptyList())
-            row.setOnLongClickListener { view ->
-                (view as? SearchResultView)?.launch() ?: false
+        if (category == app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS) {
+            val columns = app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsColumns(context)
+            val iconPercent = app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsIconSizePercent(context)
+            val labelLines = if (app.lawnchair.prime.search.PrimeSearchResultPreferences.twoLineAppLabels(context)) 2 else 1
+            val cellHeight = app.lawnchair.prime.search.PrimeAppGridGeometry.rowHeightPx(context, iconPercent, labelLines)
+            val cellWidth = ((context.resources.displayMetrics.widthPixels * 0.94f).toInt() - (48 * density).toInt()) / columns
+            var appRow: android.widget.LinearLayout? = null
+            var inRow = 0
+            results.forEach { result ->
+                if (result.searchTarget.resultType != SearchTargetCompat.RESULT_TYPE_APPLICATION ||
+                    result.searchTarget.layoutType != LayoutType.ICON_SINGLE_VERTICAL_TEXT) return@forEach
+                if (appRow == null || inRow == columns) {
+                    appRow = android.widget.LinearLayout(context).apply {
+                        orientation = android.widget.LinearLayout.HORIZONTAL
+                        gravity = android.view.Gravity.CENTER_HORIZONTAL
+                    }
+                    rows.addView(appRow, android.widget.LinearLayout.LayoutParams(-1, cellHeight))
+                    inRow = 0
+                }
+                val layoutId = layoutForViewType(result.viewType) ?: return@forEach
+                val tile = android.view.LayoutInflater.from(context).inflate(layoutId, appRow, false)
+                val resultView = tile as? SearchResultView ?: return@forEach
+                resultView.bind(result.searchTarget, emptyList())
+                (tile as? app.lawnchair.allapps.views.SearchResultIcon)?.setPrimeSearchLabelLayout(true)
+                appRow!!.addView(tile, android.widget.LinearLayout.LayoutParams(cellWidth, cellHeight))
+                inRow++
             }
-            rows.addView(row)
+        } else {
+            results.forEach { result ->
+                val layoutId = layoutForViewType(result.viewType) ?: return@forEach
+                val row = android.view.LayoutInflater.from(context).inflate(layoutId, rows, false)
+                val resultView = row as? SearchResultView ?: return@forEach
+                resultView.bind(result.searchTarget, emptyList())
+                rows.addView(row)
+            }
         }
         scroll.addView(rows, android.view.ViewGroup.LayoutParams(-1, -2))
         root.addView(scroll, android.widget.LinearLayout.LayoutParams(-1, 0, 1f))
@@ -461,8 +487,14 @@ class LawnchairSearchAdapterProvider(
         // Apply drawer-specific compact geometry AFTER SearchResultGeometry:
         // styleTextRow/styleFileRow restore their 52dp Prime Search baseline, which
         // otherwise silently overrides the earlier drawer sizing.
-        if (adapterItem.searchTarget.layoutType != LayoutType.TEXT_HEADER &&
-            adapterItem.searchTarget.layoutType != LayoutType.ICON_SINGLE_VERTICAL_TEXT) {
+        if (adapterItem.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT) {
+            val labelLines = if (app.lawnchair.prime.search.PrimeSearchResultPreferences.twoLineAppLabels(holder.itemView.context)) 2 else 1
+            val iconPercent = app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsIconSizePercent(holder.itemView.context)
+            holder.itemView.minimumHeight = 0
+            holder.itemView.layoutParams?.height = app.lawnchair.prime.search.PrimeAppGridGeometry.rowHeightPx(
+                holder.itemView.context, iconPercent, labelLines,
+            )
+        } else if (adapterItem.searchTarget.layoutType != LayoutType.TEXT_HEADER) {
             // Several platform result XMLs declare fixed 64/92/100dp heights.
             // WRAP_CONTENT is not compact here: custom SearchResultIconRow children
             // with MATCH_PARENT sizing can still measure against those large bounds.
