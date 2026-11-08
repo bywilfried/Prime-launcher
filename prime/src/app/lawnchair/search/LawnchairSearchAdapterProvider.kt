@@ -141,10 +141,12 @@ class LawnchairSearchAdapterProvider(
         }
     }
     /**
-     * The compact drawer preview stays clipped. "Plus de…" transfers the
-     * category and active query to Prime Search's shared detail-page renderer;
-     * the drawer no longer owns a second category-results dialog.
+     * Categories expand inside the drawer's own RecyclerView. The drawer never
+     * hands its query or results to Prime Search.
      */
+    private val expandedCategories = mutableSetOf<
+        app.lawnchair.prime.search.PrimeSearchResultPreferences.Category
+    >()
 
     private fun isStructuralHeader(item: SearchAdapterItem): Boolean {
         if (item.searchTarget.layoutType != LayoutType.TEXT_HEADER) return false
@@ -248,26 +250,13 @@ class LawnchairSearchAdapterProvider(
         }
     }
 
-    private fun openCategoryDetails(
+    private fun toggleCategoryExpansion(
         category: app.lawnchair.prime.search.PrimeSearchResultPreferences.Category,
     ) {
-        val launcher = appsView.context as? app.lawnchair.LawnchairLauncher ?: return
-        // Use the launcher's actual All Apps search field, not a recursive scan
-        // that could pick up an unrelated EditText from another drawer component.
-        val query = appsView.findViewById<android.widget.EditText>(R.id.input)
-            ?.text?.toString()
-            .orEmpty()
-        if (query.isBlank()) return
-
-        // All expanded sections now go through the same result renderer and
-        // navigation stack as Prime Search. Do not fall back to the old custom
-        // dialog: that dialog had different layouts, actions and result limits.
-        app.lawnchair.prime.search.PrimeSearchOverlay.showCategoryInDrawer(
-            launcher,
-            appsView,
-            category,
-            query,
-        )
+        if (!expandedCategories.add(category)) expandedCategories.remove(category)
+        // Rebind the existing drawer adapter in place. This reveals the hidden
+        // rows in the same category card without opening or launching Prime Search.
+        appsView.mSearchRecyclerView.adapter?.notifyDataSetChanged()
     }
 
     private fun applyDrawerPreview(itemView: View, position: Int, item: SearchAdapterItem) {
@@ -301,7 +290,8 @@ class LawnchairSearchAdapterProvider(
             } else totalHeight > limitPx
             val title = itemView.findViewById<TextView>(R.id.title)
             if (overflow) {
-                title?.text = "Plus de " + when (category) {
+                val expanded = category in expandedCategories
+                title?.text = if (expanded) "Réduire  ⌃" else "Plus de " + when (category) {
                     app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS -> "applications"
                     app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> "raccourcis"
                     app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CONTACTS -> "contacts"
@@ -318,7 +308,7 @@ class LawnchairSearchAdapterProvider(
                 itemView.layoutParams?.height = dp(40, itemView)
                 itemView.isClickable = true
                 itemView.setOnClickListener {
-                    openCategoryDetails(category)
+                    toggleCategoryExpansion(category)
                 }
             } else {
                 itemView.setOnClickListener(null)
@@ -339,7 +329,7 @@ class LawnchairSearchAdapterProvider(
         ) * app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsColumns(
             itemView.context, app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER,
         )
-        val shouldShow = if (isApps) resultIndex < maxAppItems
+        val shouldShow = category in expandedCategories || if (isApps) resultIndex < maxAppItems
             else previousHeight == 0 || previousHeight + currentHeight <= limitPx
         itemView.visibility = if (shouldShow) View.VISIBLE else View.GONE
         if (shouldShow) itemView.minimumHeight = 0
