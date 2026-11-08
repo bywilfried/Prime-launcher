@@ -50,8 +50,15 @@ object PrimeSearchCategoryPresentation {
         "Raccourcis Web" to PrimeSearchResultPreferences.Category.WEB_SHORTCUTS,
     )
 
-    fun categoryForHeading(title: String?): PrimeSearchResultPreferences.Category? =
-        title?.trim()?.let(headings::get)
+    fun categoryForHeading(title: String?): PrimeSearchResultPreferences.Category? {
+        val normalized = title?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+        // Prefer explicit aliases for provider-specific headings, then fall back
+        // to the canonical category title so every shared category is recognized.
+        return headings[normalized]
+            ?: PrimeSearchResultPreferences.Category.values().firstOrNull {
+                it.title.equals(normalized, ignoreCase = true)
+            }
+    }
 
     fun orderedDrawerBuilders(context: Context): List<SectionBuilder> {
         val surface = PrimeSearchResultPreferences.Surface.DRAWER
