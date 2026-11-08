@@ -1,6 +1,7 @@
 package app.lawnchair.search.algorithms
 
 import app.lawnchair.prime.search.PrimeSearchResultPreferences
+import app.lawnchair.prime.search.PrimeSearchCategoryPresentation
 
 import android.content.Context
 import app.lawnchair.preferences.PreferenceManager
@@ -359,20 +360,7 @@ class LawnchairLocalSearchAlgorithm(
                 if (builder === AppsAndShortcutsSectionBuilder) PrimeAppsAndShortcutsSectionBuilder else builder
             }
         } else {
-            val settings = app.lawnchair.prime.search.PrimeSearchResultPreferences
-            val order = settings.order(context, app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER)
-            val byCategory = mapOf(
-                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS to AppsAndShortcutsSectionBuilder,
-                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALCULATOR to CalculationSectionBuilder,
-                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB to WebSuggestionsSectionBuilder,
-                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CONTACTS to ContactsSectionBuilder,
-                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.FILES to FilesSectionBuilder,
-                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.SETTINGS to SettingsSectionBuilder,
-                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.HISTORY to HistorySectionBuilder,
-                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALENDAR to PrimeEntriesSectionBuilder,
-            )
-            val ordered = order.mapNotNull { byCategory[it] }.distinct()
-            ordered + sectionBuilders.filterNot { it in ordered }
+            PrimeSearchCategoryPresentation.orderedDrawerBuilders(context)
         }
         return builders.flatMap { builder ->
             builder.build(context, factory, results)
