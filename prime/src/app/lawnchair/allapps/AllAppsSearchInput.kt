@@ -480,7 +480,7 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
     override fun initializeSearch(appsView: ActivityAllAppsContainerView<*>) {
         apps = appsView.searchResultList as LawnchairAlphabeticalAppsList<*>
         this.appsView = appsView
-        val algorithm = LawnchairSearchAlgorithm.create(context)
+        val algorithm = LawnchairSearchAlgorithm.create(context, primeMatching = true)
         this.searchAlgorithm = algorithm
         searchBarController.initialize(
             algorithm,
