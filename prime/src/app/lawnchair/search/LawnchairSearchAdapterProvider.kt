@@ -341,15 +341,20 @@ class LawnchairSearchAdapterProvider(
             app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsColumns(context, drawerSurface)
                 .coerceAtLeast(1)
         } else 1
+        val appIconSizePercent = if (isAppGrid) {
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsIconSizePercent(
+                context, drawerSurface,
+            )
+        } else 100
+        val appLabelLines = if (isAppGrid &&
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.twoLineAppLabels(context, drawerSurface)
+        ) 2 else 1
+        val appIconSizePx = if (isAppGrid) {
+            app.lawnchair.prime.search.PrimeAppGridGeometry.iconPx(context, appIconSizePercent)
+        } else 0
         val appRowHeight = if (isAppGrid) {
             app.lawnchair.prime.search.PrimeAppGridGeometry.rowHeightPx(
-                context,
-                app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsIconSizePercent(
-                    context, drawerSurface,
-                ),
-                if (app.lawnchair.prime.search.PrimeSearchResultPreferences.twoLineAppLabels(
-                    context, drawerSurface,
-                )) 2 else 1,
+                context, appIconSizePercent, appLabelLines,
             )
         } else 0
         val categoryItems = results.filter {
@@ -366,7 +371,7 @@ class LawnchairSearchAdapterProvider(
             }
             clipToPadding = false
             setPadding(dp(8, this), dp(if (isAppGrid) 8 else 4, this), dp(8, this), dp(24, this))
-            adapter = DrawerCategoryResultsAdapter(categoryItems, isAppGrid, appRowHeight)
+            adapter = DrawerCategoryResultsAdapter(categoryItems, isAppGrid, appRowHeight, appIconSizePx, appLabelLines)
         }
         page.addView(list, android.widget.LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f,
@@ -410,6 +415,8 @@ class LawnchairSearchAdapterProvider(
         private val results: List<SearchAdapterItem>,
         private val appGrid: Boolean,
         private val appRowHeightPx: Int,
+        private val appIconSizePx: Int,
+        private val appLabelLines: Int,
     ) : androidx.recyclerview.widget.RecyclerView.Adapter<DrawerCategoryResultsAdapter.ResultHolder>() {
 
         inner class ResultHolder(val resultView: View) :
@@ -446,7 +453,18 @@ class LawnchairSearchAdapterProvider(
             if (appGrid) {
                 view.minimumHeight = 0
                 view.layoutParams?.height = appRowHeightPx
-                view.setPadding(0, 0, 0, 0)
+                view.setPadding(0, dp(4, view), 0, dp(4, view))
+                (view as? app.lawnchair.allapps.views.SearchResultIcon)?.apply {
+                    setPrimeIconSize(appIconSizePx)
+                    setTextVisibility(true)
+                    setPrimeSearchLabelLayout(true)
+                    gravity = android.view.Gravity.TOP or android.view.Gravity.CENTER_HORIZONTAL
+                    setCompoundDrawablePadding(dp(4, this))
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
+                    includeFontPadding = false
+                    maxLines = appLabelLines
+                    ellipsize = android.text.TextUtils.TruncateAt.END
+                }
             } else if (item.searchTarget.layoutType != LayoutType.ICON_SINGLE_VERTICAL_TEXT) {
                 val category = categoryForResult(item)
                 val rowHeight = SearchResultGeometry.compactRowHeightDp(
