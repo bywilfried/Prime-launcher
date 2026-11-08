@@ -86,7 +86,9 @@ class LawnchairSearchAdapterProvider(
                 val isHeading = item?.searchTarget?.layoutType == LayoutType.TEXT_HEADER
                 val headingText = if (isHeading) child.findViewById<TextView>(R.id.title)?.text?.toString()?.trim().orEmpty() else ""
                 val structural = headingText.equals(app.lawnchair.search.adapter.SPACE, true) ||
-                    headingText.equals(app.lawnchair.search.adapter.SPACE_MINI, true)
+                    headingText.equals(app.lawnchair.search.adapter.SPACE_MINI, true) ||
+                    headingText.startsWith("Plus de ", ignoreCase = true) ||
+                    headingText.startsWith("Réduire", ignoreCase = true)
                 if (isHeading && !structural) {
                     drawSection()
                     start = child
