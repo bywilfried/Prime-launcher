@@ -217,6 +217,28 @@ class LawnchairSearchAdapterProvider(
         results: List<SearchAdapterItem>,
     ) {
         val context = appsView.context
+        // The drawer's "Plus de…" action now enters Prime Search's real category
+        // detail renderer. Keep the legacy dialog only as a defensive fallback
+        // for non-launcher hosts or when the drawer query cannot be recovered.
+        fun findDrawerQuery(view: View): String? {
+            if (view is android.widget.EditText) {
+                view.text?.toString()?.takeIf { it.isNotBlank() }?.let { return it }
+            }
+            if (view is ViewGroup) {
+                for (index in 0 until view.childCount) {
+                    findDrawerQuery(view.getChildAt(index))?.let { return it }
+                }
+            }
+            return null
+        }
+        val query = findDrawerQuery(appsView)
+        val launcher = context as? app.lawnchair.LawnchairLauncher
+        if (launcher != null && !query.isNullOrBlank()) {
+            app.lawnchair.prime.search.PrimeSearchOverlay.showCategoryInDrawer(
+                launcher, appsView, category, query,
+            )
+            return
+        }
         val density = context.resources.displayMetrics.density
         val titleText = when (category) {
             app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS -> "Applications"
