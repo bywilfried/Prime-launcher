@@ -101,12 +101,16 @@ object PrimeSearchResultPreferences {
         surfacePrefs(context, surface).edit().putString("suggestion_provider", provider.name).apply()
     }
 
-    fun enabledWebEngines(context: Context, surface: Surface): List<WebEngine> {
-        val preferences = surfacePrefs(context, surface)
-        val selected = preferences.getStringSet("web_engines", setOf(WebEngine.DUCKDUCKGO.name)).orEmpty()
-        val saved = preferences.getString("web_engine_order", null)
+    fun webEngineOrder(context: Context, surface: Surface): List<WebEngine> {
+        val saved = surfacePrefs(context, surface).getString("web_engine_order", null)
             ?.split(",")?.mapNotNull { name -> WebEngine.entries.firstOrNull { it.name == name } }.orEmpty()
-        return (saved + WebEngine.entries).distinct().filter { it.name in selected }
+        return (saved + WebEngine.entries).distinct()
+    }
+
+    fun enabledWebEngines(context: Context, surface: Surface): List<WebEngine> {
+        val selected = surfacePrefs(context, surface)
+            .getStringSet("web_engines", setOf(WebEngine.DUCKDUCKGO.name)).orEmpty()
+        return webEngineOrder(context, surface).filter { it.name in selected }
     }
 
     fun saveWebEngineOrder(context: Context, engines: List<WebEngine>, surface: Surface) {
