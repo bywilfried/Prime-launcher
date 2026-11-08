@@ -52,6 +52,31 @@ class LawnchairSearchAdapterProvider(
 
             var start: android.view.View? = null
             var end: android.view.View? = null
+
+            // A category heading can scroll above the viewport while its rows
+            // remain visible. Continue painting that card from the first visible
+            // row instead of dropping its background during a fling.
+            val firstVisible = children.firstOrNull()
+            if (firstVisible != null) {
+                val firstItem = firstVisible.third
+                val firstIsHeading = firstItem?.searchTarget?.layoutType == LayoutType.TEXT_HEADER
+                if (!firstIsHeading) {
+                    val adapterItems = appsView.mSearchRecyclerView.mApps.adapterItems
+                    for (index in firstVisible.first - 1 downTo 0) {
+                        val previous = adapterItems.getOrNull(index) as? SearchAdapterItem ?: continue
+                        if (previous.searchTarget.layoutType == LayoutType.TEXT_HEADER) {
+                            val title = previous.searchTarget.searchAction?.title?.toString()?.trim().orEmpty()
+                            if (!title.equals(app.lawnchair.search.adapter.SPACE, true) &&
+                                !title.equals(app.lawnchair.search.adapter.SPACE_MINI, true)) {
+                                start = firstVisible.second
+                                end = firstVisible.second
+                            }
+                            break
+                        }
+                    }
+                }
+            }
+
             fun drawSection() {
                 val first = start ?: return
                 val last = end ?: return
