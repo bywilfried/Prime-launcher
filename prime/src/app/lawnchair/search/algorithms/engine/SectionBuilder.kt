@@ -181,6 +181,36 @@ data object HistorySectionBuilder : SectionBuilder {
     }
 }
 
+data object WebShortcutsSectionBuilder : SectionBuilder {
+    override fun build(
+        context: Context,
+        factory: SearchTargetFactory,
+        results: List<SearchResult>,
+    ): List<SearchTargetCompat> {
+        val shortcuts = results.filterIsInstance<SearchResult.Action.WebShortcut>()
+        if (shortcuts.isEmpty()) return emptyList()
+        val targets = mutableListOf<SearchTargetCompat>()
+        targets.add(
+            factory.createHeaderTarget(
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB_SHORTCUTS.title,
+            ),
+        )
+        shortcuts.distinctBy { it.searchUrl }.forEach { action ->
+            targets.add(
+                factory.createWebSearchActionTarget(
+                    query = action.query,
+                    providerName = action.providerName,
+                    searchUrl = action.searchUrl,
+                    providerIconRes = action.providerIconRes,
+                    tintIcon = action.tintIcon,
+                ),
+            )
+        }
+        targets.add(factory.createHeaderTarget(SPACE))
+        return targets
+    }
+}
+
 data object ActionsSectionBuilder : SectionBuilder {
     override fun build(
         context: Context,
