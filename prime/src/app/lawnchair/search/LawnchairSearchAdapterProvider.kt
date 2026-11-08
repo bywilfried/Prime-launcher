@@ -131,8 +131,11 @@ class LawnchairSearchAdapterProvider(
                 SearchTargetCompat.RESULT_TYPE_FILE_TILE -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.FILES
                 SearchTargetCompat.RESULT_TYPE_SETTING_TILE -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.SETTINGS
                 SearchTargetCompat.RESULT_TYPE_CALCULATOR -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALCULATOR
-                SearchTargetCompat.RESULT_TYPE_SUGGESTIONS -> when (target.packageName) {
-                    app.lawnchair.search.adapter.HISTORY ->
+                SearchTargetCompat.RESULT_TYPE_SUGGESTIONS -> when {
+                    target.id.startsWith("browser:") ->
+                        app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB_SHORTCUTS
+                    target.packageName == app.lawnchair.search.adapter.HISTORY ->
+
                         app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.HISTORY
                     "Agenda", "Événements de l'agenda" ->
                         app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALENDAR
