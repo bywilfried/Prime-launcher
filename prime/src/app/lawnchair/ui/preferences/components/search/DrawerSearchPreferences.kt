@@ -258,7 +258,7 @@ private fun DrawerAdvancedSearchPreferences() {
         }
     }
     PreferenceGroup(heading = "Recherche du tiroir d'applications") {
-        Text("Réglages indépendants de Prime Search. L'apparence du tiroir et de sa barre de recherche reste inchangée.")
+        Text("Réglages indépendants de Prime Search. Les résultats du tiroir utilisent des cartes arrondies et les couleurs définies dans Personnalisation → Tiroirs.")
         val drawerSurface = PrimeSearchResultPreferences.Surface.DRAWER
         var drawerWebCount by remember {
             mutableStateOf(PrimeSearchResultPreferences.webSuggestionCount(context, drawerSurface))
