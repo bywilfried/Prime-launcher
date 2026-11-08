@@ -309,32 +309,47 @@ private fun DrawerAdvancedSearchPreferences() {
             onClick = { showDrawerEngineSettings = true },
         )
         if (showDrawerEngineSettings) {
+            var engines by remember { mutableStateOf(PrimeSearchResultPreferences.webEngineOrder(context, drawerSurface)) }
             androidx.compose.material3.AlertDialog(
                 onDismissRequest = { showDrawerEngineSettings = false },
                 title = { Text("Moteurs Web du tiroir") },
                 text = {
                     androidx.compose.foundation.lazy.LazyColumn {
-                        items(PrimeSearchResultPreferences.WebEngine.entries.size) { index ->
-                            val engine = PrimeSearchResultPreferences.WebEngine.entries[index]
+                        items(engines.size) { index ->
+                            val engine = engines[index]
                             var enabled by remember(engine) {
                                 mutableStateOf(engine in PrimeSearchResultPreferences.enabledWebEngines(context, drawerSurface))
                             }
-                            PreferenceTemplate(
-                                title = { Text(engine.title) },
-                                endWidget = {
-                                    androidx.compose.material3.Switch(
-                                        checked = enabled,
-                                        onCheckedChange = {
-                                            enabled = it
-                                            PrimeSearchResultPreferences.setWebEngineEnabled(context, engine, it, drawerSurface)
-                                        },
-                                    )
-                                },
-                                onClick = {
-                                    enabled = !enabled
-                                    PrimeSearchResultPreferences.setWebEngineEnabled(context, engine, enabled, drawerSurface)
-                                },
-                            )
+                            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                androidx.compose.material3.Switch(
+                                    checked = enabled,
+                                    onCheckedChange = {
+                                        enabled = it
+                                        PrimeSearchResultPreferences.setWebEngineEnabled(context, engine, it, drawerSurface)
+                                    },
+                                )
+                                Text(engine.title, modifier = Modifier.weight(1f).padding(start = 8.dp))
+                                IconButton(onClick = {
+                                    if (index > 0) {
+                                        val updated = engines.toMutableList()
+                                        java.util.Collections.swap(updated, index, index - 1)
+                                        engines = updated
+                                        PrimeSearchResultPreferences.saveWebEngineOrder(context, updated, drawerSurface)
+                                    }
+                                }, enabled = index > 0) {
+                                    Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Monter")
+                                }
+                                IconButton(onClick = {
+                                    if (index < engines.lastIndex) {
+                                        val updated = engines.toMutableList()
+                                        java.util.Collections.swap(updated, index, index + 1)
+                                        engines = updated
+                                        PrimeSearchResultPreferences.saveWebEngineOrder(context, updated, drawerSurface)
+                                    }
+                                }, enabled = index < engines.lastIndex) {
+                                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Descendre")
+                                }
+                            }
                         }
                     }
                 },
