@@ -84,8 +84,8 @@ object SearchResultGeometry {
     }
 
     /**
-     * Drawer-only result card treatment. Prime Search owns its own surface and
-     * never calls this method, so its palette and rendering remain untouched.
+     * Drawer-only result card treatment. Shared row geometry is handled above;
+     * the card palette and outline remain surface-specific.
      */
     fun styleDrawerCard(view: View) {
         val context = view.context
