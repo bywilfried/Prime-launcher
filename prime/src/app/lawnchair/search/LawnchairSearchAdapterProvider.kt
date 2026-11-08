@@ -141,9 +141,9 @@ class LawnchairSearchAdapterProvider(
         }
     }
     /**
-     * The drawer preview stays clipped. "Plus de…" opens a separate full-results
-     * window, matching Prime Search's detail-page interaction rather than
-     * revealing hidden rows inside the compact drawer list.
+     * The compact drawer preview stays clipped. "Plus de…" transfers the
+     * category and active query to Prime Search's shared detail-page renderer;
+     * the drawer no longer owns a second category-results dialog.
      */
 
     private fun isStructuralHeader(item: SearchAdapterItem): Boolean {
