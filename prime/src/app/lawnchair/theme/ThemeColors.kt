@@ -141,6 +141,7 @@ object ThemeColors {
             ThemeColorRole.HOME_POPUP_ICON,
             ThemeColorRole.DRAWER_POPUP_ICON,
             ThemeColorRole.DRAWER_SEARCH_TEXT,
+            ThemeColorRole.DRAWER_SEARCH_RESULT_TEXT,
             ThemeColorRole.DRAWER_SEARCH_HINT,
             ThemeColorRole.DRAWER_SEARCH_ICON,
             ThemeColorRole.TABS_CATEGORY_TEXT,
@@ -149,10 +150,12 @@ object ThemeColors {
             ThemeColorRole.DRAWER_BACKGROUND,
             ThemeColorRole.HOME_HOTSEAT_BACKGROUND -> if (dark) recipe("Neutral2", 600, 6) else recipe("Neutral2", 600, 87)
             ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE,
+            ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BACKGROUND,
             ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE,
             ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND ->
                 if (dark) recipe("Accent2", 600, 34) else recipe("Accent2", 200, 72)
-            ThemeColorRole.DRAWER_SEARCH_BORDER -> if (dark) recipe("Accent1", 100) else recipe("Accent1", 600)
+            ThemeColorRole.DRAWER_SEARCH_BORDER,
+            ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BORDER -> if (dark) recipe("Accent1", 100) else recipe("Accent1", 600)
             ThemeColorRole.DRAWER_PROFILE_TAB_SELECTED_BACKGROUND ->
                 if (dark) recipe("Accent2", 800, 14) else recipe("Accent2", 300, 58)
             ThemeColorRole.DRAWER_PROFILE_TAB_UNSELECTED_BACKGROUND ->
@@ -774,10 +777,12 @@ object ThemeColors {
         // dynamic recipe, not the same semantic value. They therefore evolve together with the
         // accent source/style while remaining independently overridable.
         ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE,
+        ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BACKGROUND,
         ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE,
         ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND ->
             resolveLegacyToken(context, ColorTokens.AllAppsTabBackground, variant)
-        ThemeColorRole.DRAWER_SEARCH_TEXT ->
+        ThemeColorRole.DRAWER_SEARCH_TEXT,
+        ThemeColorRole.DRAWER_SEARCH_RESULT_TEXT ->
             resolveLegacyToken(context, ColorTokens.TextColorPrimary, variant)
         ThemeColorRole.DRAWER_SEARCH_HINT ->
             resolveLegacyToken(context, ColorTokens.TextColorSecondary, variant)
@@ -785,8 +790,11 @@ object ThemeColors {
         // not the multicolour search-provider artwork in the Dock.
         ThemeColorRole.DRAWER_SEARCH_ICON ->
             resolveLegacyToken(context, ColorTokens.ColorAccent, variant)
-        ThemeColorRole.DRAWER_SEARCH_BORDER ->
+        ThemeColorRole.DRAWER_SEARCH_BORDER,
+        ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BORDER ->
             resolveLegacyToken(context, ColorTokens.ColorAccent, variant)
+        ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BACKGROUND ->
+            resolveLegacyToken(context, ColorTokens.AllAppsTabBackground, variant)
         ThemeColorRole.DRAWER_SEARCH_SELECTED_RESULT_BACKGROUND ->
             resolveLegacyToken(
                 context,
