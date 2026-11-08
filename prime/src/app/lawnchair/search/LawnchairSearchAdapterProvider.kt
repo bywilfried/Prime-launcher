@@ -216,142 +216,22 @@ class LawnchairSearchAdapterProvider(
         category: app.lawnchair.prime.search.PrimeSearchResultPreferences.Category,
         results: List<SearchAdapterItem>,
     ) {
-        val context = appsView.context
-        // The drawer's "Plus de…" action now enters Prime Search's real category
-        // detail renderer. Keep the legacy dialog only as a defensive fallback
-        // for non-launcher hosts or when the drawer query cannot be recovered.
-        fun findDrawerQuery(view: View): String? {
-            if (view is android.widget.EditText) {
-                view.text?.toString()?.takeIf { it.isNotBlank() }?.let { return it }
-            }
-            if (view is ViewGroup) {
-                for (index in 0 until view.childCount) {
-                    findDrawerQuery(view.getChildAt(index))?.let { return it }
-                }
-            }
-            return null
-        }
-        val query = findDrawerQuery(appsView)
-        val launcher = context as? app.lawnchair.LawnchairLauncher
-        if (launcher != null && !query.isNullOrBlank()) {
-            app.lawnchair.prime.search.PrimeSearchOverlay.showCategoryInDrawer(
-                launcher, appsView, category, query,
-            )
-            return
-        }
-        val density = context.resources.displayMetrics.density
-        val titleText = when (category) {
-            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS -> "Applications"
-            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> "Raccourcis"
-            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CONTACTS -> "Contacts"
-            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.FILES -> "Fichiers"
-            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.SETTINGS -> "Paramètres"
-            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALCULATOR -> "Calculatrice"
-            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALENDAR -> "Agenda"
-            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.REMINDERS -> "Tâches"
-            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.NOTIFICATIONS -> "Notifications"
-            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.HISTORY -> "Historique"
-            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB_SHORTCUTS -> "Raccourcis web"
-            else -> "Résultats"
-        }
-        val dialog = android.app.Dialog(context)
-        val root = android.widget.LinearLayout(context).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-            setPadding((12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt())
-            setBackgroundColor(app.lawnchair.theme.ThemeColors.resolve(
-                context,
-                app.lawnchair.theme.ThemeProfile.current(context),
-                app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BACKGROUND,
-                context.effectiveThemeVariant(),
-            ))
-        }
-        val header = android.widget.LinearLayout(context).apply {
-            orientation = android.widget.LinearLayout.HORIZONTAL
-            gravity = android.view.Gravity.CENTER_VERTICAL
-            setPadding((8 * density).toInt(), (4 * density).toInt(), (4 * density).toInt(), (12 * density).toInt())
-        }
-        val heading = TextView(context).apply {
-            text = titleText
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
-            setTypeface(typeface, Typeface.BOLD)
-            setTextColor(app.lawnchair.theme.ThemeColors.resolve(
-                context, app.lawnchair.theme.ThemeProfile.current(context),
-                app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_TEXT,
-                context.effectiveThemeVariant(),
-            ))
-        }
-        header.addView(heading, android.widget.LinearLayout.LayoutParams(0, -2, 1f))
-        val close = TextView(context).apply {
-            text = "✕"
-            gravity = android.view.Gravity.CENTER
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 22f)
-            setPadding((12 * density).toInt(), (4 * density).toInt(), (8 * density).toInt(), (4 * density).toInt())
-            setOnClickListener { dialog.dismiss() }
-        }
-        header.addView(close, android.widget.LinearLayout.LayoutParams(-2, -2))
-        root.addView(header)
-        val scroll = android.widget.ScrollView(context).apply {
-            isFillViewport = true
-            clipToPadding = false
-        }
-        val rows = android.widget.LinearLayout(context).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-        }
-        if (category == app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS) {
-            val columns = app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsColumns(context, PrimeSearchResultPreferences.Surface.DRAWER)
-            val iconPercent = app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsIconSizePercent(context, PrimeSearchResultPreferences.Surface.DRAWER)
-            val labelLines = if (app.lawnchair.prime.search.PrimeSearchResultPreferences.twoLineAppLabels(context, PrimeSearchResultPreferences.Surface.DRAWER)) 2 else 1
-            val cellHeight = app.lawnchair.prime.search.PrimeAppGridGeometry.rowHeightPx(context, iconPercent, labelLines)
-            val cellWidth = ((context.resources.displayMetrics.widthPixels * 0.94f).toInt() - (48 * density).toInt()) / columns
-            var appRow: android.widget.LinearLayout? = null
-            var inRow = 0
-            results.forEach { result ->
-                if (result.searchTarget.resultType != SearchTargetCompat.RESULT_TYPE_APPLICATION ||
-                    result.searchTarget.layoutType != LayoutType.ICON_SINGLE_VERTICAL_TEXT) return@forEach
-                if (appRow == null || inRow == columns) {
-                    appRow = android.widget.LinearLayout(context).apply {
-                        orientation = android.widget.LinearLayout.HORIZONTAL
-                        gravity = android.view.Gravity.CENTER_HORIZONTAL
-                    }
-                    rows.addView(appRow, android.widget.LinearLayout.LayoutParams(-1, cellHeight))
-                    inRow = 0
-                }
-                val layoutId = layoutForViewType(result.viewType) ?: return@forEach
-                val tile = android.view.LayoutInflater.from(context).inflate(layoutId, appRow, false)
-                val resultView = tile as? SearchResultView ?: return@forEach
-                resultView.bind(result.searchTarget, emptyList())
-                (tile as? app.lawnchair.allapps.views.SearchResultIcon)?.setPrimeSearchLabelLayout(true)
-                appRow!!.addView(tile, android.widget.LinearLayout.LayoutParams(cellWidth, cellHeight))
-                inRow++
-            }
-        } else {
-            results.forEach { result ->
-                val layoutId = layoutForViewType(result.viewType) ?: return@forEach
-                val row = android.view.LayoutInflater.from(context).inflate(layoutId, rows, false)
-                val resultView = row as? SearchResultView ?: return@forEach
-                resultView.bind(result.searchTarget, emptyList())
-                rows.addView(row)
-            }
-        }
-        scroll.addView(rows, android.view.ViewGroup.LayoutParams(-1, -2))
-        root.addView(scroll, android.widget.LinearLayout.LayoutParams(-1, 0, 1f))
-        dialog.setContentView(root)
-        dialog.setOnShowListener {
-            dialog.window?.apply {
-                setBackgroundDrawableResource(android.R.color.transparent)
-                setLayout(
-                    (context.resources.displayMetrics.widthPixels * 0.94f).toInt(),
-                    (context.resources.displayMetrics.heightPixels * 0.86f).toInt(),
-                )
-                setGravity(android.view.Gravity.CENTER)
-                addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-                attributes = attributes.apply { dimAmount = 0.42f }
-            }
-        }
-        dialog.show()
-        dialog.window?.setLayout(
-            (context.resources.displayMetrics.widthPixels * 0.94f).toInt(),
-            (context.resources.displayMetrics.heightPixels * 0.86f).toInt(),
+        val launcher = appsView.context as? app.lawnchair.LawnchairLauncher ?: return
+        // Use the launcher's actual All Apps search field, not a recursive scan
+        // that could pick up an unrelated EditText from another drawer component.
+        val query = appsView.findViewById<android.widget.EditText>(R.id.input)
+            ?.text?.toString()
+            .orEmpty()
+        if (query.isBlank()) return
+
+        // All expanded sections now go through the same result renderer and
+        // navigation stack as Prime Search. Do not fall back to the old custom
+        // dialog: that dialog had different layouts, actions and result limits.
+        app.lawnchair.prime.search.PrimeSearchOverlay.showCategoryInDrawer(
+            launcher,
+            appsView,
+            category,
+            query,
         )
     }
 
