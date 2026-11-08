@@ -129,10 +129,17 @@ class LawnchairSearchAdapterProvider(
                 SearchTargetCompat.RESULT_TYPE_FILE_TILE -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.FILES
                 SearchTargetCompat.RESULT_TYPE_SETTING_TILE -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.SETTINGS
                 SearchTargetCompat.RESULT_TYPE_CALCULATOR -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALCULATOR
-                SearchTargetCompat.RESULT_TYPE_SUGGESTIONS ->
-                    if (target.packageName == app.lawnchair.search.adapter.HISTORY)
+                SearchTargetCompat.RESULT_TYPE_SUGGESTIONS -> when (target.packageName) {
+                    app.lawnchair.search.adapter.HISTORY ->
                         app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.HISTORY
-                    else app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB
+                    "Agenda", "Événements de l'agenda" ->
+                        app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALENDAR
+                    "Tâches", "Tâches · Tasks.org" ->
+                        app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.REMINDERS
+                    "Notifications", "Historique des notifications" ->
+                        app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.NOTIFICATIONS
+                    else -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB
+                }
                 else -> null
             }
         }
