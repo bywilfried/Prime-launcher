@@ -1,13 +1,16 @@
 package app.lawnchair.prime.search
 
 import android.content.Context
+import app.lawnchair.search.algorithms.engine.ActionsSectionBuilder
 import app.lawnchair.search.algorithms.engine.AppsAndShortcutsSectionBuilder
 import app.lawnchair.search.algorithms.engine.CalculationSectionBuilder
 import app.lawnchair.search.algorithms.engine.ContactsSectionBuilder
 import app.lawnchair.search.algorithms.engine.FilesSectionBuilder
+import app.lawnchair.search.algorithms.engine.EmptyStateSectionBuilder
 import app.lawnchair.search.algorithms.engine.HistorySectionBuilder
 import app.lawnchair.search.algorithms.engine.PrimeEntriesSectionBuilder
 import app.lawnchair.search.algorithms.engine.SectionBuilder
+import app.lawnchair.search.algorithms.engine.SearchSettingsSectionBuilder
 import app.lawnchair.search.algorithms.engine.SettingsSectionBuilder
 import app.lawnchair.search.algorithms.engine.WebSuggestionsSectionBuilder
 
@@ -60,6 +63,9 @@ object PrimeSearchCategoryPresentation {
             PrimeEntriesSectionBuilder,
             SettingsSectionBuilder,
             HistorySectionBuilder,
+            ActionsSectionBuilder,
+            EmptyStateSectionBuilder,
+            SearchSettingsSectionBuilder,
         ).filterNot { it in ordered }
     }
 
