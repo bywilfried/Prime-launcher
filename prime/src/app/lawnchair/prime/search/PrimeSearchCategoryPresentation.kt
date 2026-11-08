@@ -40,6 +40,8 @@ object PrimeSearchCategoryPresentation {
 
     private val headings = mapOf(
         "Suggestions Web" to PrimeSearchResultPreferences.Category.WEB,
+        "Raccourcis d'app" to PrimeSearchResultPreferences.Category.APP_SHORTCUTS,
+        "Raccourcis d’app" to PrimeSearchResultPreferences.Category.APP_SHORTCUTS,
         "Contacts" to PrimeSearchResultPreferences.Category.CONTACTS,
         "Événements de l'agenda" to PrimeSearchResultPreferences.Category.CALENDAR,
         "Tâches · Tasks.org" to PrimeSearchResultPreferences.Category.REMINDERS,
