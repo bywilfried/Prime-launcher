@@ -329,19 +329,6 @@ class LawnchairSearchAdapterProvider(
             }
         }
         holder.itemView.visibility = View.VISIBLE
-        // Drawer cards should wrap their actual content tightly. The shared
-        // heading/row styles are intentionally generous for Prime Search, so
-        // compact only the drawer's non-grid rows here.
-        if (adapterItem.searchTarget.layoutType != LayoutType.TEXT_HEADER &&
-            adapterItem.searchTarget.layoutType != LayoutType.ICON_SINGLE_VERTICAL_TEXT) {
-            val isFile = adapterItem.searchTarget.resultType ==
-                SearchTargetCompat.RESULT_TYPE_FILE_TILE
-            holder.itemView.minimumHeight = dp(if (isFile) 54 else 42)
-            holder.itemView.layoutParams?.height = ViewGroup.LayoutParams.WRAP_CONTENT
-            holder.itemView.findViewById<View>(R.id.text_rows)?.apply {
-                setPadding(paddingLeft, dp(2), paddingRight, dp(2))
-            }
-        }
         when (adapterItem.searchTarget.layoutType) {
             LayoutType.TEXT_HEADER -> {
                 val heading = holder.itemView.findViewById<TextView>(R.id.title)
@@ -377,6 +364,19 @@ class LawnchairSearchAdapterProvider(
             LayoutType.HORIZONTAL_MEDIUM_TEXT, LayoutType.SMALL_ICON_HORIZONTAL_TEXT,
             LayoutType.ICON_HORIZONTAL_TEXT, LayoutType.ICON_SLICE, LayoutType.WIDGET_LIVE -> {
                 SearchResultGeometry.styleTextRow(holder.itemView)
+            }
+        }
+        // Apply drawer-specific compact geometry AFTER SearchResultGeometry:
+        // styleTextRow/styleFileRow restore their 52dp Prime Search baseline, which
+        // otherwise silently overrides the earlier drawer sizing.
+        if (adapterItem.searchTarget.layoutType != LayoutType.TEXT_HEADER &&
+            adapterItem.searchTarget.layoutType != LayoutType.ICON_SINGLE_VERTICAL_TEXT) {
+            val isFile = adapterItem.searchTarget.resultType ==
+                SearchTargetCompat.RESULT_TYPE_FILE_TILE
+            holder.itemView.minimumHeight = dp(if (isFile) 46 else 38)
+            holder.itemView.layoutParams?.height = ViewGroup.LayoutParams.WRAP_CONTENT
+            holder.itemView.findViewById<View>(R.id.text_rows)?.apply {
+                setPadding(paddingLeft, 0, paddingRight, 0)
             }
         }
         // Search results inherit the selected drawer/category palette, not the
