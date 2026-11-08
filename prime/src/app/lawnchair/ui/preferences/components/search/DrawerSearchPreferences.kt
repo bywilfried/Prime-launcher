@@ -539,6 +539,47 @@ private fun DrawerAdvancedSearchPreferences() {
                 valueRange = 60f..150f,
                 steps = 8,
             )
+            var resultAlignment by remember {
+                mutableStateOf(PrimeSearchResultPreferences.appResultsAlignment(context, drawerSurface))
+            }
+            var showAlignmentChoices by remember { mutableStateOf(false) }
+            PreferenceTemplate(
+                title = { Text("Alignement des résultats") },
+                description = { Text(resultAlignment.label) },
+                onClick = { showAlignmentChoices = true },
+            )
+            if (showAlignmentChoices) {
+                androidx.compose.material3.AlertDialog(
+                    onDismissRequest = { showAlignmentChoices = false },
+                    title = { Text("Alignement des applications") },
+                    text = {
+                        androidx.compose.foundation.layout.Column {
+                            PrimeSearchResultPreferences.AppResultsAlignment.entries.forEach { option ->
+                                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                    androidx.compose.material3.RadioButton(
+                                        selected = resultAlignment == option,
+                                        onClick = {
+                                            resultAlignment = option
+                                            PrimeSearchResultPreferences.setAppResultsAlignment(context, option, drawerSurface)
+                                            showAlignmentChoices = false
+                                        },
+                                    )
+                                    androidx.compose.material3.TextButton(onClick = {
+                                        resultAlignment = option
+                                        PrimeSearchResultPreferences.setAppResultsAlignment(context, option, drawerSurface)
+                                        showAlignmentChoices = false
+                                    }) { Text(option.label) }
+                                }
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        androidx.compose.material3.TextButton(onClick = { showAlignmentChoices = false }) {
+                            Text("Fermer")
+                        }
+                    },
+                )
+            }
         }
         val drawerCategories = PrimeSearchResultPreferences.order(context, drawerSurface)
         var drawerOrder by remember { mutableStateOf(drawerCategories) }
