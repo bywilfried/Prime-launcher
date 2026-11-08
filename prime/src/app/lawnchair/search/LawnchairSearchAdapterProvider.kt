@@ -163,7 +163,7 @@ class LawnchairSearchAdapterProvider(
             .categoryForHeading(heading)?.let { return it }
         for (index in start until end) {
             val target = items[index].searchTarget
-            return when (target.resultType) {
+            val category = when (target.resultType) {
                 SearchTargetCompat.RESULT_TYPE_APPLICATION -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS
                 SearchTargetCompat.RESULT_TYPE_SHORTCUT -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS
                 SearchTargetCompat.RESULT_TYPE_CONTACT_TILE -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CONTACTS
@@ -176,6 +176,7 @@ class LawnchairSearchAdapterProvider(
                     app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.HISTORY
                 else -> null
             }
+            if (category != null) return category
         }
         return null
     }
