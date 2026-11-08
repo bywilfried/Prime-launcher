@@ -14,6 +14,7 @@ import app.lawnchair.search.algorithms.engine.SectionBuilder
 import app.lawnchair.search.algorithms.engine.SearchSettingsSectionBuilder
 import app.lawnchair.search.algorithms.engine.SettingsSectionBuilder
 import app.lawnchair.search.algorithms.engine.WebSuggestionsSectionBuilder
+import app.lawnchair.search.algorithms.engine.WebShortcutsSectionBuilder
 
 /**
  * Presentation rules shared by the drawer and Prime Search.
@@ -29,6 +30,7 @@ object PrimeSearchCategoryPresentation {
         PrimeSearchResultPreferences.Category.APP_SHORTCUTS to AppShortcutsSectionBuilder,
         PrimeSearchResultPreferences.Category.CALCULATOR to CalculationSectionBuilder,
         PrimeSearchResultPreferences.Category.WEB to WebSuggestionsSectionBuilder,
+        PrimeSearchResultPreferences.Category.WEB_SHORTCUTS to WebShortcutsSectionBuilder,
         PrimeSearchResultPreferences.Category.CONTACTS to ContactsSectionBuilder,
         PrimeSearchResultPreferences.Category.FILES to FilesSectionBuilder,
         PrimeSearchResultPreferences.Category.SETTINGS to SettingsSectionBuilder,
@@ -61,6 +63,7 @@ object PrimeSearchCategoryPresentation {
             AppShortcutsSectionBuilder,
             CalculationSectionBuilder,
             WebSuggestionsSectionBuilder,
+            WebShortcutsSectionBuilder,
             ContactsSectionBuilder,
             FilesSectionBuilder,
             PrimeEntriesSectionBuilder,
