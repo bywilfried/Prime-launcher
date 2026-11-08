@@ -214,7 +214,6 @@ class LawnchairSearchAdapterProvider(
 
     private fun openCategoryDetails(
         category: app.lawnchair.prime.search.PrimeSearchResultPreferences.Category,
-        results: List<SearchAdapterItem>,
     ) {
         val launcher = appsView.context as? app.lawnchair.LawnchairLauncher ?: return
         // Use the launcher's actual All Apps search field, not a recursive scan
@@ -274,7 +273,7 @@ class LawnchairSearchAdapterProvider(
                 itemView.layoutParams?.height = dp(40, itemView)
                 itemView.isClickable = true
                 itemView.setOnClickListener {
-                    openCategoryDetails(category, resultPositions.map(items::get))
+                    openCategoryDetails(category)
                 }
             } else {
                 itemView.setOnClickListener(null)
