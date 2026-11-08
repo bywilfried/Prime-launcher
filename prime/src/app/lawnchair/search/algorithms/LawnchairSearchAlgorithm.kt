@@ -235,7 +235,7 @@ sealed class LawnchairSearchAlgorithm(
             return true
         }
 
-        fun create(context: Context): LawnchairSearchAlgorithm {
+        fun create(context: Context, primeMatching: Boolean = false): LawnchairSearchAlgorithm {
             val prefs = PreferenceManager2.getInstance(context)
             val searchAlgorithm = prefs.searchAlgorithm.firstCached()
 
@@ -244,7 +244,7 @@ sealed class LawnchairSearchAlgorithm(
                     context,
                 )
 
-                searchAlgorithm == LOCAL_SEARCH -> LawnchairLocalSearchAlgorithm(context, primeMatching = true)
+                searchAlgorithm == LOCAL_SEARCH -> LawnchairLocalSearchAlgorithm(context, primeMatching = primeMatching)
 
                 else -> LawnchairAppSearchAlgorithm(context)
             }
