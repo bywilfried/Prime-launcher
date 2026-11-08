@@ -378,6 +378,26 @@ private fun DrawerAdvancedSearchPreferences() {
                 },
             )
         }
+        var drawerAutoKeyboard by remember {
+            mutableStateOf(PrimeSearchResultPreferences.autoShowKeyboard(context, drawerSurface))
+        }
+        PreferenceTemplate(
+            title = { Text("Afficher le clavier automatiquement") },
+            description = { Text("Ouvrir le clavier lors de l'affichage de la recherche du tiroir") },
+            endWidget = {
+                androidx.compose.material3.Switch(
+                    checked = drawerAutoKeyboard,
+                    onCheckedChange = {
+                        drawerAutoKeyboard = it
+                        PrimeSearchResultPreferences.setAutoShowKeyboard(context, it, drawerSurface)
+                    },
+                )
+            },
+            onClick = {
+                drawerAutoKeyboard = !drawerAutoKeyboard
+                PrimeSearchResultPreferences.setAutoShowKeyboard(context, drawerAutoKeyboard, drawerSurface)
+            },
+        )
         Text("Applications à l'ouverture")
         var drawerOpeningTab by remember {
             mutableStateOf(PrimeSearchResultPreferences.openingTab(context, drawerSurface))
