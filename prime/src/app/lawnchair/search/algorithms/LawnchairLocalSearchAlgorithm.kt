@@ -48,7 +48,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.os.SystemClock
 
-class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: Boolean = false) : LawnchairSearchAlgorithm(context) {
+class LawnchairLocalSearchAlgorithm(
+    context: Context,
+    private val primeSearch: Boolean = false,
+    /** Reuse Prime Search's matching/providers while retaining the drawer's own result filtering and actions. */
+    private val primeMatching: Boolean = primeSearch,
+) : LawnchairSearchAlgorithm(context) {
 
     private val appState = LauncherAppState.getInstance(context)
 
@@ -101,15 +106,15 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
             currentJob = coroutineScope.launch {
                 val appSearchStarted = SystemClock.elapsedRealtime()
                 val appResults = appSearchProvider.search(
-                    context, query, apps, if (primeSearch) Int.MAX_VALUE else null,
-                    if (primeSearch) false else null,
-                    strictTypos = primeSearch,
+                    context, query, apps, if (primeMatching) Int.MAX_VALUE else null,
+                    if (primeMatching) false else null,
+                    strictTypos = primeMatching,
                 )
                 app.lawnchair.search.PrimeSearchTrace.record("engine appMatch len=${query.length} count=${appResults.size} ms=${SystemClock.elapsedRealtime() - appSearchStarted}")
                 if (generation != searchGeneration) return@launch
                 // Deliver apps independently of slower contacts, shortcuts, files
                 // and network providers. A provider that stalls cannot hide apps.
-                if (primeSearch && appResults.isNotEmpty()) {
+                if (primeMatching && appResults.isNotEmpty()) {
                     val appTargets = translateToSearchTargets(appResults)
                     setFirstItemQuickLaunch(appTargets)
                     val appItems = transformSearchResults(appTargets)
@@ -125,7 +130,7 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                 // can take much longer on devices with many installed apps.
                 val shortcutResultsFlow = flow {
                     emit(emptyList<SearchResult.Shortcut>())
-                    val shortcuts = if (primeSearch) {
+                    val shortcuts = if (primeMatching) {
                         shortcutSearchProvider.searchForPrime(context, query, apps.data, appResults)
                     } else {
                         shortcutSearchProvider.search(context, appResults)
@@ -141,9 +146,9 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                 // See issue #7325 (symptom 1: results gated behind the slowest provider).
                 val nonAppProvidersFlow = combine(
                     searchProviders.map { provider ->
-                        (if (primeSearch && provider === ContactsSearchProvider) {
+                        (if (primeMatching && provider === ContactsSearchProvider) {
                             ContactsSearchProvider.searchForPrime(context, query)
-                        } else if (primeSearch && provider === FileSearchProvider) {
+                        } else if (primeMatching && provider === FileSearchProvider) {
                             FileSearchProvider.searchForPrime(context, query)
                         } else if (!primeSearch && provider === WebSuggestionProvider) {
                             WebSuggestionProvider.searchForDrawer(context, query)
