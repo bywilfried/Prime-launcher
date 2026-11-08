@@ -8,6 +8,7 @@ import android.widget.TextView
 import android.graphics.Typeface
 import android.util.TypedValue
 import app.lawnchair.theme.effectiveThemeVariant
+import app.lawnchair.prime.search.PrimeSearchResultPreferences
 import androidx.core.util.contains
 import app.lawnchair.allapps.views.SearchItemDecorator
 import app.lawnchair.allapps.views.SearchResultView
