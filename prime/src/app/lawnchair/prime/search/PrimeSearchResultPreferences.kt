@@ -458,6 +458,140 @@ object PrimeSearchResultPreferences {
         prefs(context).edit().remove("category_order").apply()
     }
 
+    // Every renderer option is keyed by Surface so the drawer can use the exact
+    // Prime Search presentation without sharing its configuration.
+    fun openingTab(context: Context, surface: Surface): OpeningTab =
+        runCatching {
+            OpeningTab.valueOf(surfacePrefs(context, surface).getString("opening_tab", OpeningTab.FREQUENT.name)!!)
+        }.getOrDefault(OpeningTab.FREQUENT)
+
+    fun setOpeningTab(context: Context, tab: OpeningTab, surface: Surface) {
+        surfacePrefs(context, surface).edit().putString("opening_tab", tab.name).apply()
+    }
+
+    fun lastOpenedTab(context: Context, surface: Surface): Int =
+        surfacePrefs(context, surface).getInt("last_opened_tab", 0).coerceIn(0, 2)
+
+    fun setLastOpenedTab(context: Context, tab: Int, surface: Surface) {
+        surfacePrefs(context, surface).edit().putInt("last_opened_tab", tab.coerceIn(0, 2)).apply()
+    }
+
+    fun zeroStateRows(context: Context, surface: Surface): Int =
+        surfacePrefs(context, surface).getInt("zero_state_rows", 1).coerceIn(1, 2)
+
+    fun setZeroStateRows(context: Context, rows: Int, surface: Surface) {
+        surfacePrefs(context, surface).edit().putInt("zero_state_rows", rows.coerceIn(1, 2)).apply()
+    }
+
+    fun floatingWindow(context: Context, surface: Surface): Boolean =
+        surfacePrefs(context, surface).getBoolean("floating_window", true)
+
+    fun setFloatingWindow(context: Context, enabled: Boolean, surface: Surface) {
+        surfacePrefs(context, surface).edit().putBoolean("floating_window", enabled).apply()
+    }
+
+    fun twoLineAppLabels(context: Context, surface: Surface): Boolean =
+        surfacePrefs(context, surface).getBoolean("two_line_app_labels", false)
+
+    fun setTwoLineAppLabels(context: Context, enabled: Boolean, surface: Surface) {
+        surfacePrefs(context, surface).edit().putBoolean("two_line_app_labels", enabled).apply()
+    }
+
+    fun iconSizePercent(context: Context, surface: Surface): Int =
+        surfacePrefs(context, surface).getInt("icon_size_percent", 100).coerceIn(60, 150)
+
+    fun setIconSizePercent(context: Context, percent: Int, surface: Surface) {
+        surfacePrefs(context, surface).edit().putInt("icon_size_percent", percent.coerceIn(60, 150)).apply()
+    }
+
+    fun appResultsFollowGeneral(context: Context, surface: Surface): Boolean =
+        surfacePrefs(context, surface).getBoolean("app_results_follow_general", true)
+
+    fun setAppResultsFollowGeneral(context: Context, follow: Boolean, surface: Surface) {
+        surfacePrefs(context, surface).edit().putBoolean("app_results_follow_general", follow).apply()
+    }
+
+    fun appResultsAlignment(context: Context, surface: Surface): AppResultsAlignment =
+        runCatching {
+            AppResultsAlignment.valueOf(surfacePrefs(context, surface).getString("app_results_alignment", "CENTER") ?: "CENTER")
+        }.getOrDefault(AppResultsAlignment.CENTER)
+
+    fun setAppResultsAlignment(context: Context, alignment: AppResultsAlignment, surface: Surface) {
+        surfacePrefs(context, surface).edit().putString("app_results_alignment", alignment.name).apply()
+    }
+
+    fun appResultsColumns(context: Context, surface: Surface): Int =
+        if (appResultsFollowGeneral(context, surface)) appsPerRow(context, surface)
+        else surfacePrefs(context, surface).getInt("app_results_columns", 5).coerceIn(3, 5)
+
+    fun setAppResultsColumns(context: Context, columns: Int, surface: Surface) {
+        surfacePrefs(context, surface).edit().putInt("app_results_columns", columns.coerceIn(3, 5)).apply()
+    }
+
+    fun appResultsRows(context: Context, surface: Surface): Int =
+        if (appResultsFollowGeneral(context, surface)) zeroStateRows(context, surface)
+        else surfacePrefs(context, surface).getInt("app_results_rows", 2).coerceIn(1, 3)
+
+    fun setAppResultsRows(context: Context, rows: Int, surface: Surface) {
+        surfacePrefs(context, surface).edit().putInt("app_results_rows", rows.coerceIn(1, 3)).apply()
+    }
+
+    fun appResultsIconSizePercent(context: Context, surface: Surface): Int =
+        if (appResultsFollowGeneral(context, surface)) iconSizePercent(context, surface)
+        else surfacePrefs(context, surface).getInt("app_results_icon_percent", 100).coerceIn(60, 150)
+
+    fun setAppResultsIconSizePercent(context: Context, percent: Int, surface: Surface) {
+        surfacePrefs(context, surface).edit().putInt("app_results_icon_percent", percent.coerceIn(60, 150)).apply()
+    }
+
+    fun appsPerRow(context: Context, surface: Surface): Int =
+        surfacePrefs(context, surface).getInt("apps_per_row", 4).coerceIn(3, 6)
+
+    fun setAppsPerRow(context: Context, count: Int, surface: Surface) {
+        surfacePrefs(context, surface).edit().putInt("apps_per_row", count.coerceIn(3, 6)).apply()
+    }
+
+    fun autoShowKeyboard(context: Context, surface: Surface): Boolean =
+        surfacePrefs(context, surface).getBoolean("auto_show_keyboard", true)
+
+    fun setAutoShowKeyboard(context: Context, enabled: Boolean, surface: Surface) {
+        surfacePrefs(context, surface).edit().putBoolean("auto_show_keyboard", enabled).apply()
+    }
+
+    fun filter(context: Context, items: List<SearchAdapterItem>, surface: Surface): List<SearchAdapterItem> {
+        val kept = items.filter { item ->
+            val target = item.searchTarget
+            val type = target.resultType
+            if (type == SearchTargetCompat.RESULT_TYPE_SETTING_TILE ||
+                type == SearchTargetCompat.RESULT_TYPE_CONTACT_TILE ||
+                (type == SearchTargetCompat.RESULT_TYPE_SUGGESTIONS &&
+                    item.searchTarget.packageName != app.lawnchair.search.adapter.HISTORY)
+            ) false else category(item)?.let { enabled(context, it, surface) } ?: true
+        }
+        val cleaned = kept.filterIndexed { index, item ->
+            if (item.searchTarget.resultType != SearchTargetCompat.RESULT_TYPE_SECTION_HEADER &&
+                item.searchTarget.layoutType != LayoutType.EMPTY_DIVIDER) return@filterIndexed true
+            kept.drop(index + 1).takeWhile {
+                it.searchTarget.resultType != SearchTargetCompat.RESULT_TYPE_SECTION_HEADER
+            }.any { category(it) != null }
+        }
+        val sections = mutableListOf<MutableList<SearchAdapterItem>>()
+        cleaned.forEach { item ->
+            if (sections.isEmpty() ||
+                (item.searchTarget.resultType == SearchTargetCompat.RESULT_TYPE_SECTION_HEADER &&
+                    item.searchTarget.layoutType != LayoutType.EMPTY_DIVIDER)
+            ) sections.add(mutableListOf())
+            sections.last().add(item)
+        }
+        val priorities = order(context, surface).withIndex().associate { it.value to it.index }
+        return sections.withIndex().sortedWith(
+            compareBy({ indexed ->
+                indexed.value.firstNotNullOfOrNull { category(it) }
+                    ?.let { priorities[it] } ?: Int.MAX_VALUE
+            }, { it.index }),
+        ).flatMap { it.value }
+    }
+
     private fun category(item: SearchAdapterItem): Category? {
         val target = item.searchTarget
         return when (target.resultType) {
