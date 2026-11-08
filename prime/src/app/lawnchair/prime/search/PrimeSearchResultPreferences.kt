@@ -109,6 +109,13 @@ object PrimeSearchResultPreferences {
         return (saved + WebEngine.entries).distinct().filter { it.name in selected }
     }
 
+    fun saveWebEngineOrder(context: Context, engines: List<WebEngine>, surface: Surface) {
+        surfacePrefs(context, surface).edit().putString(
+            "web_engine_order",
+            (engines + WebEngine.entries).distinct().joinToString(",") { it.name },
+        ).apply()
+    }
+
     fun setWebEngineEnabled(context: Context, engine: WebEngine, enabled: Boolean, surface: Surface) {
         val current = enabledWebEngines(context, surface).map { it.name }.toMutableSet()
         if (enabled) current.add(engine.name) else current.remove(engine.name)
