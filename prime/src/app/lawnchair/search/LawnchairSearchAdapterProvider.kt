@@ -104,6 +104,128 @@ class LawnchairSearchAdapterProvider(
         // behind them rather than silently skipped when one exists.
         appsView.mSearchRecyclerView.addItemDecoration(categoryCards)
     }
+    /**
+     * Expanded section is drawer-local. Prime Search keeps its own independent detail page.
+     * The drawer expands a category in place, without creating or showing a floating window.
+     */
+    private var expandedCategory: app.lawnchair.prime.search.PrimeSearchResultPreferences.Category? = null
+
+    private fun isStructuralHeader(item: SearchAdapterItem): Boolean {
+        if (item.searchTarget.layoutType != LayoutType.TEXT_HEADER) return false
+        val title = item.searchTarget.searchAction?.title?.toString()?.trim().orEmpty()
+        return title.equals(app.lawnchair.search.adapter.SPACE, true) ||
+            title.equals(app.lawnchair.search.adapter.SPACE_MINI, true)
+    }
+
+    private fun categoryForSection(items: List<SearchAdapterItem>, start: Int, end: Int):
+        app.lawnchair.prime.search.PrimeSearchResultPreferences.Category? {
+        for (index in start until end) {
+            val target = items[index].searchTarget
+            return when (target.resultType) {
+                SearchTargetCompat.RESULT_TYPE_APPLICATION -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS
+                SearchTargetCompat.RESULT_TYPE_SHORTCUT -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS
+                SearchTargetCompat.RESULT_TYPE_CONTACT_TILE -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CONTACTS
+                SearchTargetCompat.RESULT_TYPE_FILE_TILE -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.FILES
+                SearchTargetCompat.RESULT_TYPE_SETTING_TILE -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.SETTINGS
+                SearchTargetCompat.RESULT_TYPE_CALCULATOR -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALCULATOR
+                SearchTargetCompat.RESULT_TYPE_SUGGESTIONS ->
+                    if (target.packageName == app.lawnchair.search.adapter.HISTORY)
+                        app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.HISTORY
+                    else app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB
+                else -> null
+            }
+        }
+        return null
+    }
+
+    private fun sectionBounds(items: List<SearchAdapterItem>, position: Int): Pair<Int, Int>? {
+        var start = -1
+        for (index in position downTo 0) {
+            val item = items[index]
+            if (item.searchTarget.layoutType == LayoutType.TEXT_HEADER && !isStructuralHeader(item)) {
+                start = index + 1
+                break
+            }
+        }
+        if (start < 0) return null
+        var end = items.size
+        for (index in position + 1 until items.size) {
+            val item = items[index]
+            if (item.searchTarget.layoutType == LayoutType.TEXT_HEADER && !isStructuralHeader(item)) {
+                end = index
+                break
+            }
+        }
+        return start to end
+    }
+
+    private fun previewLimit(category: app.lawnchair.prime.search.PrimeSearchResultPreferences.Category): Int =
+        when (category) {
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS -> 8
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> 3
+            else -> 3
+        }
+
+    private fun applyDrawerPreview(itemView: View, position: Int, item: SearchAdapterItem) {
+        val items = appsView.mSearchRecyclerView.mApps.adapterItems
+            .mapNotNull { it as? SearchAdapterItem }
+        val bounds = sectionBounds(items, position) ?: run {
+            itemView.visibility = View.VISIBLE
+            return
+        }
+        val (start, end) = bounds
+        val category = categoryForSection(items, start, end) ?: run {
+            itemView.visibility = View.VISIBLE
+            return
+        }
+        val resultPositions = (start until end).filter { index ->
+            val target = items[index].searchTarget
+            target.layoutType != LayoutType.TEXT_HEADER &&
+                target.layoutType != LayoutType.EMPTY_DIVIDER
+        }
+        val limit = previewLimit(category)
+        val expanded = expandedCategory == category
+        val isStructural = isStructuralHeader(item)
+        if (isStructural) {
+            val overflow = resultPositions.size > limit
+            val title = itemView.findViewById<TextView>(R.id.title)
+            if (overflow && !expanded) {
+                title?.text = "Plus de " + when (category) {
+                    app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS -> "applications"
+                    app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> "raccourcis"
+                    app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CONTACTS -> "contacts"
+                    app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.FILES -> "fichiers"
+                    else -> "résultats"
+                } + "  ⌄"
+                title?.gravity = android.view.Gravity.CENTER
+                title?.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+                itemView.minimumHeight = dp(40, itemView)
+                itemView.layoutParams?.height = dp(40, itemView)
+                itemView.isClickable = true
+                itemView.setOnClickListener {
+                    expandedCategory = category
+                    appsView.mSearchRecyclerView.adapter?.notifyDataSetChanged()
+                }
+            } else {
+                itemView.setOnClickListener(null)
+                itemView.isClickable = false
+            }
+            return
+        }
+
+        val resultIndex = resultPositions.indexOf(position)
+        if (resultIndex >= 0 && !expanded && resultIndex >= limit) {
+            itemView.visibility = View.GONE
+            itemView.minimumHeight = 0
+            itemView.layoutParams?.height = 0
+        } else {
+            itemView.visibility = View.VISIBLE
+        }
+    }
+
+    private fun dp(value: Int, view: View): Int =
+        (value * view.resources.displayMetrics.density).toInt()
+
     private val layoutIdMap = SparseIntArray().apply {
         append(SEARCH_RESULT_ICON, R.layout.search_result_icon)
         append(SEARCH_RESULT_ICON_ROW, R.layout.search_result_tall_icon_row)
@@ -140,6 +262,7 @@ class LawnchairSearchAdapterProvider(
             adapterItem.searchTarget,
             emptyList(),
         )
+        applyDrawerPreview(holder.itemView, position, adapterItem)
         // Match Prime Search's compact section headings and non-app result rows.
         // Applied after bind because individual result views restore their own heights.
         val density = holder.itemView.resources.displayMetrics.density
