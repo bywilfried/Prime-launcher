@@ -378,6 +378,168 @@ private fun DrawerAdvancedSearchPreferences() {
                 },
             )
         }
+        Text("Applications à l'ouverture")
+        var drawerOpeningTab by remember {
+            mutableStateOf(PrimeSearchResultPreferences.openingTab(context, drawerSurface))
+        }
+        var showDrawerOpeningTabs by remember { mutableStateOf(false) }
+        PreferenceTemplate(
+            title = { Text("Onglet affiché à l'ouverture") },
+            description = { Text(drawerOpeningTab.label) },
+            onClick = { showDrawerOpeningTabs = true },
+        )
+        if (showDrawerOpeningTabs) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { showDrawerOpeningTabs = false },
+                title = { Text("Ouvrir le tiroir sur") },
+                text = {
+                    androidx.compose.foundation.layout.Column {
+                        PrimeSearchResultPreferences.OpeningTab.entries.forEach { option ->
+                            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                androidx.compose.material3.RadioButton(
+                                    selected = drawerOpeningTab == option,
+                                    onClick = {
+                                        drawerOpeningTab = option
+                                        PrimeSearchResultPreferences.setOpeningTab(context, option, drawerSurface)
+                                        showDrawerOpeningTabs = false
+                                    },
+                                )
+                                androidx.compose.material3.TextButton(onClick = {
+                                    drawerOpeningTab = option
+                                    PrimeSearchResultPreferences.setOpeningTab(context, option, drawerSurface)
+                                    showDrawerOpeningTabs = false
+                                }) { Text(option.label) }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    androidx.compose.material3.TextButton(onClick = { showDrawerOpeningTabs = false }) {
+                        Text("Fermer")
+                    }
+                },
+            )
+        }
+        Text("Apparence des applications")
+        var drawerRows by remember {
+            mutableStateOf(PrimeSearchResultPreferences.zeroStateRows(context, drawerSurface))
+        }
+        var drawerColumns by remember {
+            mutableStateOf(PrimeSearchResultPreferences.appsPerRow(context, drawerSurface))
+        }
+        var drawerIconPercent by remember {
+            mutableStateOf(PrimeSearchResultPreferences.iconSizePercent(context, drawerSurface))
+        }
+        var drawerTwoLines by remember {
+            mutableStateOf(PrimeSearchResultPreferences.twoLineAppLabels(context, drawerSurface))
+        }
+        Text("Lignes au repos : $drawerRows")
+        androidx.compose.material3.Slider(
+            value = drawerRows.toFloat(),
+            onValueChange = {
+                drawerRows = it.toInt().coerceIn(1, 2)
+                PrimeSearchResultPreferences.setZeroStateRows(context, drawerRows, drawerSurface)
+            },
+            valueRange = 1f..2f,
+            steps = 0,
+        )
+        Text("Colonnes : $drawerColumns")
+        androidx.compose.material3.Slider(
+            value = drawerColumns.toFloat(),
+            onValueChange = {
+                drawerColumns = it.toInt().coerceIn(3, 6)
+                PrimeSearchResultPreferences.setAppsPerRow(context, drawerColumns, drawerSurface)
+            },
+            valueRange = 3f..6f,
+            steps = 2,
+        )
+        Text("Taille des icônes : $drawerIconPercent %")
+        androidx.compose.material3.Slider(
+            value = drawerIconPercent.toFloat(),
+            onValueChange = {
+                drawerIconPercent = it.toInt().coerceIn(60, 150)
+                PrimeSearchResultPreferences.setIconSizePercent(context, drawerIconPercent, drawerSurface)
+            },
+            valueRange = 60f..150f,
+            steps = 8,
+        )
+        PreferenceTemplate(
+            title = { Text("Libellés sur deux lignes") },
+            endWidget = {
+                androidx.compose.material3.Switch(
+                    checked = drawerTwoLines,
+                    onCheckedChange = {
+                        drawerTwoLines = it
+                        PrimeSearchResultPreferences.setTwoLineAppLabels(context, it, drawerSurface)
+                    },
+                )
+            },
+            onClick = {
+                drawerTwoLines = !drawerTwoLines
+                PrimeSearchResultPreferences.setTwoLineAppLabels(context, drawerTwoLines, drawerSurface)
+            },
+        )
+        var drawerFollowGeneral by remember {
+            mutableStateOf(PrimeSearchResultPreferences.appResultsFollowGeneral(context, drawerSurface))
+        }
+        PreferenceTemplate(
+            title = { Text("Résultats d'applications : suivre les réglages généraux") },
+            description = { Text("Sinon, définir une grille distincte pour les résultats d'une recherche") },
+            endWidget = {
+                androidx.compose.material3.Switch(
+                    checked = drawerFollowGeneral,
+                    onCheckedChange = {
+                        drawerFollowGeneral = it
+                        PrimeSearchResultPreferences.setAppResultsFollowGeneral(context, it, drawerSurface)
+                    },
+                )
+            },
+            onClick = {
+                drawerFollowGeneral = !drawerFollowGeneral
+                PrimeSearchResultPreferences.setAppResultsFollowGeneral(context, drawerFollowGeneral, drawerSurface)
+            },
+        )
+        if (!drawerFollowGeneral) {
+            var resultColumns by remember {
+                mutableStateOf(PrimeSearchResultPreferences.appResultsColumns(context, drawerSurface))
+            }
+            var resultRows by remember {
+                mutableStateOf(PrimeSearchResultPreferences.appResultsRows(context, drawerSurface))
+            }
+            var resultIconSize by remember {
+                mutableStateOf(PrimeSearchResultPreferences.appResultsIconSizePercent(context, drawerSurface))
+            }
+            Text("Colonnes des résultats : $resultColumns")
+            androidx.compose.material3.Slider(
+                value = resultColumns.toFloat(),
+                onValueChange = {
+                    resultColumns = it.toInt().coerceIn(3, 5)
+                    PrimeSearchResultPreferences.setAppResultsColumns(context, resultColumns, drawerSurface)
+                },
+                valueRange = 3f..5f,
+                steps = 1,
+            )
+            Text("Lignes des résultats : $resultRows")
+            androidx.compose.material3.Slider(
+                value = resultRows.toFloat(),
+                onValueChange = {
+                    resultRows = it.toInt().coerceIn(1, 3)
+                    PrimeSearchResultPreferences.setAppResultsRows(context, resultRows, drawerSurface)
+                },
+                valueRange = 1f..3f,
+                steps = 1,
+            )
+            Text("Taille des icônes des résultats : $resultIconSize %")
+            androidx.compose.material3.Slider(
+                value = resultIconSize.toFloat(),
+                onValueChange = {
+                    resultIconSize = it.toInt().coerceIn(60, 150)
+                    PrimeSearchResultPreferences.setAppResultsIconSizePercent(context, resultIconSize, drawerSurface)
+                },
+                valueRange = 60f..150f,
+                steps = 8,
+            )
+        }
         val drawerCategories = PrimeSearchResultPreferences.order(context, drawerSurface)
         var drawerOrder by remember { mutableStateOf(drawerCategories) }
         var categorySettings by remember { mutableStateOf<PrimeSearchResultPreferences.Category?>(null) }
