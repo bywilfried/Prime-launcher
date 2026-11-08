@@ -91,9 +91,10 @@ object SearchResultGeometry {
             },
         )
         view.clipToOutline = true
-        (view.layoutParams as? ViewGroup.MarginLayoutParams)?.apply {
-            leftMargin = (4 * density).toInt()
-            rightMargin = (4 * density).toInt()
+        (view.layoutParams as? ViewGroup.MarginLayoutParams)?.let { params ->
+            params.leftMargin = (4 * density).toInt()
+            params.rightMargin = (4 * density).toInt()
+            view.layoutParams = params
         }
     }
 }
