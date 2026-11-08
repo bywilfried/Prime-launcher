@@ -201,12 +201,28 @@ class LawnchairSearchAdapterProvider(
         return start to end
     }
 
-    private fun previewLimit(category: app.lawnchair.prime.search.PrimeSearchResultPreferences.Category): Int =
-        when (category) {
-            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS -> 8
-            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> 3
-            else -> 3
+    private fun previewLimit(
+        category: app.lawnchair.prime.search.PrimeSearchResultPreferences.Category,
+        view: View,
+    ): Int {
+        val context = view.context
+        val surface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
+        if (category == app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS) {
+            // Match the Prime Search compact app grid: its visible capacity is
+            // controlled by the drawer's own rows and columns, not a fixed count.
+            return app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsRows(context, surface) *
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsColumns(context, surface)
         }
+        val heightDp = app.lawnchair.prime.search.PrimeSearchCategoryPresentation
+            .compactPreviewHeightDp(category) ?: 190
+        val rowHeightDp = when (category) {
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> 48
+            else -> 52
+        }
+        // Use the shared compact-card height budget so categories do not expose
+        // a different number of rows simply because the drawer uses XML holders.
+        return (heightDp / rowHeightDp).coerceAtLeast(1)
+    }
 
     private fun openCategoryDetails(
         category: app.lawnchair.prime.search.PrimeSearchResultPreferences.Category,
@@ -247,7 +263,7 @@ class LawnchairSearchAdapterProvider(
             target.layoutType != LayoutType.TEXT_HEADER &&
                 target.layoutType != LayoutType.EMPTY_DIVIDER
         }
-        val limit = previewLimit(category)
+        val limit = previewLimit(category, itemView)
         if (isStructuralHeader(item)) {
             val overflow = resultPositions.size > limit
             val title = itemView.findViewById<TextView>(R.id.title)
