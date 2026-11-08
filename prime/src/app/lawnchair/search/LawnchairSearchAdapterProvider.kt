@@ -141,10 +141,10 @@ class LawnchairSearchAdapterProvider(
         }
     }
     /**
-     * Expanded section is drawer-local. Prime Search keeps its own independent detail page.
-     * The drawer expands a category in place, without creating or showing a floating window.
+     * The drawer preview stays clipped. "Plus de…" opens a separate full-results
+     * window, matching Prime Search's detail-page interaction rather than
+     * revealing hidden rows inside the compact drawer list.
      */
-    private var expandedCategory: app.lawnchair.prime.search.PrimeSearchResultPreferences.Category? = null
 
     private fun isStructuralHeader(item: SearchAdapterItem): Boolean {
         if (item.searchTarget.layoutType != LayoutType.TEXT_HEADER) return false
@@ -212,6 +212,101 @@ class LawnchairSearchAdapterProvider(
             else -> 3
         }
 
+    private fun openCategoryDetails(
+        category: app.lawnchair.prime.search.PrimeSearchResultPreferences.Category,
+        results: List<SearchAdapterItem>,
+    ) {
+        val context = appsView.context
+        val density = context.resources.displayMetrics.density
+        val titleText = when (category) {
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS -> "Applications"
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> "Raccourcis"
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CONTACTS -> "Contacts"
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.FILES -> "Fichiers"
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.SETTINGS -> "Paramètres"
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALCULATOR -> "Calculatrice"
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALENDAR -> "Agenda"
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.REMINDERS -> "Tâches"
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.NOTIFICATIONS -> "Notifications"
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.HISTORY -> "Historique"
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB_SHORTCUTS -> "Raccourcis web"
+            else -> "Résultats"
+        }
+        val dialog = android.app.Dialog(context)
+        val root = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding((12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt())
+            setBackgroundColor(app.lawnchair.theme.ThemeColors.resolve(
+                context,
+                app.lawnchair.theme.ThemeProfile.current(context),
+                app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BACKGROUND,
+                context.effectiveThemeVariant(),
+            ))
+        }
+        val header = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setPadding((8 * density).toInt(), (4 * density).toInt(), (4 * density).toInt(), (12 * density).toInt())
+        }
+        val heading = TextView(context).apply {
+            text = titleText
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+            setTypeface(typeface, Typeface.BOLD)
+            setTextColor(app.lawnchair.theme.ThemeColors.resolve(
+                context, app.lawnchair.theme.ThemeProfile.current(context),
+                app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_TEXT,
+                context.effectiveThemeVariant(),
+            ))
+        }
+        header.addView(heading, android.widget.LinearLayout.LayoutParams(0, -2, 1f))
+        val close = TextView(context).apply {
+            text = "✕"
+            gravity = android.view.Gravity.CENTER
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 22f)
+            setPadding((12 * density).toInt(), (4 * density).toInt(), (8 * density).toInt(), (4 * density).toInt())
+            setOnClickListener { dialog.dismiss() }
+        }
+        header.addView(close, android.widget.LinearLayout.LayoutParams(-2, -2))
+        root.addView(header)
+        val scroll = android.widget.ScrollView(context).apply {
+            isFillViewport = true
+            clipToPadding = false
+        }
+        val rows = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+        }
+        results.forEach { result ->
+            val layoutId = layoutForViewType(result.viewType) ?: return@forEach
+            val row = android.view.LayoutInflater.from(context).inflate(layoutId, rows, false)
+            val resultView = row as? SearchResultView ?: return@forEach
+            resultView.bind(result.searchTarget, emptyList())
+            row.setOnLongClickListener { view ->
+                (view as? SearchResultView)?.launch() ?: false
+            }
+            rows.addView(row)
+        }
+        scroll.addView(rows, android.widget.ScrollView.LayoutParams(-1, -2))
+        root.addView(scroll, android.widget.LinearLayout.LayoutParams(-1, 0, 1f))
+        dialog.setContentView(root)
+        dialog.setOnShowListener {
+            dialog.window?.apply {
+                setBackgroundDrawableResource(android.R.color.transparent)
+                setLayout(
+                    (context.resources.displayMetrics.widthPixels * 0.94f).toInt(),
+                    (context.resources.displayMetrics.heightPixels * 0.86f).toInt(),
+                )
+                setGravity(android.view.Gravity.CENTER)
+                addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                attributes = attributes.apply { dimAmount = 0.42f }
+            }
+        }
+        dialog.show()
+        dialog.window?.setLayout(
+            (context.resources.displayMetrics.widthPixels * 0.94f).toInt(),
+            (context.resources.displayMetrics.heightPixels * 0.86f).toInt(),
+        )
+    }
+
     private fun applyDrawerPreview(itemView: View, position: Int, item: SearchAdapterItem) {
         val items = appsView.mSearchRecyclerView.mApps.adapterItems
             .mapNotNull { it as? SearchAdapterItem }
@@ -230,13 +325,11 @@ class LawnchairSearchAdapterProvider(
                 target.layoutType != LayoutType.EMPTY_DIVIDER
         }
         val limit = previewLimit(category)
-        val expanded = expandedCategory == category
-        val isStructural = isStructuralHeader(item)
-        if (isStructural) {
+        if (isStructuralHeader(item)) {
             val overflow = resultPositions.size > limit
             val title = itemView.findViewById<TextView>(R.id.title)
             if (overflow) {
-                title?.text = if (expanded) "Réduire  ⌃" else "Plus de " + when (category) {
+                title?.text = "Plus de " + when (category) {
                     app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS -> "applications"
                     app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> "raccourcis"
                     app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CONTACTS -> "contacts"
@@ -253,8 +346,7 @@ class LawnchairSearchAdapterProvider(
                 itemView.layoutParams?.height = dp(40, itemView)
                 itemView.isClickable = true
                 itemView.setOnClickListener {
-                    expandedCategory = if (expanded) null else category
-                    appsView.mSearchRecyclerView.adapter?.notifyDataSetChanged()
+                    openCategoryDetails(category, resultPositions.map(items::get))
                 }
             } else {
                 itemView.setOnClickListener(null)
@@ -264,7 +356,7 @@ class LawnchairSearchAdapterProvider(
         }
 
         val resultIndex = resultPositions.indexOf(position)
-        if (resultIndex >= 0 && !expanded && resultIndex >= limit) {
+        if (resultIndex >= limit) {
             itemView.visibility = View.GONE
         } else {
             itemView.visibility = View.VISIBLE
