@@ -296,7 +296,12 @@ class LawnchairLocalSearchAlgorithm(
         currentJob?.cancel()
 
         val prefs = PreferenceManager.getInstance(context)
-        val historyEnabled = prefs.searchResulRecentSuggestion.get()
+        val historyEnabled = prefs.searchResulRecentSuggestion.get() &&
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.enabled(
+                context,
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.HISTORY,
+                preferenceSurface,
+            )
 
         if (!historyEnabled) {
             callback.clearSearchResult()
