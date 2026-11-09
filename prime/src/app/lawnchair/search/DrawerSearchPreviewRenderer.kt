@@ -22,6 +22,16 @@ internal class DrawerSearchPreviewRenderer(
         List<SearchAdapterItem>,
     ) -> Unit,
 ) {
+    private fun isStructuralHeader(item: SearchAdapterItem): Boolean =
+        DrawerSearchSectionModel.isStructuralHeader(item)
+
+    private fun categoryForSection(items: List<SearchAdapterItem>, start: Int, end: Int):
+        PrimeSearchResultPreferences.Category? =
+        DrawerSearchSectionModel.categoryForSection(items, start, end)
+
+    private fun sectionBounds(items: List<SearchAdapterItem>, position: Int): Pair<Int, Int>? =
+        DrawerSearchSectionModel.sectionBounds(items, position)
+
     fun previewLimitPx(
         category: app.lawnchair.prime.search.PrimeSearchResultPreferences.Category,
         view: View,
@@ -114,7 +124,7 @@ internal class DrawerSearchPreviewRenderer(
                     val heading = items.getOrNull(start - 1)?.searchTarget?.searchAction?.title
                         ?.toString()?.trim().orEmpty().ifBlank { "Résultats" }
                     val categoryResults = resultPositions.mapNotNull(items::getOrNull)
-                    showCategoryPage(category, heading, categoryResults)
+                    onOpenCategoryPage(category, heading, categoryResults)
                 }
             } else {
                 itemView.setOnClickListener(null)

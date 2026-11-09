@@ -471,7 +471,7 @@ class LawnchairSearchAdapterProvider(
             emptyList(),
         )
         if (adapterItem.searchTarget.layoutType == LayoutType.TEXT_HEADER) {
-            previewRenderer.previewRenderer.applyDrawerPreview(holder.itemView, position, adapterItem)
+            previewRenderer.applyDrawerPreview(holder.itemView, position, adapterItem)
         }
         // Match Prime Search's compact section headings and non-app result rows.
         // Applied after bind because individual result views restore their own heights.
