@@ -46,7 +46,7 @@ internal class DrawerSearchPreviewRenderer(
                 app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsIconSizePercent(context, surface),
                 if (app.lawnchair.prime.search.PrimeSearchResultPreferences.twoLineAppLabels(context, surface)) 2 else 1,
             )
-            return rows * rowHeight.coerceAtLeast(dp(132, view))
+            return rows * rowHeight
         }
         val heightDp = DrawerSearchCategoryPresentation.compactPreviewHeightDp(category) ?: 190
         return (heightDp * density).toInt().coerceAtLeast(1)

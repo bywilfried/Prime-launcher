@@ -162,6 +162,22 @@ class LawnchairSearchAdapterProvider(
                 SearchResultGeometry.styleTextRow(holder.itemView)
             }
         }
+        if (adapterItem.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT) {
+            val surface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
+            val preferences = app.lawnchair.prime.search.PrimeSearchResultPreferences
+            (holder.itemView as? app.lawnchair.allapps.views.SearchResultIcon)?.apply {
+                setPrimeIconSize(app.lawnchair.prime.search.PrimeAppGridGeometry.iconPx(
+                    holder.itemView.context, preferences.appResultsIconSizePercent(context, surface),
+                ))
+                setTextVisibility(true)
+                setPrimeSearchLabelLayout(true)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, app.lawnchair.prime.search.PrimeAppGridGeometry.LABEL_SP)
+                includeFontPadding = false
+                maxLines = if (preferences.twoLineAppLabels(context, surface)) 2 else 1
+                ellipsize = android.text.TextUtils.TruncateAt.END
+                gravity = android.view.Gravity.TOP or android.view.Gravity.CENTER_HORIZONTAL
+            }
+        }
         // Apply drawer-specific compact geometry AFTER SearchResultGeometry:
         // styleTextRow/styleFileRow restore their 52dp Prime Search baseline, which
         // otherwise silently overrides the earlier drawer sizing.
@@ -171,7 +187,7 @@ class LawnchairSearchAdapterProvider(
             holder.itemView.minimumHeight = 0
             holder.itemView.layoutParams?.height = app.lawnchair.prime.search.PrimeAppGridGeometry.rowHeightPx(
                 holder.itemView.context, iconPercent, labelLines,
-            ).coerceAtLeast(dp(132))
+            )
         } else if (adapterItem.searchTarget.layoutType != LayoutType.TEXT_HEADER) {
             // Use the same compact row contract as the embedded Prime Search
             // renderer so files, contacts, suggestions and shortcuts share
@@ -252,7 +268,20 @@ class LawnchairSearchAdapterProvider(
         return BaseAllAppsAdapter.ViewHolder(view)
     }
 
-    override fun getItemsPerRow(viewType: Int, appsPerRow: Int) = if (viewType != SEARCH_RESULT_ICON) 1 else super.getItemsPerRow(viewType, appsPerRow)
+    override fun getSupportedItemsPerRowArray(): IntArray = intArrayOf(
+        app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsColumns(
+            appsView.context,
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER,
+        ).coerceAtLeast(1),
+    )
+
+    override fun getItemsPerRow(viewType: Int, appsPerRow: Int): Int =
+        if (viewType == SEARCH_RESULT_ICON) {
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsColumns(
+                appsView.context,
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER,
+            ).coerceAtLeast(1)
+        } else 1
 
     override fun launchHighlightedItem(): Boolean = quickLaunchItem?.launch() ?: false
 
