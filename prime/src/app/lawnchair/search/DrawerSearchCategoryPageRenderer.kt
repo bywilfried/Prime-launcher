@@ -378,7 +378,6 @@ internal class DrawerSearchCategoryPageRenderer(
             } else {
                 view.minimumHeight = (56 * density).toInt()
             }
-            view.background = null
         }
     }
 
