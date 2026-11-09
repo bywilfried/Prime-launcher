@@ -22,11 +22,18 @@ internal class DrawerSearchResultsRenderer(
 
         val isHeading = item.searchTarget.layoutType == LayoutType.TEXT_HEADER
         val firstResultPosition = if (isHeading) {
-            (position + 1 until items.size).firstOrNull { index ->
+            var first: Int? = null
+            for (index in position + 1 until items.size) {
                 val candidate = items[index]
-                candidate.searchTarget.layoutType != LayoutType.TEXT_HEADER &&
-                    candidate.searchTarget.layoutType != LayoutType.EMPTY_DIVIDER
-            } ?: return
+                if (candidate.searchTarget.layoutType == LayoutType.TEXT_HEADER) {
+                    if (!DrawerSearchSectionModel.isStructuralHeader(candidate)) break
+                    continue
+                }
+                if (candidate.searchTarget.layoutType == LayoutType.EMPTY_DIVIDER) continue
+                first = index
+                break
+            }
+            first ?: return
         } else {
             position
         }
