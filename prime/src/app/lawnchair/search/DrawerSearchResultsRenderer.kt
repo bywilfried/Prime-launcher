@@ -6,8 +6,8 @@ import com.android.app.search.LayoutType
 import com.android.launcher3.allapps.ActivityAllAppsContainerView
 
 /**
- * Applies a drawer-owned section surface to each native result row. The row's
- * native feedback drawable is layered above the surface and remains interactive.
+ * Applies one continuous drawer-owned surface across a section heading and its
+ * result rows. Native row backgrounds remain layered above it for ripple feedback.
  */
 internal class DrawerSearchResultsRenderer(
     private val appsView: ActivityAllAppsContainerView<*>,
@@ -16,12 +16,24 @@ internal class DrawerSearchResultsRenderer(
         val recyclerView = appsView.mSearchRecyclerView ?: return
         val items = recyclerView.mApps.adapterItems.mapNotNull { it as? SearchAdapterItem }
         if (items.getOrNull(position) !== item) return
-        val bounds = DrawerSearchSectionModel.sectionBounds(items, position) ?: return
-        val (start, end) = bounds
-        DrawerSearchSectionModel.categoryForSection(items, start, end) ?: return
         if (item.searchTarget.layoutType == LayoutType.EMPTY_DIVIDER ||
             DrawerSearchSectionModel.isStructuralHeader(item)
         ) return
+
+        val isHeading = item.searchTarget.layoutType == LayoutType.TEXT_HEADER
+        val firstResultPosition = if (isHeading) {
+            (position + 1 until items.size).firstOrNull { index ->
+                val candidate = items[index]
+                candidate.searchTarget.layoutType != LayoutType.TEXT_HEADER &&
+                    candidate.searchTarget.layoutType != LayoutType.EMPTY_DIVIDER
+            } ?: return
+        } else {
+            position
+        }
+        val bounds = DrawerSearchSectionModel.sectionBounds(items, firstResultPosition) ?: return
+        val (start, end) = bounds
+        if (position !in start until end && !isHeading) return
+        DrawerSearchSectionModel.categoryForSection(items, start, end) ?: return
 
         val resultPositions = (start until end).filter { index ->
             items[index].searchTarget.layoutType != LayoutType.TEXT_HEADER &&
@@ -29,10 +41,20 @@ internal class DrawerSearchResultsRenderer(
         }
         if (resultPositions.isEmpty()) return
 
+        val headingPosition = (start - 1).takeIf { index ->
+            index >= 0 &&
+                items[index].searchTarget.layoutType == LayoutType.TEXT_HEADER &&
+                !DrawerSearchSectionModel.isStructuralHeader(items[index])
+        }
+        if (isHeading && position != headingPosition) return
+        if (!isHeading && position !in resultPositions) return
+
         val density = view.resources.displayMetrics.density
-        val isSectionHeading = item.searchTarget.layoutType == LayoutType.TEXT_HEADER && position == start - 1
-        val top = isSectionHeading || position == resultPositions.first()
-        val bottom = position == resultPositions.last()
+        // The heading owns the top edge whenever it exists; otherwise the first
+        // result row starts the card. This avoids a seam between separate surfaces.
+        val top = if (headingPosition != null) position == headingPosition
+            else position == resultPositions.first()
+        val bottom = !isHeading && position == resultPositions.last()
         val sectionSurface = android.graphics.drawable.InsetDrawable(
             DrawerSearchSectionBackground(view.context, top, bottom),
             (4f * density).toInt(), 0, (4f * density).toInt(), 0,
