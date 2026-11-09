@@ -46,7 +46,11 @@ internal class DrawerSearchSectionViewRenderer(
         val prefs = PrimeSearchResultPreferences
         val surface = PrimeSearchResultPreferences.Surface.DRAWER
         val heading = TextView(context).apply {
-            text = section.heading
+            text = when (section.category) {
+                PrimeSearchResultPreferences.Category.WEB -> "Suggestions Web"
+                PrimeSearchResultPreferences.Category.FILES -> "Fichiers de l’appareil"
+                else -> section.heading
+            }
             textSize = 16f
             setTypeface(typeface, Typeface.BOLD)
             setPadding(0, 0, 0, dp(card, 12))
@@ -85,6 +89,8 @@ internal class DrawerSearchSectionViewRenderer(
                             context, prefs.appResultsIconSizePercent(context, surface),
                         ))
                         child.setTextVisibility(true)
+                        child.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, PrimeAppGridGeometry.LABEL_SP)
+                        child.includeFontPadding = false
                         child.setPrimeSearchLabelLayout(true)
                         child.maxLines = if (prefs.twoLineAppLabels(context, surface)) 2 else 1
                         child.ellipsize = android.text.TextUtils.TruncateAt.END

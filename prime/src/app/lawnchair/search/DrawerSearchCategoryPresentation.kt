@@ -11,9 +11,12 @@ import app.lawnchair.prime.search.PrimeSearchResultPreferences
 internal object DrawerSearchCategoryPresentation {
     private val headingAliases = mapOf(
         "Suggestions Web" to PrimeSearchResultPreferences.Category.WEB,
+        "Depuis le Web" to PrimeSearchResultPreferences.Category.WEB,
         "Raccourcis d'app" to PrimeSearchResultPreferences.Category.APP_SHORTCUTS,
         "Raccourcis d’app" to PrimeSearchResultPreferences.Category.APP_SHORTCUTS,
         "Contacts" to PrimeSearchResultPreferences.Category.CONTACTS,
+        "Fichiers de l'appareil" to PrimeSearchResultPreferences.Category.FILES,
+        "Fichiers de l’appareil" to PrimeSearchResultPreferences.Category.FILES,
         "Événements de l'agenda" to PrimeSearchResultPreferences.Category.CALENDAR,
         "Agenda" to PrimeSearchResultPreferences.Category.CALENDAR,
         "Tâches · Tasks.org" to PrimeSearchResultPreferences.Category.REMINDERS,

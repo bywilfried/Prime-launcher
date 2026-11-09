@@ -62,7 +62,16 @@ internal class DrawerSearchSectionAdapterItem(
                         end++
                         continue
                     }
-                    if (candidateTarget.layoutType == LayoutType.TEXT_HEADER) break
+                    if (candidateTarget.layoutType == LayoutType.TEXT_HEADER) {
+                        val nextTitle = candidateTarget.searchAction?.title?.toString().orEmpty()
+                        // The provider may emit a broad section heading and
+                        // a second heading for the same category.
+                        if (DrawerSearchCategoryPresentation.categoryForHeading(nextTitle) == category) {
+                            end++
+                            continue
+                        }
+                        break
+                    }
                     // A missing heading must not merge unrelated result categories.
                     if (DrawerSearchCategoryPresentation.categoryForResult(candidateTarget) != category) break
                     results.add(candidate)
