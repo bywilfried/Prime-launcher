@@ -41,13 +41,12 @@ internal class DrawerSearchPreviewRenderer(
         val surface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
         if (category == app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS) {
             val rows = app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsRows(context, surface)
-            val columns = app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsColumns(context, surface)
             val rowHeight = app.lawnchair.prime.search.PrimeAppGridGeometry.rowHeightPx(
                 context,
                 app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsIconSizePercent(context, surface),
                 if (app.lawnchair.prime.search.PrimeSearchResultPreferences.twoLineAppLabels(context, surface)) 2 else 1,
             )
-            return rows * columns * rowHeight
+            return rows * rowHeight
         }
         val heightDp = DrawerSearchCategoryPresentation.compactPreviewHeightDp(category) ?: 190
         return (heightDp * density).toInt().coerceAtLeast(1)
