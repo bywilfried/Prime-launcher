@@ -1,7 +1,6 @@
 package app.lawnchair.search
 
 import android.graphics.drawable.Drawable
-import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
 import android.view.View
 import android.widget.TextView
@@ -63,37 +62,9 @@ internal class DrawerSearchResultsRenderer(
         if (resultPositions.isEmpty()) return
 
         val density = view.resources.displayMetrics.density
-        val radius = 14f * density
         val top = position == resultPositions.first()
         val bottom = position == resultPositions.last()
-        val topLeft = if (top) radius else 0f
-        val topRight = if (top) radius else 0f
-        val bottomRight = if (bottom) radius else 0f
-        val bottomLeft = if (bottom) radius else 0f
-        val radii = floatArrayOf(
-            topLeft, topLeft, topRight, topRight,
-            bottomRight, bottomRight, bottomLeft, bottomLeft,
-        )
-        val shape = GradientDrawable().apply {
-            cornerRadii = radii
-            setColor(
-                app.lawnchair.theme.ThemeColors.resolve(
-                    view.context,
-                    app.lawnchair.theme.ThemeProfile.current(view.context),
-                    app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BACKGROUND,
-                    view.context.effectiveThemeVariant(),
-                ),
-            )
-            setStroke(
-                density.toInt().coerceAtLeast(1),
-                app.lawnchair.theme.ThemeColors.resolve(
-                    view.context,
-                    app.lawnchair.theme.ThemeProfile.current(view.context),
-                    app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BORDER,
-                    view.context.effectiveThemeVariant(),
-                ),
-            )
-        }
+        val sectionSurface = DrawerSearchSectionBackground(view.context, top, bottom)
         val inset = (4f * density).toInt()
         val surface = LayerDrawable(arrayOf(shape)).apply {
             setLayerInset(0, inset, 0, inset, 0)
