@@ -35,7 +35,6 @@ class LawnchairSearchAdapterProvider(
     private val decorator = SearchItemDecorator(appsView)
     private val resultsRenderer = DrawerSearchResultsRenderer(appsView)
     private val categoryPageRenderer = DrawerSearchCategoryPageRenderer(
-        launcher,
         appsView,
         ::applySearchTextColor,
     )

@@ -8,6 +8,7 @@ import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.window.OnBackInvokedCallback
 import android.widget.TextView
 import app.lawnchair.allapps.views.SearchResultView
 import app.lawnchair.search.adapter.SearchAdapterItem
@@ -32,7 +33,7 @@ internal class DrawerSearchCategoryPageRenderer(
     private var categoryBackActivity: Activity? = null
     private var categoryBackCallback: OnBackInvokedCallback? = null
 
-    private fun showCategoryPage(
+    fun showCategoryPage(
         category: app.lawnchair.prime.search.PrimeSearchResultPreferences.Category,
         title: String,
         results: List<SearchAdapterItem>,
@@ -191,7 +192,7 @@ internal class DrawerSearchCategoryPageRenderer(
                     ))
                     inRow = 0
                 }
-                val layout = layoutForViewType(item.viewType) ?: return@forEach
+                val layout = LawnchairSearchAdapterProvider.layoutForViewType(item.viewType) ?: return@forEach
                 val resultView = LayoutInflater.from(context).inflate(layout, row, false)
                 val searchResultView = resultView as? SearchResultView ?: return@forEach
                 item.setRippleEffect(resultView)
@@ -289,7 +290,7 @@ internal class DrawerSearchCategoryPageRenderer(
         }
     }
 
-    private fun close() {
+    fun close() {
         val activity = categoryBackActivity
         val callback = categoryBackCallback
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -363,7 +364,7 @@ internal class DrawerSearchCategoryPageRenderer(
                     ellipsize = android.text.TextUtils.TruncateAt.END
                 }
             } else if (item.searchTarget.layoutType != LayoutType.ICON_SINGLE_VERTICAL_TEXT) {
-                val category = categoryForResult(item)
+                val category = DrawerSearchCategoryPresentation.categoryForResultType(item.searchTarget.resultType)
                 val rowHeight = SearchResultGeometry.compactRowHeightDp(
                     item.searchTarget.layoutType,
                     isAppShortcut = category ==
