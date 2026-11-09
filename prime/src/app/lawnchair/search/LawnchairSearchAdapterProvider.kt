@@ -476,6 +476,9 @@ class LawnchairSearchAdapterProvider(
         override fun onBindViewHolder(holder: ResultHolder, position: Int) {
             val item = results[position]
             val view = holder.resultView
+            // Keep the same target-owned ripple feedback as the drawer's compact
+            // result rows and the expanded application grid.
+            item.setRippleEffect(view)
             (view as? SearchResultView)?.bind(item.searchTarget, emptyList())
             val context = view.context
             val density = context.resources.displayMetrics.density
