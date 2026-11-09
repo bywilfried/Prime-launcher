@@ -47,6 +47,16 @@ class LawnchairSearchAdapterProvider(
         // Defer observer installation until the container has completed inflation.
         appsView.post {
             appsView.mSearchRecyclerView?.let { recyclerView ->
+                // Reserve room for the last section's expansion control above
+                // the system navigation bar, without altering Prime Search.
+                val bottomSpace = dp(88, recyclerView)
+                if (recyclerView.paddingBottom < bottomSpace) {
+                    recyclerView.setPadding(
+                        recyclerView.paddingLeft, recyclerView.paddingTop,
+                        recyclerView.paddingRight, bottomSpace,
+                    )
+                    recyclerView.clipToPadding = false
+                }
                 recyclerView.adapter?.registerAdapterDataObserver(
                     object : androidx.recyclerview.widget.RecyclerView.AdapterDataObserver() {
                         override fun onChanged() = categoryPageRenderer.close()

@@ -16,6 +16,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -691,6 +695,83 @@ private fun DrawerAdvancedSearchPreferences() {
                         },
                         valueRange = 60f..150f,
                     )
+                    // Live drawer-only preview: independent of Prime Search settings.
+                    val previewApps = remember(context) {
+                        val pm = context.packageManager
+                        pm.getInstalledApplications(0)
+                            .asSequence()
+                            .filter { pm.getLaunchIntentForPackage(it.packageName) != null }
+                            .sortedBy { pm.getApplicationLabel(it).toString().lowercase() }
+                            .take(15)
+                            .map { pm.getApplicationLabel(it).toString() to it.packageName }
+                            .toList()
+                    }
+                    Text("Aperçu des résultats d'applications")
+                    androidx.compose.material3.Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant,
+                    ) {
+                        androidx.compose.foundation.layout.Column(modifier = Modifier.padding(8.dp)) {
+                            Text("Applications", modifier = Modifier.padding(6.dp))
+                            val geometry = app.lawnchair.prime.search.PrimeAppGridGeometry
+                            val density = context.resources.displayMetrics.density
+                            val twoLines = PrimeSearchResultPreferences.twoLineAppLabels(context, drawerSurface)
+                            val lineCount = if (twoLines) 2 else 1
+                            val iconDp = (geometry.iconPx(context, iconSize) / density).dp
+                            val rowDp = (geometry.rowHeightPx(context, iconSize, lineCount) / density).dp
+                            repeat(rows) { rowIndex ->
+                                androidx.compose.foundation.layout.Row(
+                                    modifier = Modifier.fillMaxWidth().height(rowDp),
+                                ) {
+                                    repeat(columns) { columnIndex ->
+                                        val app = previewApps.getOrNull(rowIndex * columns + columnIndex)
+                                        androidx.compose.foundation.layout.Column(
+                                            modifier = Modifier.weight(1f),
+                                            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+                                        ) {
+                                            androidx.compose.foundation.layout.Box(
+                                                modifier = Modifier.height(iconDp).fillMaxWidth(),
+                                                contentAlignment = androidx.compose.ui.Alignment.Center,
+                                            ) {
+                                                if (app != null) {
+                                                    val icon = remember(app.second) {
+                                                        runCatching { context.packageManager.getApplicationIcon(app.second) }
+                                                            .getOrNull()
+                                                    }
+                                                    if (icon != null) {
+                                                        androidx.compose.foundation.Image(
+                                                            painter = androidx.compose.ui.graphics.painter.BitmapPainter(
+                                                                remember(icon) {
+                                                                    val bitmap = android.graphics.Bitmap.createBitmap(
+                                                                        icon.intrinsicWidth.coerceAtLeast(1),
+                                                                        icon.intrinsicHeight.coerceAtLeast(1),
+                                                                        android.graphics.Bitmap.Config.ARGB_8888,
+                                                                    )
+                                                                    val canvas = android.graphics.Canvas(bitmap)
+                                                                    icon.setBounds(0, 0, bitmap.width, bitmap.height)
+                                                                    icon.draw(canvas)
+                                                                    bitmap.asImageBitmap()
+                                                                },
+                                                            ),
+                                                            contentDescription = null,
+                                                            modifier = Modifier.size(iconDp),
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                            Text(
+                                                app?.first.orEmpty(),
+                                                maxLines = lineCount,
+                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                                style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                     Text("Alignement des applications")
                     androidx.compose.material3.OutlinedButton(onClick = { showAlignment = true }) {
                         Text(alignment.label)
