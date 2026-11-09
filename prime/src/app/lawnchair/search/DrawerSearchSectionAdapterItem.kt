@@ -73,7 +73,12 @@ internal class DrawerSearchSectionAdapterItem(
                         break
                     }
                     // A missing heading must not merge unrelated result categories.
-                    if (DrawerSearchCategoryPresentation.categoryForResult(candidateTarget) != category) break
+                    // A provider heading is authoritative: its children can use
+                    // generic result types (notably Web shortcuts and entries).
+                    // For heading-less sections, category changes delimit cards.
+                    if (!isHeading &&
+                        DrawerSearchCategoryPresentation.categoryForResult(candidateTarget) != category
+                    ) break
                     results.add(candidate)
                     end++
                 }
@@ -85,8 +90,9 @@ internal class DrawerSearchSectionAdapterItem(
                     ))
                     index = end
                 } else {
-                    if (isHeading) output.add(current)
-                    index++
+                    // Do not leak orphan headings outside the card layout.
+                    // A heading without results has no visible section.
+                    index = if (isHeading) end.coerceAtLeast(index + 1) else index + 1
                 }
             }
             return output

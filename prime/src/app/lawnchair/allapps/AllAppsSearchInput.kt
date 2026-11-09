@@ -486,6 +486,7 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
         val algorithm = app.lawnchair.search.algorithms.LawnchairLocalSearchAlgorithm(
             context,
             primeSearch = false,
+            primeMatching = true,
             preferenceSurface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER,
         )
         this.searchAlgorithm = algorithm

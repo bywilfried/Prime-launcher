@@ -143,11 +143,11 @@ internal class DrawerSearchSectionViewRenderer(
         val layout = LawnchairSearchAdapterProvider.layoutForViewType(item.viewType)
             ?: R.layout.search_result_small_icon_row
         val child = LayoutInflater.from(parent.context).inflate(layout, parent, false)
-        item.setRippleEffect(child)
         (child as? SearchResultView)?.let { result ->
             result.bind(item.searchTarget, emptyList())
             if (result.isQuickLaunch) onQuickLaunch(result)
         }
+        item.setRippleEffect(child)
         return child
     }
 }
