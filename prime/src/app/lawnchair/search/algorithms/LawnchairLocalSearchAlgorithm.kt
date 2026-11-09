@@ -125,7 +125,7 @@ class LawnchairLocalSearchAlgorithm(
                 if (primeMatching && appResults.isNotEmpty()) {
                     val appTargets = translateToSearchTargets(appResults)
                     setFirstItemQuickLaunch(appTargets)
-                    val appItems = transformSearchResults(appTargets)
+                    val appItems = drawerSectionItems(transformSearchResults(appTargets))
                     withContext(Dispatchers.Main) {
                         if (generation == searchGeneration) {
                             val snapshot = ArrayList<BaseAllAppsAdapter.AdapterItem>(appItems)
@@ -272,7 +272,7 @@ class LawnchairLocalSearchAlgorithm(
                     }
                     val searchTargets = translateToSearchTargets(resultsForSurface)
                     setFirstItemQuickLaunch(searchTargets)
-                    val adapterItems = transformSearchResults(searchTargets)
+                    val adapterItems = drawerSectionItems(transformSearchResults(searchTargets))
                     app.lawnchair.search.PrimeSearchTrace.record("engine transform len=${query.length} items=${adapterItems.size} ms=${SystemClock.elapsedRealtime() - updateStarted}")
                     withContext(Dispatchers.Main) {
                         if (generation != searchGeneration) return@withContext
@@ -391,6 +391,14 @@ class LawnchairLocalSearchAlgorithm(
         SearchSettingsSectionBuilder,
     )
 
+
+    private fun drawerSectionItems(items: List<BaseAllAppsAdapter.AdapterItem>): List<BaseAllAppsAdapter.AdapterItem> {
+        if (primeSearch || items.isEmpty()) return items
+        val searchItems = items.mapNotNull { it as? app.lawnchair.search.adapter.SearchAdapterItem }
+        if (searchItems.size != items.size) return items
+        return app.lawnchair.search.DrawerSearchSectionAdapterItem.group(searchItems)
+    }
+
     private fun translateToSearchTargets(
         results: List<SearchResult>,
     ): List<SearchTargetCompat> {
@@ -405,28 +413,7 @@ class LawnchairLocalSearchAlgorithm(
             PrimeSearchCategoryPresentation.orderedDrawerBuilders(context)
         }
         return builders.flatMap { builder ->
-            val targets = builder.build(context, factory, results)
-            if (primeSearch || targets.isEmpty()) return@flatMap targets
-            // A footer belongs to the drawer's result section, never to Prime Search.
-            // Only show it when the compact preview actually hides results.
-            val first = targets.firstOrNull { it.layoutType == com.android.app.search.LayoutType.TEXT_HEADER }
-            val category = app.lawnchair.search.DrawerSearchCategoryPresentation.categoryForHeading(
-                first?.searchAction?.title?.toString(),
-            )
-            if (category != PrimeSearchResultPreferences.Category.APPS) return@flatMap targets
-            val resultCount = targets.count {
-                it.layoutType == com.android.app.search.LayoutType.ICON_SINGLE_VERTICAL_TEXT
-            }
-            val limit = PrimeSearchResultPreferences.appResultsRows(context, preferenceSurface) *
-                PrimeSearchResultPreferences.appResultsColumns(context, preferenceSurface)
-            if (resultCount <= limit) return@flatMap targets
-            val spacer = targets.indexOfLast {
-                it.layoutType == com.android.app.search.LayoutType.TEXT_HEADER &&
-                    it.searchAction?.title?.toString() == app.lawnchair.search.adapter.SPACE
-            }
-            val footer = factory.createHeaderTarget("Plus d'applications ⌄")
-            if (spacer >= 0) targets.take(spacer) + footer + targets.drop(spacer)
-            else targets + footer
+            builder.build(context, factory, results)
         }
     }
 }

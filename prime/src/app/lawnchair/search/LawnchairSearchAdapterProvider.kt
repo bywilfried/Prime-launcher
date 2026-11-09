@@ -36,6 +36,10 @@ class LawnchairSearchAdapterProvider(
         categoryPageRenderer.showCategoryPage(category, title, results)
     }
     private val resultsRenderer = DrawerSearchResultsRenderer(appsView, previewRenderer)
+    private val sectionRenderer = DrawerSearchSectionViewRenderer(
+        { category, title, results -> categoryPageRenderer.showCategoryPage(category, title, results) },
+        { result -> quickLaunchItem = result },
+    )
 
 
     init {
@@ -95,10 +99,16 @@ class LawnchairSearchAdapterProvider(
             appsView.mSearchRecyclerView.invalidate()
         }
 
-    override fun isViewSupported(viewType: Int): Boolean = layoutIdMap.contains(viewType)
+    override fun isViewSupported(viewType: Int): Boolean =
+        viewType == DrawerSearchSectionAdapterItem.VIEW_TYPE || layoutIdMap.contains(viewType)
 
     override fun onBindView(holder: BaseAllAppsAdapter.ViewHolder, position: Int) {
-        val adapterItem = appsView.mSearchRecyclerView.mApps.adapterItems[position] as SearchAdapterItem
+        val current = appsView.mSearchRecyclerView.mApps.adapterItems[position]
+        if (current is DrawerSearchSectionAdapterItem) {
+            sectionRenderer.bind(holder.itemView as android.widget.LinearLayout, current)
+            return
+        }
+        val adapterItem = current as SearchAdapterItem
         adapterItem.setRippleEffect(holder.itemView)
         val itemView = holder.itemView as SearchResultView
         itemView.bind(
@@ -279,6 +289,9 @@ class LawnchairSearchAdapterProvider(
         parent: ViewGroup?,
         viewType: Int,
     ): BaseAllAppsAdapter.ViewHolder {
+        if (viewType == DrawerSearchSectionAdapterItem.VIEW_TYPE) {
+            return BaseAllAppsAdapter.ViewHolder(sectionRenderer.create(parent))
+        }
         val view = layoutInflater.inflate(layoutIdMap[viewType], parent, false)
         val grid: DeviceProfile = mLauncher.deviceProfile
         val leftMargin = grid.allAppsPadding.left
