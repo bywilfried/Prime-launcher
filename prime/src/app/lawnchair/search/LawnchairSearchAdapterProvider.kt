@@ -105,7 +105,10 @@ class LawnchairSearchAdapterProvider(
             adapterItem.searchTarget,
             emptyList(),
         )
-        if (adapterItem.searchTarget.layoutType == LayoutType.TEXT_HEADER) {
+        val footerTitle = adapterItem.searchTarget.searchAction?.title?.toString().orEmpty()
+        val isExpansionFooter = adapterItem.searchTarget.layoutType == LayoutType.TEXT_HEADER &&
+            footerTitle.startsWith("Plus d'applications")
+        if (adapterItem.searchTarget.layoutType == LayoutType.TEXT_HEADER && !isExpansionFooter) {
             previewRenderer.applyDrawerPreview(holder.itemView, position, adapterItem)
         }
         // Match Prime Search's compact section headings and non-app result rows.
@@ -225,6 +228,35 @@ class LawnchairSearchAdapterProvider(
         applySearchTextColor(holder.itemView, textColor)
         if (adapterItem.searchTarget.layoutType != LayoutType.TEXT_HEADER) {
             previewRenderer.applyDrawerPreview(holder.itemView, position, adapterItem)
+        }
+        if (isExpansionFooter) {
+            val all = appsView.mSearchRecyclerView.mApps.adapterItems.mapNotNull { it as? SearchAdapterItem }
+            val headerPosition = (position - 1 downTo 0).firstOrNull { index ->
+                all[index].searchTarget.layoutType == LayoutType.TEXT_HEADER &&
+                    !DrawerSearchSectionModel.isStructuralHeader(all[index]) &&
+                    !all[index].searchTarget.searchAction?.title.toString().startsWith("Plus de")
+            }
+            val entries = if (headerPosition == null) emptyList() else
+                all.subList(headerPosition + 1, position).filter {
+                    it.searchTarget.layoutType != LayoutType.TEXT_HEADER &&
+                        it.searchTarget.layoutType != LayoutType.EMPTY_DIVIDER
+                }
+            holder.itemView.apply {
+                visibility = View.VISIBLE
+                layoutParams?.height = dp(44)
+                isClickable = entries.isNotEmpty()
+                setOnClickListener {
+                    if (entries.isNotEmpty()) categoryPageRenderer.showCategoryPage(
+                        app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS,
+                        "Applications", entries,
+                    )
+                }
+                findViewById<TextView>(R.id.title)?.apply {
+                    text = "Plus d'applications ⌄"
+                    gravity = android.view.Gravity.CENTER
+                    textAlignment = View.TEXT_ALIGNMENT_CENTER
+                }
+            }
         }
         // Keep the native ripple drawable above the drawer-owned section surface.
         resultsRenderer.styleBoundRow(holder.itemView, position, adapterItem)

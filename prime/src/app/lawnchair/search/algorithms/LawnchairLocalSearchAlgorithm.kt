@@ -405,7 +405,28 @@ class LawnchairLocalSearchAlgorithm(
             PrimeSearchCategoryPresentation.orderedDrawerBuilders(context)
         }
         return builders.flatMap { builder ->
-            builder.build(context, factory, results)
+            val targets = builder.build(context, factory, results)
+            if (primeSearch || targets.isEmpty()) return@flatMap targets
+            // A footer belongs to the drawer's result section, never to Prime Search.
+            // Only show it when the compact preview actually hides results.
+            val first = targets.firstOrNull { it.layoutType == com.android.app.search.LayoutType.TEXT_HEADER }
+            val category = app.lawnchair.search.DrawerSearchCategoryPresentation.categoryForHeading(
+                first?.searchAction?.title?.toString(),
+            )
+            if (category != PrimeSearchResultPreferences.Category.APPS) return@flatMap targets
+            val resultCount = targets.count {
+                it.layoutType == com.android.app.search.LayoutType.ICON_SINGLE_VERTICAL_TEXT
+            }
+            val limit = PrimeSearchResultPreferences.appResultsRows(context, preferenceSurface) *
+                PrimeSearchResultPreferences.appResultsColumns(context, preferenceSurface)
+            if (resultCount <= limit) return@flatMap targets
+            val spacer = targets.indexOfLast {
+                it.layoutType == com.android.app.search.LayoutType.TEXT_HEADER &&
+                    it.searchAction?.title?.toString() == app.lawnchair.search.adapter.SPACE
+            }
+            val footer = factory.createHeaderTarget("Plus d'applications ⌄")
+            if (spacer >= 0) targets.take(spacer) + footer + targets.drop(spacer)
+            else targets + footer
         }
     }
 }

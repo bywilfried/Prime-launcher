@@ -17,6 +17,19 @@ internal class DrawerSearchResultsRenderer(
         val recyclerView = appsView.mSearchRecyclerView ?: return
         val items = recyclerView.mApps.adapterItems.mapNotNull { it as? SearchAdapterItem }
         if (items.getOrNull(position) !== item) return
+        val footer = item.searchTarget.layoutType == LayoutType.TEXT_HEADER &&
+            item.searchTarget.searchAction?.title?.toString()?.startsWith("Plus d'applications") == true
+        if (footer) {
+            val density = view.resources.displayMetrics.density
+            val sectionSurface = android.graphics.drawable.InsetDrawable(
+                DrawerSearchSectionBackground(view.context, false, true),
+                (4f * density).toInt(), 0, (4f * density).toInt(), 0,
+            )
+            val feedback = view.background
+            view.background = if (feedback == null) sectionSurface
+                else android.graphics.drawable.LayerDrawable(arrayOf(sectionSurface, feedback))
+            return
+        }
         if (item.searchTarget.layoutType == LayoutType.EMPTY_DIVIDER ||
             DrawerSearchSectionModel.isStructuralHeader(item)
         ) return
@@ -62,7 +75,9 @@ internal class DrawerSearchResultsRenderer(
         // result row starts the card. This avoids a seam between separate surfaces.
         val top = if (headingPosition != null) position == headingPosition
             else position == resultPositions.first()
-        val bottom = !isHeading && position == previewRenderer.lastVisibleResultPosition(
+        val hasFooter = items.getOrNull(end)?.searchTarget?.searchAction?.title
+            ?.toString()?.startsWith("Plus d'applications") == true
+        val bottom = !hasFooter && !isHeading && position == previewRenderer.lastVisibleResultPosition(
             items, start, end, category, view,
         )
         val sectionSurface = android.graphics.drawable.InsetDrawable(
