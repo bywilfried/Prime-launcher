@@ -1,10 +1,6 @@
 package app.lawnchair.search
 
 import android.util.SparseIntArray
-import android.app.Activity
-import android.os.Build
-import android.view.KeyEvent
-import android.window.OnBackInvokedCallback
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,12 +8,10 @@ import android.widget.TextView
 import android.graphics.Typeface
 import android.util.TypedValue
 import app.lawnchair.theme.effectiveThemeVariant
-import app.lawnchair.prime.search.PrimeSearchResultPreferences
 import androidx.core.util.contains
 import app.lawnchair.allapps.views.SearchItemDecorator
 import app.lawnchair.allapps.views.SearchResultView
 import app.lawnchair.search.adapter.SearchAdapterItem
-import app.lawnchair.search.adapter.SearchTargetCompat
 import com.android.app.search.LayoutType
 import com.android.launcher3.DeviceProfile
 import com.android.launcher3.R
@@ -44,9 +38,8 @@ class LawnchairSearchAdapterProvider(
 
 
     init {
-        // The adapter provider is created from ActivityAllAppsContainerView.initContent(),
-        // before mSearchRecyclerView is assigned. Defer decoration installation until
-        // the container has completed inflation to avoid crashing launcher startup.
+        // The adapter provider is created before mSearchRecyclerView is assigned.
+        // Defer observer installation until the container has completed inflation.
         appsView.post {
             appsView.mSearchRecyclerView?.let { recyclerView ->
                 recyclerView.adapter?.registerAdapterDataObserver(
@@ -72,11 +65,6 @@ class LawnchairSearchAdapterProvider(
             }
         }
     }
-    private fun categoryForResult(item: SearchAdapterItem) =
-        DrawerSearchCategoryPresentation.categoryForResultType(item.searchTarget.resultType)
-
-
-
     private fun dp(value: Int, view: View): Int =
         (value * view.resources.displayMetrics.density).toInt()
 
