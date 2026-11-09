@@ -285,14 +285,7 @@ class LawnchairSearchAdapterProvider(
         val context = appsView.context
         val page = android.widget.LinearLayout(context).apply {
             orientation = android.widget.LinearLayout.VERTICAL
-            setBackgroundColor(
-                app.lawnchair.theme.ThemeColors.resolve(
-                    context,
-                    app.lawnchair.theme.ThemeProfile.current(context),
-                    app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BACKGROUND,
-                    context.effectiveThemeVariant(),
-                ),
-            )
+            setBackgroundColor(android.graphics.Color.TRANSPARENT)
             isFocusableInTouchMode = true
             setOnKeyListener { _, keyCode, event ->
                 if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
@@ -302,35 +295,51 @@ class LawnchairSearchAdapterProvider(
                     keyCode == KeyEvent.KEYCODE_BACK
                 }
             }
-            elevation = 12f * resources.displayMetrics.density
         }
 
-        val toolbar = android.widget.LinearLayout(context).apply {
-            orientation = android.widget.LinearLayout.HORIZONTAL
-            gravity = android.view.Gravity.CENTER_VERTICAL
-            setPadding(dp(12, this), dp(8, this), dp(16, this), dp(8, this))
-            minimumHeight = dp(56, this)
-        }
-        val back = android.widget.TextView(context).apply {
-            text = "‹"
-            textSize = 32f
-            gravity = android.view.Gravity.CENTER
-            contentDescription = "Retour aux résultats"
-            isClickable = true
-            isFocusable = true
-            setPadding(dp(8, this), 0, dp(16, this), 0)
-            setOnClickListener { closeCategoryPage() }
+        // Prime Search's expanded view is a single full-height rounded card.
+        // Keep the same hierarchy and spacing, but resolve colors from the
+        // drawer palette so this page remains visually and functionally separate.
+        val density = resources.displayMetrics.density
+        val cardBackground = app.lawnchair.theme.ThemeColors.resolve(
+            context,
+            app.lawnchair.theme.ThemeProfile.current(context),
+            app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BACKGROUND,
+            context.effectiveThemeVariant(),
+        )
+        val cardBorder = app.lawnchair.theme.ThemeColors.resolve(
+            context,
+            app.lawnchair.theme.ThemeProfile.current(context),
+            app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BORDER,
+            context.effectiveThemeVariant(),
+        )
+        val contentCard = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(dp(8, this), dp(8, this), dp(8, this), dp(12, this))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = 16f * density
+                setColor(cardBackground)
+                setStroke((1f * density).toInt().coerceAtLeast(1), cardBorder)
+            }
+            clipToOutline = true
         }
         val heading = android.widget.TextView(context).apply {
             text = title
-            textSize = 18f
-            typeface = Typeface.DEFAULT_BOLD
-            gravity = android.view.Gravity.CENTER_VERTICAL
+            textSize = 16f
+            setTextColor(
+                app.lawnchair.theme.ThemeColors.resolve(
+                    context,
+                    app.lawnchair.theme.ThemeProfile.current(context),
+                    app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_TEXT,
+                    context.effectiveThemeVariant(),
+                ),
+            )
+            setTypeface(typeface, Typeface.BOLD)
+            setPadding(dp(18, this), dp(12, this), dp(12, this), dp(8, this))
             maxLines = 1
+            ellipsize = android.text.TextUtils.TruncateAt.END
         }
-        toolbar.addView(back, android.widget.LinearLayout.LayoutParams(dp(48, toolbar), dp(48, toolbar)))
-        toolbar.addView(heading, android.widget.LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        page.addView(toolbar, android.widget.LinearLayout.LayoutParams(
+        contentCard.addView(heading, android.widget.LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
         ))
 
@@ -382,7 +391,7 @@ class LawnchairSearchAdapterProvider(
             val scroll = android.widget.ScrollView(context).apply {
                 clipToPadding = false
                 isFillViewport = false
-                setPadding(dp(8, this), dp(8, this), dp(8, this), dp(24, this))
+                setPadding(0, 0, 0, 0)
                 isVerticalScrollBarEnabled = false
             }
             val grid = android.widget.LinearLayout(context).apply {
@@ -445,20 +454,48 @@ class LawnchairSearchAdapterProvider(
                 inRow++
             }
             scroll.addView(grid)
-            page.addView(scroll, android.widget.LinearLayout.LayoutParams(
+            contentCard.addView(scroll, android.widget.LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f,
             ))
         } else {
             val list = androidx.recyclerview.widget.RecyclerView(context).apply {
                 layoutManager = androidx.recyclerview.widget.LinearLayoutManager(context)
                 clipToPadding = false
-                setPadding(dp(8, this), dp(4, this), dp(8, this), dp(24, this))
+                setPadding(0, 0, 0, 0)
                 adapter = DrawerCategoryResultsAdapter(categoryItems, false, appRowHeight, appIconSizePx, appLabelLines)
             }
-            page.addView(list, android.widget.LinearLayout.LayoutParams(
+            contentCard.addView(list, android.widget.LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f,
             ))
         }
+        page.addView(contentCard, android.widget.LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f,
+        ).apply {
+            marginStart = dp(4, page)
+            marginEnd = dp(4, page)
+            topMargin = dp(16, page)
+            bottomMargin = dp(4, page)
+        })
+        val reduce = android.widget.TextView(context).apply {
+            text = "⌃  Réduire"
+            gravity = android.view.Gravity.CENTER
+            textSize = 15f
+            setTextColor(
+                app.lawnchair.theme.ThemeColors.resolve(
+                    context,
+                    app.lawnchair.theme.ThemeProfile.current(context),
+                    app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_TEXT,
+                    context.effectiveThemeVariant(),
+                ),
+            )
+            setPadding(0, dp(12, this), 0, dp(12, this))
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { closeCategoryPage() }
+        }
+        page.addView(reduce, android.widget.LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+        ))
         categoryPage = page
         appsView.addView(page, ViewGroup.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT,
