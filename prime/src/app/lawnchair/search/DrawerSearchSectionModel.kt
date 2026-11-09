@@ -26,7 +26,7 @@ internal object DrawerSearchSectionModel {
         DrawerSearchCategoryPresentation.categoryForHeading(heading)?.let { return it }
         for (index in start until end) {
             val target = items[index].searchTarget
-            val category = DrawerSearchCategoryPresentation.categoryForResultType(target.resultType)
+            val category = DrawerSearchCategoryPresentation.categoryForResult(target)
             if (category != null) return category
         }
         return null

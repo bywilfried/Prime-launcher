@@ -15,9 +15,11 @@ internal object DrawerSearchCategoryPresentation {
         "Raccourcis d’app" to PrimeSearchResultPreferences.Category.APP_SHORTCUTS,
         "Contacts" to PrimeSearchResultPreferences.Category.CONTACTS,
         "Événements de l'agenda" to PrimeSearchResultPreferences.Category.CALENDAR,
+        "Agenda" to PrimeSearchResultPreferences.Category.CALENDAR,
         "Tâches · Tasks.org" to PrimeSearchResultPreferences.Category.REMINDERS,
         "Tâches" to PrimeSearchResultPreferences.Category.REMINDERS,
         "Historique des notifications" to PrimeSearchResultPreferences.Category.NOTIFICATIONS,
+        "Notifications" to PrimeSearchResultPreferences.Category.NOTIFICATIONS,
         "Paramètres de l'appareil" to PrimeSearchResultPreferences.Category.SETTINGS,
         "Device settings" to PrimeSearchResultPreferences.Category.SETTINGS,
         "Raccourcis Web" to PrimeSearchResultPreferences.Category.WEB_SHORTCUTS,
@@ -53,6 +55,18 @@ internal object DrawerSearchCategoryPresentation {
             app.lawnchair.search.adapter.SearchTargetCompat.RESULT_TYPE_SUGGESTIONS ->
                 PrimeSearchResultPreferences.Category.HISTORY
             else -> null
+        }
+
+    fun categoryForResult(target: app.lawnchair.search.adapter.SearchTargetCompat):
+        PrimeSearchResultPreferences.Category? =
+        if (target.resultType == app.lawnchair.search.adapter.SearchTargetCompat.RESULT_TYPE_SUGGESTIONS) {
+            if (target.packageName == app.lawnchair.search.adapter.HISTORY) {
+                PrimeSearchResultPreferences.Category.HISTORY
+            } else {
+                PrimeSearchResultPreferences.Category.WEB
+            }
+        } else {
+            categoryForResultType(target.resultType)
         }
 
     fun compactPreviewHeightDp(category: PrimeSearchResultPreferences.Category): Int? =
