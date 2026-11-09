@@ -154,7 +154,7 @@ internal class DrawerSearchCategoryPageRenderer(
             }.distinctBy { it.searchTarget.packageName }
             val contentWidth = (
                 (appsView.width.takeIf { it > 0 } ?: appsView.resources.displayMetrics.widthPixels) -
-                    dp(16, appsView)
+                    dp(24, appsView)
                 ).coerceAtLeast(appColumns)
             val cellWidth = (contentWidth / appColumns).coerceAtLeast(1)
             val alignment = app.lawnchair.prime.search.PrimeSearchResultPreferences
