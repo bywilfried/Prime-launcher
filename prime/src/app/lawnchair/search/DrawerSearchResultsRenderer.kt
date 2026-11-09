@@ -1,16 +1,9 @@
 package app.lawnchair.search
 
-import android.graphics.drawable.Drawable
-import android.graphics.drawable.LayerDrawable
 import android.view.View
-import android.widget.TextView
-import androidx.recyclerview.widget.RecyclerView
-import app.lawnchair.prime.search.PrimeSearchResultPreferences
 import app.lawnchair.search.adapter.SearchAdapterItem
-import app.lawnchair.theme.effectiveThemeVariant
 import com.android.app.search.LayoutType
 import com.android.launcher3.allapps.ActivityAllAppsContainerView
-import java.util.WeakHashMap
 
 /**
  * Builds drawer section surfaces from the attached result rows instead of
@@ -20,36 +13,13 @@ import java.util.WeakHashMap
 internal class DrawerSearchResultsRenderer(
     private val appsView: ActivityAllAppsContainerView<*>,
 ) {
-    private val originalBackgrounds = WeakHashMap<View, Drawable?>()
-
-    private val childListener = object : RecyclerView.OnChildAttachStateChangeListener {
-        override fun onChildViewAttachedToWindow(view: View) = styleChild(view)
-
-        override fun onChildViewDetachedFromWindow(view: View) {
-            if (originalBackgrounds.containsKey(view)) {
-                view.background = originalBackgrounds.remove(view)
-            }
-        }
-    }
-
-    fun attach(recyclerView: RecyclerView) {
-        recyclerView.removeOnChildAttachStateChangeListener(childListener)
-        recyclerView.addOnChildAttachStateChangeListener(childListener)
-        for (index in 0 until recyclerView.childCount) {
-            styleChild(recyclerView.getChildAt(index))
-        }
-    }
-
     fun styleBoundRow(view: View, position: Int, item: SearchAdapterItem) {
         val recyclerView = appsView.mSearchRecyclerView ?: return
-        originalBackgrounds.remove(view)
-        view.background = null
-
         val items = recyclerView.mApps.adapterItems.mapNotNull { it as? SearchAdapterItem }
         if (items.getOrNull(position) !== item) return
         val bounds = DrawerSearchSectionModel.sectionBounds(items, position) ?: return
         val (start, end) = bounds
-        val category = DrawerSearchSectionModel.categoryForSection(items, start, end) ?: return
+        DrawerSearchSectionModel.categoryForSection(items, start, end) ?: return
         if (item.searchTarget.layoutType == LayoutType.EMPTY_DIVIDER ||
             item.searchTarget.layoutType == LayoutType.TEXT_HEADER ||
             DrawerSearchSectionModel.isStructuralHeader(item)
@@ -66,18 +36,9 @@ internal class DrawerSearchResultsRenderer(
         val bottom = position == resultPositions.last()
         val sectionSurface = DrawerSearchSectionBackground(view.context, top, bottom)
         val inset = (4f * density).toInt()
-        val surface = LayerDrawable(arrayOf(shape)).apply {
-            setLayerInset(0, inset, 0, inset, 0)
+        val surface = DrawerSearchSectionBackground(view.context, top, bottom).apply {
+            setBounds(0, 0, view.width, view.height)
         }
-        originalBackgrounds[view] = null
-        view.background = surface
-    }
-
-    private fun styleChild(view: View) {
-        val recyclerView = appsView.mSearchRecyclerView ?: return
-        val position = recyclerView.getChildAdapterPosition(view)
-        if (position == RecyclerView.NO_POSITION) return
-        val item = recyclerView.mApps.adapterItems.getOrNull(position) as? SearchAdapterItem ?: return
-        styleBoundRow(view, position, item)
+        view.background = android.graphics.drawable.InsetDrawable(sectionSurface, inset)
     }
 }

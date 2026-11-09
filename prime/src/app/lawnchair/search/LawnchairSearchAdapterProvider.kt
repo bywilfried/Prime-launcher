@@ -49,7 +49,6 @@ class LawnchairSearchAdapterProvider(
         // the container has completed inflation to avoid crashing launcher startup.
         appsView.post {
             appsView.mSearchRecyclerView?.let { recyclerView ->
-                resultsRenderer.attach(recyclerView)
                 recyclerView.adapter?.registerAdapterDataObserver(
                     object : androidx.recyclerview.widget.RecyclerView.AdapterDataObserver() {
                         override fun onChanged() = categoryPageRenderer.close()
@@ -222,9 +221,7 @@ class LawnchairSearchAdapterProvider(
         if (adapterItem.searchTarget.layoutType != LayoutType.TEXT_HEADER) {
             applyDrawerPreview(holder.itemView, position, adapterItem)
         }
-        // The drawer renderer attaches a real section surface to this bound row.
-        // Apply it after native binding, which may reset the row background.
-        holder.itemView.background = null
+        // Apply the drawer-owned section surface after native binding.
         resultsRenderer.styleBoundRow(holder.itemView, position, adapterItem)
         if (itemView.isQuickLaunch) {
             quickLaunchItem = itemView
