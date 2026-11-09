@@ -70,7 +70,7 @@ internal class DrawerSearchCategoryPageRenderer(
             isFocusableInTouchMode = true
             setOnKeyListener { _, keyCode, event ->
                 if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
-                    close()
+                    backOrHideKeyboard()
                     true
                 } else {
                     keyCode == KeyEvent.KEYCODE_BACK
@@ -355,7 +355,7 @@ internal class DrawerSearchCategoryPageRenderer(
         page.requestFocus()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             (context as? Activity)?.let { activity ->
-                val callback = OnBackInvokedCallback { close() }
+                val callback = OnBackInvokedCallback { backOrHideKeyboard() }
                 activity.onBackInvokedDispatcher.registerOnBackInvokedCallback(
                     android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,
                     callback,
@@ -366,13 +366,26 @@ internal class DrawerSearchCategoryPageRenderer(
         }
     }
 
+    private fun backOrHideKeyboard() {
+        val input = drawerInput?.editText
+        val imeVisible = androidx.core.view.ViewCompat.getRootWindowInsets(appsView)
+            ?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) == true
+        if (imeVisible) {
+            (appsView.context.getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
+                as? android.view.inputmethod.InputMethodManager)
+                ?.hideSoftInputFromWindow(input?.windowToken ?: appsView.windowToken, 0)
+            input?.clearFocus()
+        } else {
+            close()
+        }
+    }
+
     fun close() {
         detailGeneration++
         detailAlgorithm?.cancel(true)
         detailAlgorithm = null
         val inputToRestore = drawerInput
         drawerInput = null
-        categoryPage = null
         inputToRestore?.endCategorySearch()
         val activity = categoryBackActivity
         val callback = categoryBackCallback

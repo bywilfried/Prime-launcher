@@ -108,18 +108,20 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
     fun beginCategorySearch(callback: (String, ArrayList<AdapterItem>?) -> Unit) {
         savedQuery = input.text?.toString().orEmpty()
         detailCallback = callback
-        input.setText("")
-        input.clearFocus()
+        // Dismiss IME before changing the query; otherwise the controller can
+        // immediately request focus again while its text watcher runs.
         (context.getSystemService(Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager)
             ?.hideSoftInputFromWindow(input.windowToken, 0)
+        input.clearFocus()
+        input.setText("")
     }
 
     fun endCategorySearch() {
         val previous = savedQuery ?: return
         detailCallback = null
         savedQuery = null
-        input.setText(previous)
         input.clearFocus()
+        input.setText(previous)
     }
 
     private val inCategorySearch: Boolean get() = savedQuery != null
