@@ -171,7 +171,7 @@ class LawnchairSearchAdapterProvider(
             holder.itemView.minimumHeight = 0
             holder.itemView.layoutParams?.height = app.lawnchair.prime.search.PrimeAppGridGeometry.rowHeightPx(
                 holder.itemView.context, iconPercent, labelLines,
-            )
+            ).coerceAtLeast(dp(132))
         } else if (adapterItem.searchTarget.layoutType != LayoutType.TEXT_HEADER) {
             // Use the same compact row contract as the embedded Prime Search
             // renderer so files, contacts, suggestions and shortcuts share

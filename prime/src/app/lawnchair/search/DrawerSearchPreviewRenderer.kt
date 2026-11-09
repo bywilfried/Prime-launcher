@@ -46,7 +46,7 @@ internal class DrawerSearchPreviewRenderer(
                 app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsIconSizePercent(context, surface),
                 if (app.lawnchair.prime.search.PrimeSearchResultPreferences.twoLineAppLabels(context, surface)) 2 else 1,
             )
-            return rows * rowHeight
+            return rows * rowHeight.coerceAtLeast(dp(132, view))
         }
         val heightDp = DrawerSearchCategoryPresentation.compactPreviewHeightDp(category) ?: 190
         return (heightDp * density).toInt().coerceAtLeast(1)
@@ -145,7 +145,14 @@ internal class DrawerSearchPreviewRenderer(
         val shouldShow = if (isApps) resultIndex < maxAppItems
             else previousHeight == 0 || previousHeight + currentHeight <= limitPx
         itemView.visibility = if (shouldShow) View.VISIBLE else View.GONE
-        if (shouldShow) itemView.minimumHeight = 0
+        if (shouldShow) {
+            itemView.minimumHeight = 0
+        } else {
+            // RecyclerView's grid still measures GONE children; collapse the
+            // hidden preview entries so they cannot overlap the next section.
+            itemView.minimumHeight = 0
+            itemView.layoutParams?.height = 0
+        }
     }
 
     private fun dp(value: Int, view: View): Int =
