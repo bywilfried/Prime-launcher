@@ -664,6 +664,7 @@ private fun DrawerAdvancedSearchPreferences() {
                         value = columns.toFloat(),
                         onValueChange = {
                             columns = it.roundToInt().coerceIn(3, 5)
+                            PrimeSearchResultPreferences.setAppResultsFollowGeneral(context, false, drawerSurface)
                             PrimeSearchResultPreferences.setAppResultsColumns(context, columns, drawerSurface)
                         },
                         valueRange = 3f..5f,
@@ -674,6 +675,7 @@ private fun DrawerAdvancedSearchPreferences() {
                         value = rows.toFloat(),
                         onValueChange = {
                             rows = it.roundToInt().coerceIn(1, 3)
+                            PrimeSearchResultPreferences.setAppResultsFollowGeneral(context, false, drawerSurface)
                             PrimeSearchResultPreferences.setAppResultsRows(context, rows, drawerSurface)
                         },
                         valueRange = 1f..3f,
@@ -684,6 +686,7 @@ private fun DrawerAdvancedSearchPreferences() {
                         value = iconSize.toFloat(),
                         onValueChange = {
                             iconSize = (it.roundToInt() / 5 * 5).coerceIn(60, 150)
+                            PrimeSearchResultPreferences.setAppResultsFollowGeneral(context, false, drawerSurface)
                             PrimeSearchResultPreferences.setAppResultsIconSizePercent(context, iconSize, drawerSurface)
                         },
                         valueRange = 60f..150f,
