@@ -117,12 +117,11 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
             categoryBackHandler?.invoke()
             true
         }
-        // Dismiss IME before changing the query; otherwise the controller can
-        // immediately request focus again while its text watcher runs.
+        // Preserve the global query visually when entering category detail.
+        // Subsequent edits are routed to the detail callback, not the compact list.
         (context.getSystemService(Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager)
             ?.hideSoftInputFromWindow(input.windowToken, 0)
         input.clearFocus()
-        input.setText("")
     }
 
     fun endCategorySearch() {
@@ -132,7 +131,7 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
         input.setOnBackKeyListener(searchBarController)
         savedQuery = null
         input.clearFocus()
-        input.setText(previous)
+        if (input.text?.toString() != previous) input.setText(previous)
     }
 
     private val inCategorySearch: Boolean get() = savedQuery != null
