@@ -187,12 +187,12 @@ class LawnchairSearchAdapterProvider(
             // Use the same compact row contract as the embedded Prime Search
             // renderer so files, contacts, suggestions and shortcuts share
             // typography, spacing and exact row heights.
-            val section = sectionBounds(
+            val section = DrawerSearchSectionModel.sectionBounds(
                 appsView.mSearchRecyclerView.mApps.adapterItems.mapNotNull { it as? SearchAdapterItem },
                 position,
             )
             val category = section?.let { (start, end) ->
-                categoryForSection(
+                DrawerSearchSectionModel.categoryForSection(
                     appsView.mSearchRecyclerView.mApps.adapterItems.mapNotNull { it as? SearchAdapterItem },
                     start,
                     end,
@@ -219,7 +219,7 @@ class LawnchairSearchAdapterProvider(
         val textColor = app.lawnchair.theme.ThemeColors.resolve(context, profile, role, variant)
         applySearchTextColor(holder.itemView, textColor)
         if (adapterItem.searchTarget.layoutType != LayoutType.TEXT_HEADER) {
-            applyDrawerPreview(holder.itemView, position, adapterItem)
+            previewRenderer.applyDrawerPreview(holder.itemView, position, adapterItem)
         }
         // Keep the native ripple drawable above the drawer-owned section surface.
         resultsRenderer.styleBoundRow(holder.itemView, position, adapterItem)
