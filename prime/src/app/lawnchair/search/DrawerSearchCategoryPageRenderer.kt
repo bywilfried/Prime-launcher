@@ -57,7 +57,14 @@ internal class DrawerSearchCategoryPageRenderer(
         val context = appsView.context
         val page = android.widget.LinearLayout(context).apply {
             orientation = android.widget.LinearLayout.VERTICAL
-            setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            // The detail page replaces the result viewport; it must not let
+            // the compact drawer sections show through its background.
+            setBackgroundColor(app.lawnchair.theme.ThemeColors.resolve(
+                context,
+                app.lawnchair.theme.ThemeProfile.current(context),
+                app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BACKGROUND,
+                context.effectiveThemeVariant(),
+            ))
             isFocusableInTouchMode = true
             setOnKeyListener { _, keyCode, event ->
                 if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
@@ -362,18 +369,23 @@ internal class DrawerSearchCategoryPageRenderer(
         ).apply {
             // The drawer can extend behind Android's gesture/navigation bar.
             // Reserve the actual system inset inside this overlay.
-            bottomMargin = (appsView.rootWindowInsets?.systemWindowInsetBottom ?: dp(48, page)) +
-                dp(12, page)
+            // The drawer's own content is already inset from system bars on
+            // some layouts. Keep a safe minimum without stacking huge margins.
+            bottomMargin = (appsView.rootWindowInsets?.systemWindowInsetBottom ?: 0)
+                .coerceAtLeast(dp(16, page))
         })
         categoryPage = page
         appsView.addView(page, ViewGroup.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT,
         ))
         page.bringToFront()
-        page.alpha = 0f
-        page.translationY = dp(28, page).toFloat()
-        page.animate().alpha(1f).translationY(0f).setDuration(220L)
-            .setInterpolator(DecelerateInterpolator()).start()
+        // Match Prime Search's card reveal: animate the result surface, not
+        // the entire window (which otherwise moves the search field).
+        contentCard.pivotY = 0f
+        contentCard.scaleY = 0.82f
+        contentCard.alpha = 0.88f
+        contentCard.animate().scaleY(1f).alpha(1f).setDuration(310L)
+            .setInterpolator(android.view.animation.AccelerateDecelerateInterpolator()).start()
         page.requestFocus()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             (context as? Activity)?.let { activity ->
@@ -404,10 +416,18 @@ internal class DrawerSearchCategoryPageRenderer(
         categoryPage?.let { page ->
             // Keep the exit motion consistent with the drawer detail entrance.
             page.animate().cancel()
-            page.animate().alpha(0f).translationY(dp(20, page).toFloat())
-                .setDuration(170L).setInterpolator(DecelerateInterpolator())
-                .withEndAction { (page.parent as? ViewGroup)?.removeView(page) }
-                .start()
+            val card = (page as? ViewGroup)?.getChildAt(1)
+            if (card != null) {
+                card.animate().cancel()
+                card.pivotY = 0f
+                card.animate().scaleY(0.82f).alpha(0.88f)
+                    .setDuration(310L)
+                    .setInterpolator(android.view.animation.AccelerateDecelerateInterpolator())
+                    .withEndAction { (page.parent as? ViewGroup)?.removeView(page) }
+                    .start()
+            } else {
+                (page.parent as? ViewGroup)?.removeView(page)
+            }
         }
         categoryPage = null
     }
