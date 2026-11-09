@@ -645,6 +645,82 @@ private fun DrawerAdvancedSearchPreferences() {
                 permissionRefresh = permissionRefresh,
                 onDismiss = { categorySettings = null },
             ) {
+                if (selected == PrimeSearchResultPreferences.Category.APPS) {
+                    var columns by remember(selected) {
+                        mutableStateOf(PrimeSearchResultPreferences.appResultsColumns(context, drawerSurface))
+                    }
+                    var rows by remember(selected) {
+                        mutableStateOf(PrimeSearchResultPreferences.appResultsRows(context, drawerSurface))
+                    }
+                    var iconSize by remember(selected) {
+                        mutableStateOf(PrimeSearchResultPreferences.appResultsIconSizePercent(context, drawerSurface))
+                    }
+                    var alignment by remember(selected) {
+                        mutableStateOf(PrimeSearchResultPreferences.appResultsAlignment(context, drawerSurface))
+                    }
+                    var showAlignment by remember(selected) { mutableStateOf(false) }
+                    Text("Applications par ligne : $columns")
+                    androidx.compose.material3.Slider(
+                        value = columns.toFloat(),
+                        onValueChange = {
+                            columns = it.roundToInt().coerceIn(3, 5)
+                            PrimeSearchResultPreferences.setAppResultsColumns(context, columns, drawerSurface)
+                        },
+                        valueRange = 3f..5f,
+                        steps = 1,
+                    )
+                    Text("Nombre maximal de lignes : $rows")
+                    androidx.compose.material3.Slider(
+                        value = rows.toFloat(),
+                        onValueChange = {
+                            rows = it.roundToInt().coerceIn(1, 3)
+                            PrimeSearchResultPreferences.setAppResultsRows(context, rows, drawerSurface)
+                        },
+                        valueRange = 1f..3f,
+                        steps = 1,
+                    )
+                    Text("Taille des icônes : $iconSize %")
+                    androidx.compose.material3.Slider(
+                        value = iconSize.toFloat(),
+                        onValueChange = {
+                            iconSize = (it.roundToInt() / 5 * 5).coerceIn(60, 150)
+                            PrimeSearchResultPreferences.setAppResultsIconSizePercent(context, iconSize, drawerSurface)
+                        },
+                        valueRange = 60f..150f,
+                    )
+                    Text("Alignement des applications")
+                    androidx.compose.material3.OutlinedButton(onClick = { showAlignment = true }) {
+                        Text(alignment.label)
+                    }
+                    if (showAlignment) {
+                        androidx.compose.material3.AlertDialog(
+                            onDismissRequest = { showAlignment = false },
+                            title = { Text("Alignement des applications") },
+                            text = {
+                                androidx.compose.foundation.layout.Column {
+                                    PrimeSearchResultPreferences.AppResultsAlignment.entries.forEach { option ->
+                                        Row {
+                                            androidx.compose.material3.RadioButton(
+                                                selected = alignment == option,
+                                                onClick = {
+                                                    alignment = option
+                                                    PrimeSearchResultPreferences.setAppResultsAlignment(context, option, drawerSurface)
+                                                    showAlignment = false
+                                                },
+                                            )
+                                            Text(option.label)
+                                        }
+                                    }
+                                }
+                            },
+                            confirmButton = {
+                                androidx.compose.material3.TextButton(onClick = { showAlignment = false }) {
+                                    Text("Fermer")
+                                }
+                            },
+                        )
+                    }
+                }
                 if (PrimeSearchPermissions.required(selected) && !PrimeSearchPermissions.granted(context, selected)) {
                     Text(PrimeSearchPermissions.explanation(selected))
                     androidx.compose.material3.TextButton(onClick = { requestCategory(selected, drawerSurface) }) {
