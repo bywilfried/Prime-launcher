@@ -71,6 +71,37 @@ internal class DrawerSearchPreviewRenderer(
         }
     }
 
+    /** Last rendered tile, not the last item in the untrimmed result stream. */
+    fun lastVisibleResultPosition(
+        items: List<SearchAdapterItem>,
+        start: Int,
+        end: Int,
+        category: PrimeSearchResultPreferences.Category,
+        view: View,
+    ): Int? {
+        val positions = (start until end).filter { index ->
+            items[index].searchTarget.layoutType != LayoutType.TEXT_HEADER &&
+                items[index].searchTarget.layoutType != LayoutType.EMPTY_DIVIDER
+        }
+        if (positions.isEmpty()) return null
+        if (category == PrimeSearchResultPreferences.Category.APPS) {
+            val surface = PrimeSearchResultPreferences.Surface.DRAWER
+            val max = PrimeSearchResultPreferences.appResultsRows(view.context, surface) *
+                PrimeSearchResultPreferences.appResultsColumns(view.context, surface)
+            return positions.take(max.coerceAtLeast(1)).lastOrNull()
+        }
+        val limit = previewLimitPx(category, view)
+        var used = 0
+        var last: Int? = null
+        for (position in positions) {
+            val height = resultRowHeightPx(items[position], view)
+            if (last != null && used + height > limit) break
+            used += height
+            last = position
+        }
+        return last
+    }
+
     fun applyDrawerPreview(itemView: View, position: Int, item: SearchAdapterItem) {
         val items = appsView.mSearchRecyclerView.mApps.adapterItems
             .mapNotNull { it as? SearchAdapterItem }

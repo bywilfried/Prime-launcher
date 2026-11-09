@@ -27,7 +27,6 @@ class LawnchairSearchAdapterProvider(
 ) : DefaultSearchAdapterProvider(launcher) {
 
     private val decorator = SearchItemDecorator(appsView)
-    private val resultsRenderer = DrawerSearchResultsRenderer(appsView)
     private val categoryPageRenderer = DrawerSearchCategoryPageRenderer(
         launcher,
         appsView,
@@ -36,6 +35,7 @@ class LawnchairSearchAdapterProvider(
     private val previewRenderer = DrawerSearchPreviewRenderer(appsView) { category, title, results ->
         categoryPageRenderer.showCategoryPage(category, title, results)
     }
+    private val resultsRenderer = DrawerSearchResultsRenderer(appsView, previewRenderer)
 
 
     init {

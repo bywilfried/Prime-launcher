@@ -11,6 +11,7 @@ import com.android.launcher3.allapps.ActivityAllAppsContainerView
  */
 internal class DrawerSearchResultsRenderer(
     private val appsView: ActivityAllAppsContainerView<*>,
+    private val previewRenderer: DrawerSearchPreviewRenderer,
 ) {
     fun styleBoundRow(view: View, position: Int, item: SearchAdapterItem) {
         val recyclerView = appsView.mSearchRecyclerView ?: return
@@ -40,7 +41,7 @@ internal class DrawerSearchResultsRenderer(
         val bounds = DrawerSearchSectionModel.sectionBounds(items, firstResultPosition) ?: return
         val (start, end) = bounds
         if (position !in start until end && !isHeading) return
-        DrawerSearchSectionModel.categoryForSection(items, start, end) ?: return
+        val category = DrawerSearchSectionModel.categoryForSection(items, start, end) ?: return
 
         val resultPositions = (start until end).filter { index ->
             items[index].searchTarget.layoutType != LayoutType.TEXT_HEADER &&
@@ -61,7 +62,9 @@ internal class DrawerSearchResultsRenderer(
         // result row starts the card. This avoids a seam between separate surfaces.
         val top = if (headingPosition != null) position == headingPosition
             else position == resultPositions.first()
-        val bottom = !isHeading && position == resultPositions.last()
+        val bottom = !isHeading && position == previewRenderer.lastVisibleResultPosition(
+            items, start, end, category, view,
+        )
         val sectionSurface = android.graphics.drawable.InsetDrawable(
             DrawerSearchSectionBackground(view.context, top, bottom),
             (4f * density).toInt(), 0, (4f * density).toInt(), 0,
