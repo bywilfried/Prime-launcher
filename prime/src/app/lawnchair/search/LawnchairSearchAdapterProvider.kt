@@ -425,8 +425,9 @@ class LawnchairSearchAdapterProvider(
                     ),
                 )
                 resultView.minimumHeight = 0
-                resultView.setPadding(0, dp(PrimeAppGridGeometry.TOP_DP.toInt(), resultView), 0,
-                    dp(PrimeAppGridGeometry.BOTTOM_DP.toInt(), resultView))
+                // Keep the inflated native tile's vertical insets. Prime Search
+                // sizes the row around those defaults rather than adding another
+                // layer of top/bottom padding.
                 (resultView as? app.lawnchair.allapps.views.SearchResultIcon)?.apply {
                     setPrimeIconSize(appIconSizePx)
                     setTextVisibility(true)
