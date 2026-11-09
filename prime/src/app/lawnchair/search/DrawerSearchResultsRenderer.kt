@@ -42,26 +42,19 @@ internal class DrawerSearchResultsRenderer(
         }
     }
 
-    private fun styleChild(view: View) {
+    fun styleBoundRow(view: View, position: Int, item: SearchAdapterItem) {
         val recyclerView = appsView.mSearchRecyclerView ?: return
-        val position = recyclerView.getChildAdapterPosition(view)
-        if (position == RecyclerView.NO_POSITION) return
+        originalBackgrounds.remove(view)
+        view.background = null
+
         val items = recyclerView.mApps.adapterItems.mapNotNull { it as? SearchAdapterItem }
-        val item = items.getOrNull(position) ?: return
+        if (items.getOrNull(position) !== item) return
         val bounds = DrawerSearchSectionModel.sectionBounds(items, position) ?: return
         val (start, end) = bounds
         val category = DrawerSearchSectionModel.categoryForSection(items, start, end) ?: return
         if (item.searchTarget.layoutType == LayoutType.EMPTY_DIVIDER ||
+            item.searchTarget.layoutType == LayoutType.TEXT_HEADER ||
             DrawerSearchSectionModel.isStructuralHeader(item)
-        ) {
-            return
-        }
-
-        val title = if (item.searchTarget.layoutType == LayoutType.TEXT_HEADER) {
-            view.findViewById<TextView>(R.id.title)?.text?.toString()?.trim().orEmpty()
-        } else ""
-        if (title.startsWith("Plus de ", ignoreCase = true) ||
-            title.startsWith("Réduire", ignoreCase = true)
         ) return
 
         val resultPositions = (start until end).filter { index ->
@@ -70,47 +63,48 @@ internal class DrawerSearchResultsRenderer(
         }
         if (resultPositions.isEmpty()) return
 
-        val firstPosition = start - 1
-        val lastPosition = resultPositions.last()
         val density = view.resources.displayMetrics.density
         val radius = 14f * density
-        val top = position == firstPosition
-        val bottom = position == lastPosition
+        val top = position == resultPositions.first()
+        val bottom = position == resultPositions.last()
         val radii = floatArrayOf(
-            if (top) radius else 0f, if (top) radius else 0f,
-            if (top) radius else 0f, if (top) radius else 0f,
-            if (bottom) radius else 0f, if (bottom) radius else 0f,
-            if (bottom) radius else 0f, if (bottom) radius else 0f,
+            radius, radius, radius, radius,
+            radius, radius, radius, radius,
         )
-
-        val context = view.context
-        val profile = app.lawnchair.theme.ThemeProfile.current(context)
-        val variant = context.effectiveThemeVariant()
-        val backgroundColor = app.lawnchair.theme.ThemeColors.resolve(
-            context, profile,
-            app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BACKGROUND, variant,
-        )
-        val borderColor = app.lawnchair.theme.ThemeColors.resolve(
-            context, profile,
-            app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BORDER, variant,
-        )
-        val sectionSurface = GradientDrawable().apply {
+        val shape = GradientDrawable().apply {
             cornerRadii = radii
-            setColor(backgroundColor)
-            setStroke((density).toInt().coerceAtLeast(1), borderColor)
-        }
-
-        if (!originalBackgrounds.containsKey(view)) {
-            originalBackgrounds[view] = view.background
-        }
-        val original = originalBackgrounds[view]
-        val layers = if (original == null) {
-            LayerDrawable(arrayOf(sectionSurface))
-        } else {
-            LayerDrawable(arrayOf(sectionSurface, original))
+            setColor(
+                app.lawnchair.theme.ThemeColors.resolve(
+                    view.context,
+                    app.lawnchair.theme.ThemeProfile.current(view.context),
+                    app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BACKGROUND,
+                    view.context.effectiveThemeVariant(),
+                ),
+            )
+            setStroke(
+                density.toInt().coerceAtLeast(1),
+                app.lawnchair.theme.ThemeColors.resolve(
+                    view.context,
+                    app.lawnchair.theme.ThemeProfile.current(view.context),
+                    app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BORDER,
+                    view.context.effectiveThemeVariant(),
+                ),
+            )
         }
         val inset = (4f * density).toInt()
-        layers.setLayerInset(0, inset, 0, inset, 0)
-        view.background = layers
+        val surface = LayerDrawable(arrayOf(shape)).apply {
+            setLayerInset(0, inset, 0, inset, 0)
+        }
+        originalBackgrounds[view] = null
+        view.background = surface
+        view.setTag(R.id.drawer_search_section_surface, category.ordinal * 2 + (if (top) 1 else 0) + (if (bottom) 1 else 0))
+    }
+
+    private fun styleChild(view: View) {
+        val recyclerView = appsView.mSearchRecyclerView ?: return
+        val position = recyclerView.getChildAdapterPosition(view)
+        if (position == RecyclerView.NO_POSITION) return
+        val item = recyclerView.mApps.adapterItems.getOrNull(position) as? SearchAdapterItem ?: return
+        styleBoundRow(view, position, item)
     }
 }

@@ -73,15 +73,6 @@ class LawnchairSearchAdapterProvider(
             }
         }
     }
-    /L,
-                )
-            } else {
-                view.minimumHeight = (56 * density).toInt()
-            }
-            view.background = null
-        }
-    }
-
     private fun categoryForResult(item: SearchAdapterItem) =
         DrawerSearchCategoryPresentation.categoryForResultType(item.searchTarget.resultType)
 
@@ -231,9 +222,10 @@ class LawnchairSearchAdapterProvider(
         if (adapterItem.searchTarget.layoutType != LayoutType.TEXT_HEADER) {
             applyDrawerPreview(holder.itemView, position, adapterItem)
         }
-        // The category-level ItemDecoration draws one shared card behind the
-        // heading and all rows. Individual result rows stay transparent.
+        // The drawer renderer attaches a real section surface to this bound row.
+        // Apply it after native binding, which may reset the row background.
         holder.itemView.background = null
+        resultsRenderer.styleBoundRow(holder.itemView, position, adapterItem)
         if (itemView.isQuickLaunch) {
             quickLaunchItem = itemView
         }
