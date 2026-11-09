@@ -41,6 +41,8 @@ internal class DrawerSearchCategoryPageRenderer(
     private val applyTextColor: (View, Int) -> Unit,
 ) {
     private var categoryPage: View? = null
+    private var compactResults: View? = null
+    private var savedResultsScrollY = 0
     private var detailAlgorithm: LawnchairLocalSearchAlgorithm? = null
     private var detailGeneration = 0
     private var categoryBackActivity: Activity? = null
@@ -374,10 +376,20 @@ internal class DrawerSearchCategoryPageRenderer(
             bottomMargin = (appsView.rootWindowInsets?.systemWindowInsetBottom ?: 0)
                 .coerceAtLeast(dp(16, page))
         })
+        // Swap only the results viewport, leaving the drawer's search chrome
+        // and the rest of the All Apps layout untouched. This is a page state,
+        // not a full-screen overlay on top of the drawer.
+        val resultsView = appsView.mSearchRecyclerView
+        val resultsParent = resultsView.parent as? ViewGroup ?: return
+        savedResultsScrollY = resultsView.computeVerticalScrollOffset()
+        compactResults = resultsView
         categoryPage = page
-        appsView.addView(page, ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT,
-        ))
+        resultsView.visibility = View.INVISIBLE
+        resultsParent.addView(page, resultsParent.indexOfChild(resultsView) + 1,
+            ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+            ))
         page.bringToFront()
         // Match Prime Search's card reveal: animate the result surface, not
         // the entire window (which otherwise moves the search field).
@@ -423,10 +435,18 @@ internal class DrawerSearchCategoryPageRenderer(
                 card.animate().scaleY(0.82f).alpha(0.88f)
                     .setDuration(310L)
                     .setInterpolator(android.view.animation.AccelerateDecelerateInterpolator())
-                    .withEndAction { (page.parent as? ViewGroup)?.removeView(page) }
+                    .withEndAction {
+                        (page.parent as? ViewGroup)?.removeView(page)
+                        compactResults?.visibility = View.VISIBLE
+                        (compactResults as? androidx.recyclerview.widget.RecyclerView)
+                            ?.scrollBy(0, savedResultsScrollY)
+                        compactResults = null
+                    }
                     .start()
             } else {
                 (page.parent as? ViewGroup)?.removeView(page)
+                compactResults?.visibility = View.VISIBLE
+                compactResults = null
             }
         }
         categoryPage = null
