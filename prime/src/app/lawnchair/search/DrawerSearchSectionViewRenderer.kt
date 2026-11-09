@@ -147,6 +147,30 @@ internal class DrawerSearchSectionViewRenderer(
             result.bind(item.searchTarget, emptyList())
             if (result.isQuickLaunch) onQuickLaunch(result)
         }
+        // Prime entry targets use a generic monochrome search drawable.
+        // On some icon themes it becomes a solid white square; show an
+        // explicit category symbol instead of the unreadable placeholder.
+        val category = DrawerSearchCategoryPresentation.categoryForResult(item.searchTarget)
+        val symbol = when (category) {
+            PrimeSearchResultPreferences.Category.CALENDAR -> "📅"
+            PrimeSearchResultPreferences.Category.REMINDERS -> "✓"
+            PrimeSearchResultPreferences.Category.NOTIFICATIONS -> "🔔"
+            else -> null
+        }
+        if (symbol != null && child is LinearLayout) {
+            child.findViewById<View>(R.id.icon)?.visibility = View.GONE
+            val marker = TextView(parent.context).apply {
+                text = symbol
+                textSize = 23f
+                gravity = Gravity.CENTER
+                contentDescription = when (category) {
+                    PrimeSearchResultPreferences.Category.CALENDAR -> "Agenda"
+                    PrimeSearchResultPreferences.Category.REMINDERS -> "Tâches"
+                    else -> "Notifications"
+                }
+            }
+            child.addView(marker, 0, LinearLayout.LayoutParams(dp(child, 56), -1))
+        }
         item.setRippleEffect(child)
         return child
     }
