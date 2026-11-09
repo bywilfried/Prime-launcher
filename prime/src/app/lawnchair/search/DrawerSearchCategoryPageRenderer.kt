@@ -42,6 +42,7 @@ internal class DrawerSearchCategoryPageRenderer(
 ) {
     private var categoryPage: View? = null
     private var compactResults: View? = null
+    private var drawerInput: app.lawnchair.allapps.AllAppsSearchInput? = null
     private var detailAlgorithm: LawnchairLocalSearchAlgorithm? = null
     private var detailGeneration = 0
     private var categoryBackActivity: Activity? = null
@@ -92,13 +93,6 @@ internal class DrawerSearchCategoryPageRenderer(
         )
         var renderDetailResults: (List<SearchAdapterItem>) -> Unit = {}
         var initialCategoryResults: List<SearchAdapterItem> = results
-        val detailSearch = LawnchairLocalSearchAlgorithm(
-            context,
-            primeSearch = false,
-            primeMatching = true,
-            preferenceSurface = PrimeSearchResultPreferences.Surface.DRAWER,
-        )
-        detailAlgorithm = detailSearch
         var detailQuery = ""
         fun categoryResults(items: ArrayList<BaseAllAppsAdapter.AdapterItem>): List<SearchAdapterItem> =
             items.flatMap { item ->
@@ -109,53 +103,8 @@ internal class DrawerSearchCategoryPageRenderer(
                 }
             }.filter { it.searchTarget.layoutType != LayoutType.TEXT_HEADER &&
                 it.searchTarget.layoutType != LayoutType.EMPTY_DIVIDER }
-        val detailCallback = object : SearchCallback<BaseAllAppsAdapter.AdapterItem> {
-            override fun onSearchResult(query: String, items: ArrayList<BaseAllAppsAdapter.AdapterItem>) {
-                if (generation != detailGeneration || query != detailQuery) return
-                renderDetailResults(categoryResults(items))
-            }
-            override fun clearSearchResult() {
-                if (generation == detailGeneration) renderDetailResults(emptyList())
-            }
-        }
-        val searchField = EditText(context).apply {
-            setSingleLine(true)
-            textSize = 18f
-            hint = "Rechercher"
-            
-            setPadding(dp(20, this), 0, dp(20, this), 0)
-            setTextColor(app.lawnchair.theme.ThemeColors.resolve(
-                context,
-                app.lawnchair.theme.ThemeProfile.current(context),
-                app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_TEXT,
-                context.effectiveThemeVariant(),
-            ))
-            background = GradientDrawable().apply {
-                cornerRadius = 28f * density
-                setColor(cardBackground)
-            }
-            addTextChangedListener(object : TextWatcher {
-                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                    detailQuery = s?.toString().orEmpty()
-                    if (detailQuery.isBlank()) {
-                        renderDetailResults(initialCategoryResults)
-                    } else {
-                        detailSearch.doSearch(detailQuery, detailCallback)
-                    }
-                }
-                override fun afterTextChanged(s: Editable?) = Unit
-            })
-        }
-        page.addView(searchField, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, dp(54, page),
-        ).apply {
-            marginStart = dp(16, page)
-            marginEnd = dp(16, page)
-            topMargin = dp(12, page)
-            bottomMargin = dp(8, page)
-        })
-
+        val inputManager = appsView.searchUiManager as? app.lawnchair.allapps.AllAppsSearchInput
+        drawerInput = inputManager
         // Prime Search's expanded view is a single full-height rounded card.
         // Keep the same hierarchy and spacing, but resolve colors from the
         // drawer palette so this page remains visually and functionally separate.
@@ -382,6 +331,16 @@ internal class DrawerSearchCategoryPageRenderer(
         val resultsParent = resultsView.parent as? ViewGroup ?: return
         compactResults = resultsView
         categoryPage = page
+        inputManager?.beginCategorySearch { query, items ->
+            if (generation == detailGeneration) {
+                detailQuery = query
+                renderDetailResults(
+                    if (query.isBlank()) initialCategoryResults
+                    else if (items != null) categoryResults(items)
+                    else emptyList(),
+                )
+            }
+        }
         resultsView.visibility = View.INVISIBLE
         resultsParent.addView(page, resultsParent.indexOfChild(resultsView) + 1,
             resultsView.layoutParams)
@@ -411,6 +370,10 @@ internal class DrawerSearchCategoryPageRenderer(
         detailGeneration++
         detailAlgorithm?.cancel(true)
         detailAlgorithm = null
+        val inputToRestore = drawerInput
+        drawerInput = null
+        categoryPage = null
+        inputToRestore?.endCategorySearch()
         val activity = categoryBackActivity
         val callback = categoryBackCallback
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&

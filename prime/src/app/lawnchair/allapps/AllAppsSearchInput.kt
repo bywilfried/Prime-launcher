@@ -102,6 +102,28 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
     private lateinit var apps: LawnchairAlphabeticalAppsList<*>
     private lateinit var appsView: ActivityAllAppsContainerView<*>
     private var searchAlgorithm: LawnchairSearchAlgorithm? = null
+    private var detailCallback: ((String, ArrayList<AdapterItem>?) -> Unit)? = null
+    private var savedQuery: String? = null
+
+    fun beginCategorySearch(callback: (String, ArrayList<AdapterItem>?) -> Unit) {
+        savedQuery = input.text?.toString().orEmpty()
+        detailCallback = callback
+        input.setText("")
+        input.clearFocus()
+        (context.getSystemService(Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager)
+            ?.hideSoftInputFromWindow(input.windowToken, 0)
+    }
+
+    fun endCategorySearch() {
+        val previous = savedQuery ?: return
+        detailCallback = null
+        savedQuery = null
+        input.setText(previous)
+        input.clearFocus()
+    }
+
+    private val inCategorySearch: Boolean get() = savedQuery != null
+
 
     private var isDirectFocus = false
     private var focusedResultTitle = ""
@@ -344,7 +366,7 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
             },
             afterTextChanged = {
                 updateHint()
-                if (input.text.isNullOrEmpty() && input.hasFocus() && !input.isResetting) {
+                if (!inCategorySearch && input.text.isNullOrEmpty() && input.hasFocus() && !input.isResetting) {
                     searchAlgorithm?.doZeroStateSearch(this)
                 }
                 if (input.text.toString() == "/lawnchairdebug") {
@@ -526,6 +548,10 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
 
     override fun onSearchResult(query: String, items: ArrayList<AdapterItem>?) {
         app.lawnchair.search.PrimeSearchTrace.record("drawer onSearchResult len=${query.length} items=${items?.size ?: 0}")
+        if (inCategorySearch) {
+            detailCallback?.invoke(query, items)
+            return
+        }
         if (items != null) {
             apps.setSearchResults(items)
             notifyResultChanged()
@@ -535,6 +561,10 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
 
     override fun clearSearchResult() {
         app.lawnchair.search.PrimeSearchTrace.record("drawer clearSearchResult")
+        if (inCategorySearch) {
+            detailCallback?.invoke("", null)
+            return
+        }
         if (apps.setSearchResults(null)) {
             notifyResultChanged()
         }
