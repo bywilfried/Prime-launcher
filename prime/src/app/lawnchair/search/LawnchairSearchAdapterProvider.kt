@@ -363,19 +363,101 @@ class LawnchairSearchAdapterProvider(
         }.let { items ->
             if (isAppGrid) items.distinctBy { it.searchTarget.packageName } else items
         }
-        val list = androidx.recyclerview.widget.RecyclerView(context).apply {
-            layoutManager = if (isAppGrid) {
-                androidx.recyclerview.widget.GridLayoutManager(context, appColumns)
-            } else {
-                androidx.recyclerview.widget.LinearLayoutManager(context)
+        if (isAppGrid) {
+            // Prime Search builds application results as fixed-width cells inside
+            // independently aligned rows. A GridLayoutManager stretches the final
+            // partial row and changes the visual rhythm, so mirror the same row
+            // composition here while keeping every view owned by the drawer.
+            val appItems = categoryItems.filter {
+                it.searchTarget.resultType == SearchTargetCompat.RESULT_TYPE_APPLICATION &&
+                    it.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT
+            }.distinctBy { it.searchTarget.packageName }
+            val contentWidth = (
+                (appsView.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels) -
+                    dp(16, appsView)
+                ).coerceAtLeast(appColumns)
+            val cellWidth = (contentWidth / appColumns).coerceAtLeast(1)
+            val alignment = app.lawnchair.prime.search.PrimeSearchResultPreferences
+                .appResultsAlignment(context, drawerSurface)
+            val scroll = android.widget.ScrollView(context).apply {
+                clipToPadding = false
+                isFillViewport = false
+                setPadding(dp(8, this), dp(8, this), dp(8, this), dp(24, this))
+                isVerticalScrollBarEnabled = false
             }
-            clipToPadding = false
-            setPadding(dp(8, this), dp(if (isAppGrid) 8 else 4, this), dp(8, this), dp(24, this))
-            adapter = DrawerCategoryResultsAdapter(categoryItems, isAppGrid, appRowHeight, appIconSizePx, appLabelLines)
+            val grid = android.widget.LinearLayout(context).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+                layoutParams = android.widget.ScrollView.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                )
+            }
+            var row: android.widget.LinearLayout? = null
+            var inRow = 0
+            appItems.forEach { item ->
+                if (row == null || inRow == appColumns) {
+                    row = android.widget.LinearLayout(context).apply {
+                        orientation = android.widget.LinearLayout.HORIZONTAL
+                        gravity = when (alignment) {
+                            app.lawnchair.prime.search.PrimeSearchResultPreferences.AppResultsAlignment.LEFT ->
+                                android.view.Gravity.START
+                            app.lawnchair.prime.search.PrimeSearchResultPreferences.AppResultsAlignment.RIGHT ->
+                                android.view.Gravity.END
+                            else -> android.view.Gravity.CENTER_HORIZONTAL
+                        }
+                    }
+                    grid.addView(row, android.widget.LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, appRowHeight,
+                    ))
+                    inRow = 0
+                }
+                val layout = layoutForViewType(item.viewType) ?: return@forEach
+                val resultView = LayoutInflater.from(context).inflate(layout, row, false) as? SearchResultView
+                    ?: return@forEach
+                item.setRippleEffect(resultView)
+                resultView.bind(item.searchTarget, emptyList())
+                applySearchTextColor(
+                    resultView,
+                    app.lawnchair.theme.ThemeColors.resolve(
+                        context,
+                        app.lawnchair.theme.ThemeProfile.current(context),
+                        app.lawnchair.theme.ThemeColorRole.DRAWER_ICON_TEXT,
+                        context.effectiveThemeVariant(),
+                    ),
+                )
+                resultView.minimumHeight = 0
+                resultView.setPadding(0, dp(PrimeAppGridGeometry.TOP_DP.toInt(), resultView), 0,
+                    dp(PrimeAppGridGeometry.BOTTOM_DP.toInt(), resultView))
+                (resultView as? app.lawnchair.allapps.views.SearchResultIcon)?.apply {
+                    setPrimeIconSize(appIconSizePx)
+                    setTextVisibility(true)
+                    setPrimeSearchLabelLayout(true)
+                    gravity = android.view.Gravity.TOP or android.view.Gravity.CENTER_HORIZONTAL
+                    setCompoundDrawablePadding(dp(PrimeAppGridGeometry.ICON_LABEL_GAP_DP.toInt(), this))
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, PrimeAppGridGeometry.LABEL_SP)
+                    includeFontPadding = false
+                    maxLines = appLabelLines
+                    ellipsize = android.text.TextUtils.TruncateAt.END
+                }
+                row!!.addView(resultView, android.widget.LinearLayout.LayoutParams(
+                    cellWidth, appRowHeight,
+                ))
+                inRow++
+            }
+            scroll.addView(grid)
+            page.addView(scroll, android.widget.LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f,
+            ))
+        } else {
+            val list = androidx.recyclerview.widget.RecyclerView(context).apply {
+                layoutManager = androidx.recyclerview.widget.LinearLayoutManager(context)
+                clipToPadding = false
+                setPadding(dp(8, this), dp(4, this), dp(8, this), dp(24, this))
+                adapter = DrawerCategoryResultsAdapter(categoryItems, false, appRowHeight, appIconSizePx, appLabelLines)
+            }
+            page.addView(list, android.widget.LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f,
+            ))
         }
-        page.addView(list, android.widget.LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f,
-        ))
         categoryPage = page
         appsView.addView(page, ViewGroup.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT,
