@@ -104,10 +104,19 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
     private var searchAlgorithm: LawnchairSearchAlgorithm? = null
     private var detailCallback: ((String, ArrayList<AdapterItem>?) -> Unit)? = null
     private var savedQuery: String? = null
+    private var categoryBackHandler: (() -> Unit)? = null
 
-    fun beginCategorySearch(callback: (String, ArrayList<AdapterItem>?) -> Unit) {
+    fun beginCategorySearch(
+        callback: (String, ArrayList<AdapterItem>?) -> Unit,
+        onBack: () -> Unit,
+    ) {
         savedQuery = input.text?.toString().orEmpty()
         detailCallback = callback
+        categoryBackHandler = onBack
+        input.setOnBackKeyListener {
+            categoryBackHandler?.invoke()
+            true
+        }
         // Dismiss IME before changing the query; otherwise the controller can
         // immediately request focus again while its text watcher runs.
         (context.getSystemService(Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager)
@@ -119,6 +128,8 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
     fun endCategorySearch() {
         val previous = savedQuery ?: return
         detailCallback = null
+        categoryBackHandler = null
+        input.setOnBackKeyListener(searchBarController)
         savedQuery = null
         input.clearFocus()
         input.setText(previous)
@@ -524,6 +535,10 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
     }
 
     override fun resetSearch() {
+        if (inCategorySearch) {
+            categoryBackHandler?.invoke()
+            return
+        }
         searchBarController.reset()
     }
 

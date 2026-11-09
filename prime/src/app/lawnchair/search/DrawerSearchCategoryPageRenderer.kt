@@ -331,7 +331,7 @@ internal class DrawerSearchCategoryPageRenderer(
         val resultsParent = resultsView.parent as? ViewGroup ?: return
         compactResults = resultsView
         categoryPage = page
-        inputManager?.beginCategorySearch { query, items ->
+        inputManager?.beginCategorySearch({ query, items ->
             if (generation == detailGeneration) {
                 detailQuery = query
                 renderDetailResults(
@@ -340,7 +340,7 @@ internal class DrawerSearchCategoryPageRenderer(
                     else emptyList(),
                 )
             }
-        }
+        }, onBack = { backOrHideKeyboard() })
         resultsView.visibility = View.INVISIBLE
         resultsParent.addView(page, resultsParent.indexOfChild(resultsView) + 1,
             resultsView.layoutParams)
