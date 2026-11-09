@@ -435,10 +435,10 @@ class LawnchairSearchAdapterProvider(
                     inRow = 0
                 }
                 val layout = layoutForViewType(item.viewType) ?: return@forEach
-                val resultView = LayoutInflater.from(context).inflate(layout, row, false) as? SearchResultView
-                    ?: return@forEach
+                val resultView = LayoutInflater.from(context).inflate(layout, row, false)
+                val searchResultView = resultView as? SearchResultView ?: return@forEach
                 item.setRippleEffect(resultView)
-                resultView.bind(item.searchTarget, emptyList())
+                searchResultView.bind(item.searchTarget, emptyList())
                 applySearchTextColor(
                     resultView,
                     app.lawnchair.theme.ThemeColors.resolve(
