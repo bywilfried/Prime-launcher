@@ -9,6 +9,10 @@ import android.text.Editable
 import android.view.animation.DecelerateInterpolator
 import android.widget.EditText
 import android.widget.LinearLayout
+import com.android.launcher3.allapps.BaseAllAppsAdapter
+import com.android.launcher3.search.SearchCallback
+import app.lawnchair.search.algorithms.LawnchairLocalSearchAlgorithm
+import app.lawnchair.prime.search.PrimeSearchResultPreferences
 import android.os.Build
 import android.util.TypedValue
 import android.view.KeyEvent
@@ -37,6 +41,8 @@ internal class DrawerSearchCategoryPageRenderer(
     private val applyTextColor: (View, Int) -> Unit,
 ) {
     private var categoryPage: View? = null
+    private var detailAlgorithm: LawnchairLocalSearchAlgorithm? = null
+    private var detailGeneration = 0
     private var categoryBackActivity: Activity? = null
     private var categoryBackCallback: OnBackInvokedCallback? = null
 
@@ -46,6 +52,7 @@ internal class DrawerSearchCategoryPageRenderer(
         results: List<SearchAdapterItem>,
     ) {
         close()
+        val generation = ++detailGeneration
 
         val context = appsView.context
         val page = android.widget.LinearLayout(context).apply {
@@ -75,7 +82,34 @@ internal class DrawerSearchCategoryPageRenderer(
             app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BORDER,
             context.effectiveThemeVariant(),
         )
-        var applyDetailFilter: (String) -> Unit = {}
+        var renderDetailResults: (List<SearchAdapterItem>) -> Unit = {}
+        var initialCategoryResults: List<SearchAdapterItem> = results
+        val detailSearch = LawnchairLocalSearchAlgorithm(
+            context,
+            primeSearch = false,
+            primeMatching = true,
+            preferenceSurface = PrimeSearchResultPreferences.Surface.DRAWER,
+        )
+        detailAlgorithm = detailSearch
+        var detailQuery = ""
+        fun categoryResults(items: ArrayList<BaseAllAppsAdapter.AdapterItem>): List<SearchAdapterItem> =
+            items.flatMap { item ->
+                when (item) {
+                    is DrawerSearchSectionAdapterItem -> if (item.category == category) item.results else emptyList()
+                    is SearchAdapterItem -> if (DrawerSearchCategoryPresentation.categoryForResult(item.searchTarget) == category) listOf(item) else emptyList()
+                    else -> emptyList()
+                }
+            }.filter { it.searchTarget.layoutType != LayoutType.TEXT_HEADER &&
+                it.searchTarget.layoutType != LayoutType.EMPTY_DIVIDER }
+        val detailCallback = object : SearchCallback<BaseAllAppsAdapter.AdapterItem> {
+            override fun onSearchResult(query: String, items: ArrayList<BaseAllAppsAdapter.AdapterItem>) {
+                if (generation != detailGeneration || query != detailQuery) return
+                renderDetailResults(categoryResults(items))
+            }
+            override fun clearSearchResult() {
+                if (generation == detailGeneration) renderDetailResults(emptyList())
+            }
+        }
         val searchField = EditText(context).apply {
             setSingleLine(true)
             textSize = 18f
@@ -95,7 +129,12 @@ internal class DrawerSearchCategoryPageRenderer(
             addTextChangedListener(object : TextWatcher {
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                    applyDetailFilter(s?.toString().orEmpty())
+                    detailQuery = s?.toString().orEmpty()
+                    if (detailQuery.isBlank()) {
+                        renderDetailResults(initialCategoryResults)
+                    } else {
+                        detailSearch.doSearch(detailQuery, detailCallback)
+                    }
                 }
                 override fun afterTextChanged(s: Editable?) = Unit
             })
@@ -184,6 +223,7 @@ internal class DrawerSearchCategoryPageRenderer(
         }.let { items ->
             if (isAppGrid) items.distinctBy { it.searchTarget.packageName } else items
         }
+        initialCategoryResults = categoryItems
         if (isAppGrid) {
             // Prime Search builds application results as fixed-width cells inside
             // independently aligned rows. A GridLayoutManager stretches the final
@@ -214,9 +254,13 @@ internal class DrawerSearchCategoryPageRenderer(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
                 )
             }
+            renderDetailResults = { newItems ->
+                grid.removeAllViews()
             var row: android.widget.LinearLayout? = null
             var inRow = 0
-            appItems.forEach { item ->
+            newItems.filter { it.searchTarget.resultType == SearchTargetCompat.RESULT_TYPE_APPLICATION &&
+                it.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT }
+                .distinctBy { it.searchTarget.packageName }.forEach { item ->
                 if (row == null || inRow == appColumns) {
                     row = android.widget.LinearLayout(context).apply {
                         orientation = android.widget.LinearLayout.HORIZONTAL
@@ -267,28 +311,15 @@ internal class DrawerSearchCategoryPageRenderer(
                 ))
                 inRow++
             }
-            applyDetailFilter = { query ->
-                val needle = query.trim()
-                for (rowIndex in 0 until grid.childCount) {
-                    val appRow = grid.getChildAt(rowIndex) as? ViewGroup ?: continue
-                    var visible = false
-                    for (tileIndex in 0 until appRow.childCount) {
-                        val tile = appRow.getChildAt(tileIndex)
-                        val label = (tile as? TextView)?.text?.toString().orEmpty()
-                        val matches = needle.isEmpty() || label.contains(needle, ignoreCase = true)
-                        tile.visibility = if (matches) View.VISIBLE else View.INVISIBLE
-                        if (matches) visible = true
-                    }
-                    appRow.visibility = if (visible) View.VISIBLE else View.GONE
-                }
             }
+            renderDetailResults(categoryItems)
             scroll.addView(grid)
             contentCard.addView(scroll, android.widget.LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f,
             ))
         } else {
             val detailAdapter = DrawerCategoryResultsAdapter(categoryItems, false, appRowHeight, appIconSizePx, appLabelLines)
-            applyDetailFilter = { query -> detailAdapter.filter(query) }
+            renderDetailResults = { items -> detailAdapter.replaceResults(items) }
             val list = androidx.recyclerview.widget.RecyclerView(context).apply {
                 layoutManager = androidx.recyclerview.widget.LinearLayoutManager(context)
                 clipToPadding = false
@@ -358,6 +389,9 @@ internal class DrawerSearchCategoryPageRenderer(
     }
 
     fun close() {
+        detailGeneration++
+        detailAlgorithm?.cancel(true)
+        detailAlgorithm = null
         val activity = categoryBackActivity
         val callback = categoryBackCallback
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -391,16 +425,8 @@ internal class DrawerSearchCategoryPageRenderer(
 
         private var results: List<SearchAdapterItem> = allResults
 
-        fun filter(query: String) {
-            val needle = query.trim()
-            results = if (needle.isEmpty()) allResults else allResults.filter { item ->
-                val target = item.searchTarget
-                listOfNotNull(
-                    target.searchAction?.title?.toString(),
-                    target.shortcutInfo?.shortLabel?.toString(),
-                    target.id,
-                ).any { it.contains(needle, ignoreCase = true) }
-            }
+        fun replaceResults(items: List<SearchAdapterItem>) {
+            results = items
             notifyDataSetChanged()
         }
 
