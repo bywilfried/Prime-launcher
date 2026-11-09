@@ -186,8 +186,7 @@ class LawnchairSearchAdapterProvider(
         // This preserves distinct sections such as Web, Calendar, Reminders and
         // Notifications instead of guessing from a provider package name.
         val heading = items.getOrNull(start - 1)?.searchTarget?.searchAction?.title?.toString()
-        app.lawnchair.prime.search.PrimeSearchCategoryPresentation
-            .categoryForHeading(heading)?.let { return it }
+        DrawerSearchCategoryPresentation.categoryForHeading(heading)?.let { return it }
         for (index in start until end) {
             val target = items[index].searchTarget
             val category = when (target.resultType) {
@@ -246,8 +245,7 @@ class LawnchairSearchAdapterProvider(
             )
             return rows * columns * rowHeight
         }
-        val heightDp = app.lawnchair.prime.search.PrimeSearchCategoryPresentation
-            .compactPreviewHeightDp(category) ?: 190
+        val heightDp = DrawerSearchCategoryPresentation.compactPreviewHeightDp(category) ?: 190
         return (heightDp * density).toInt().coerceAtLeast(1)
     }
 
