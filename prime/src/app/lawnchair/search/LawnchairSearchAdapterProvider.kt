@@ -300,7 +300,7 @@ class LawnchairSearchAdapterProvider(
         // Prime Search's expanded view is a single full-height rounded card.
         // Keep the same hierarchy and spacing, but resolve colors from the
         // drawer palette so this page remains visually and functionally separate.
-        val density = resources.displayMetrics.density
+        val density = appsView.resources.displayMetrics.density
         val cardBackground = app.lawnchair.theme.ThemeColors.resolve(
             context,
             app.lawnchair.theme.ThemeProfile.current(context),
@@ -395,7 +395,7 @@ class LawnchairSearchAdapterProvider(
                     it.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT
             }.distinctBy { it.searchTarget.packageName }
             val contentWidth = (
-                (appsView.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels) -
+                (appsView.width.takeIf { it > 0 } ?: appsView.resources.displayMetrics.widthPixels) -
                     dp(16, appsView)
                 ).coerceAtLeast(appColumns)
             val cellWidth = (contentWidth / appColumns).coerceAtLeast(1)
@@ -411,7 +411,7 @@ class LawnchairSearchAdapterProvider(
             }
             val grid = android.widget.LinearLayout(context).apply {
                 orientation = android.widget.LinearLayout.VERTICAL
-                layoutParams = android.widget.ScrollView.LayoutParams(
+                layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
                 )
             }
@@ -457,8 +457,8 @@ class LawnchairSearchAdapterProvider(
                     setTextVisibility(true)
                     setPrimeSearchLabelLayout(true)
                     gravity = android.view.Gravity.TOP or android.view.Gravity.CENTER_HORIZONTAL
-                    setCompoundDrawablePadding(dp(PrimeAppGridGeometry.ICON_LABEL_GAP_DP.toInt(), this))
-                    setTextSize(TypedValue.COMPLEX_UNIT_SP, PrimeAppGridGeometry.LABEL_SP)
+                    setCompoundDrawablePadding(dp(app.lawnchair.prime.search.PrimeAppGridGeometry.ICON_LABEL_GAP_DP.toInt(), this))
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, app.lawnchair.prime.search.PrimeAppGridGeometry.LABEL_SP)
                     includeFontPadding = false
                     maxLines = appLabelLines
                     ellipsize = android.text.TextUtils.TruncateAt.END
