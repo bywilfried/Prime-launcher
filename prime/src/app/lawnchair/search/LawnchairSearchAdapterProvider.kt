@@ -90,19 +90,7 @@ class LawnchairSearchAdapterProvider(
         DrawerSearchCategoryPresentation.categoryForHeading(heading)?.let { return it }
         for (index in start until end) {
             val target = items[index].searchTarget
-            val category = when (target.resultType) {
-                SearchTargetCompat.RESULT_TYPE_APPLICATION -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS
-                SearchTargetCompat.RESULT_TYPE_SHORTCUT -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS
-                SearchTargetCompat.RESULT_TYPE_CONTACT_TILE -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CONTACTS
-                SearchTargetCompat.RESULT_TYPE_FILE_TILE -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.FILES
-                SearchTargetCompat.RESULT_TYPE_SETTING_TILE -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.SETTINGS
-                SearchTargetCompat.RESULT_TYPE_CALCULATOR -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALCULATOR
-                // Match PrimeSearchOverlay.nativeCategoryFor(): suggestion tiles
-                // are a single HISTORY section in the shared result renderer.
-                SearchTargetCompat.RESULT_TYPE_SUGGESTIONS ->
-                    app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.HISTORY
-                else -> null
-            }
+            val category = DrawerSearchCategoryPresentation.categoryForResultType(target.resultType)
             if (category != null) return category
         }
         return null
@@ -523,17 +511,8 @@ class LawnchairSearchAdapterProvider(
         }
     }
 
-    private fun categoryForResult(item: SearchAdapterItem):
-        app.lawnchair.prime.search.PrimeSearchResultPreferences.Category? = when (item.searchTarget.resultType) {
-        SearchTargetCompat.RESULT_TYPE_APPLICATION -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS
-        SearchTargetCompat.RESULT_TYPE_SHORTCUT -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS
-        SearchTargetCompat.RESULT_TYPE_CONTACT_TILE -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CONTACTS
-        SearchTargetCompat.RESULT_TYPE_FILE_TILE -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.FILES
-        SearchTargetCompat.RESULT_TYPE_SETTING_TILE -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.SETTINGS
-        SearchTargetCompat.RESULT_TYPE_CALCULATOR -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALCULATOR
-        SearchTargetCompat.RESULT_TYPE_SUGGESTIONS -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.HISTORY
-        else -> null
-    }
+    private fun categoryForResult(item: SearchAdapterItem) =
+        DrawerSearchCategoryPresentation.categoryForResultType(item.searchTarget.resultType)
 
     private fun applyDrawerPreview(itemView: View, position: Int, item: SearchAdapterItem) {
         val items = appsView.mSearchRecyclerView.mApps.adapterItems

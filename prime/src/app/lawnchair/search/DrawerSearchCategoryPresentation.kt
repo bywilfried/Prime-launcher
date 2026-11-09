@@ -31,6 +31,30 @@ internal object DrawerSearchCategoryPresentation {
             }
     }
 
+
+    /**
+     * Maps launcher result types to drawer-owned categories. Keeping this
+     * registry here prevents section rendering and detail rows from drifting.
+     */
+    fun categoryForResultType(resultType: Int): PrimeSearchResultPreferences.Category? =
+        when (resultType) {
+            app.lawnchair.search.adapter.SearchTargetCompat.RESULT_TYPE_APPLICATION ->
+                PrimeSearchResultPreferences.Category.APPS
+            app.lawnchair.search.adapter.SearchTargetCompat.RESULT_TYPE_SHORTCUT ->
+                PrimeSearchResultPreferences.Category.APP_SHORTCUTS
+            app.lawnchair.search.adapter.SearchTargetCompat.RESULT_TYPE_CONTACT_TILE ->
+                PrimeSearchResultPreferences.Category.CONTACTS
+            app.lawnchair.search.adapter.SearchTargetCompat.RESULT_TYPE_FILE_TILE ->
+                PrimeSearchResultPreferences.Category.FILES
+            app.lawnchair.search.adapter.SearchTargetCompat.RESULT_TYPE_SETTING_TILE ->
+                PrimeSearchResultPreferences.Category.SETTINGS
+            app.lawnchair.search.adapter.SearchTargetCompat.RESULT_TYPE_CALCULATOR ->
+                PrimeSearchResultPreferences.Category.CALCULATOR
+            app.lawnchair.search.adapter.SearchTargetCompat.RESULT_TYPE_SUGGESTIONS ->
+                PrimeSearchResultPreferences.Category.HISTORY
+            else -> null
+        }
+
     fun compactPreviewHeightDp(category: PrimeSearchResultPreferences.Category): Int? =
         when (category) {
             PrimeSearchResultPreferences.Category.APPS -> null
