@@ -29,40 +29,56 @@ internal class DrawerSearchSectionAdapterItem(
             val output = mutableListOf<BaseAllAppsAdapter.AdapterItem>()
             var index = 0
             while (index < items.size) {
-                val item = items[index]
-                val target = item.searchTarget
-                if (target.layoutType != LayoutType.TEXT_HEADER ||
-                    DrawerSearchSectionModel.isStructuralHeader(item) ||
-                    target.searchAction?.title?.toString()?.startsWith("Plus de") == true
-                ) {
-                    // Structural separators are not visible content.
-                    if (!DrawerSearchSectionModel.isStructuralHeader(item)) output.add(item)
+                val current = items[index]
+                val target = current.searchTarget
+                if (DrawerSearchSectionModel.isStructuralHeader(current)) {
                     index++
                     continue
                 }
-                val heading = target.searchAction?.title?.toString().orEmpty()
-                val category = DrawerSearchCategoryPresentation.categoryForHeading(heading)
-                var end = index + 1
+                val isHeading = target.layoutType == LayoutType.TEXT_HEADER
+                val title = target.searchAction?.title?.toString().orEmpty()
+                if (isHeading && title.startsWith("Plus de")) {
+                    // Expansion is owned by the section container.
+                    index++
+                    continue
+                }
+                val category = if (isHeading) {
+                    DrawerSearchCategoryPresentation.categoryForHeading(title)
+                } else {
+                    DrawerSearchCategoryPresentation.categoryForResult(target)
+                }
+                if (category == null) {
+                    output.add(current)
+                    index++
+                    continue
+                }
+
+                val results = mutableListOf<SearchAdapterItem>()
+                var end = index + if (isHeading) 1 else 0
                 while (end < items.size) {
                     val candidate = items[end]
-                    if (candidate.searchTarget.layoutType == LayoutType.TEXT_HEADER &&
-                        !DrawerSearchSectionModel.isStructuralHeader(candidate)
-                    ) break
+                    val candidateTarget = candidate.searchTarget
+                    if (DrawerSearchSectionModel.isStructuralHeader(candidate)) {
+                        end++
+                        continue
+                    }
+                    if (candidateTarget.layoutType == LayoutType.TEXT_HEADER) break
+                    // A missing heading must not merge unrelated result categories.
+                    if (DrawerSearchCategoryPresentation.categoryForResult(candidateTarget) != category) break
+                    results.add(candidate)
                     end++
                 }
-                val results = items.subList(index + 1, end).filter {
-                    it.searchTarget.layoutType != LayoutType.TEXT_HEADER &&
-                        it.searchTarget.layoutType != LayoutType.EMPTY_DIVIDER
-                }
-                if (category != null && results.isNotEmpty()) {
-                    output.add(DrawerSearchSectionAdapterItem(category, heading, results))
+                if (results.isNotEmpty()) {
+                    output.add(DrawerSearchSectionAdapterItem(
+                        category,
+                        if (isHeading) title else category.title,
+                        results,
+                    ))
+                    index = end
                 } else {
-                    output.add(item)
-                    output.addAll(items.subList(index + 1, end).filterNot {
-                        DrawerSearchSectionModel.isStructuralHeader(it)
-                    })
+                    if (isHeading) output.add(current)
+                    index++
                 }
-                index = end
             }
             return output
         }
