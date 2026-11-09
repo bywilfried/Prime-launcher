@@ -10,7 +10,6 @@ import app.lawnchair.prime.search.PrimeSearchResultPreferences
 import app.lawnchair.search.adapter.SearchAdapterItem
 import app.lawnchair.theme.effectiveThemeVariant
 import com.android.app.search.LayoutType
-import com.android.launcher3.R
 import com.android.launcher3.allapps.ActivityAllAppsContainerView
 import java.util.WeakHashMap
 
@@ -67,9 +66,13 @@ internal class DrawerSearchResultsRenderer(
         val radius = 14f * density
         val top = position == resultPositions.first()
         val bottom = position == resultPositions.last()
+        val topLeft = if (top) radius else 0f
+        val topRight = if (top) radius else 0f
+        val bottomRight = if (bottom) radius else 0f
+        val bottomLeft = if (bottom) radius else 0f
         val radii = floatArrayOf(
-            radius, radius, radius, radius,
-            radius, radius, radius, radius,
+            topLeft, topLeft, topRight, topRight,
+            bottomRight, bottomRight, bottomLeft, bottomLeft,
         )
         val shape = GradientDrawable().apply {
             cornerRadii = radii
@@ -97,7 +100,6 @@ internal class DrawerSearchResultsRenderer(
         }
         originalBackgrounds[view] = null
         view.background = surface
-        view.setTag(R.id.drawer_search_section_surface, category.ordinal * 2 + (if (top) 1 else 0) + (if (bottom) 1 else 0))
     }
 
     private fun styleChild(view: View) {
