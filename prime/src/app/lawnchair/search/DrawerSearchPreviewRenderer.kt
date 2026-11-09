@@ -104,21 +104,19 @@ internal class DrawerSearchPreviewRenderer(
             } else totalHeight > limitPx
             val title = itemView.findViewById<TextView>(R.id.title)
             if (overflow) {
-                title?.text = "Plus de " + when (category) {
+                // Keep the category title visible. Replacing it with "Plus de"
+                // makes the entire section lose its heading after recycling.
+                // The drawer owns this expansion affordance independently.
+                val expansionLabel = "Plus de " + when (category) {
                     app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS -> "applications"
                     app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> "raccourcis"
                     app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CONTACTS -> "contacts"
                     app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.FILES -> "fichiers"
                     else -> "résultats"
                 } + "  ⌄"
-                title?.apply {
-                    gravity = android.view.Gravity.CENTER
-                    textAlignment = View.TEXT_ALIGNMENT_CENTER
-                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
-                    layoutParams = layoutParams.apply { width = ViewGroup.LayoutParams.MATCH_PARENT }
-                }
+                title?.contentDescription = "${title.text}. $expansionLabel"
                 itemView.minimumHeight = dp(40, itemView)
-                itemView.layoutParams?.height = dp(40, itemView)
+                itemView.layoutParams?.height = ViewGroup.LayoutParams.WRAP_CONTENT
                 itemView.isClickable = true
                 itemView.setOnClickListener {
                     val heading = items.getOrNull(start - 1)?.searchTarget?.searchAction?.title
