@@ -323,8 +323,21 @@ class LawnchairSearchAdapterProvider(
             }
             clipToOutline = true
         }
+        val detailTitle = when (category) {
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS -> "Applications"
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> "Raccourcis d'app"
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CONTACTS -> "Contacts"
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.FILES -> "Fichiers"
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB -> "Suggestions Web"
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB_SHORTCUTS -> "Raccourcis Web"
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALENDAR -> "Événements de l'agenda"
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.REMINDERS -> "Tâches"
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.NOTIFICATIONS -> "Historique des notifications"
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.SETTINGS -> "Paramètres de l'appareil"
+            else -> title
+        }
         val heading = android.widget.TextView(context).apply {
-            text = title
+            text = detailTitle
             textSize = 16f
             setTextColor(
                 app.lawnchair.theme.ThemeColors.resolve(
@@ -391,6 +404,8 @@ class LawnchairSearchAdapterProvider(
             val scroll = android.widget.ScrollView(context).apply {
                 clipToPadding = false
                 isFillViewport = false
+                isVerticalFadingEdgeEnabled = true
+                setFadingEdgeLength(dp(32, this))
                 setPadding(0, 0, 0, 0)
                 isVerticalScrollBarEnabled = false
             }
@@ -461,6 +476,8 @@ class LawnchairSearchAdapterProvider(
             val list = androidx.recyclerview.widget.RecyclerView(context).apply {
                 layoutManager = androidx.recyclerview.widget.LinearLayoutManager(context)
                 clipToPadding = false
+                isVerticalFadingEdgeEnabled = true
+                setFadingEdgeLength(dp(32, this))
                 setPadding(0, 0, 0, 0)
                 adapter = DrawerCategoryResultsAdapter(categoryItems, false, appRowHeight, appIconSizePx, appLabelLines)
             }
