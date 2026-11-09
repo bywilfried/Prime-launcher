@@ -60,10 +60,13 @@ internal object DrawerSearchCategoryPresentation {
     fun categoryForResult(target: app.lawnchair.search.adapter.SearchTargetCompat):
         PrimeSearchResultPreferences.Category? =
         if (target.resultType == app.lawnchair.search.adapter.SearchTargetCompat.RESULT_TYPE_SUGGESTIONS) {
-            if (target.packageName == app.lawnchair.search.adapter.HISTORY) {
-                PrimeSearchResultPreferences.Category.HISTORY
-            } else {
-                PrimeSearchResultPreferences.Category.WEB
+            when (target.packageName) {
+                app.lawnchair.search.adapter.HISTORY ->
+                    PrimeSearchResultPreferences.Category.HISTORY
+                "Agenda" -> PrimeSearchResultPreferences.Category.CALENDAR
+                "Tâches" -> PrimeSearchResultPreferences.Category.REMINDERS
+                "Notifications" -> PrimeSearchResultPreferences.Category.NOTIFICATIONS
+                else -> PrimeSearchResultPreferences.Category.WEB
             }
         } else {
             categoryForResultType(target.resultType)
