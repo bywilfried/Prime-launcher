@@ -237,7 +237,40 @@ class LawnchairLocalSearchAlgorithm(
                             category == null || prefs.enabled(context, category, surface)
                         }
                     }
-                    val searchTargets = translateToSearchTargets(visibleResults + drawerEntries)
+                    val resultsForSurface = if (primeSearch) {
+                        visibleResults + drawerEntries
+                    } else {
+                        val preferences = app.lawnchair.prime.search.PrimeSearchResultPreferences
+                        val priorities = preferences.order(context, preferenceSurface)
+                            .withIndex().associate { it.value to it.index }
+                        fun categoryOf(result: SearchResult):
+                            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category? =
+                            when (result) {
+                                is SearchResult.App -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS
+                                is SearchResult.Shortcut -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS
+                                is SearchResult.File -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.FILES
+                                is SearchResult.Contact -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CONTACTS
+                                is SearchResult.Setting -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.SETTINGS
+                                is SearchResult.History -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.HISTORY
+                                is SearchResult.Calculation -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALCULATOR
+                                is SearchResult.WebSuggestion -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB
+                                is SearchResult.Action.WebShortcut -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB_SHORTCUTS
+                                is SearchResult.PrimeEntry -> when (result.category) {
+                                    "Agenda" -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALENDAR
+                                    "Tâches" -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.REMINDERS
+                                    "Notifications" -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.NOTIFICATIONS
+                                    else -> null
+                                }
+                                else -> null
+                            }
+                        (visibleResults + drawerEntries).withIndex()
+                            .sortedWith(compareBy(
+                                { indexed -> categoryOf(indexed.value)?.let { priorities[it] } ?: Int.MAX_VALUE },
+                                { it.index },
+                            ))
+                            .map { it.value }
+                    }
+                    val searchTargets = translateToSearchTargets(resultsForSurface)
                     setFirstItemQuickLaunch(searchTargets)
                     val adapterItems = transformSearchResults(searchTargets)
                     app.lawnchair.search.PrimeSearchTrace.record("engine transform len=${query.length} items=${adapterItems.size} ms=${SystemClock.elapsedRealtime() - updateStarted}")
