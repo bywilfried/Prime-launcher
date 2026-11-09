@@ -42,7 +42,6 @@ internal class DrawerSearchCategoryPageRenderer(
 ) {
     private var categoryPage: View? = null
     private var compactResults: View? = null
-    private var savedResultsScrollY = 0
     private var detailAlgorithm: LawnchairLocalSearchAlgorithm? = null
     private var detailGeneration = 0
     private var categoryBackActivity: Activity? = null
@@ -381,15 +380,11 @@ internal class DrawerSearchCategoryPageRenderer(
         // not a full-screen overlay on top of the drawer.
         val resultsView = appsView.mSearchRecyclerView
         val resultsParent = resultsView.parent as? ViewGroup ?: return
-        savedResultsScrollY = resultsView.computeVerticalScrollOffset()
         compactResults = resultsView
         categoryPage = page
         resultsView.visibility = View.INVISIBLE
         resultsParent.addView(page, resultsParent.indexOfChild(resultsView) + 1,
-            ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT,
-            ))
+            resultsView.layoutParams)
         page.bringToFront()
         // Match Prime Search's card reveal: animate the result surface, not
         // the entire window (which otherwise moves the search field).
@@ -438,8 +433,6 @@ internal class DrawerSearchCategoryPageRenderer(
                     .withEndAction {
                         (page.parent as? ViewGroup)?.removeView(page)
                         compactResults?.visibility = View.VISIBLE
-                        (compactResults as? androidx.recyclerview.widget.RecyclerView)
-                            ?.scrollBy(0, savedResultsScrollY)
                         compactResults = null
                     }
                     .start()
