@@ -2,6 +2,13 @@ package app.lawnchair.search
 
 import android.app.Activity
 import android.graphics.Typeface
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
+import android.text.TextWatcher
+import android.text.Editable
+import android.view.animation.DecelerateInterpolator
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.os.Build
 import android.util.TypedValue
 import android.view.KeyEvent
@@ -55,9 +62,6 @@ internal class DrawerSearchCategoryPageRenderer(
             }
         }
 
-        // Prime Search's expanded view is a single full-height rounded card.
-        // Keep the same hierarchy and spacing, but resolve colors from the
-        // drawer palette so this page remains visually and functionally separate.
         val density = appsView.resources.displayMetrics.density
         val cardBackground = app.lawnchair.theme.ThemeColors.resolve(
             context,
@@ -71,6 +75,53 @@ internal class DrawerSearchCategoryPageRenderer(
             app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BORDER,
             context.effectiveThemeVariant(),
         )
+        // This is the main drawer search, not a filter over this category.
+        // Editing it restarts the complete search pipeline and closes details
+        // through the existing result observer.
+        val sourceInput = (appsView.searchUiManager as? app.lawnchair.allapps.AllAppsSearchInput)
+            ?.editText
+        val searchField = EditText(context).apply {
+            setSingleLine(true)
+            textSize = 18f
+            hint = "Rechercher"
+            setText(sourceInput?.text?.toString().orEmpty())
+            setSelection(text.length)
+            setPadding(dp(20, this), 0, dp(20, this), 0)
+            setTextColor(app.lawnchair.theme.ThemeColors.resolve(
+                context,
+                app.lawnchair.theme.ThemeProfile.current(context),
+                app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_TEXT,
+                context.effectiveThemeVariant(),
+            ))
+            background = GradientDrawable().apply {
+                cornerRadius = 28f * density
+                setColor(cardBackground)
+            }
+            addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    val next = s?.toString().orEmpty()
+                    if (sourceInput?.text?.toString() != next) {
+                        sourceInput?.setText(next)
+                        sourceInput?.setSelection(next.length)
+                        close()
+                    }
+                }
+                override fun afterTextChanged(s: Editable?) = Unit
+            })
+        }
+        page.addView(searchField, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(54, page),
+        ).apply {
+            marginStart = dp(16, page)
+            marginEnd = dp(16, page)
+            topMargin = dp(12, page)
+            bottomMargin = dp(8, page)
+        })
+
+        // Prime Search's expanded view is a single full-height rounded card.
+        // Keep the same hierarchy and spacing, but resolve colors from the
+        // drawer palette so this page remains visually and functionally separate.
         val contentCard = android.widget.LinearLayout(context).apply {
             orientation = android.widget.LinearLayout.VERTICAL
             setPadding(dp(8, this), dp(8, this), dp(8, this), dp(12, this))
@@ -270,12 +321,21 @@ internal class DrawerSearchCategoryPageRenderer(
         }
         page.addView(reduce, android.widget.LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
-        ))
+        ).apply {
+            // The drawer can extend behind Android's gesture/navigation bar.
+            // Reserve the actual system inset inside this overlay.
+            bottomMargin = (appsView.rootWindowInsets?.systemWindowInsetBottom ?: dp(48, page)) +
+                dp(12, page)
+        })
         categoryPage = page
         appsView.addView(page, ViewGroup.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT,
         ))
         page.bringToFront()
+        page.alpha = 0f
+        page.translationY = dp(28, page).toFloat()
+        page.animate().alpha(1f).translationY(0f).setDuration(220L)
+            .setInterpolator(DecelerateInterpolator()).start()
         page.requestFocus()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             (context as? Activity)?.let { activity ->
@@ -301,7 +361,12 @@ internal class DrawerSearchCategoryPageRenderer(
         categoryBackActivity = null
         categoryBackCallback = null
         categoryPage?.let { page ->
-            (page.parent as? ViewGroup)?.removeView(page)
+            // Keep the exit motion consistent with the drawer detail entrance.
+            page.animate().cancel()
+            page.animate().alpha(0f).translationY(dp(20, page).toFloat())
+                .setDuration(170L).setInterpolator(DecelerateInterpolator())
+                .withEndAction { (page.parent as? ViewGroup)?.removeView(page) }
+                .start()
         }
         categoryPage = null
     }
