@@ -75,17 +75,12 @@ internal class DrawerSearchCategoryPageRenderer(
             app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BORDER,
             context.effectiveThemeVariant(),
         )
-        // This is the main drawer search, not a filter over this category.
-        // Editing it restarts the complete search pipeline and closes details
-        // through the existing result observer.
-        val sourceInput = (appsView.searchUiManager as? app.lawnchair.allapps.AllAppsSearchInput)
-            ?.editText
+        var applyDetailFilter: (String) -> Unit = {}
         val searchField = EditText(context).apply {
             setSingleLine(true)
             textSize = 18f
             hint = "Rechercher"
-            setText(sourceInput?.text?.toString().orEmpty())
-            setSelection(text.length)
+            
             setPadding(dp(20, this), 0, dp(20, this), 0)
             setTextColor(app.lawnchair.theme.ThemeColors.resolve(
                 context,
@@ -100,12 +95,7 @@ internal class DrawerSearchCategoryPageRenderer(
             addTextChangedListener(object : TextWatcher {
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                    val next = s?.toString().orEmpty()
-                    if (sourceInput?.text?.toString() != next) {
-                        sourceInput?.setText(next)
-                        sourceInput?.setSelection(next.length)
-                        close()
-                    }
+                    applyDetailFilter(s?.toString().orEmpty())
                 }
                 override fun afterTextChanged(s: Editable?) = Unit
             })
@@ -277,18 +267,35 @@ internal class DrawerSearchCategoryPageRenderer(
                 ))
                 inRow++
             }
+            applyDetailFilter = { query ->
+                val needle = query.trim()
+                for (rowIndex in 0 until grid.childCount) {
+                    val appRow = grid.getChildAt(rowIndex) as? ViewGroup ?: continue
+                    var visible = false
+                    for (tileIndex in 0 until appRow.childCount) {
+                        val tile = appRow.getChildAt(tileIndex)
+                        val label = (tile as? TextView)?.text?.toString().orEmpty()
+                        val matches = needle.isEmpty() || label.contains(needle, ignoreCase = true)
+                        tile.visibility = if (matches) View.VISIBLE else View.INVISIBLE
+                        if (matches) visible = true
+                    }
+                    appRow.visibility = if (visible) View.VISIBLE else View.GONE
+                }
+            }
             scroll.addView(grid)
             contentCard.addView(scroll, android.widget.LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f,
             ))
         } else {
+            val detailAdapter = DrawerCategoryResultsAdapter(categoryItems, false, appRowHeight, appIconSizePx, appLabelLines)
+            applyDetailFilter = { query -> detailAdapter.filter(query) }
             val list = androidx.recyclerview.widget.RecyclerView(context).apply {
                 layoutManager = androidx.recyclerview.widget.LinearLayoutManager(context)
                 clipToPadding = false
                 isVerticalFadingEdgeEnabled = true
                 setFadingEdgeLength(dp(32, this))
                 setPadding(0, 0, 0, 0)
-                adapter = DrawerCategoryResultsAdapter(categoryItems, false, appRowHeight, appIconSizePx, appLabelLines)
+                adapter = detailAdapter
             }
             contentCard.addView(list, android.widget.LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f,
@@ -372,7 +379,7 @@ internal class DrawerSearchCategoryPageRenderer(
     }
 
     private inner class DrawerCategoryResultsAdapter(
-        private val results: List<SearchAdapterItem>,
+        private val allResults: List<SearchAdapterItem>,
         private val appGrid: Boolean,
         private val appRowHeightPx: Int,
         private val appIconSizePx: Int,
@@ -381,6 +388,21 @@ internal class DrawerSearchCategoryPageRenderer(
 
         inner class ResultHolder(val resultView: View) :
             androidx.recyclerview.widget.RecyclerView.ViewHolder(resultView)
+
+        private var results: List<SearchAdapterItem> = allResults
+
+        fun filter(query: String) {
+            val needle = query.trim()
+            results = if (needle.isEmpty()) allResults else allResults.filter { item ->
+                val target = item.searchTarget
+                listOfNotNull(
+                    target.searchAction?.title?.toString(),
+                    target.shortcutInfo?.shortLabel?.toString(),
+                    target.id,
+                ).any { it.contains(needle, ignoreCase = true) }
+            }
+            notifyDataSetChanged()
+        }
 
         override fun getItemCount() = results.size
 
