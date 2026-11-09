@@ -205,17 +205,9 @@ class LawnchairSearchAdapterProvider(
             // Use the same compact row contract as the embedded Prime Search
             // renderer so files, contacts, suggestions and shortcuts share
             // typography, spacing and exact row heights.
-            val section = DrawerSearchSectionModel.sectionBounds(
-                appsView.mSearchRecyclerView.mApps.adapterItems.mapNotNull { it as? SearchAdapterItem },
-                position,
-            )
-            val category = section?.let { (start, end) ->
-                DrawerSearchSectionModel.categoryForSection(
-                    appsView.mSearchRecyclerView.mApps.adapterItems.mapNotNull { it as? SearchAdapterItem },
-                    start,
-                    end,
-                )
-            }
+            // Adapter positions include whole category cards. Never index a
+            // filtered SearchAdapterItem list with a RecyclerView position.
+            val category = DrawerSearchCategoryPresentation.categoryForResult(adapterItem.searchTarget)
             val rowHeight = SearchResultGeometry.compactRowHeightDp(
                 adapterItem.searchTarget.layoutType,
                 isAppShortcut = category == app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS,

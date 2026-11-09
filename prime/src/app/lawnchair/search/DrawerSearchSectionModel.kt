@@ -33,6 +33,7 @@ internal object DrawerSearchSectionModel {
     }
 
     fun sectionBounds(items: List<SearchAdapterItem>, position: Int): Pair<Int, Int>? {
+        if (position !in items.indices) return null
         var start = -1
         for (index in position downTo 0) {
             val item = items[index]
