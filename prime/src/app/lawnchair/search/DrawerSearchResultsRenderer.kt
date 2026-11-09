@@ -6,9 +6,8 @@ import com.android.app.search.LayoutType
 import com.android.launcher3.allapps.ActivityAllAppsContainerView
 
 /**
- * Builds drawer section surfaces from the attached result rows instead of
- * painting cards in RecyclerView.ItemDecoration. The original row background
- * stays above the section surface so native ripple feedback is retained.
+ * Applies a drawer-owned section surface to each native result row. The row's
+ * native feedback drawable is layered above the surface and remains interactive.
  */
 internal class DrawerSearchResultsRenderer(
     private val appsView: ActivityAllAppsContainerView<*>,
@@ -34,11 +33,15 @@ internal class DrawerSearchResultsRenderer(
         val density = view.resources.displayMetrics.density
         val top = position == resultPositions.first()
         val bottom = position == resultPositions.last()
-        val sectionSurface = DrawerSearchSectionBackground(view.context, top, bottom)
-        val inset = (4f * density).toInt()
-        val surface = DrawerSearchSectionBackground(view.context, top, bottom).apply {
-            setBounds(0, 0, view.width, view.height)
+        val sectionSurface = android.graphics.drawable.InsetDrawable(
+            DrawerSearchSectionBackground(view.context, top, bottom),
+            (4f * density).toInt(),
+        )
+        val feedback = view.background
+        view.background = if (feedback == null) {
+            sectionSurface
+        } else {
+            android.graphics.drawable.LayerDrawable(arrayOf(sectionSurface, feedback))
         }
-        view.background = android.graphics.drawable.InsetDrawable(sectionSurface, inset)
     }
 }

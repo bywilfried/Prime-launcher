@@ -221,7 +221,7 @@ class LawnchairSearchAdapterProvider(
         if (adapterItem.searchTarget.layoutType != LayoutType.TEXT_HEADER) {
             applyDrawerPreview(holder.itemView, position, adapterItem)
         }
-        // Apply the drawer-owned section surface after native binding.
+        // Keep the native ripple drawable above the drawer-owned section surface.
         resultsRenderer.styleBoundRow(holder.itemView, position, adapterItem)
         if (itemView.isQuickLaunch) {
             quickLaunchItem = itemView
