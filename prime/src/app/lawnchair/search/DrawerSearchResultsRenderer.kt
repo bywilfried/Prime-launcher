@@ -20,7 +20,6 @@ internal class DrawerSearchResultsRenderer(
         val (start, end) = bounds
         DrawerSearchSectionModel.categoryForSection(items, start, end) ?: return
         if (item.searchTarget.layoutType == LayoutType.EMPTY_DIVIDER ||
-            item.searchTarget.layoutType == LayoutType.TEXT_HEADER ||
             DrawerSearchSectionModel.isStructuralHeader(item)
         ) return
 
@@ -31,11 +30,12 @@ internal class DrawerSearchResultsRenderer(
         if (resultPositions.isEmpty()) return
 
         val density = view.resources.displayMetrics.density
-        val top = position == resultPositions.first()
+        val isSectionHeading = item.searchTarget.layoutType == LayoutType.TEXT_HEADER && position == start - 1
+        val top = isSectionHeading || position == resultPositions.first()
         val bottom = position == resultPositions.last()
         val sectionSurface = android.graphics.drawable.InsetDrawable(
             DrawerSearchSectionBackground(view.context, top, bottom),
-            (4f * density).toInt(),
+            (4f * density).toInt(), 0, (4f * density).toInt(), 0,
         )
         val feedback = view.background
         view.background = if (feedback == null) {
