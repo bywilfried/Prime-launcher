@@ -1434,6 +1434,9 @@ object PrimeSearchOverlay {
                 return
             }
             val priorities = PrimeSearchResultPreferences.order(launcher, preferenceSurface)
+            val showAllSingleCategory = priorities.count {
+                PrimeSearchResultPreferences.enabled(launcher, it, preferenceSurface)
+            } == 1
             // Exactly one section per enabled category, regardless of how many
             // separate chunks the drawer provider produced.
             val grouped = linkedMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
@@ -1563,7 +1566,7 @@ object PrimeSearchOverlay {
                     } else limit
                      clipped.layoutParams = (clipped.layoutParams as? LinearLayout.LayoutParams
                         ?: LinearLayout.LayoutParams(-1, -2)).apply {
-                        height = if (isApps) appViewportHeight.coerceAtLeast(1) else limit
+                        height = if (showAllSingleCategory) -2 else if (isApps) appViewportHeight.coerceAtLeast(1) else limit
                     }
                     val more = compactMoreButtons.getOrPut(category) { TextView(launcher).apply {
                         text = "Plus de " + when (category) {
@@ -1620,15 +1623,15 @@ object PrimeSearchOverlay {
                             wrapper.addView(heading, LinearLayout.LayoutParams(-1, -2))
                         }
                         wrapper.addView(clipped, LinearLayout.LayoutParams(
-                            -1, if (isApps) appViewportHeight.coerceAtLeast(1) else limit
+                            -1, if (showAllSingleCategory) -2 else if (isApps) appViewportHeight.coerceAtLeast(1) else limit
                         ))
                         wrapper.addView(more, LinearLayout.LayoutParams(-1, -2))
                     }
                     orderedWrappers.add(wrapper)
                     if (isApps) {
-                        more.visibility = if (appRowCount > maxVisibleRows) View.VISIBLE else View.GONE
+                        more.visibility = if (!showAllSingleCategory && appRowCount > maxVisibleRows) View.VISIBLE else View.GONE
                     } else clipped.post {
-                        if (!detailOpen && card.parent === clipped) {
+                        if (!detailOpen && card.parent === clipped && !showAllSingleCategory) {
                             // Measure the actual card independently of its clipped parent.
                             val widthSpec = View.MeasureSpec.makeMeasureSpec(
                                 clipped.width.coerceAtLeast(1), View.MeasureSpec.EXACTLY)
