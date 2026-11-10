@@ -1515,7 +1515,15 @@ object PrimeSearchOverlay {
                 val headingCategory = PrimeSearchCategoryPresentation.categoryForHeading((child as? TextView)?.text?.toString())
                 if (headingCategory != null) currentCategory = headingCategory
                 val category = currentCategory
-                if (category != null && PrimeSearchResultPreferences.enabled(launcher, category, preferenceSurface)) {
+                if (category == PrimeSearchResultPreferences.Category.APPS) {
+                    // App rows belong exclusively to the native search provider.
+                    // A dynamic heading named "Applications" must never clear the
+                    // already-built app grid when Web sections are refreshed.
+                    app.lawnchair.search.PrimeSearchTrace.record(
+                        "overlay ignore dynamic apps heading=${headingCategory != null}"
+                    )
+                    currentCategory = null
+                } else if (category != null && PrimeSearchResultPreferences.enabled(launcher, category, preferenceSurface)) {
                     val section = sectionFor(category)
                     if (dynamicCategories.add(category)) section.removeAllViews()
                     section.addView(child)
