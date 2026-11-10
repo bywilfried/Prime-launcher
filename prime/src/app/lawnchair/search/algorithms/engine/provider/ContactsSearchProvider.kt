@@ -72,9 +72,18 @@ object ContactsSearchProvider : SearchProvider, SearchPermission {
     ): Flow<List<SearchResult>> = searchInternal(context, query, false)
 
     fun searchForPrime(context: Context, query: String): Flow<List<SearchResult>> =
-        searchInternal(context, query, true)
+        searchInternal(context, query, true, app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.PRIME_SEARCH)
 
-    private fun searchInternal(context: Context, query: String, primeSearch: Boolean): Flow<List<SearchResult>> = flow {
+    fun searchForDrawer(context: Context, query: String): Flow<List<SearchResult>> =
+        searchInternal(context, query, true, app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER)
+
+    private fun searchInternal(
+        context: Context,
+        query: String,
+        primeSearch: Boolean,
+        surface: app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface =
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER,
+    ): Flow<List<SearchResult>> = flow {
         val prefs = PreferenceManager.getInstance(context)
         val prefs2 = PreferenceManager2.getInstance(context)
 
@@ -92,9 +101,6 @@ object ContactsSearchProvider : SearchProvider, SearchPermission {
             "contacts query len=${query.length} count=${contactInfoList.size} ms=${SystemClock.elapsedRealtime() - started}"
         )
 
-        val surface = if (primeSearch)
-            app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.PRIME_SEARCH
-        else app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
         val selected = app.lawnchair.prime.search.PrimeSourceSelection.selected(context, "contacts", surface)
         val allowedIds = selected?.let { accounts ->
             val ids = mutableSetOf<String>()

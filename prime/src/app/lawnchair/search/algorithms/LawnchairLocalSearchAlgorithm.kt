@@ -155,7 +155,8 @@ class LawnchairLocalSearchAlgorithm(
                 val nonAppProvidersFlow = combine(
                     searchProviders.map { provider ->
                         (if (primeMatching && provider === ContactsSearchProvider) {
-                            ContactsSearchProvider.searchForPrime(context, query)
+                            if (primeSearch) ContactsSearchProvider.searchForPrime(context, query)
+                            else ContactsSearchProvider.searchForDrawer(context, query)
                         } else if (primeMatching && provider === FileSearchProvider) {
                             FileSearchProvider.searchForPrime(context, query)
                         } else if (!primeSearch && provider === WebSuggestionProvider) {
