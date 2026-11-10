@@ -31,7 +31,7 @@ internal fun applyDrawerLabelWrapping(view: SearchResultIcon, lines: Int) {
         val first = original.substring(0, split).trimEnd()
         val second = original.substring(if (whitespace > 0) split + 1 else split).trimStart()
         if (first.isNotEmpty() && second.isNotEmpty()) {
-            view.text = first + "\\n" + second
+            view.text = first + "\n" + second
         }
     }
 }
