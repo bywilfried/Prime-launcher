@@ -1521,9 +1521,20 @@ object PrimeSearchOverlay {
                     section.addView(child)
                 }
             }
+            // Providers may emit a category heading without any actual result.
+            // Do not render heading-only cards, including cached sections after
+            // asynchronous refreshes. Check the content, not just childCount.
+            fun hasVisibleResult(card: LinearLayout, category: PrimeSearchResultPreferences.Category): Boolean =
+                (0 until card.childCount).any { index ->
+                    val child = card.getChildAt(index)
+                    child.visibility != View.GONE && !(
+                        child is TextView &&
+                            PrimeSearchCategoryPresentation.categoryForHeading(child.text?.toString()) == category
+                    ) && !(child is ViewGroup && child.childCount == 0)
+                }
             val orderedWrappers = mutableListOf<View>()
             priorities.forEach { category ->
-                grouped[category]?.takeIf { it.childCount > 0 }?.let { card ->
+                grouped[category]?.takeIf { hasVisibleResult(it, category) }?.let { card ->
                     val limit = PrimeSearchCategoryPresentation.compactPreviewHeightDp(category)
                         ?.let { (it * density).toInt() }
                         ?: (PrimeAppGridGeometry.rowHeightPx(
