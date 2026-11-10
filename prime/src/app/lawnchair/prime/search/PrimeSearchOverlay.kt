@@ -1532,6 +1532,9 @@ object PrimeSearchOverlay {
                             PrimeSearchCategoryPresentation.categoryForHeading(child.text?.toString()) == category
                     ) && !(child is ViewGroup && child.childCount == 0)
                 }
+            app.lawnchair.search.PrimeSearchTrace.record(
+                "overlay reorder grouped=${grouped.keys.joinToString()} appsChildren=${grouped[PrimeSearchResultPreferences.Category.APPS]?.childCount ?: -1}"
+            )
             val orderedWrappers = mutableListOf<View>()
             priorities.forEach { category ->
                 grouped[category]?.takeIf { hasVisibleResult(it, category) }?.let { card ->
@@ -1566,6 +1569,9 @@ object PrimeSearchOverlay {
                             child.orientation == LinearLayout.HORIZONTAL &&
                             child.childCount > 0
                     } else 0
+                    if (isApps) app.lawnchair.search.PrimeSearchTrace.record(
+                        "overlay appCard rows=$appRowCount children=${card.childCount}"
+                    )
                     val maxVisibleRows = PrimeSearchResultPreferences.appResultsRows(launcher, preferenceSurface)
                     val appViewportHeight = if (isApps) {
                         val rowHeight = PrimeAppGridGeometry.rowHeightPx(
@@ -2408,6 +2414,9 @@ object PrimeSearchOverlay {
                     }
                 }
                 flushNativeSection()
+                app.lawnchair.search.PrimeSearchTrace.record(
+                    "overlay built len=${query.length} sections=${nativeSections.size} appSections=${nativeSections.count { it.first == appCategory }} appRows=${nativeSections.filter { it.first == appCategory }.sumOf { it.second.childCount }} reused=$reuseAppGrid"
+                )
                 lastAppGridQuery = query
                 lastAppGridSignature = appGridSignature
                 results.removeAllViews()
