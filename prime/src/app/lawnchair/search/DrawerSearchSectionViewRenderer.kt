@@ -93,7 +93,7 @@ internal class DrawerSearchSectionViewRenderer(
                         child.includeFontPadding = false
                         child.setPrimeSearchLabelLayout(true)
                         child.setSingleLine(false)
-                        child.isHorizontallyScrolling = false
+                        child.setHorizontallyScrolling(false)
                         child.maxLines = if (prefs.twoLineAppLabels(context, surface)) 2 else 1
                         child.breakStrategy = android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY
                         child.ellipsize = android.text.TextUtils.TruncateAt.END
