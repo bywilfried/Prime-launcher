@@ -15,6 +15,8 @@ internal object DrawerSearchCategoryPresentation {
         "Raccourcis d'app" to PrimeSearchResultPreferences.Category.APP_SHORTCUTS,
         "Raccourcis d’app" to PrimeSearchResultPreferences.Category.APP_SHORTCUTS,
         "Contacts" to PrimeSearchResultPreferences.Category.CONTACTS,
+        "Contacts de l’appareil" to PrimeSearchResultPreferences.Category.CONTACTS,
+        "Contacts de l'appareil" to PrimeSearchResultPreferences.Category.CONTACTS,
         "Fichiers de l'appareil" to PrimeSearchResultPreferences.Category.FILES,
         "Fichiers de l’appareil" to PrimeSearchResultPreferences.Category.FILES,
         "Événements de l'agenda" to PrimeSearchResultPreferences.Category.CALENDAR,
