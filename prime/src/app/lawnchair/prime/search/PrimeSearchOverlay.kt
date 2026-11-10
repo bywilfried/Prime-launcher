@@ -1986,11 +1986,10 @@ object PrimeSearchOverlay {
                             nativeSection.addView(heading)
                         }
                     }
-                    // Search providers can supply a synthetic settings shortcut as an
-                    // application tile. It has no launchable application package and
-                    // must not occupy a cell in the Apps results grid.
+                    // Only exclude the explicit settings shortcut. Genuine app targets
+                    // can have an empty packageName while still carrying a valid icon.
                     if (category == appCategory &&
-                        item.searchTarget.packageName.isBlank()) return@forEach
+                        item.searchTarget.layoutType == LayoutType.SEARCH_SETTINGS) return@forEach
                     if (category == appCategory && reuseAppGrid) return@forEach
                     // The drawer can emit the same application as a grid icon
                     // and again as a text row. Prime Search keeps one app entry.
