@@ -31,6 +31,11 @@ internal class DrawerSearchSectionAdapterItem(
             while (index < items.size) {
                 val current = items[index]
                 val target = current.searchTarget
+                // Settings shortcut belongs in the empty search bar, never in results.
+                if (target.layoutType == LayoutType.SEARCH_SETTINGS) {
+                    index++
+                    continue
+                }
                 if (DrawerSearchSectionModel.isStructuralHeader(current)) {
                     index++
                     continue
@@ -58,6 +63,10 @@ internal class DrawerSearchSectionAdapterItem(
                 while (end < items.size) {
                     val candidate = items[end]
                     val candidateTarget = candidate.searchTarget
+                    if (candidateTarget.layoutType == LayoutType.SEARCH_SETTINGS) {
+                        end++
+                        continue
+                    }
                     if (DrawerSearchSectionModel.isStructuralHeader(candidate)) {
                         end++
                         continue
