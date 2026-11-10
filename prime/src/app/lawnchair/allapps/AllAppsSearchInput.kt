@@ -15,6 +15,7 @@ import android.util.AttributeSet
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.view.ViewTreeObserver.OnGlobalFocusChangeListener
 import android.view.animation.DecelerateInterpolator
@@ -417,6 +418,7 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
                     animatePadding(currentPaddingLeft, currentPaddingRight)
                 }
                 queryEmpty = isEmpty
+                if (!isEmpty) updateDrawerTabsSearchVisibility(true)
             },
         )
 
@@ -587,6 +589,18 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
         }
     }
 
+    private fun updateDrawerTabsSearchVisibility(active: Boolean) {
+        if (!::appsView.isInitialized) return
+        fun findTabs(view: View): app.lawnchair.prime.drawer.PrimeDrawerTabsView? {
+            if (view is app.lawnchair.prime.drawer.PrimeDrawerTabsView) return view
+            if (view is ViewGroup) for (index in 0 until view.childCount) {
+                findTabs(view.getChildAt(index))?.let { return it }
+            }
+            return null
+        }
+        findTabs(appsView)?.setDrawerSearchActive(active)
+    }
+
     override fun onSearchResult(query: String, items: ArrayList<AdapterItem>?) {
         app.lawnchair.search.PrimeSearchTrace.record("drawer onSearchResult len=${query.length} items=${items?.size ?: 0}")
         if (inCategorySearch) {
@@ -594,6 +608,7 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
             return
         }
         if (items != null) {
+            updateDrawerTabsSearchVisibility(true)
             apps.setSearchResults(items)
             notifyResultChanged()
             appsView.setSearchResults(items)
@@ -601,6 +616,7 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
     }
 
     override fun clearSearchResult() {
+        updateDrawerTabsSearchVisibility(false)
         app.lawnchair.search.PrimeSearchTrace.record("drawer clearSearchResult")
         if (inCategorySearch) {
             detailCallback?.invoke("", null)
