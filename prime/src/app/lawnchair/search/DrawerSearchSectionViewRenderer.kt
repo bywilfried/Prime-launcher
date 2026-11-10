@@ -15,6 +15,27 @@ import app.lawnchair.search.adapter.SearchAdapterItem
 import com.android.app.search.LayoutType
 import com.android.launcher3.R
 
+/** Force a visible line break for drawer app tiles whose launcher text layout stays single-line. */
+internal fun applyDrawerLabelWrapping(view: SearchResultIcon, lines: Int) {
+    if (lines < 2) return
+    val original = view.text?.toString().orEmpty()
+    if (original.isBlank()) return
+    view.post {
+        if (!view.isAttachedToWindow) return@post
+        val available = view.width - view.paddingLeft - view.paddingRight
+        if (available <= 0 || view.paint.measureText(original) <= available) return@post
+        val fit = view.paint.breakText(original, true, available.toFloat(), null)
+            .coerceIn(1, original.length - 1)
+        val whitespace = original.lastIndexOf(' ', fit)
+        val split = if (whitespace > 0) whitespace else fit
+        val first = original.substring(0, split).trimEnd()
+        val second = original.substring(if (whitespace > 0) split + 1 else split).trimStart()
+        if (first.isNotEmpty() && second.isNotEmpty()) {
+            view.text = "$"+"first\\n$"+"second"
+        }
+    }
+}
+
 /**
  * Drawer-only category card: a single parent view owns all of its native
  * result children. No per-row RecyclerView backgrounds or hidden grid cells.
