@@ -93,10 +93,14 @@ internal class DrawerSearchSectionViewRenderer(
         }
         card.addView(heading, LinearLayout.LayoutParams(-1, -2))
 
+        // A single enabled search category has no reason to use compact previews.
+        val showAll = prefs.order(context, surface).count { prefs.enabled(context, it, surface) } == 1
         val isApps = section.category == PrimeSearchResultPreferences.Category.APPS
         val columns = prefs.appResultsColumns(context, surface).coerceAtLeast(1)
         val maxRows = prefs.appResultsRows(context, surface).coerceAtLeast(1)
-        val visible = if (isApps) {
+        val visible = if (showAll) {
+            section.results
+        } else if (isApps) {
             section.results.take(columns * maxRows)
         } else {
             val maxHeight = dp(card, DrawerSearchCategoryPresentation.compactPreviewHeightDp(section.category) ?: 190)
@@ -159,7 +163,7 @@ internal class DrawerSearchSectionViewRenderer(
                 })))
             }
         }
-        if (section.results.size > visible.size) {
+        if (!showAll && section.results.size > visible.size) {
             val suffix = when (section.category) {
                 PrimeSearchResultPreferences.Category.APPS -> "applications"
                 PrimeSearchResultPreferences.Category.CONTACTS -> "contacts"
