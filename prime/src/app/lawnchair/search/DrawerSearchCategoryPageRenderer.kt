@@ -255,7 +255,7 @@ internal class DrawerSearchCategoryPageRenderer(
                     setTextSize(TypedValue.COMPLEX_UNIT_SP, app.lawnchair.prime.search.PrimeAppGridGeometry.LABEL_SP)
                     includeFontPadding = false
                     setSingleLine(false)
-                    isHorizontallyScrolling = false
+                    setHorizontallyScrolling(false)
                     maxLines = appLabelLines
                     breakStrategy = android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY
                     ellipsize = android.text.TextUtils.TruncateAt.END
