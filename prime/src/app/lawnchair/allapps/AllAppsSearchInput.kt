@@ -47,6 +47,11 @@ import app.lawnchair.qsb.LawnQsbLayout.Companion.getVoiceIntent
 import app.lawnchair.qsb.LawnQsbUi
 import app.lawnchair.qsb.QsbActions
 import app.lawnchair.qsb.QsbIconId
+import app.lawnchair.qsb.QsbIconState
+import app.lawnchair.qsb.ThemingMethod
+import app.lawnchair.ui.preferences.PreferenceActivity
+import app.lawnchair.ui.preferences.destinations.SearchRoute
+import app.lawnchair.ui.preferences.navigation.Search
 import app.lawnchair.qsb.buildQsbStyle
 import app.lawnchair.qsb.providers.Google
 import app.lawnchair.qsb.providers.PixelSearch
@@ -219,6 +224,20 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
                     showLens = lensIntent != null,
                 )
 
+                val drawerQsbState = state.copy(
+                    endIcons = if (queryEmpty) {
+                        listOf(QsbIconState(
+                            id = QsbIconId.SETTINGS,
+                            resId = android.R.drawable.ic_menu_preferences,
+                            themed = true,
+                            method = ThemingMethod.TINT,
+                            contentDescription = "Paramètres de recherche du tiroir",
+                        ))
+                    } else {
+                        state.endIcons.filter { it.id == QsbIconId.CLEAR }
+                    },
+                )
+
                 val profile = ThemeProfile.current(context)
                 val variant = context.effectiveThemeVariant()
                 val backgroundColor = ThemeColors.resolve(
@@ -287,6 +306,12 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
 
                             QsbIconId.LENS -> lensIntent?.let { context.startActivity(it) }
 
+                            QsbIconId.SETTINGS -> {
+                                context.startActivity(PreferenceActivity.createIntent(
+                                    context, Search(SearchRoute.DRAWER_SEARCH),
+                                ))
+                            }
+
                             QsbIconId.CLEAR -> {
                                 input.reset()
                                 searchAlgorithm?.doZeroStateSearch(this@AllAppsSearchInput)
@@ -301,7 +326,7 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
                 LawnchairTheme {
                     ProvideLifecycleState {
                         LawnQsbUi(
-                            state = state,
+                            state = drawerQsbState,
                             style = style,
                             actions = actions,
                         )
