@@ -92,7 +92,10 @@ internal class DrawerSearchSectionViewRenderer(
                         child.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, PrimeAppGridGeometry.LABEL_SP)
                         child.includeFontPadding = false
                         child.setPrimeSearchLabelLayout(true)
+                        child.setSingleLine(false)
+                        child.isHorizontallyScrolling = false
                         child.maxLines = if (prefs.twoLineAppLabels(context, surface)) 2 else 1
+                        child.breakStrategy = android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY
                         child.ellipsize = android.text.TextUtils.TruncateAt.END
                         child.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
                     }

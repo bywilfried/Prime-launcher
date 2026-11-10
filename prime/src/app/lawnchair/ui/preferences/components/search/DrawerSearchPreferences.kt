@@ -444,16 +444,8 @@ private fun DrawerAdvancedSearchPreferences() {
                 },
             )
         }
-        Text("Apparence des applications")
-        var drawerRows by remember {
-            mutableStateOf(PrimeSearchResultPreferences.zeroStateRows(context, drawerSurface))
-        }
-        var drawerColumns by remember {
-            mutableStateOf(PrimeSearchResultPreferences.appsPerRow(context, drawerSurface))
-        }
-        var drawerIconPercent by remember {
-            mutableStateOf(PrimeSearchResultPreferences.iconSizePercent(context, drawerSurface))
-        }
+        // The drawer's application grid is configured in Applications.
+        // Keep only the search-card-specific label wrapping option here.
         var drawerTwoLines by remember {
             mutableStateOf(PrimeSearchResultPreferences.twoLineAppLabels(context, drawerSurface))
         }
@@ -503,108 +495,6 @@ private fun DrawerAdvancedSearchPreferences() {
                 PrimeSearchResultPreferences.setTwoLineAppLabels(context, drawerTwoLines, drawerSurface)
             },
         )
-        var drawerFollowGeneral by remember {
-            mutableStateOf(PrimeSearchResultPreferences.appResultsFollowGeneral(context, drawerSurface))
-        }
-        PreferenceTemplate(
-            title = { Text("Résultats d'applications : suivre les réglages généraux") },
-            description = { Text("Sinon, définir une grille distincte pour les résultats d'une recherche") },
-            endWidget = {
-                androidx.compose.material3.Switch(
-                    checked = drawerFollowGeneral,
-                    onCheckedChange = {
-                        drawerFollowGeneral = it
-                        PrimeSearchResultPreferences.setAppResultsFollowGeneral(context, it, drawerSurface)
-                    },
-                )
-            },
-            onClick = {
-                drawerFollowGeneral = !drawerFollowGeneral
-                PrimeSearchResultPreferences.setAppResultsFollowGeneral(context, drawerFollowGeneral, drawerSurface)
-            },
-        )
-        if (!drawerFollowGeneral) {
-            var resultColumns by remember {
-                mutableStateOf(PrimeSearchResultPreferences.appResultsColumns(context, drawerSurface))
-            }
-            var resultRows by remember {
-                mutableStateOf(PrimeSearchResultPreferences.appResultsRows(context, drawerSurface))
-            }
-            var resultIconSize by remember {
-                mutableStateOf(PrimeSearchResultPreferences.appResultsIconSizePercent(context, drawerSurface))
-            }
-            Text("Colonnes des résultats : $resultColumns")
-            androidx.compose.material3.Slider(
-                value = resultColumns.toFloat(),
-                onValueChange = {
-                    resultColumns = it.toInt().coerceIn(3, 5)
-                    PrimeSearchResultPreferences.setAppResultsColumns(context, resultColumns, drawerSurface)
-                },
-                valueRange = 3f..5f,
-                steps = 1,
-            )
-            Text("Lignes des résultats : $resultRows")
-            androidx.compose.material3.Slider(
-                value = resultRows.toFloat(),
-                onValueChange = {
-                    resultRows = it.toInt().coerceIn(1, 3)
-                    PrimeSearchResultPreferences.setAppResultsRows(context, resultRows, drawerSurface)
-                },
-                valueRange = 1f..3f,
-                steps = 1,
-            )
-            Text("Taille des icônes des résultats : $resultIconSize %")
-            androidx.compose.material3.Slider(
-                value = resultIconSize.toFloat(),
-                onValueChange = {
-                    resultIconSize = it.toInt().coerceIn(60, 150)
-                    PrimeSearchResultPreferences.setAppResultsIconSizePercent(context, resultIconSize, drawerSurface)
-                },
-                valueRange = 60f..150f,
-                steps = 8,
-            )
-            var resultAlignment by remember {
-                mutableStateOf(PrimeSearchResultPreferences.appResultsAlignment(context, drawerSurface))
-            }
-            var showAlignmentChoices by remember { mutableStateOf(false) }
-            PreferenceTemplate(
-                title = { Text("Alignement des résultats") },
-                description = { Text(resultAlignment.label) },
-                onClick = { showAlignmentChoices = true },
-            )
-            if (showAlignmentChoices) {
-                androidx.compose.material3.AlertDialog(
-                    onDismissRequest = { showAlignmentChoices = false },
-                    title = { Text("Alignement des applications") },
-                    text = {
-                        androidx.compose.foundation.layout.Column {
-                            PrimeSearchResultPreferences.AppResultsAlignment.entries.forEach { option ->
-                                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                                    androidx.compose.material3.RadioButton(
-                                        selected = resultAlignment == option,
-                                        onClick = {
-                                            resultAlignment = option
-                                            PrimeSearchResultPreferences.setAppResultsAlignment(context, option, drawerSurface)
-                                            showAlignmentChoices = false
-                                        },
-                                    )
-                                    androidx.compose.material3.TextButton(onClick = {
-                                        resultAlignment = option
-                                        PrimeSearchResultPreferences.setAppResultsAlignment(context, option, drawerSurface)
-                                        showAlignmentChoices = false
-                                    }) { Text(option.label) }
-                                }
-                            }
-                        }
-                    },
-                    confirmButton = {
-                        androidx.compose.material3.TextButton(onClick = { showAlignmentChoices = false }) {
-                            Text("Fermer")
-                        }
-                    },
-                )
-            }
-        }
         val drawerCategories = PrimeSearchResultPreferences.order(context, drawerSurface)
         var drawerOrder by remember { mutableStateOf(drawerCategories) }
         var categorySettings by remember { mutableStateOf<PrimeSearchResultPreferences.Category?>(null) }

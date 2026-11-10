@@ -254,7 +254,10 @@ internal class DrawerSearchCategoryPageRenderer(
                     setCompoundDrawablePadding(dp(app.lawnchair.prime.search.PrimeAppGridGeometry.ICON_LABEL_GAP_DP.toInt(), this))
                     setTextSize(TypedValue.COMPLEX_UNIT_SP, app.lawnchair.prime.search.PrimeAppGridGeometry.LABEL_SP)
                     includeFontPadding = false
+                    setSingleLine(false)
+                    isHorizontallyScrolling = false
                     maxLines = appLabelLines
+                    breakStrategy = android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY
                     ellipsize = android.text.TextUtils.TruncateAt.END
                 }
                 row!!.addView(resultView, android.widget.LinearLayout.LayoutParams(
