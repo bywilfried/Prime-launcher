@@ -104,15 +104,19 @@ class LawnchairLocalSearchAlgorithm(
         val generation = ++searchGeneration
         modelRetryJob?.cancel()
         currentJob?.cancel()
+        app.lawnchair.search.PrimeSearchTrace.record("engine awaitingModel len=${query.length} generation=$generation")
         modelRetryJob = appState.model.runWhenModelLoaded(coroutineScope) { apps ->
+            app.lawnchair.search.PrimeSearchTrace.record("engine modelReady len=${query.length} generation=$generation current=$searchGeneration apps=${apps.data.size}")
             if (generation != searchGeneration) return@runWhenModelLoaded
             // Querying published shortcuts can be expensive. Keep it off the
             // model/UI callback thread so typing remains responsive.
             currentJob?.cancel()
             currentJob = coroutineScope.launch {
+                app.lawnchair.search.PrimeSearchTrace.record("engine jobStart len=${query.length} generation=$generation")
                 val appSearchStarted = SystemClock.elapsedRealtime()
                 val drawerTypoMatching = primeMatching &&
                     PrimeSearchResultPreferences.fuzzyApps(context, preferenceSurface)
+                app.lawnchair.search.PrimeSearchTrace.record("engine matchStart len=${query.length} strict=$drawerTypoMatching")
                 val appResults = appSearchProvider.search(
                     context, query, apps, if (primeMatching) Int.MAX_VALUE else null,
                     if (primeMatching) false else null,
