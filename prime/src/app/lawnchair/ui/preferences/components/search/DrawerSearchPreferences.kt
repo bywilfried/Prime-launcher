@@ -449,6 +449,15 @@ private fun DrawerAdvancedSearchPreferences() {
         var drawerTwoLines by remember {
             mutableStateOf(PrimeSearchResultPreferences.twoLineAppLabels(context, drawerSurface))
         }
+        var drawerRows by remember {
+            mutableStateOf(PrimeSearchResultPreferences.zeroStateRows(context, drawerSurface))
+        }
+        var drawerColumns by remember {
+            mutableStateOf(PrimeSearchResultPreferences.appsPerRow(context, drawerSurface))
+        }
+        var drawerIconPercent by remember {
+            mutableStateOf(PrimeSearchResultPreferences.iconSizePercent(context, drawerSurface))
+        }
         Text("Lignes au repos : $drawerRows")
         androidx.compose.material3.Slider(
             value = drawerRows.toFloat(),
