@@ -2749,6 +2749,34 @@ object PrimeSearchOverlay {
         activeDialog = dialog
         input.requestFocus()
         dialog.show()
+        // Ask Android for the IME immediately after attaching the search surface,
+        // before zero-state population, layout listeners or entrance animation.
+        // InsetsController is the modern request path; IMM supports older Android.
+        val autoKeyboard = PrimeSearchResultPreferences.autoShowKeyboard(launcher, preferenceSurface)
+        if (autoKeyboard) {
+            fun requestPrimeKeyboard() {
+                if (activeDialog !== dialog || !dialog.isShowing) return
+                input.requestFocus()
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                    input.windowInsetsController?.show(android.view.WindowInsets.Type.ime())
+                }
+                (launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                    .showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
+            }
+            if (input.isAttachedToWindow) {
+                requestPrimeKeyboard()
+            } else {
+                input.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                    override fun onViewAttachedToWindow(v: View) {
+                        input.removeOnAttachStateChangeListener(this)
+                        requestPrimeKeyboard()
+                    }
+                    override fun onViewDetachedFromWindow(v: View) {
+                        input.removeOnAttachStateChangeListener(this)
+                    }
+                })
+            }
+        }
         if (initialQuery.isNotBlank()) input.setText(initialQuery)
         if (floating) {
             val decor = dialog.decorView
@@ -2841,27 +2869,6 @@ object PrimeSearchOverlay {
         }.start()
         container.translationY = -120 * density
         container.animate().translationY(0f).setDuration(220).start()
-        // Request the IME as soon as the search field is attached, rather than
-        // waiting for the next posted UI task. Keep the existing Prime Search
-        // entrance animation and its 220 ms duration unchanged.
-        val keyboard = launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        if (!PrimeSearchResultPreferences.autoShowKeyboard(launcher, preferenceSurface)) {
-            // Keep the field usable: tapping it still opens the keyboard normally.
-        } else if (input.isAttachedToWindow) {
-            keyboard.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
-        } else {
-            input.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-                override fun onViewAttachedToWindow(v: View) {
-                    input.removeOnAttachStateChangeListener(this)
-                    if (activeDialog === dialog && dialog.isShowing) {
-                        keyboard.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
-                    }
-                }
-                override fun onViewDetachedFromWindow(v: View) {
-                    input.removeOnAttachStateChangeListener(this)
-                }
-            })
-        }
         zeroState.visibility = View.VISIBLE
         scroll.visibility = View.GONE
     }
