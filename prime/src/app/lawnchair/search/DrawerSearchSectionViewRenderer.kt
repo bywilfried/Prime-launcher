@@ -94,9 +94,10 @@ internal class DrawerSearchSectionViewRenderer(
                         child.setPrimeSearchLabelLayout(true)
                         child.setSingleLine(false)
                         child.setHorizontallyScrolling(false)
-                        child.maxLines = if (prefs.twoLineAppLabels(context, surface)) 2 else 1
+                        val labelLines = if (prefs.twoLineAppLabels(context, surface)) 2 else 1
+                        child.maxLines = labelLines
+                        child.ellipsize = if (labelLines == 2) null else android.text.TextUtils.TruncateAt.END
                         child.breakStrategy = android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY
-                        child.ellipsize = android.text.TextUtils.TruncateAt.END
                         child.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
                     }
                     row.addView(child, LinearLayout.LayoutParams(
