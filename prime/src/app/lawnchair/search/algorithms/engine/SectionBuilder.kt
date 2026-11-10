@@ -292,9 +292,24 @@ data object PrimeAppsAndShortcutsSectionBuilder : SectionBuilder {
     ): List<SearchTargetCompat> {
         val apps = results.filterIsInstance<SearchResult.App>()
         val shortcuts = results.filterIsInstance<SearchResult.Shortcut>()
-        val targets = apps.map { factory.createAppSearchTarget(it.data, asRow = false) }.toMutableList()
-        targets.addAll(shortcuts.map { factory.createShortcutTarget(it.data) })
-        targets.add(factory.createHeaderTarget(SPACE))
+        // Prime Search also needs a section header: the adapter's section
+        // transformer uses it to delimit application results. Without it,
+        // app tiles can disappear when another provider publishes its results.
+        val targets = mutableListOf<SearchTargetCompat>()
+        if (apps.isNotEmpty()) {
+            targets.add(factory.createHeaderTarget(
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS.title,
+            ))
+            targets.addAll(apps.map { factory.createAppSearchTarget(it.data, asRow = false) })
+            targets.add(factory.createHeaderTarget(SPACE))
+        }
+        if (shortcuts.isNotEmpty()) {
+            targets.add(factory.createHeaderTarget(
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS.title,
+            ))
+            targets.addAll(shortcuts.map { factory.createShortcutTarget(it.data) })
+            targets.add(factory.createHeaderTarget(SPACE))
+        }
         return targets
     }
 }
