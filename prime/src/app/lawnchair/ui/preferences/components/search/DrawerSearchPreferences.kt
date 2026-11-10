@@ -402,92 +402,9 @@ private fun DrawerAdvancedSearchPreferences() {
                 PrimeSearchResultPreferences.setAutoShowKeyboard(context, drawerAutoKeyboard, drawerSurface)
             },
         )
-        Text("Applications à l'ouverture")
-        var drawerOpeningTab by remember {
-            mutableStateOf(PrimeSearchResultPreferences.openingTab(context, drawerSurface))
-        }
-        var showDrawerOpeningTabs by remember { mutableStateOf(false) }
-        PreferenceTemplate(
-            title = { Text("Onglet affiché à l'ouverture") },
-            description = { Text(drawerOpeningTab.label) },
-            onClick = { showDrawerOpeningTabs = true },
-        )
-        if (showDrawerOpeningTabs) {
-            androidx.compose.material3.AlertDialog(
-                onDismissRequest = { showDrawerOpeningTabs = false },
-                title = { Text("Ouvrir le tiroir sur") },
-                text = {
-                    androidx.compose.foundation.layout.Column {
-                        PrimeSearchResultPreferences.OpeningTab.entries.forEach { option ->
-                            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                                androidx.compose.material3.RadioButton(
-                                    selected = drawerOpeningTab == option,
-                                    onClick = {
-                                        drawerOpeningTab = option
-                                        PrimeSearchResultPreferences.setOpeningTab(context, option, drawerSurface)
-                                        showDrawerOpeningTabs = false
-                                    },
-                                )
-                                androidx.compose.material3.TextButton(onClick = {
-                                    drawerOpeningTab = option
-                                    PrimeSearchResultPreferences.setOpeningTab(context, option, drawerSurface)
-                                    showDrawerOpeningTabs = false
-                                }) { Text(option.label) }
-                            }
-                        }
-                    }
-                },
-                confirmButton = {
-                    androidx.compose.material3.TextButton(onClick = { showDrawerOpeningTabs = false }) {
-                        Text("Fermer")
-                    }
-                },
-            )
-        }
-        // The drawer's application grid is configured in Applications.
-        // Keep only the search-card-specific label wrapping option here.
         var drawerTwoLines by remember {
             mutableStateOf(PrimeSearchResultPreferences.twoLineAppLabels(context, drawerSurface))
         }
-        var drawerRows by remember {
-            mutableStateOf(PrimeSearchResultPreferences.zeroStateRows(context, drawerSurface))
-        }
-        var drawerColumns by remember {
-            mutableStateOf(PrimeSearchResultPreferences.appsPerRow(context, drawerSurface))
-        }
-        var drawerIconPercent by remember {
-            mutableStateOf(PrimeSearchResultPreferences.iconSizePercent(context, drawerSurface))
-        }
-        Text("Lignes au repos : $drawerRows")
-        androidx.compose.material3.Slider(
-            value = drawerRows.toFloat(),
-            onValueChange = {
-                drawerRows = it.toInt().coerceIn(1, 2)
-                PrimeSearchResultPreferences.setZeroStateRows(context, drawerRows, drawerSurface)
-            },
-            valueRange = 1f..2f,
-            steps = 0,
-        )
-        Text("Colonnes : $drawerColumns")
-        androidx.compose.material3.Slider(
-            value = drawerColumns.toFloat(),
-            onValueChange = {
-                drawerColumns = it.toInt().coerceIn(3, 6)
-                PrimeSearchResultPreferences.setAppsPerRow(context, drawerColumns, drawerSurface)
-            },
-            valueRange = 3f..6f,
-            steps = 2,
-        )
-        Text("Taille des icônes : $drawerIconPercent %")
-        androidx.compose.material3.Slider(
-            value = drawerIconPercent.toFloat(),
-            onValueChange = {
-                drawerIconPercent = it.toInt().coerceIn(60, 150)
-                PrimeSearchResultPreferences.setIconSizePercent(context, drawerIconPercent, drawerSurface)
-            },
-            valueRange = 60f..150f,
-            steps = 8,
-        )
         PreferenceTemplate(
             title = { Text("Libellés sur deux lignes") },
             endWidget = {
