@@ -259,6 +259,7 @@ internal class DrawerSearchCategoryPageRenderer(
                     maxLines = appLabelLines
                     ellipsize = if (appLabelLines == 2) null else android.text.TextUtils.TruncateAt.END
                     breakStrategy = android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY
+                    applyDrawerLabelWrapping(this, appLabelLines)
                 }
                 row!!.addView(resultView, android.widget.LinearLayout.LayoutParams(
                     cellWidth, appRowHeight,
@@ -481,6 +482,7 @@ internal class DrawerSearchCategoryPageRenderer(
                     setHorizontallyScrolling(false)
                     maxLines = appLabelLines
                     ellipsize = if (appLabelLines == 2) null else android.text.TextUtils.TruncateAt.END
+                    applyDrawerLabelWrapping(this, appLabelLines)
                 }
             } else if (item.searchTarget.layoutType != LayoutType.ICON_SINGLE_VERTICAL_TEXT) {
                 val category = DrawerSearchCategoryPresentation.categoryForResultType(item.searchTarget.resultType)
