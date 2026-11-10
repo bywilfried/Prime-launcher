@@ -51,7 +51,7 @@ object AppSearchProvider {
         // apps that don't match all of the words in the query.
         val matcher = StringMatcherUtility.StringMatcher.getInstance()
         return apps.asSequence()
-            .filter { StringMatcherUtility.matches(query, stripDiacritics(it.title.toString()), matcher) }
+            .filter { prepared(it).normalized.contains(query) || StringMatcherUtility.matches(query, stripDiacritics(it.title.toString()), matcher) }
             .filterHiddenApps(query, hiddenApps, hiddenAppsInSearch)
             .take(maxResultsCount)
             .toList()
@@ -65,10 +65,11 @@ object AppSearchProvider {
         return filteredApps
             .mapNotNull { app ->
                 val matchResult = AppMatcher.match(stripDiacritics(app.title.toString()), query)
-                if (matchResult.type == MatchType.NO_MATCH) null else Pair(app, matchResult)
+                if (matchResult.type == MatchType.NO_MATCH && !prepared(app).normalized.contains(query)) null else Pair(app, matchResult)
             }
             .sortedWith(
                 compareBy(
+                    { if (prepared(it.first).normalized.contains(query)) 0 else 1 },
                     { it.second.type.priority },
                     { -it.second.score },
                 ),
@@ -86,7 +87,6 @@ object AppSearchProvider {
         hiddenApps: Set<String>,
         hiddenAppsInSearch: String,
     ): List<AppInfo> {
-        val matcher = StringMatcherUtility.StringMatcher.getInstance()
         val needle = query.trim()
         if (needle.isEmpty()) return emptyList()
         val allowedEdits = when {
@@ -99,17 +99,22 @@ object AppSearchProvider {
             .mapNotNull { app ->
                 val preparedName = prepared(app)
                 val name = preparedName.normalized
-                if (StringMatcherUtility.matches(needle, name, matcher)) {
+                if (name.contains(needle)) {
+                    // Exact substring wins, even in the middle of a word.
                     app to 0
                 } else if (allowedEdits > 0) {
-                    val words = preparedName.words
-                    val distance = words.minOfOrNull { word ->
-                        if (kotlin.math.abs(word.length - needle.length) > allowedEdits ||
-                            !sharesEnoughCharacters(word, needle, allowedEdits)) {
-                            allowedEdits + 1
-                        } else {
-                            editDistanceWithin(word, needle, allowedEdits)
-                        }
+                    // Compare with substrings, not only entire words: "appp"
+                    // should match the "app" in "App Lock".
+                    val distance = preparedName.words.minOfOrNull { word ->
+                        val lengths = ((needle.length - allowedEdits).coerceAtLeast(1))..(needle.length + allowedEdits)
+                        lengths.minOfOrNull { length ->
+                            if (length > word.length) allowedEdits + 1 else
+                                (0..word.length - length).minOf { offset ->
+                                    val segment = word.substring(offset, offset + length)
+                                    if (!sharesEnoughCharacters(segment, needle, allowedEdits)) allowedEdits + 1
+                                    else editDistanceWithin(segment, needle, allowedEdits)
+                                }
+                        } ?: (allowedEdits + 1)
                     } ?: (allowedEdits + 1)
                     if (distance <= allowedEdits) app to distance else null
                 } else null
