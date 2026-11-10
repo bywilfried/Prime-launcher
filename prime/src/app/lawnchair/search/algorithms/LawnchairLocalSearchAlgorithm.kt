@@ -34,6 +34,7 @@ import app.lawnchair.search.algorithms.engine.provider.ShortcutSearchProvider
 import app.lawnchair.search.algorithms.engine.provider.apps.AppSearchProvider
 import app.lawnchair.search.algorithms.engine.provider.web.CustomWebSearchProvider
 import app.lawnchair.search.algorithms.engine.provider.web.WebSuggestionProvider
+import com.android.launcher3.model.AllAppsList
 import com.android.launcher3.LauncherAppState
 import com.android.launcher3.R
 import com.android.launcher3.allapps.BaseAllAppsAdapter
@@ -66,6 +67,7 @@ class LawnchairLocalSearchAlgorithm(
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var currentJob: Job? = null
     private var modelRetryJob: Job? = null
+    @Volatile private var lastLoadedApps: AllAppsList? = null
     @Volatile private var searchGeneration = 0L
     private var lastQuery: String? = null
     private var lastCallback: SearchCallback<BaseAllAppsAdapter.AdapterItem>? = null
@@ -105,9 +107,9 @@ class LawnchairLocalSearchAlgorithm(
         modelRetryJob?.cancel()
         currentJob?.cancel()
         app.lawnchair.search.PrimeSearchTrace.record("engine awaitingModel len=${query.length} generation=$generation")
-        modelRetryJob = appState.model.runWhenModelLoaded(coroutineScope) { apps ->
+        val searchWithApps: (AllAppsList) -> Unit = searchWithApps@{ apps ->
             app.lawnchair.search.PrimeSearchTrace.record("engine modelReady len=${query.length} generation=$generation current=$searchGeneration apps=${apps.data.size}")
-            if (generation != searchGeneration) return@runWhenModelLoaded
+            if (generation != searchGeneration) return@searchWithApps
             // Querying published shortcuts can be expensive. Keep it off the
             // model/UI callback thread so typing remains responsive.
             currentJob?.cancel()
@@ -307,6 +309,22 @@ class LawnchairLocalSearchAlgorithm(
                         app.lawnchair.search.PrimeSearchTrace.record("engine deliver len=${query.length} items=${snapshot.size} generation=$generation")
                         lastCallback?.onSearchResult(query, ArrayList(snapshot))
                     }
+                }
+            }
+        }
+        // runWhenModelLoaded can stop invoking callbacks after its previous
+        // registration is cancelled. Prime Search already received a loaded
+        // app model for this overlay session, so reuse it for subsequent keystrokes.
+        // This also avoids dropping a query while a new model callback is pending.
+        val cachedApps = if (primeSearch) lastLoadedApps else null
+        if (cachedApps != null) {
+            app.lawnchair.search.PrimeSearchTrace.record("engine reuseModel len=${query.length} apps=${cachedApps.data.size}")
+            searchWithApps(cachedApps)
+        } else {
+            modelRetryJob = appState.model.runWhenModelLoaded(coroutineScope) { apps ->
+                if (generation == searchGeneration) {
+                    if (primeSearch) lastLoadedApps = apps
+                    searchWithApps(apps)
                 }
             }
         }
