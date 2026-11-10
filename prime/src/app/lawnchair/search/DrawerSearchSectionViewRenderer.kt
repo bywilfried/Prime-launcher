@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.widget.addTextChangedListener
 import app.lawnchair.allapps.views.SearchResultIcon
 import app.lawnchair.allapps.views.SearchResultView
 import app.lawnchair.prime.search.PrimeAppGridGeometry
@@ -15,24 +16,29 @@ import app.lawnchair.search.adapter.SearchAdapterItem
 import com.android.app.search.LayoutType
 import com.android.launcher3.R
 
-/** Force a visible line break for drawer app tiles whose launcher text layout stays single-line. */
-internal fun applyDrawerLabelWrapping(view: SearchResultIcon, lines: Int) {
-    if (lines < 2) return
-    val original = view.text?.toString().orEmpty()
-    if (original.isBlank()) return
-    view.post {
-        if (!view.isAttachedToWindow) return@post
-        val available = view.width - view.paddingLeft - view.paddingRight
-        if (available <= 0 || view.paint.measureText(original) <= available) return@post
-        val fit = view.paint.breakText(original, true, available.toFloat(), null)
-            .coerceIn(1, original.length - 1)
-        val whitespace = original.lastIndexOf(' ', fit)
-        val split = if (whitespace > 0) whitespace else fit
-        val first = original.substring(0, split).trimEnd()
-        val second = original.substring(if (whitespace > 0) split + 1 else split).trimStart()
-        if (first.isNotEmpty() && second.isNotEmpty()) {
-            view.text = first + "\n" + second
-        }
+/** Native launcher icon labels are painted as one line; use a drawer-owned TextView for two lines. */
+internal fun drawerAppTileView(icon: SearchResultIcon, lines: Int): View {
+    if (lines < 2) return icon
+    val context = icon.context
+    val density = context.resources.displayMetrics.density
+    val label = TextView(context).apply {
+        gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+        textSize = PrimeAppGridGeometry.LABEL_SP
+        setTextColor(icon.currentTextColor)
+        maxLines = 2
+        setSingleLine(false)
+        setHorizontallyScrolling(false)
+        ellipsize = android.text.TextUtils.TruncateAt.END
+        includeFontPadding = false
+        breakStrategy = android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY
+        text = icon.text
+        setPadding((2 * density).toInt(), 0, (2 * density).toInt(), 0)
+    }
+    icon.addTextChangedListener(afterTextChanged = { label.text = it?.toString().orEmpty() })
+    icon.setTextVisibility(false)
+    return android.widget.FrameLayout(context).apply {
+        addView(icon, android.widget.FrameLayout.LayoutParams(-1, -1))
+        addView(label, android.widget.FrameLayout.LayoutParams(-1, (42 * density).toInt(), Gravity.BOTTOM))
     }
 }
 
@@ -120,9 +126,8 @@ internal class DrawerSearchSectionViewRenderer(
                         child.ellipsize = if (labelLines == 2) null else android.text.TextUtils.TruncateAt.END
                         child.breakStrategy = android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY
                         child.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-                        applyDrawerLabelWrapping(child, labelLines)
                     }
-                    row.addView(child, LinearLayout.LayoutParams(
+                    row.addView(if (child is SearchResultIcon) drawerAppTileView(child, if (prefs.twoLineAppLabels(context, surface)) 2 else 1) else child, LinearLayout.LayoutParams(
                         0,
                         PrimeAppGridGeometry.rowHeightPx(
                             context, prefs.appResultsIconSizePercent(context, surface),
