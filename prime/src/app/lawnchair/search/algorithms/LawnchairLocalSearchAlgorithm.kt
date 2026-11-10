@@ -118,12 +118,27 @@ class LawnchairLocalSearchAlgorithm(
                     if (primeMatching) false else null,
                     strictTypos = drawerTypoMatching,
                 )
-                app.lawnchair.search.PrimeSearchTrace.record("engine appMatch len=${query.length} count=${appResults.size} ms=${SystemClock.elapsedRealtime() - appSearchStarted}")
+                // Prime and drawer must agree on literal substring matches.
+                // If the strict typo pass unexpectedly returns no applications,
+                // retry with the normal contains-based matcher before publishing
+                // an empty app section. This preserves typo tolerance when it
+                // succeeds and never replaces its ranked matches.
+                val resolvedAppResults = if (primeMatching && appResults.isEmpty() && query.isNotBlank()) {
+                    appSearchProvider.search(
+                        context, query, apps, Int.MAX_VALUE, false,
+                        strictTypos = false,
+                    ).also { fallback ->
+                        app.lawnchair.search.PrimeSearchTrace.record(
+                            "engine appFallback len=${query.length} count=${fallback.size} prime=$primeSearch"
+                        )
+                    }
+                } else appResults
+                app.lawnchair.search.PrimeSearchTrace.record("engine appMatch len=${query.length} count=${resolvedAppResults.size} ms=${SystemClock.elapsedRealtime() - appSearchStarted}")
                 if (generation != searchGeneration) return@launch
                 // Deliver apps independently of slower contacts, shortcuts, files
                 // and network providers. A provider that stalls cannot hide apps.
-                if (primeMatching && appResults.isNotEmpty()) {
-                    val appTargets = translateToSearchTargets(appResults)
+                if (primeMatching && resolvedAppResults.isNotEmpty()) {
+                    val appTargets = translateToSearchTargets(resolvedAppResults)
                     setFirstItemQuickLaunch(appTargets)
                     val appItems = drawerSectionItems(transformSearchResults(appTargets))
                     withContext(Dispatchers.Main) {
@@ -139,9 +154,9 @@ class LawnchairLocalSearchAlgorithm(
                 val shortcutResultsFlow = flow {
                     emit(emptyList<SearchResult.Shortcut>())
                     val shortcuts = if (primeMatching) {
-                        shortcutSearchProvider.searchForPrime(context, query, apps.data, appResults)
+                        shortcutSearchProvider.searchForPrime(context, query, apps.data, resolvedAppResults)
                     } else {
-                        shortcutSearchProvider.search(context, appResults)
+                        shortcutSearchProvider.search(context, resolvedAppResults)
                     }
                     emit(shortcuts)
                 }.flowOn(Dispatchers.IO)
@@ -192,7 +207,7 @@ class LawnchairLocalSearchAlgorithm(
                             }
                         } else emptyList()
                     }
-                    val allResults = appResults + shortcutResults + (calcResult ?: emptyList()) + nonAppResults + actions + drawerWebActions
+                    val allResults = resolvedAppResults + shortcutResults + (calcResult ?: emptyList()) + nonAppResults + actions + drawerWebActions
 
                     val drawerEntries = if (primeSearch || query.isBlank()) emptyList() else {
                         val preferences = app.lawnchair.prime.search.PrimeSearchResultPreferences
