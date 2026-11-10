@@ -63,6 +63,7 @@ enum class QsbIconId {
     MIC,
     LENS,
     CLEAR,
+    SETTINGS,
 }
 
 /**
