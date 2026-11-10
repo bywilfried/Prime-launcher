@@ -134,6 +134,8 @@ class LawnchairLocalSearchAlgorithm(
                     }
                 } else appResults
                 app.lawnchair.search.PrimeSearchTrace.record("engine appMatch len=${query.length} count=${resolvedAppResults.size} ms=${SystemClock.elapsedRealtime() - appSearchStarted}")
+                if (primeSearch) android.util.Log.d("PrimeSearchDiagnosis",
+                    "engine queryLength=${query.length} modelApps=${apps.data.size} matches=${resolvedAppResults.size} strict=$drawerTypoMatching")
                 if (generation != searchGeneration) return@launch
                 // Deliver apps independently of slower contacts, shortcuts, files
                 // and network providers. A provider that stalls cannot hide apps.
@@ -289,6 +291,8 @@ class LawnchairLocalSearchAlgorithm(
                     val searchTargets = translateToSearchTargets(resultsForSurface)
                     setFirstItemQuickLaunch(searchTargets)
                     val adapterItems = drawerSectionItems(transformSearchResults(searchTargets))
+                    if (primeSearch) android.util.Log.d("PrimeSearchDiagnosis",
+                        "translated targets=${searchTargets.size} appTargets=${searchTargets.count { it.resultType == SearchTargetCompat.RESULT_TYPE_APPLICATION }} adapterItems=${adapterItems.size}")
                     app.lawnchair.search.PrimeSearchTrace.record("engine transform len=${query.length} items=${adapterItems.size} ms=${SystemClock.elapsedRealtime() - updateStarted}")
                     withContext(Dispatchers.Main) {
                         if (generation != searchGeneration) return@withContext
