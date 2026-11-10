@@ -46,6 +46,18 @@ object AppSearchProvider {
         return appResults.map { SearchResult.App(data = it) }
     }
 
+    // Shared relevance order for Prime Search and drawer search.
+    // Beginning of title > beginning of another word > substring > typo.
+    private fun relevance(app: AppInfo, query: String): Int {
+        val name = prepared(app)
+        return when {
+            name.normalized.startsWith(query) -> 0
+            name.words.any { it.startsWith(query) } -> 1
+            name.normalized.contains(query) -> 2
+            else -> 3
+        }
+    }
+
     private fun normalSearch(apps: List<AppInfo>, query: String, maxResultsCount: Int, hiddenApps: Set<String>, hiddenAppsInSearch: String): List<AppInfo> {
         // Do an intersection of the words in the query and each title, and filter out all the
         // apps that don't match all of the words in the query.
@@ -53,6 +65,7 @@ object AppSearchProvider {
         return apps.asSequence()
             .filter { prepared(it).normalized.contains(query) || StringMatcherUtility.matches(query, stripDiacritics(it.title.toString()), matcher) }
             .filterHiddenApps(query, hiddenApps, hiddenAppsInSearch)
+            .sortedWith(compareBy<AppInfo> { relevance(it, query) }.thenBy { prepared(it).normalized })
             .take(maxResultsCount)
             .toList()
     }
@@ -69,7 +82,7 @@ object AppSearchProvider {
             }
             .sortedWith(
                 compareBy(
-                    { if (prepared(it.first).normalized.contains(query)) 0 else 1 },
+                    { relevance(it.first, query) },
                     { it.second.type.priority },
                     { -it.second.score },
                 ),
@@ -119,7 +132,9 @@ object AppSearchProvider {
                     if (distance <= allowedEdits) app to distance else null
                 } else null
             }
-            .sortedBy { it.second }
+            .sortedWith(compareBy<Pair<AppInfo, Int>> { relevance(it.first, needle) }
+                .thenBy { it.second }
+                .thenBy { prepared(it.first).normalized })
             .map { it.first }
             .take(maxResults)
             .toList()
