@@ -220,9 +220,9 @@ object PrimeSearchOverlay {
         icon.setOnTouchListener { _, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    // Let the app icon own the complete tap immediately.
-                    // The parent ScrollView must not steal the first gesture.
-                    icon.parent?.requestDisallowInterceptTouchEvent(true)
+                    // Allow the parent ScrollView to intercept a vertical swipe.
+                    // Only a confirmed long press should lock touch interception
+                    // for the native popup/drag gesture.
                     onTouchActive(true)
                     pressed = false
                     dragging = false
@@ -2405,7 +2405,8 @@ object PrimeSearchOverlay {
                             cell.setOnTouchListener { _, event ->
                                 if (event.actionMasked == MotionEvent.ACTION_DOWN) {
                                     appTouchInProgress = true
-                                    cell.parent?.requestDisallowInterceptTouchEvent(true)
+                                    // Do not block the parent ScrollView on ACTION_DOWN.
+                                    // A vertical swipe starting on an app tile must scroll.
                                 } else if (event.actionMasked == MotionEvent.ACTION_UP ||
                                     event.actionMasked == MotionEvent.ACTION_CANCEL) {
                                     appTouchInProgress = false
@@ -2660,7 +2661,8 @@ object PrimeSearchOverlay {
                                         when (event.actionMasked) {
                                             MotionEvent.ACTION_DOWN -> {
                                                 appTouchInProgress = true
-                                                parent.requestDisallowInterceptTouchEvent(true)
+                                                // Keep vertical scrolling available from app cells.
+                                                // Long-press popup handling locks interception separately.
                                             }
                                             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
                                                 appTouchInProgress = false
