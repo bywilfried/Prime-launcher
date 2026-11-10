@@ -228,7 +228,7 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
                     endIcons = if (queryEmpty) {
                         listOf(QsbIconState(
                             id = QsbIconId.SETTINGS,
-                            resId = android.R.drawable.ic_menu_preferences,
+                            resId = R.drawable.ic_prime_search_settings_outline,
                             themed = true,
                             method = ThemingMethod.TINT,
                             contentDescription = "Paramètres de recherche du tiroir",
