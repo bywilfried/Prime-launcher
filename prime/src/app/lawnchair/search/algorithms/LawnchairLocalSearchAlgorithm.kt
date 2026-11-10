@@ -397,7 +397,20 @@ class LawnchairLocalSearchAlgorithm(
         if (primeSearch || items.isEmpty()) return items
         val searchItems = items.mapNotNull { it as? app.lawnchair.search.adapter.SearchAdapterItem }
         if (searchItems.size != items.size) return items
+        // Section builders emit their own fixed order. Apply the drawer's saved
+        // category order after grouping so the visible cards match preferences.
+        val priorities = PrimeSearchResultPreferences.order(context, PrimeSearchResultPreferences.Surface.DRAWER)
+            .withIndex().associate { it.value to it.index }
         return app.lawnchair.search.DrawerSearchSectionAdapterItem.group(searchItems)
+            .withIndex()
+            .sortedWith(compareBy(
+                { indexed ->
+                    (indexed.value as? app.lawnchair.search.DrawerSearchSectionAdapterItem)
+                        ?.category?.let { priorities[it] } ?: Int.MAX_VALUE
+                },
+                { it.index },
+            ))
+            .map { it.value }
     }
 
     private fun translateToSearchTargets(
