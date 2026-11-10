@@ -1916,6 +1916,10 @@ object PrimeSearchOverlay {
                 val appSlots = filteredNativeItems.filter {
                     nativeCategoryFor(it) == appCategory
                 }
+                android.util.Log.d("PrimeSearchDiagnosis",
+                    "overlay queryLength=${query.length} incoming=${incoming.size} " +
+                    "rawApps=${incoming.count { nativeCategoryFor(it) == appCategory }} " +
+                    "filteredApps=${appSlots.size} enabled=${PrimeSearchResultPreferences.enabled(launcher, appCategory, preferenceSurface)}")
                 val normalizedQuery = java.text.Normalizer.normalize(
                     query.trim(), java.text.Normalizer.Form.NFD,
                 ).replace(Regex("\\p{M}+"), "").lowercase(java.util.Locale.ROOT)
