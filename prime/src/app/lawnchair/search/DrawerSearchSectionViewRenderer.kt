@@ -99,6 +99,7 @@ internal class DrawerSearchSectionViewRenderer(
                         child.ellipsize = if (labelLines == 2) null else android.text.TextUtils.TruncateAt.END
                         child.breakStrategy = android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY
                         child.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                        applyDrawerLabelWrapping(child, labelLines)
                     }
                     row.addView(child, LinearLayout.LayoutParams(
                         0,
