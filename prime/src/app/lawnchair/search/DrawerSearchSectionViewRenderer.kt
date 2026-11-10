@@ -38,7 +38,16 @@ internal fun drawerAppTileView(icon: SearchResultIcon, lines: Int): View {
     icon.setTextVisibility(false)
     return android.widget.FrameLayout(context).apply {
         addView(icon, android.widget.FrameLayout.LayoutParams(-1, -1))
-        addView(label, android.widget.FrameLayout.LayoutParams(-1, (42 * density).toInt(), Gravity.BOTTOM))
+        // Anchor the label below the icon, not to the bottom of the whole cell.
+        // The previous BOTTOM gravity placed text on top of the drawable.
+        val iconTop = (PrimeAppGridGeometry.TOP_DP * density).toInt()
+        val iconHeight = icon.compoundDrawablesRelative[1]?.bounds?.height()
+            ?.takeIf { it > 0 } ?: PrimeAppGridGeometry.iconPx(context, 100)
+        val labelTop = iconTop + iconHeight +
+            (PrimeAppGridGeometry.ICON_LABEL_GAP_DP * density).toInt()
+        addView(label, android.widget.FrameLayout.LayoutParams(
+            -1, PrimeAppGridGeometry.labelHeightPx(context, lines), Gravity.TOP,
+        ).apply { topMargin = labelTop })
     }
 }
 
