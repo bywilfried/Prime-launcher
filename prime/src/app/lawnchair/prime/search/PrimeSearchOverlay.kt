@@ -1808,6 +1808,9 @@ object PrimeSearchOverlay {
                     return
                 }
                 val incoming = items.orEmpty().filterIsInstance<SearchAdapterItem>()
+                app.lawnchair.search.PrimeSearchTrace.record(
+                    "overlay callback len=${query.length} incoming=${incoming.size} apps=${incoming.count { it.searchTarget.resultType == SearchTargetCompat.RESULT_TYPE_APPLICATION }}"
+                )
                 // Some providers publish an intermediate partial/empty snapshot.
                 // Do not erase a visible app grid for the unchanged query.
                 val hasApps = incoming.any {
@@ -1823,7 +1826,10 @@ object PrimeSearchOverlay {
                     val target = (adapterItem as? SearchAdapterItem)?.searchTarget
                     if (target != null) "${target.resultType}:${target.layoutType}:${target.id}" else adapterItem.toString()
                 }
-                if (lastNativeRenderQuery == query && lastNativeRenderSignature == signature) return
+                if (lastNativeRenderQuery == query && lastNativeRenderSignature == signature) {
+                    app.lawnchair.search.PrimeSearchTrace.record("overlay skip duplicate len=${query.length}")
+                    return
+                }
                 lastNativeRenderQuery = query
                 lastNativeRenderSignature = signature
                 // Build the replacement sections before detaching the visible
@@ -1916,10 +1922,11 @@ object PrimeSearchOverlay {
                 val appSlots = filteredNativeItems.filter {
                     nativeCategoryFor(it) == appCategory
                 }
-                android.util.Log.d("PrimeSearchDiagnosis",
+                app.lawnchair.search.PrimeSearchTrace.record(
                     "overlay queryLength=${query.length} incoming=${incoming.size} " +
                     "rawApps=${incoming.count { nativeCategoryFor(it) == appCategory }} " +
-                    "filteredApps=${appSlots.size} enabled=${PrimeSearchResultPreferences.enabled(launcher, appCategory, preferenceSurface)}")
+                    "filteredApps=${appSlots.size} enabled=${PrimeSearchResultPreferences.enabled(launcher, appCategory, preferenceSurface)}"
+                )
                 val normalizedQuery = java.text.Normalizer.normalize(
                     query.trim(), java.text.Normalizer.Form.NFD,
                 ).replace(Regex("\\p{M}+"), "").lowercase(java.util.Locale.ROOT)
