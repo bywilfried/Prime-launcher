@@ -481,7 +481,6 @@ internal class DrawerSearchCategoryPageRenderer(
                     setHorizontallyScrolling(false)
                     maxLines = appLabelLines
                     ellipsize = if (appLabelLines == 2) null else android.text.TextUtils.TruncateAt.END
-                    applyDrawerLabelWrapping(this, appLabelLines)
                 }
             } else if (item.searchTarget.layoutType != LayoutType.ICON_SINGLE_VERTICAL_TEXT) {
                 val category = DrawerSearchCategoryPresentation.categoryForResultType(item.searchTarget.resultType)
