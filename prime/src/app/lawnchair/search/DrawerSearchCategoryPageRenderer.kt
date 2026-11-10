@@ -259,9 +259,8 @@ internal class DrawerSearchCategoryPageRenderer(
                     maxLines = appLabelLines
                     ellipsize = if (appLabelLines == 2) null else android.text.TextUtils.TruncateAt.END
                     breakStrategy = android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY
-                    applyDrawerLabelWrapping(this, appLabelLines)
                 }
-                row!!.addView(resultView, android.widget.LinearLayout.LayoutParams(
+                row!!.addView(if (resultView is app.lawnchair.allapps.views.SearchResultIcon) drawerAppTileView(resultView, appLabelLines) else resultView, android.widget.LinearLayout.LayoutParams(
                     cellWidth, appRowHeight,
                 ))
                 inRow++
