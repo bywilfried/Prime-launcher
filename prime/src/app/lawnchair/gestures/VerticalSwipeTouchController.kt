@@ -37,6 +37,7 @@ class VerticalSwipeTouchController(
     private var currentDisplacement = 0f
 
     private var pointerCount = 0
+    private var maxPointerCount = 0
     private var triggered = false
 
     init {
@@ -59,6 +60,10 @@ class VerticalSwipeTouchController(
 
     override fun onControllerInterceptTouchEvent(ev: MotionEvent): Boolean {
         if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
+            maxPointerCount = 1
+            currentMillis = 0L
+            currentVelocity = 0f
+            currentDisplacement = 0f
             noIntercept = !canInterceptTouch(ev)
             if (noIntercept) {
                 return false
@@ -75,6 +80,7 @@ class VerticalSwipeTouchController(
     override fun onControllerTouchEvent(ev: MotionEvent): Boolean {
         // We don't need to check when the pointer count changes during a swipe
         pointerCount = ev.pointerCount
+        maxPointerCount = maxOf(maxPointerCount, ev.pointerCount)
         return detector.onTouchEvent(ev)
     }
 
@@ -128,17 +134,25 @@ class VerticalSwipeTouchController(
 
     override fun onDragStart(start: Boolean) {
         triggered = false
+        currentMillis = 0L
+        currentVelocity = 0f
+        currentDisplacement = 0f
     }
 
     override fun onDrag(displacement: PointF, motionEvent: MotionEvent): Boolean {
         if (triggered) return true
+        maxPointerCount = maxOf(maxPointerCount, motionEvent.pointerCount)
         val velocity = computeVelocity(displacement.y - currentDisplacement, motionEvent.eventTime)
-        if (velocity.absoluteValue > TRIGGER_VELOCITY) {
+        currentDisplacement = displacement.y
+        // Fast flicks may deliver very few MOVE samples. Accept distance as well as speed.
+        if (velocity.absoluteValue > TRIGGER_VELOCITY ||
+            displacement.y.absoluteValue > 36f * launcher.resources.displayMetrics.density
+        ) {
             triggered = true
-            if (velocity < 0) {
-                if (pointerCount == 1) {
+            if (displacement.y < 0) {
+                if (maxPointerCount == 1) {
                     gestureController.onSwipeUp()
-                } else if (pointerCount == 2) {
+                } else if (maxPointerCount == 2) {
                     gestureController.onTwoFingerSwipeUp()
                 }
             } else {
