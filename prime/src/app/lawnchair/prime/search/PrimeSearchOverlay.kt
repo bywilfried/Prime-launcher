@@ -2747,36 +2747,35 @@ object PrimeSearchOverlay {
             override fun afterTextChanged(s: Editable?) = Unit
         })
         activeDialog = dialog
+        val autoKeyboard = PrimeSearchResultPreferences.autoShowKeyboard(launcher, preferenceSurface)
+        // Register before mounting Prime Search. The IME request can then run
+        // synchronously when the editor joins the launcher's existing window,
+        // rather than waiting until after dialog.show() returns.
+        val keyboard = launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        fun requestPrimeKeyboard() {
+            if (!autoKeyboard || activeDialog !== dialog || !dialog.isShowing) return
+            input.requestFocus()
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                input.windowInsetsController?.show(android.view.WindowInsets.Type.ime())
+            }
+            keyboard.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
+        }
+        if (autoKeyboard) {
+            input.isFocusableInTouchMode = true
+            input.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: View) {
+                    input.removeOnAttachStateChangeListener(this)
+                    requestPrimeKeyboard()
+                }
+                override fun onViewDetachedFromWindow(v: View) {
+                    input.removeOnAttachStateChangeListener(this)
+                }
+            })
+        }
         input.requestFocus()
         dialog.show()
-        // Ask Android for the IME immediately after attaching the search surface,
-        // before zero-state population, layout listeners or entrance animation.
-        // InsetsController is the modern request path; IMM supports older Android.
-        val autoKeyboard = PrimeSearchResultPreferences.autoShowKeyboard(launcher, preferenceSurface)
-        if (autoKeyboard) {
-            fun requestPrimeKeyboard() {
-                if (activeDialog !== dialog || !dialog.isShowing) return
-                input.requestFocus()
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                    input.windowInsetsController?.show(android.view.WindowInsets.Type.ime())
-                }
-                (launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
-                    .showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
-            }
-            if (input.isAttachedToWindow) {
-                requestPrimeKeyboard()
-            } else {
-                input.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-                    override fun onViewAttachedToWindow(v: View) {
-                        input.removeOnAttachStateChangeListener(this)
-                        requestPrimeKeyboard()
-                    }
-                    override fun onViewDetachedFromWindow(v: View) {
-                        input.removeOnAttachStateChangeListener(this)
-                    }
-                })
-            }
-        }
+        // Covers embedded hosts where the input may already be attached.
+        if (autoKeyboard && input.isAttachedToWindow) requestPrimeKeyboard()
         if (initialQuery.isNotBlank()) input.setText(initialQuery)
         if (floating) {
             val decor = dialog.decorView
