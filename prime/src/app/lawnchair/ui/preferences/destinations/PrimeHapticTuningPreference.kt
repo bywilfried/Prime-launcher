@@ -22,6 +22,7 @@ fun PrimeHapticTuningPreference() {
     val sliders = listOf(
         prefs.primeHapticWorkspaceLongPress, prefs.primeHapticDragStart,
         prefs.primeHapticIconDrag, prefs.primeHapticNotificationGesture,
+        prefs.primeHapticGestures,
         prefs.primeHapticDrawerThreshold,
         prefs.primeHapticDrawerTap, prefs.primeHapticReorderStart,
         prefs.primeHapticReorderMove, prefs.primeHapticReorderEnd,
@@ -94,6 +95,9 @@ fun PrimeHapticTuningPreference() {
             HapticSlider(stringResource(R.string.prime_haptic_drag_start), prefs.primeHapticDragStart)
             HapticSlider(stringResource(R.string.prime_haptic_icon_drag), prefs.primeHapticIconDrag)
         }
+        PreferenceGroup(heading = stringResource(R.string.prime_haptic_gestures_group)) {
+            HapticSlider(stringResource(R.string.prime_haptic_gestures), prefs.primeHapticGestures)
+        }
         PreferenceGroup(heading = stringResource(R.string.prime_haptic_notifications_group)) {
             HapticSlider(stringResource(R.string.prime_haptic_notification_gesture), prefs.primeHapticNotificationGesture)
         }
@@ -121,6 +125,7 @@ fun PrimeHapticTuningPreference() {
                     prefs.primeHapticDragStart.set(100)
                     prefs.primeHapticIconDrag.set(100)
                     prefs.primeHapticNotificationGesture.set(100)
+                    prefs.primeHapticGestures.set(100)
                     prefs.primeHapticDrawerThreshold.set(100)
                     prefs.primeHapticDrawerTap.set(100)
                     prefs.primeHapticReorderStart.set(100)
