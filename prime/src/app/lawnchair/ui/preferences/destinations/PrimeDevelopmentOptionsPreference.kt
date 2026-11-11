@@ -38,7 +38,6 @@ fun PrimeDevelopmentOptionsPreference() {
     var showSearchDiagnostic by remember { mutableStateOf(false) }
     var searchLog by remember { mutableStateOf("") }
     var searchTraceEnabled by remember { mutableStateOf(app.lawnchair.search.PrimeSearchTrace.enabled) }
-    var keyboardTimingEnabled by remember { mutableStateOf(app.lawnchair.search.PrimeSearchTrace.keyboardTimingEnabled) }
     var showPopupDiagnostic by remember { mutableStateOf(false) }
     var popupLog by remember { mutableStateOf("") }
     PreferenceLayout(
@@ -127,14 +126,6 @@ fun PrimeDevelopmentOptionsPreference() {
                         },
                     )
                     Text(if (searchTraceEnabled) "Capture activée" else "Capture désactivée")
-                    androidx.compose.material3.Switch(
-                        checked = keyboardTimingEnabled,
-                        onCheckedChange = {
-                            keyboardTimingEnabled = it
-                            app.lawnchair.search.PrimeSearchTrace.keyboardTimingEnabled = it
-                        },
-                    )
-                    Text("Mesurer le délai d'ouverture du clavier")
                     TextButton(onClick = { searchLog = app.lawnchair.search.PrimeSearchTrace.dump() }) {
                         Text("Actualiser")
                     }
