@@ -3,7 +3,6 @@ package app.lawnchair.ui.preferences.destinations
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
-import app.lawnchair.preferences.getAdapter
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import app.lawnchair.gestures.handlers.SleepMode
