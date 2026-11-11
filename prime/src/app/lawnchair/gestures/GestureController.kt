@@ -45,6 +45,13 @@ class GestureController(private val launcher: LawnchairLauncher) {
     private val swipeDownHandler = handler(prefs.swipeDownGestureHandler)
     private val twoFingerSwipeUpHandler = handler(prefs.twoFingerSwipeUpGestureHandler)
     private val twoFingerSwipeDownHandler = handler(prefs.twoFingerSwipeDownGestureHandler)
+    private val swipeLeftHandler = handler(prefs.swipeLeftGestureHandler)
+    private val swipeRightHandler = handler(prefs.swipeRightGestureHandler)
+    private val twoFingerSwipeLeftHandler = handler(prefs.twoFingerSwipeLeftGestureHandler)
+    private val twoFingerSwipeRightHandler = handler(prefs.twoFingerSwipeRightGestureHandler)
+    private val pinchInHandler = handler(prefs.pinchInGestureHandler)
+    private val pinchOutHandler = handler(prefs.pinchOutGestureHandler)
+    private val twoFingerDoubleTapHandler = handler(prefs.twoFingerDoubleTapGestureHandler)
     private val homePressHandler = handler(prefs.homePressGestureHandler)
     private val backPressHandler = handler(prefs.backPressGestureHandler)
 
@@ -67,6 +74,14 @@ class GestureController(private val launcher: LawnchairLauncher) {
     fun onTwoFingerSwipeDown() {
         triggerHandler(twoFingerSwipeDownHandler)
     }
+
+    fun onSwipeLeft() { triggerHandler(swipeLeftHandler) }
+    fun onSwipeRight() { triggerHandler(swipeRightHandler) }
+    fun onTwoFingerSwipeLeft() { triggerHandler(twoFingerSwipeLeftHandler) }
+    fun onTwoFingerSwipeRight() { triggerHandler(twoFingerSwipeRightHandler) }
+    fun onPinchIn() { triggerHandler(pinchInHandler) }
+    fun onPinchOut() { triggerHandler(pinchOutHandler) }
+    fun onTwoFingerDoubleTap() { triggerHandler(twoFingerDoubleTapHandler) }
 
     fun onHomePressed() {
         triggerHandler(homePressHandler, LawnchairApp.isRecentsEnabled)
