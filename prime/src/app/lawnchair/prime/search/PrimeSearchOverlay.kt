@@ -2753,6 +2753,38 @@ object PrimeSearchOverlay {
         input.requestFocus()
         dialog.show()
         if (measureKeyboard) {
+            val imeType = androidx.core.view.WindowInsetsCompat.Type.ime()
+            val animationCallback = object : androidx.core.view.WindowInsetsAnimationCompat.Callback(
+                androidx.core.view.WindowInsetsAnimationCompat.Callback.DISPATCH_MODE_CONTINUE_ON_SUBTREE
+            ) {
+                private var started = false
+                override fun onPrepare(animation: androidx.core.view.WindowInsetsAnimationCompat) {
+                    if (animation.typeMask and imeType != 0) {
+                        app.lawnchair.search.PrimeSearchTrace.keyboardAnimation("prepare")
+                    }
+                }
+                override fun onStart(
+                    animation: androidx.core.view.WindowInsetsAnimationCompat,
+                    bounds: androidx.core.view.WindowInsetsAnimationCompat.BoundsCompat,
+                ): androidx.core.view.WindowInsetsAnimationCompat.BoundsCompat {
+                    if (animation.typeMask and imeType != 0 && !started) {
+                        started = true
+                        app.lawnchair.search.PrimeSearchTrace.keyboardAnimation("start")
+                    }
+                    return bounds
+                }
+                override fun onProgress(
+                    insets: androidx.core.view.WindowInsetsCompat,
+                    runningAnimations: MutableList<androidx.core.view.WindowInsetsAnimationCompat>,
+                ): androidx.core.view.WindowInsetsCompat = insets
+                override fun onEnd(animation: androidx.core.view.WindowInsetsAnimationCompat) {
+                    if (animation.typeMask and imeType != 0) {
+                        app.lawnchair.search.PrimeSearchTrace.keyboardAnimation("end")
+                        androidx.core.view.ViewCompat.setWindowInsetsAnimationCallback(input, null)
+                    }
+                }
+            }
+            androidx.core.view.ViewCompat.setWindowInsetsAnimationCallback(input, animationCallback)
             val observer = input.viewTreeObserver
             val listener = object : ViewTreeObserver.OnGlobalLayoutListener {
                 override fun onGlobalLayout() {
