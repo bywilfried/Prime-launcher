@@ -565,6 +565,15 @@ class LawnchairLauncher : QuickstepLauncher() {
         return ActivityOptionsWrapper(options, callback)
     }
 
+    override fun onPause() {
+        // Snapshot workspace page count before the settings activity takes focus.
+        getSharedPreferences("prime_workspace_gestures", Context.MODE_PRIVATE)
+            .edit()
+            .putInt("page_count", workspace?.childCount ?: 1)
+            .apply()
+        super.onPause()
+    }
+
     override fun onResume() {
         super.onResume()
         restartIfPending()
