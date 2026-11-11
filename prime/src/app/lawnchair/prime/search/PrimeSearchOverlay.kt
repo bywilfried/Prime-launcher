@@ -2755,6 +2755,8 @@ object PrimeSearchOverlay {
             // so Android can start preparing its input connection sooner.
             // This is temporary and happens only within the opening call.
             val layer = launcher.dragLayer
+            val searchBar = input.parent as? FrameLayout
+            searchBar?.removeView(input)
             layer.addView(input, FrameLayout.LayoutParams(1, 1).apply {
                 gravity = Gravity.TOP or Gravity.START
             })
@@ -2763,7 +2765,6 @@ object PrimeSearchOverlay {
                 .showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
             (input.parent as? ViewGroup)?.removeView(input)
             // Restore the original search-bar hierarchy before showing it.
-            val searchBar = container.getChildAt(0) as? FrameLayout
             searchBar?.addView(input, 0, FrameLayout.LayoutParams(-1, -2))
         } else {
             input.requestFocus()
