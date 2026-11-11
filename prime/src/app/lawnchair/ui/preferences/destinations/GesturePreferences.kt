@@ -45,6 +45,34 @@ fun GesturePreferences(
                 label = stringResource(id = R.string.gesture_two_finger_swipe_down),
             )
             GestureHandlerPreference(
+                adapter = prefs.swipeLeftGestureHandler.getAdapter(),
+                label = "Balayage vers la gauche",
+            )
+            GestureHandlerPreference(
+                adapter = prefs.swipeRightGestureHandler.getAdapter(),
+                label = "Balayage vers la droite",
+            )
+            GestureHandlerPreference(
+                adapter = prefs.twoFingerSwipeLeftGestureHandler.getAdapter(),
+                label = "Deux doigts vers la gauche",
+            )
+            GestureHandlerPreference(
+                adapter = prefs.twoFingerSwipeRightGestureHandler.getAdapter(),
+                label = "Deux doigts vers la droite",
+            )
+            GestureHandlerPreference(
+                adapter = prefs.pinchInGestureHandler.getAdapter(),
+                label = "Pincer deux doigts",
+            )
+            GestureHandlerPreference(
+                adapter = prefs.pinchOutGestureHandler.getAdapter(),
+                label = "Écarter deux doigts",
+            )
+            GestureHandlerPreference(
+                adapter = prefs.twoFingerDoubleTapGestureHandler.getAdapter(),
+                label = "Double appui à deux doigts",
+            )
+            GestureHandlerPreference(
                 adapter = prefs.homePressGestureHandler.getAdapter(),
                 label = stringResource(id = R.string.gesture_home_tap),
             )
