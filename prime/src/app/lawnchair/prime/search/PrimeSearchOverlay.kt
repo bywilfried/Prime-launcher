@@ -2747,8 +2747,29 @@ object PrimeSearchOverlay {
             override fun afterTextChanged(s: Editable?) = Unit
         })
         activeDialog = dialog
+        val measureKeyboard = PrimeSearchResultPreferences.autoShowKeyboard(launcher, preferenceSurface) &&
+            app.lawnchair.search.PrimeSearchTrace.keyboardTimingEnabled
+        if (measureKeyboard) app.lawnchair.search.PrimeSearchTrace.keyboardOpening()
         input.requestFocus()
         dialog.show()
+        if (measureKeyboard) {
+            val observer = input.viewTreeObserver
+            val listener = object : ViewTreeObserver.OnGlobalLayoutListener {
+                override fun onGlobalLayout() {
+                    if (!dialog.isShowing) {
+                        if (observer.isAlive) observer.removeOnGlobalLayoutListener(this)
+                        return
+                    }
+                    val visible = androidx.core.view.ViewCompat.getRootWindowInsets(input)
+                        ?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) == true
+                    if (visible) {
+                        app.lawnchair.search.PrimeSearchTrace.keyboardVisibility(true)
+                        if (observer.isAlive) observer.removeOnGlobalLayoutListener(this)
+                    }
+                }
+            }
+            observer.addOnGlobalLayoutListener(listener)
+        }
         if (initialQuery.isNotBlank()) input.setText(initialQuery)
         if (floating) {
             val decor = dialog.decorView
@@ -2845,6 +2866,7 @@ object PrimeSearchOverlay {
         // waiting for the next posted UI task. Keep the existing Prime Search
         // entrance animation and its 220 ms duration unchanged.
         val keyboard = launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        if (measureKeyboard) app.lawnchair.search.PrimeSearchTrace.keyboardRequested()
         if (!PrimeSearchResultPreferences.autoShowKeyboard(launcher, preferenceSurface)) {
             // Keep the field usable: tapping it still opens the keyboard normally.
         } else if (input.isAttachedToWindow) {
