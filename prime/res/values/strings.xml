@@ -1197,4 +1197,8 @@
     <string name="show_widget_suggestions_label">Show widget suggestions</string>
     <string name="show_widget_suggestions_description">Show or hide suggested widget categories in the widget picker</string>
     <string name="configure_prime_preview_widget">Configure Prime Launcher Preview widget</string>
+    <string name="gesture_handler_toggle_flashlight">Activer / désactiver la lampe torche</string>
+    <string name="gesture_handler_show_volume">Afficher le panneau de volume</string>
+    <string name="gesture_handler_toggle_prime_theme">Basculer le thème clair / sombre</string>
+    <string name="gesture_handler_open_prime_settings">Ouvrir les paramètres de Prime Launcher</string>
 </resources>
