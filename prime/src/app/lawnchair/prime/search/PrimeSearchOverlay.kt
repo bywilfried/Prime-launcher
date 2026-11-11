@@ -2747,61 +2747,8 @@ object PrimeSearchOverlay {
             override fun afterTextChanged(s: Editable?) = Unit
         })
         activeDialog = dialog
-        val measureKeyboard = PrimeSearchResultPreferences.autoShowKeyboard(launcher, preferenceSurface) &&
-            app.lawnchair.search.PrimeSearchTrace.keyboardTimingEnabled
-        if (measureKeyboard) app.lawnchair.search.PrimeSearchTrace.keyboardOpening()
         input.requestFocus()
         dialog.show()
-        if (measureKeyboard) {
-            val imeType = androidx.core.view.WindowInsetsCompat.Type.ime()
-            val animationCallback = object : androidx.core.view.WindowInsetsAnimationCompat.Callback(
-                androidx.core.view.WindowInsetsAnimationCompat.Callback.DISPATCH_MODE_CONTINUE_ON_SUBTREE
-            ) {
-                private var started = false
-                override fun onPrepare(animation: androidx.core.view.WindowInsetsAnimationCompat) {
-                    if (animation.typeMask and imeType != 0) {
-                        app.lawnchair.search.PrimeSearchTrace.keyboardAnimation("prepare")
-                    }
-                }
-                override fun onStart(
-                    animation: androidx.core.view.WindowInsetsAnimationCompat,
-                    bounds: androidx.core.view.WindowInsetsAnimationCompat.BoundsCompat,
-                ): androidx.core.view.WindowInsetsAnimationCompat.BoundsCompat {
-                    if (animation.typeMask and imeType != 0 && !started) {
-                        started = true
-                        app.lawnchair.search.PrimeSearchTrace.keyboardAnimation("start")
-                    }
-                    return bounds
-                }
-                override fun onProgress(
-                    insets: androidx.core.view.WindowInsetsCompat,
-                    runningAnimations: MutableList<androidx.core.view.WindowInsetsAnimationCompat>,
-                ): androidx.core.view.WindowInsetsCompat = insets
-                override fun onEnd(animation: androidx.core.view.WindowInsetsAnimationCompat) {
-                    if (animation.typeMask and imeType != 0) {
-                        app.lawnchair.search.PrimeSearchTrace.keyboardAnimation("end")
-                        androidx.core.view.ViewCompat.setWindowInsetsAnimationCallback(input, null)
-                    }
-                }
-            }
-            androidx.core.view.ViewCompat.setWindowInsetsAnimationCallback(input, animationCallback)
-            val observer = input.viewTreeObserver
-            val listener = object : ViewTreeObserver.OnGlobalLayoutListener {
-                override fun onGlobalLayout() {
-                    if (!dialog.isShowing) {
-                        if (observer.isAlive) observer.removeOnGlobalLayoutListener(this)
-                        return
-                    }
-                    val visible = androidx.core.view.ViewCompat.getRootWindowInsets(input)
-                        ?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) == true
-                    if (visible) {
-                        app.lawnchair.search.PrimeSearchTrace.keyboardVisibility(true)
-                        if (observer.isAlive) observer.removeOnGlobalLayoutListener(this)
-                    }
-                }
-            }
-            observer.addOnGlobalLayoutListener(listener)
-        }
         if (initialQuery.isNotBlank()) input.setText(initialQuery)
         if (floating) {
             val decor = dialog.decorView
@@ -2898,7 +2845,6 @@ object PrimeSearchOverlay {
         // waiting for the next posted UI task. Keep the existing Prime Search
         // entrance animation and its 220 ms duration unchanged.
         val keyboard = launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        if (measureKeyboard) app.lawnchair.search.PrimeSearchTrace.keyboardRequested()
         if (!PrimeSearchResultPreferences.autoShowKeyboard(launcher, preferenceSurface)) {
             // Keep the field usable: tapping it still opens the keyboard normally.
         } else if (input.isAttachedToWindow) {
