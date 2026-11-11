@@ -457,24 +457,8 @@ object PrimeSearchOverlay {
             ).apply { marginEnd = (8 * density).toInt() })
             input.setPadding(inset, 0, (56 * density).toInt(), 0)
         }
-        // Prime Search is hosted in the launcher's already-focused window.
-        // Advertise the IME requirement at window level before mounting the
-        // editor, so Android can start its input-method transition immediately.
-        // Preserve the launcher's original resize/pan bits and restore on exit.
-        val searchAutoKeyboard = PrimeSearchResultPreferences.autoShowKeyboard(launcher, preferenceSurface)
-        val searchWindow = launcher.window
-        val originalSoftInputMode = searchWindow?.attributes?.softInputMode
-        if (searchAutoKeyboard && originalSoftInputMode != null) {
-            searchWindow.setSoftInputMode(
-                (originalSoftInputMode and WindowManager.LayoutParams.SOFT_INPUT_MASK_STATE.inv()) or
-                    WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE
-            )
-        }
         lateinit var dialog: PrimeSearchSurface
         dialog = PrimeSearchSurface(launcher, container, floating, density, onDismiss = {
-            if (searchAutoKeyboard && originalSoftInputMode != null) {
-                searchWindow.setSoftInputMode(originalSoftInputMode)
-            }
             algorithm.cancel(true)
             if (activeAlgorithm === algorithm) activeAlgorithm = null
             if (activeDialog === dialog) activeDialog = null
@@ -2763,35 +2747,8 @@ object PrimeSearchOverlay {
             override fun afterTextChanged(s: Editable?) = Unit
         })
         activeDialog = dialog
-        val autoKeyboard = searchAutoKeyboard
-        // Register before mounting Prime Search. The IME request can then run
-        // synchronously when the editor joins the launcher's existing window,
-        // rather than waiting until after dialog.show() returns.
-        val keyboard = launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        fun requestPrimeKeyboard() {
-            if (!autoKeyboard || activeDialog !== dialog || !dialog.isShowing) return
-            input.requestFocus()
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                input.windowInsetsController?.show(android.view.WindowInsets.Type.ime())
-            }
-            keyboard.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
-        }
-        if (autoKeyboard) {
-            input.isFocusableInTouchMode = true
-            input.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-                override fun onViewAttachedToWindow(v: View) {
-                    input.removeOnAttachStateChangeListener(this)
-                    requestPrimeKeyboard()
-                }
-                override fun onViewDetachedFromWindow(v: View) {
-                    input.removeOnAttachStateChangeListener(this)
-                }
-            })
-        }
         input.requestFocus()
         dialog.show()
-        // Covers embedded hosts where the input may already be attached.
-        if (autoKeyboard && input.isAttachedToWindow) requestPrimeKeyboard()
         if (initialQuery.isNotBlank()) input.setText(initialQuery)
         if (floating) {
             val decor = dialog.decorView
@@ -2884,6 +2841,27 @@ object PrimeSearchOverlay {
         }.start()
         container.translationY = -120 * density
         container.animate().translationY(0f).setDuration(220).start()
+        // Request the IME as soon as the search field is attached, rather than
+        // waiting for the next posted UI task. Keep the existing Prime Search
+        // entrance animation and its 220 ms duration unchanged.
+        val keyboard = launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        if (!PrimeSearchResultPreferences.autoShowKeyboard(launcher, preferenceSurface)) {
+            // Keep the field usable: tapping it still opens the keyboard normally.
+        } else if (input.isAttachedToWindow) {
+            keyboard.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
+        } else {
+            input.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: View) {
+                    input.removeOnAttachStateChangeListener(this)
+                    if (activeDialog === dialog && dialog.isShowing) {
+                        keyboard.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
+                    }
+                }
+                override fun onViewDetachedFromWindow(v: View) {
+                    input.removeOnAttachStateChangeListener(this)
+                }
+            })
+        }
         zeroState.visibility = View.VISIBLE
         scroll.visibility = View.GONE
     }
