@@ -1,6 +1,9 @@
 package app.lawnchair.ui.preferences.destinations
 
+import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
+import app.lawnchair.preferences.getAdapter
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import app.lawnchair.gestures.handlers.SleepMode
@@ -18,6 +21,11 @@ fun GesturePreferences(
     modifier: Modifier = Modifier,
 ) {
     val prefs = preferenceManager2()
+    val context = LocalContext.current
+    val pageCount = context.getSharedPreferences("prime_workspace_gestures", Context.MODE_PRIVATE)
+        .getInt("page_count", 1)
+    val multiplePages = pageCount > 1
+    val feedEnabled = prefs.enableFeed.getAdapter().state.value
     PreferenceLayout(
         label = stringResource(id = R.string.gestures_label),
         backArrowVisible = !LocalIsExpandedScreen.current,
@@ -47,10 +55,18 @@ fun GesturePreferences(
             GestureHandlerPreference(
                 adapter = prefs.swipeLeftGestureHandler.getAdapter(),
                 label = "Balayage vers la gauche",
+                enabled = !multiplePages,
+                disabledReason = if (multiplePages) "Indisponible avec plusieurs pages d’accueil" else null,
             )
             GestureHandlerPreference(
                 adapter = prefs.swipeRightGestureHandler.getAdapter(),
                 label = "Balayage vers la droite",
+                enabled = !multiplePages && !feedEnabled,
+                disabledReason = when {
+                    multiplePages -> "Indisponible avec plusieurs pages d’accueil"
+                    feedEnabled -> "Indisponible lorsque le panneau de flux est activé"
+                    else -> null
+                },
             )
             GestureHandlerPreference(
                 adapter = prefs.twoFingerSwipeLeftGestureHandler.getAdapter(),
