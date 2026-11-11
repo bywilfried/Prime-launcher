@@ -457,8 +457,24 @@ object PrimeSearchOverlay {
             ).apply { marginEnd = (8 * density).toInt() })
             input.setPadding(inset, 0, (56 * density).toInt(), 0)
         }
+        // Prime Search is hosted in the launcher's already-focused window.
+        // Advertise the IME requirement at window level before mounting the
+        // editor, so Android can start its input-method transition immediately.
+        // Preserve the launcher's original resize/pan bits and restore on exit.
+        val searchAutoKeyboard = PrimeSearchResultPreferences.autoShowKeyboard(launcher, preferenceSurface)
+        val searchWindow = launcher.window
+        val originalSoftInputMode = searchWindow?.attributes?.softInputMode
+        if (searchAutoKeyboard && originalSoftInputMode != null) {
+            searchWindow.setSoftInputMode(
+                (originalSoftInputMode and WindowManager.LayoutParams.SOFT_INPUT_MASK_STATE.inv()) or
+                    WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE
+            )
+        }
         lateinit var dialog: PrimeSearchSurface
         dialog = PrimeSearchSurface(launcher, container, floating, density, onDismiss = {
+            if (searchAutoKeyboard && originalSoftInputMode != null) {
+                searchWindow.setSoftInputMode(originalSoftInputMode)
+            }
             algorithm.cancel(true)
             if (activeAlgorithm === algorithm) activeAlgorithm = null
             if (activeDialog === dialog) activeDialog = null
@@ -2747,7 +2763,7 @@ object PrimeSearchOverlay {
             override fun afterTextChanged(s: Editable?) = Unit
         })
         activeDialog = dialog
-        val autoKeyboard = PrimeSearchResultPreferences.autoShowKeyboard(launcher, preferenceSurface)
+        val autoKeyboard = searchAutoKeyboard
         // Register before mounting Prime Search. The IME request can then run
         // synchronously when the editor joins the launcher's existing window,
         // rather than waiting until after dialog.show() returns.
