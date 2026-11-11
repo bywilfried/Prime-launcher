@@ -33,6 +33,10 @@ sealed class GestureHandlerOption(
     data object OpenPrimeSearch : Simple(GestureHandlerConfig.OpenPrimeSearch)
     data object OpenSearch : Simple(GestureHandlerConfig.OpenSearch)
     data object OpenAssistant : Simple(GestureHandlerConfig.OpenAssistant)
+    data object ToggleFlashlight : Simple(GestureHandlerConfig.ToggleFlashlight)
+    data object ShowVolume : Simple(GestureHandlerConfig.ShowVolume)
+    data object TogglePrimeTheme : Simple(GestureHandlerConfig.TogglePrimeTheme)
+    data object OpenPrimeSettings : Simple(GestureHandlerConfig.OpenPrimeSettings)
 
     data object OpenAppShortcut : GestureHandlerOption(
         R.string.gesture_handler_open_app_shortcut_option,
