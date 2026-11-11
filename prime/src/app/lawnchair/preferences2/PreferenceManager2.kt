@@ -887,6 +887,41 @@ class PreferenceManager2 @Inject constructor(
         defaultValue = GestureHandlerConfig.OpenQuickSettings,
     )
 
+    val swipeLeftGestureHandler = serializablePreference<GestureHandlerConfig>(
+        key = stringPreferencesKey("swipe_left_gesture_handler"),
+        defaultValue = GestureHandlerConfig.NoOp,
+    )
+
+    val swipeRightGestureHandler = serializablePreference<GestureHandlerConfig>(
+        key = stringPreferencesKey("swipe_right_gesture_handler"),
+        defaultValue = GestureHandlerConfig.NoOp,
+    )
+
+    val twoFingerSwipeLeftGestureHandler = serializablePreference<GestureHandlerConfig>(
+        key = stringPreferencesKey("two_finger_swipe_left_gesture_handler"),
+        defaultValue = GestureHandlerConfig.NoOp,
+    )
+
+    val twoFingerSwipeRightGestureHandler = serializablePreference<GestureHandlerConfig>(
+        key = stringPreferencesKey("two_finger_swipe_right_gesture_handler"),
+        defaultValue = GestureHandlerConfig.NoOp,
+    )
+
+    val pinchInGestureHandler = serializablePreference<GestureHandlerConfig>(
+        key = stringPreferencesKey("pinch_in_gesture_handler"),
+        defaultValue = GestureHandlerConfig.NoOp,
+    )
+
+    val pinchOutGestureHandler = serializablePreference<GestureHandlerConfig>(
+        key = stringPreferencesKey("pinch_out_gesture_handler"),
+        defaultValue = GestureHandlerConfig.NoOp,
+    )
+
+    val twoFingerDoubleTapGestureHandler = serializablePreference<GestureHandlerConfig>(
+        key = stringPreferencesKey("two_finger_double_tap_gesture_handler"),
+        defaultValue = GestureHandlerConfig.NoOp,
+    )
+
     val homePressGestureHandler = serializablePreference<GestureHandlerConfig>(
         key = stringPreferencesKey("home_press_gesture_handler"),
         defaultValue = GestureHandlerConfig.OpenPrimeSearch,
