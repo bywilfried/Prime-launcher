@@ -2747,8 +2747,36 @@ object PrimeSearchOverlay {
             override fun afterTextChanged(s: Editable?) = Unit
         })
         activeDialog = dialog
-        input.requestFocus()
+        val imeStart = android.os.SystemClock.uptimeMillis()
+        val autoKeyboard = PrimeSearchResultPreferences.autoShowKeyboard(launcher, preferenceSurface)
+        if (autoKeyboard) {
+            // Prime Search shares the launcher's already-attached window. Give
+            // the editor a valid window token before mounting the search surface
+            // so Android can start preparing its input connection sooner.
+            // This is temporary and happens only within the opening call.
+            val layer = launcher.dragLayer
+            layer.addView(input, FrameLayout.LayoutParams(1, 1).apply {
+                gravity = Gravity.TOP or Gravity.START
+            })
+            input.requestFocus()
+            (launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                .showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
+            (input.parent as? ViewGroup)?.removeView(input)
+            // Restore the original search-bar hierarchy before showing it.
+            val searchBar = container.getChildAt(0) as? FrameLayout
+            searchBar?.addView(input, 0, FrameLayout.LayoutParams(-1, -2))
+        } else {
+            input.requestFocus()
+        }
         dialog.show()
+        if (autoKeyboard) {
+            input.requestFocus()
+            (launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                .showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
+            app.lawnchair.search.PrimeSearchTrace.record(
+                "ime preattach elapsed=${android.os.SystemClock.uptimeMillis() - imeStart}ms"
+            )
+        }
         if (initialQuery.isNotBlank()) input.setText(initialQuery)
         if (floating) {
             val decor = dialog.decorView
