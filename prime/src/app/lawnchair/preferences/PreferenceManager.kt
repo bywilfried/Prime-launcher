@@ -118,6 +118,7 @@ class PreferenceManager @Inject constructor(
     val primeHapticDragStart = IntPref("pref_prime_haptic_drag_start", 100)
     val primeHapticIconDrag = IntPref("pref_prime_haptic_icon_drag", 100)
     val primeHapticNotificationGesture = IntPref("pref_prime_haptic_notification_gesture", 100)
+    val primeHapticGestures = IntPref("pref_prime_haptic_gestures", 100)
     val primeHapticDrawerThreshold = IntPref("pref_prime_haptic_drawer_threshold", 100)
     val primeHapticDrawerTap = IntPref("pref_prime_haptic_drawer_tap", 100)
     val primeHapticReorderStart = IntPref("pref_prime_haptic_reorder_start", 100)
