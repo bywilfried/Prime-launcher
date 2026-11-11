@@ -37,6 +37,14 @@ object PrimeSearchTrace {
         recordKeyboard("IME visible +" + (now - keyboardStartMs) + "ms from opening, +" + requestDelay + "ms from request")
     }
 
+    @Synchronized fun keyboardAnimation(event: String) {
+        if (!keyboardTimingEnabled || keyboardStartMs == 0L) return
+        val now = SystemClock.uptimeMillis()
+        val requestDelay = if (keyboardRequestMs > 0L) (now - keyboardRequestMs).toString() else "unknown"
+        recordKeyboard("IME animation " + event + " +" + (now - keyboardStartMs) +
+            "ms from opening, +" + requestDelay + "ms from request")
+    }
+
     @Synchronized private fun recordKeyboard(event: String) {
         val time = SimpleDateFormat("HH:mm:ss.SSS", Locale.ROOT).format(Date())
         lines.addLast(time + " [" + SystemClock.uptimeMillis() + "] KEYBOARD " + event)
