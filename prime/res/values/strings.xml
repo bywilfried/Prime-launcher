@@ -1201,4 +1201,6 @@
     <string name="gesture_handler_show_volume">Afficher le panneau de volume</string>
     <string name="gesture_handler_toggle_prime_theme">Basculer le thème clair / sombre</string>
     <string name="gesture_handler_open_prime_settings">Ouvrir les paramètres de Prime Launcher</string>
+    <string name="prime_haptic_gestures_group">Gestes</string>
+    <string name="prime_haptic_gestures">Intensité des gestes</string>
 </resources>
