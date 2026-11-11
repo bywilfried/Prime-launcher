@@ -24,7 +24,7 @@ class WorkspaceExtraGestureController(
 ) : TouchController {
     private val prefs = PreferenceManager2.getInstance(launcher)
     private val slop = ViewConfiguration.get(launcher).scaledTouchSlop.toFloat()
-    private val swipeDistance = 64f * launcher.resources.displayMetrics.density
+    private val swipeDistance = 36f * launcher.resources.displayMetrics.density
     private val pinchDistance = 48f * launcher.resources.displayMetrics.density
     private var enabled = BooleanArray(7)
     private var feedEnabled = false
@@ -156,6 +156,11 @@ class WorkspaceExtraGestureController(
             lastY = ev.y
         }
         if (ev.actionMasked == MotionEvent.ACTION_POINTER_UP && fingers == 2 && !fired) {
+            // The final MOVE can be skipped on a fast flick; use the lift coordinates.
+            if (ev.pointerCount >= 2) {
+                lastX = (ev.getX(0) + ev.getX(1)) / 2
+                lastY = (ev.getY(0) + ev.getY(1)) / 2
+            }
             val dx = lastX - startX
             val dy = lastY - startY
             if (abs(dx) >= swipeDistance && abs(dx) > abs(dy) * 1.3f) {
