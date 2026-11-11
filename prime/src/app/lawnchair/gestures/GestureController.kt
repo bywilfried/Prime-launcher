@@ -102,7 +102,7 @@ class GestureController(private val launcher: LawnchairLauncher) {
     }
 
     private fun vibrateForGesture() {
-        val intensity = PreferenceManager.getInstance(launcher).primeHapticOtherEvents.get()
+        val intensity = PreferenceManager.getInstance(launcher).primeHapticGestures.get()
         if (intensity <= 0) return
         VibratorWrapper.INSTANCE.get(launcher).vibrateScaled(
             VibrationEffect.Composition.PRIMITIVE_CLICK,
