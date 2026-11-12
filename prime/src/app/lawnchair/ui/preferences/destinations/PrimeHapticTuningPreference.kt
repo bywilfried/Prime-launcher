@@ -34,8 +34,9 @@ fun PrimeHapticTuningPreference() {
     val selectedLevel = levelAdapter.state.value
     // MINIMAL is the underlying feedback level for both 15% and 50% presets.
     // The individual values distinguish the two without changing persisted enum ordinals.
-    val uniformValue = sliders.first().get().takeIf { value ->
-        sliders.all { it.get() == value }
+    val sliderValues = sliders.map { it.getAdapter().state.value }
+    val uniformValue = sliderValues.first().takeIf { value ->
+        sliderValues.all { it == value }
     }
     val selectedPreset = when (selectedLevel) {
         FeedbackLevel.NO_FEEDBACK.ordinal -> if (uniformValue == 0) 0 else -1
