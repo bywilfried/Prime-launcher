@@ -24,7 +24,7 @@ class WorkspaceExtraGestureController(
 ) : TouchController {
     private val prefs = PreferenceManager2.getInstance(launcher)
     private val slop = ViewConfiguration.get(launcher).scaledTouchSlop.toFloat()
-    private val swipeDistance = 36f * launcher.resources.displayMetrics.density
+    private val swipeDistance = 28f * launcher.resources.displayMetrics.density
     private val pinchDistance = 48f * launcher.resources.displayMetrics.density
     private var enabled = BooleanArray(7)
     private var feedEnabled = false
@@ -149,7 +149,16 @@ class WorkspaceExtraGestureController(
                 if (spanDelta < 0 && enabled[4]) { gestures.onPinchIn(); fired = true }
                 if (spanDelta > 0 && enabled[5]) { gestures.onPinchOut(); fired = true }
             }
-            if (!fired && hypot(lastX - startX, lastY - startY) > slop) twoTapCandidate = false
+            val dx = lastX - startX
+            val dy = lastY - startY
+            // Fire during MOVE rather than waiting for a finger to lift.
+            if (!fired && abs(dx) >= swipeDistance && abs(dx) > abs(dy) * 1.3f &&
+                abs(spanDelta) < abs(dx)
+            ) {
+                if (dx < 0 && enabled[2]) { gestures.onTwoFingerSwipeLeft(); fired = true }
+                if (dx > 0 && enabled[3]) { gestures.onTwoFingerSwipeRight(); fired = true }
+            }
+            if (!fired && hypot(dx, dy) > slop) twoTapCandidate = false
         }
         if (ev.actionMasked == MotionEvent.ACTION_MOVE && fingers == 1) {
             lastX = ev.x
