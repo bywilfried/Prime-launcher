@@ -146,7 +146,7 @@ class VerticalSwipeTouchController(
         currentDisplacement = displacement.y
         // Fast flicks may deliver very few MOVE samples. Accept distance as well as speed.
         if (velocity.absoluteValue > TRIGGER_VELOCITY ||
-            displacement.y.absoluteValue > 36f * launcher.resources.displayMetrics.density
+            displacement.y.absoluteValue > 28f * launcher.resources.displayMetrics.density
         ) {
             triggered = true
             if (displacement.y < 0) {
@@ -205,6 +205,6 @@ class VerticalSwipeTouchController(
 
     companion object {
         private const val SCROLL_VELOCITY_DAMPENING_RC = 1000f / (2f * Math.PI.toFloat() * 10f)
-        private const val TRIGGER_VELOCITY = 2.25f
+        private const val TRIGGER_VELOCITY = 1.35f
     }
 }
