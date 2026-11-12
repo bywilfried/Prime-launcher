@@ -28,6 +28,9 @@ class WorkspaceExtraGestureController(
     private val pinchDistance = 48f * launcher.resources.displayMetrics.density
     private var enabled = BooleanArray(7)
     private var feedEnabled = false
+    private var twoFingerUpEnabled = false
+    private var twoFingerDownEnabled = false
+    private var startedOnEmptySpace = false
     private var active = false
     private var captured = false
     private var fingers = 0
@@ -51,6 +54,12 @@ class WorkspaceExtraGestureController(
             pref.get().onEach { enabled[index] = it !is GestureHandlerConfig.NoOp }
                 .launchIn(launcher.lifecycleScope)
         }
+        prefs.twoFingerSwipeUpGestureHandler.get()
+            .onEach { twoFingerUpEnabled = it !is GestureHandlerConfig.NoOp }
+            .launchIn(launcher.lifecycleScope)
+        prefs.twoFingerSwipeDownGestureHandler.get()
+            .onEach { twoFingerDownEnabled = it !is GestureHandlerConfig.NoOp }
+            .launchIn(launcher.lifecycleScope)
         prefs.enableFeed.get().onEach { feedEnabled = it }.launchIn(launcher.lifecycleScope)
     }
 
@@ -99,7 +108,8 @@ class WorkspaceExtraGestureController(
     override fun onControllerInterceptTouchEvent(ev: MotionEvent): Boolean {
         if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
             reset()
-            if (!workspaceReady() || !isEmptySpace(ev)) return false
+            if (!workspaceReady()) return false
+            startedOnEmptySpace = isEmptySpace(ev)
             active = true
             fingers = 1
             startX = ev.x
@@ -117,10 +127,10 @@ class WorkspaceExtraGestureController(
             startSpan = span(ev)
             twoTapCandidate = enabled[6]
             // Capture two-finger sequences only when a two-finger action is configured.
-            captured = enabled.slice(2..6).any { it }
+            captured = enabled.slice(2..6).any { it } || twoFingerUpEnabled || twoFingerDownEnabled
             return captured
         }
-        if (ev.actionMasked == MotionEvent.ACTION_MOVE && fingers == 1 && !captured) {
+        if (ev.actionMasked == MotionEvent.ACTION_MOVE && fingers == 1 && !captured && startedOnEmptySpace) {
             val dx = ev.x - startX
             val dy = ev.y - startY
             if (abs(dx) > slop && abs(dx) > abs(dy) * 1.3f &&
@@ -158,6 +168,12 @@ class WorkspaceExtraGestureController(
                 if (dx < 0 && enabled[2]) { gestures.onTwoFingerSwipeLeft(); fired = true }
                 if (dx > 0 && enabled[3]) { gestures.onTwoFingerSwipeRight(); fired = true }
             }
+            if (!fired && abs(dy) >= swipeDistance && abs(dy) > abs(dx) * 1.3f &&
+                abs(spanDelta) < abs(dy)
+            ) {
+                if (dy < 0 && twoFingerUpEnabled) { gestures.onTwoFingerSwipeUp(); fired = true }
+                if (dy > 0 && twoFingerDownEnabled) { gestures.onTwoFingerSwipeDown(); fired = true }
+            }
             if (!fired && hypot(dx, dy) > slop) twoTapCandidate = false
         }
         if (ev.actionMasked == MotionEvent.ACTION_MOVE && fingers == 1) {
@@ -172,7 +188,11 @@ class WorkspaceExtraGestureController(
             }
             val dx = lastX - startX
             val dy = lastY - startY
-            if (abs(dx) >= swipeDistance && abs(dx) > abs(dy) * 1.3f) {
+            if (abs(dy) >= swipeDistance && abs(dy) > abs(dx) * 1.3f) {
+                if (dy < 0 && twoFingerUpEnabled) { gestures.onTwoFingerSwipeUp(); fired = true }
+                if (dy > 0 && twoFingerDownEnabled) { gestures.onTwoFingerSwipeDown(); fired = true }
+            }
+            if (!fired && abs(dx) >= swipeDistance && abs(dx) > abs(dy) * 1.3f) {
                 if (dx < 0 && enabled[2]) { gestures.onTwoFingerSwipeLeft(); fired = true }
                 if (dx > 0 && enabled[3]) { gestures.onTwoFingerSwipeRight(); fired = true }
             }
