@@ -2016,7 +2016,7 @@ object PrimeSearchOverlay {
                 val appGridSignature = rankedNativeItems.filter { nativeCategoryFor(it) == appCategory }
                     .map { "${it.searchTarget.resultType}:${it.searchTarget.layoutType}:${it.searchTarget.id}" }
                 val cachedAppCard = categoryCards[appCategory]
-                val reuseAppGrid = lastAppGridQuery == query &&
+                val reuseAppGrid =
                     lastAppGridSignature == appGridSignature && cachedAppCard != null &&
                     cachedAppCard.childCount > 0
                 rankedNativeItems.forEach { item ->
