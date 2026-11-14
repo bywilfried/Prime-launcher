@@ -26,6 +26,11 @@ object AppSearchProvider {
         }
     }
 
+    /** Precompute the same matching keys used by live search, off the UI thread. */
+    fun warmUp(allApps: AllAppsList) {
+        allApps.data.forEach { prepared(it) }
+    }
+
     fun search(context: Context, query: String, allApps: AllAppsList, maxResultsOverride: Int? = null, fuzzyOverride: Boolean? = null, strictTypos: Boolean = false): List<SearchResult.App> {
         val prefs = PreferenceManager2.getInstance(context)
         val hiddenApps = prefs.hiddenApps.firstCached()
