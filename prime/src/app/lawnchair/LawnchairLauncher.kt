@@ -47,10 +47,8 @@ import app.lawnchair.prime.drawer.PrimeDrawerTabsView
 import app.lawnchair.prime.drawer.PrimeAppCategoriesShortcut
 import app.lawnchair.preferences2.PreferenceManager2
 import app.lawnchair.preferences2.firstCached
-import app.lawnchair.search.algorithms.engine.provider.apps.AppSearchProvider
-import kotlinx.coroutines.Dispatchers
+import app.lawnchair.search.algorithms.PrimeSearchWarmup
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
 import app.lawnchair.root.RootHelperManager
 import app.lawnchair.root.RootNotAvailableException
 import app.lawnchair.theme.ThemeProvider
@@ -194,11 +192,7 @@ class LawnchairLauncher : QuickstepLauncher() {
         // The model callback is cancelled with the launcher's lifecycle.
         lifecycleScope.launch {
             delay(750L)
-            LauncherAppState.getInstance(this@LawnchairLauncher).model.runWhenModelLoaded(lifecycleScope) { apps ->
-                lifecycleScope.launch(Dispatchers.Default) {
-                    AppSearchProvider.warmUp(apps)
-                }
-            }
+            PrimeSearchWarmup.refresh(this@LawnchairLauncher)
         }
 
         prefs.launcherTheme.subscribeChanges(this, ::updateTheme)
