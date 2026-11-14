@@ -1827,6 +1827,7 @@ object PrimeSearchOverlay {
         // Cache labels for this search session instead of querying PackageManager
         // repeatedly on the UI thread for every keystroke and provider refresh.
         val sessionAppLabels = mutableMapOf<String, String>()
+        val sessionNormalizedLabels = mutableMapOf<String, String>()
         val callback = object : SearchCallback<BaseAllAppsAdapter.AdapterItem> {
             override fun onSearchResult(query: String, items: ArrayList<BaseAllAppsAdapter.AdapterItem>?) {
                 if (!dialog.isShowing || input.text.toString() != query || detailOpen) return
@@ -1988,13 +1989,15 @@ object PrimeSearchOverlay {
                             ).toString()
                         }.getOrDefault(packageName)
                     }
-                fun normalizedLabel(label: String): String =
-                    java.text.Normalizer.normalize(label, java.text.Normalizer.Form.NFD)
-                        .replace(Regex("\\p{M}+"), "")
-                        .lowercase(java.util.Locale.ROOT)
+                fun normalizedLabel(packageName: String): String =
+                    sessionNormalizedLabels.getOrPut(packageName) {
+                        java.text.Normalizer.normalize(appLabel(packageName), java.text.Normalizer.Form.NFD)
+                            .replace(Regex("\\p{M}+"), "")
+                            .lowercase(java.util.Locale.ROOT)
+                    }
                 val rankedApps = appSlots.sortedWith(
                     compareBy<SearchAdapterItem> {
-                        val label = normalizedLabel(appLabel(it.searchTarget.packageName))
+                        val label = normalizedLabel(it.searchTarget.packageName)
                         when {
                             label == normalizedQuery -> 0
                             label.startsWith(normalizedQuery) -> 1
@@ -2002,7 +2005,7 @@ object PrimeSearchOverlay {
                             else -> 3
                         }
                     }.thenBy {
-                        normalizedLabel(appLabel(it.searchTarget.packageName))
+                        normalizedLabel(it.searchTarget.packageName)
                     }.thenBy { it.searchTarget.packageName }
                 ).iterator()
                 val rankedNativeItems = filteredNativeItems.map {
