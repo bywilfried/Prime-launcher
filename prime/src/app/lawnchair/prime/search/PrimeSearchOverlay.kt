@@ -2741,7 +2741,7 @@ object PrimeSearchOverlay {
                         }
                     }
                     pendingSearch = task
-                    webHandler.postDelayed(task, 60L)
+                    webHandler.postDelayed(task, 16L)
                 }
             }
             override fun afterTextChanged(s: Editable?) = Unit
