@@ -1440,6 +1440,7 @@ object PrimeSearchOverlay {
         val compactWrappers = mutableMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
         val compactClips = mutableMapOf<PrimeSearchResultPreferences.Category, FrameLayout>()
         val compactMoreButtons = mutableMapOf<PrimeSearchResultPreferences.Category, TextView>()
+        var compactAppsTruncated = false
         fun reorderSearchSections() {
             if (detailOpen || resultGestureBusy()) {
                 if (!detailOpen) scheduleResultsReorder(::reorderSearchSections)
@@ -1603,7 +1604,7 @@ object PrimeSearchOverlay {
                     } else limit
                      clipped.layoutParams = (clipped.layoutParams as? LinearLayout.LayoutParams
                         ?: LinearLayout.LayoutParams(-1, -2)).apply {
-                        height = if (showAllSingleCategory) -2 else if (isApps) appViewportHeight.coerceAtLeast(1) else limit
+                        height = if (isApps && compactAppsTruncated) appViewportHeight.coerceAtLeast(1) else if (showAllSingleCategory) -2 else if (isApps) appViewportHeight.coerceAtLeast(1) else limit
                     }
                     val more = compactMoreButtons.getOrPut(category) { TextView(launcher).apply {
                         text = "Plus de " + when (category) {
@@ -1660,13 +1661,13 @@ object PrimeSearchOverlay {
                             wrapper.addView(heading, LinearLayout.LayoutParams(-1, -2))
                         }
                         wrapper.addView(clipped, LinearLayout.LayoutParams(
-                            -1, if (showAllSingleCategory) -2 else if (isApps) appViewportHeight.coerceAtLeast(1) else limit
+                            -1, if (isApps && compactAppsTruncated) appViewportHeight.coerceAtLeast(1) else if (showAllSingleCategory) -2 else if (isApps) appViewportHeight.coerceAtLeast(1) else limit
                         ))
                         wrapper.addView(more, LinearLayout.LayoutParams(-1, -2))
                     }
                     orderedWrappers.add(wrapper)
                     if (isApps) {
-                        more.visibility = if (!showAllSingleCategory && appRowCount > maxVisibleRows) View.VISIBLE else View.GONE
+                        more.visibility = if (compactAppsTruncated || (!showAllSingleCategory && appRowCount > maxVisibleRows)) View.VISIBLE else View.GONE
                     } else clipped.post {
                         if (!detailOpen && card.parent === clipped && !showAllSingleCategory) {
                             // Measure the actual card independently of its clipped parent.
@@ -2438,6 +2439,10 @@ object PrimeSearchOverlay {
                         }
                     }
                 }
+                compactAppsTruncated = rankedNativeItems.count {
+                    nativeCategoryFor(it) == appCategory &&
+                        it.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT
+                } > maxAppTiles
                 flushNativeSection()
                 app.lawnchair.search.PrimeSearchTrace.record(
                     "overlay built len=${query.length} sections=${nativeSections.size} appSections=${nativeSections.count { it.first == appCategory }} appRows=${nativeSections.filter { it.first == appCategory }.sumOf { it.second.childCount }} reused=$reuseAppGrid"
