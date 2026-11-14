@@ -1300,6 +1300,7 @@ object PrimeSearchOverlay {
                 true
             } else false
         }
+        var refreshExpandedApps: ((String) -> Unit)? = null
         fun openDetail(card: LinearLayout) {
             if (detailOpen) return
             val parent = card.parent as? ViewGroup ?: return
@@ -1405,6 +1406,17 @@ object PrimeSearchOverlay {
                 .start()
             detailPage.requestFocus()
             container.requestLayout()
+            // The compact grid only binds visible rows. Populate the full app
+            // list on demand when the user opens its expanded category.
+            if (category == PrimeSearchResultPreferences.Category.APPS) {
+                val expandedQuery = originalDetailQuery
+                detailContent.post {
+                    if (detailOpen && !detailClosing && detailCard === card &&
+                        input.text.toString() == expandedQuery) {
+                        refreshExpandedApps?.invoke(expandedQuery)
+                    }
+                }
+            }
         }
         // Protect both app icons and the compact card's expansion action from
         // asynchronous result updates during an active pointer gesture.
@@ -2032,7 +2044,9 @@ object PrimeSearchOverlay {
                     val isAppIcon = item.searchTarget.resultType ==
                         SearchTargetCompat.RESULT_TYPE_APPLICATION &&
                         item.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT
-                    // Keep all results for expanded view; compact grid is clipped.
+                    // Bind only visible app rows in compact mode. The full set
+                    // remains available through the independent detail search.
+                    if (isAppIcon && displayedAppTiles >= maxAppTiles) return@forEach
                     if (isAppIcon) {
                         displayedAppTiles++
                         if (appRow == null || appsInRow == columns) {
@@ -2705,6 +2719,7 @@ object PrimeSearchOverlay {
             detailSearchTask = task
             webHandler.postDelayed(task, 60L)
         }
+        refreshExpandedApps = ::searchExpandedCategory
         // IME visibility and focus changes must not restart an unchanged query.
         // Only an actual change in the search text starts a new request.
         var lastSubmittedQuery = input.text?.toString().orEmpty()
