@@ -57,6 +57,7 @@ class LawnchairLocalSearchAlgorithm(
     private val primeSearch: Boolean = false,
     /** Reuse Prime Search's matching/providers while retaining the drawer's own result filtering and actions. */
     private val primeMatching: Boolean = primeSearch,
+    private val expandedAppResults: Boolean = false,
     private val preferenceSurface: PrimeSearchResultPreferences.Surface =
         if (primeSearch) PrimeSearchResultPreferences.Surface.PRIME_SEARCH
         else PrimeSearchResultPreferences.Surface.DRAWER,
@@ -119,8 +120,11 @@ class LawnchairLocalSearchAlgorithm(
                 val drawerTypoMatching = primeMatching &&
                     PrimeSearchResultPreferences.fuzzyApps(context, preferenceSurface)
                 app.lawnchair.search.PrimeSearchTrace.record("engine matchStart len=${query.length} strict=$drawerTypoMatching")
+                // Cap compact matching before target conversion and adapter binding.
+                // Expanded Prime Search explicitly opts into the full result set.
+                val appLimit = if (expandedAppResults) Int.MAX_VALUE else if (primeMatching) 48 else null
                 val appResults = appSearchProvider.search(
-                    context, query, apps, if (primeMatching) Int.MAX_VALUE else null,
+                    context, query, apps, appLimit,
                     if (primeMatching) false else null,
                     strictTypos = drawerTypoMatching,
                 )
@@ -131,7 +135,7 @@ class LawnchairLocalSearchAlgorithm(
                 // succeeds and never replaces its ranked matches.
                 val resolvedAppResults = if (primeMatching && appResults.isEmpty() && query.isNotBlank()) {
                     appSearchProvider.search(
-                        context, query, apps, Int.MAX_VALUE, false,
+                        context, query, apps, appLimit, false,
                         strictTypos = false,
                     ).also { fallback ->
                         app.lawnchair.search.PrimeSearchTrace.record(
