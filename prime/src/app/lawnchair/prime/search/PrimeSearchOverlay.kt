@@ -1820,6 +1820,8 @@ object PrimeSearchOverlay {
         var lastAppGridQuery: String? = null
         var lastAppGridSignature: List<String>? = null
         var pendingNativeRefresh: Runnable? = null
+        var pendingTypingRender: Runnable? = null
+        var readyTypingRender: ArrayList<BaseAllAppsAdapter.AdapterItem>? = null
         // A result refresh must never detach an app tile between DOWN and UP.
         var appTouchInProgress = false
         // Cache labels for this search session instead of querying PackageManager
@@ -1828,6 +1830,23 @@ object PrimeSearchOverlay {
         val callback = object : SearchCallback<BaseAllAppsAdapter.AdapterItem> {
             override fun onSearchResult(query: String, items: ArrayList<BaseAllAppsAdapter.AdapterItem>?) {
                 if (!dialog.isShowing || input.text.toString() != query || detailOpen) return
+                // Coalesce rapid provider emissions and keystrokes into one UI pass.
+                // Never build result views in the same frame as an input edit.
+                if (readyTypingRender !== items) {
+                    pendingTypingRender?.let(webHandler::removeCallbacks)
+                    val deferredItems = items?.let { ArrayList(it) }
+                    val deferred = Runnable {
+                        pendingTypingRender = null
+                        if (dialog.isShowing && !detailOpen && input.text.toString() == query) {
+                            readyTypingRender = deferredItems
+                            onSearchResult(query, deferredItems)
+                            readyTypingRender = null
+                        }
+                    }
+                    pendingTypingRender = deferred
+                    webHandler.postDelayed(deferred, 32L)
+                    return
+                }
                 // Keep only the newest deferred update. Replaying every provider
                 // callback after a touch can otherwise cause repeated full rebuilds.
                 pendingNativeRefresh?.let(webHandler::removeCallbacks)
