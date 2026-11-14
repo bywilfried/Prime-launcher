@@ -1808,6 +1808,9 @@ object PrimeSearchOverlay {
         var pendingNativeRefresh: Runnable? = null
         // A result refresh must never detach an app tile between DOWN and UP.
         var appTouchInProgress = false
+        // Cache labels for this search session instead of querying PackageManager
+        // repeatedly on the UI thread for every keystroke and provider refresh.
+        val sessionAppLabels = mutableMapOf<String, String>()
         val callback = object : SearchCallback<BaseAllAppsAdapter.AdapterItem> {
             override fun onSearchResult(query: String, items: ArrayList<BaseAllAppsAdapter.AdapterItem>?) {
                 if (!dialog.isShowing || input.text.toString() != query || detailOpen) return
@@ -1944,9 +1947,8 @@ object PrimeSearchOverlay {
                 val normalizedQuery = java.text.Normalizer.normalize(
                     query.trim(), java.text.Normalizer.Form.NFD,
                 ).replace(Regex("\\p{M}+"), "").lowercase(java.util.Locale.ROOT)
-                val appLabels = mutableMapOf<String, String>()
                 fun appLabel(packageName: String): String =
-                    appLabels.getOrPut(packageName) {
+                    sessionAppLabels.getOrPut(packageName) {
                         runCatching {
                             launcher.packageManager.getApplicationLabel(
                                 launcher.packageManager.getApplicationInfo(packageName, 0)
