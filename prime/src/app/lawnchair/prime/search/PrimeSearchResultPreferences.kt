@@ -43,7 +43,12 @@ object PrimeSearchResultPreferences {
             (!PrimeSearchPermissions.required(category) || PrimeSearchPermissions.granted(context, category))
 
     fun setEnabled(context: Context, category: Category, enabled: Boolean, surface: Surface) {
-        surfacePrefs(context, surface).edit().putBoolean(category.key, enabled).apply()
+        val preferences = surfacePrefs(context, surface)
+        val previous = preferences.getBoolean(category.key, true)
+        preferences.edit().putBoolean(category.key, enabled).apply()
+        if (previous != enabled && category == Category.APPS) {
+            app.lawnchair.search.algorithms.PrimeSearchWarmup.refresh(context)
+        }
     }
 
     fun order(context: Context, surface: Surface): List<Category> {
