@@ -1325,6 +1325,7 @@ object PrimeSearchOverlay {
             detailSearchAlgorithm = LawnchairLocalSearchAlgorithm(
                 launcher,
                 primeSearch = true,
+                expandedAppResults = true,
                 preferenceSurface = preferenceSurface,
             )
             detailSessionId++
