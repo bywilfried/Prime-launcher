@@ -1822,6 +1822,7 @@ object PrimeSearchOverlay {
         var lastNativeRenderSignature: List<String>? = null
         var lastAppGridQuery: String? = null
         var lastAppGridSignature: List<String>? = null
+        var lastRankedNativeSignature: List<String>? = null
         var pendingNativeRefresh: Runnable? = null
         var pendingTypingRender: Runnable? = null
         var pendingSecondaryRender: Runnable? = null
@@ -2020,6 +2021,34 @@ object PrimeSearchOverlay {
                 ).iterator()
                 val rankedNativeItems = filteredNativeItems.map {
                     if (nativeCategoryFor(it) == appCategory) rankedApps.next() else it
+                }
+                // Differential fast path: when the ordered native result IDs are
+                // unchanged, preserve the entire bound hierarchy (not just icons).
+                // Only dynamic provider sections need a refresh.
+                val rankedSignature = rankedNativeItems.map {
+                    "${nativeCategoryFor(it)}:${it.searchTarget.resultType}:${it.searchTarget.layoutType}:${it.searchTarget.id}"
+                }
+                if (lastRankedNativeSignature == rankedSignature &&
+                    results.childCount > 0 && categoryCards.isNotEmpty()) {
+                    lastAppGridQuery = query
+                    lastNativeRenderQuery = query
+                    lastNativeRenderSignature = signature
+                    pendingSecondaryRender?.let(webHandler::removeCallbacks)
+                    val refresh = Runnable {
+                        pendingSecondaryRender = null
+                        if (dialog.isShowing && !detailOpen && input.text.toString() == query) {
+                            renderWebPanel(query)
+                            scheduleResultsReorder {
+                                if (dialog.isShowing && !detailOpen && input.text.toString() == query) {
+                                    reorderSearchSections()
+                                }
+                            }
+                        }
+                    }
+                    pendingSecondaryRender = refresh
+                    webHandler.post(refresh)
+                    app.lawnchair.search.PrimeSearchTrace.record("overlay differential reuse len=${query.length} native=${rankedSignature.size}")
+                    return
                 }
                 // Reuse bound app views when another provider updates the same query.
                 // This avoids decoding icons and replacing click targets unnecessarily.
@@ -2482,6 +2511,7 @@ object PrimeSearchOverlay {
                 )
                 lastAppGridQuery = query
                 lastAppGridSignature = appGridSignature
+                lastRankedNativeSignature = rankedSignature
                 results.removeAllViews()
                 nativeSections.forEach { (category, section) ->
                     if (PrimeSearchResultPreferences.enabled(launcher, category, preferenceSurface)) {
@@ -2531,6 +2561,7 @@ object PrimeSearchOverlay {
                 lastNativeRenderSignature = null
                 lastAppGridQuery = null
                 lastAppGridSignature = null
+                lastRankedNativeSignature = null
                 results.removeAllViews()
                 results.requestLayout()
             }
