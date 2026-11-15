@@ -306,6 +306,10 @@ object PrimeSearchOverlay {
         activeAlgorithm = algorithm
         val input = EditText(launcher).apply {
             isSingleLine = true
+            // Disable keyboard/editor inline completion; app matches belong in
+            // the results grid and must never appear as ghost text in the field.
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
             hint = "Prime Search"
             gravity = Gravity.CENTER_VERTICAL
             minHeight = (56 * density).toInt()
@@ -2482,6 +2486,9 @@ object PrimeSearchOverlay {
                 results.addView(webPanel)
                 renderWebPanel(query)
                 scheduleResultsReorder {
+                    // A newer keystroke can arrive before this deferred layout.
+                    // Never reorder cards for an obsolete result snapshot.
+                    if (!dialog.isShowing || detailOpen || input.text.toString() != query) return@scheduleResultsReorder
                     reorderSearchSections()
                     val requestedCategory = initialCategory
                     val categoryCard = requestedCategory?.let(categoryCards::get)
