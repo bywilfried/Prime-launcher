@@ -305,11 +305,10 @@ object PrimeSearchOverlay {
         )
         activeAlgorithm = algorithm
         val input = EditText(launcher).apply {
-            isSingleLine = true
-            // Disable keyboard/editor inline completion; app matches belong in
-            // the results grid and must never appear as ghost text in the field.
+            // App matches belong in the results grid, not as inline ghost text.
             inputType = android.text.InputType.TYPE_CLASS_TEXT or
                 android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            isSingleLine = true
             hint = "Prime Search"
             gravity = Gravity.CENTER_VERTICAL
             minHeight = (56 * density).toInt()
