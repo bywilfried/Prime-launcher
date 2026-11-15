@@ -363,11 +363,11 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
         input.onFocusChangeListener = { _, hasFocus ->
             app.lawnchair.search.PrimeSearchTrace.record("drawer focus=$hasFocus len=${input.text?.length ?: 0}")
             if (hasFocus) {
-                if (prefs2.searchAlgorithm.firstCached() != LawnchairSearchAlgorithm.APP_SEARCH) {
-                    input.setHint(R.string.all_apps_device_search_hint)
-                } else {
-                    input.setHint(R.string.all_apps_search_bar_hint)
-                }
+                // A focused, empty drawer search field should be truly blank.
+                // Keep the idle search-bar label managed by the unfocused QSB.
+                input.hint = ""
+                hint.text = ""
+                hint.isInvisible = true
 
                 if (input.text.toString().isEmpty() && isDirectFocus) {
                     searchAlgorithm?.doZeroStateSearch(this)
@@ -375,7 +375,7 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
                 }
 
                 setBackgroundVisibility(false, 0f)
-                animateHintVisibility(true)
+                animateHintVisibility(false)
                 animatePadding(currentPaddingLeft / 2, currentPaddingRight / 2)
             } else {
                 setBackgroundVisibility(true, 1f)
