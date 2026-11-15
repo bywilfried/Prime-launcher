@@ -1824,6 +1824,7 @@ object PrimeSearchOverlay {
         var lastAppGridSignature: List<String>? = null
         var pendingNativeRefresh: Runnable? = null
         var pendingTypingRender: Runnable? = null
+        var pendingSecondaryRender: Runnable? = null
         var readyTypingRender: ArrayList<BaseAllAppsAdapter.AdapterItem>? = null
         // A result refresh must never detach an app tile between DOWN and UP.
         var appTouchInProgress = false
@@ -2483,7 +2484,21 @@ object PrimeSearchOverlay {
                     }
                 }
                 results.addView(webPanel)
-                renderWebPanel(query)
+                // The app grid is the first priority. Render secondary providers
+                // on the next frame, and discard their work if typing continues.
+                pendingSecondaryRender?.let(webHandler::removeCallbacks)
+                val secondaryRender = Runnable {
+                    pendingSecondaryRender = null
+                    if (!dialog.isShowing || detailOpen || input.text.toString() != query) return@Runnable
+                    renderWebPanel(query)
+                    scheduleResultsReorder {
+                        if (dialog.isShowing && !detailOpen && input.text.toString() == query) {
+                            reorderSearchSections()
+                        }
+                    }
+                }
+                pendingSecondaryRender = secondaryRender
+                webHandler.post(secondaryRender)
                 scheduleResultsReorder {
                     // A newer keystroke can arrive before this deferred layout.
                     // Never reorder cards for an obsolete result snapshot.
@@ -2779,6 +2794,10 @@ object PrimeSearchOverlay {
                 pendingSearch = null
                 pendingNativeRefresh?.let(webHandler::removeCallbacks)
                 pendingNativeRefresh = null
+                pendingTypingRender?.let(webHandler::removeCallbacks)
+                pendingTypingRender = null
+                pendingSecondaryRender?.let(webHandler::removeCallbacks)
+                pendingSecondaryRender = null
                 updateWebSuggestions(query)
                 // Keep current rows visible while the user types. Only the
                 // settled query is sent to the expensive native search engine.
