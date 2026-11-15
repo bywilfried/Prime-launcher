@@ -2075,9 +2075,14 @@ object PrimeSearchOverlay {
                                 nativeSection.addView(row)
                             }
                         }
-                        if (category == PrimeSearchResultPreferences.Category.APP_SHORTCUTS) {
+                        if (category == PrimeSearchResultPreferences.Category.APP_SHORTCUTS ||
+                            category == PrimeSearchResultPreferences.Category.CALCULATOR) {
                             val heading = TextView(launcher).apply {
-                                text = "Raccourcis d'app"
+                                text = if (category == PrimeSearchResultPreferences.Category.CALCULATOR) {
+                                    category.title
+                                } else {
+                                    "Raccourcis d'app"
+                                }
                                 setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
                                 setTypeface(typeface, android.graphics.Typeface.BOLD)
                                 setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
