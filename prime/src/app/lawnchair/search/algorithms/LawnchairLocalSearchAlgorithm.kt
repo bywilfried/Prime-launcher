@@ -195,7 +195,18 @@ class LawnchairLocalSearchAlgorithm(
                     resultsArray.toList().flatten()
                 }
 
-                val calcResult = CalculatorSearchProvider.search(context, query).firstOrNull()
+                // Prime Search has its own calculator category switch. Do not
+                // silently hide calculations because the legacy drawer toggle is off.
+                val calculatorEnabled = app.lawnchair.prime.search.PrimeSearchResultPreferences.enabled(
+                    context,
+                    app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALCULATOR,
+                    preferenceSurface,
+                )
+                val calcResult = if (calculatorEnabled) {
+                    CalculatorSearchProvider.search(
+                        context, query, respectLegacyPreference = !primeSearch,
+                    ).firstOrNull()
+                } else null
                 val actions = generateActionResults(query).filterNot { primeSearch && it is SearchResult.Action.SearchSettings }
                 var previousProviderSnapshot: Pair<List<SearchResult>, List<SearchResult.Shortcut>>? = null
                 combine(nonAppProvidersFlow, shortcutResultsFlow) { nonAppResults, shortcutResults ->
