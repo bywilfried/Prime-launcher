@@ -1826,6 +1826,7 @@ object PrimeSearchOverlay {
         var pendingTypingRender: Runnable? = null
         var pendingSecondaryRender: Runnable? = null
         var readyTypingRender: ArrayList<BaseAllAppsAdapter.AdapterItem>? = null
+        var executingTypingRender = false
         // A result refresh must never detach an app tile between DOWN and UP.
         var appTouchInProgress = false
         // Cache labels for this search session instead of querying PackageManager
@@ -1837,15 +1838,20 @@ object PrimeSearchOverlay {
                 if (!dialog.isShowing || input.text.toString() != query || detailOpen) return
                 // Coalesce rapid provider emissions and keystrokes into one UI pass.
                 // Never build result views in the same frame as an input edit.
-                if (readyTypingRender !== items) {
+                if (!executingTypingRender) {
                     pendingTypingRender?.let(webHandler::removeCallbacks)
                     val deferredItems = items?.let { ArrayList(it) }
                     val deferred = Runnable {
                         pendingTypingRender = null
                         if (dialog.isShowing && !detailOpen && input.text.toString() == query) {
                             readyTypingRender = deferredItems
-                            onSearchResult(query, deferredItems)
-                            readyTypingRender = null
+                            executingTypingRender = true
+                            try {
+                                onSearchResult(query, deferredItems)
+                            } finally {
+                                executingTypingRender = false
+                                readyTypingRender = null
+                            }
                         }
                     }
                     pendingTypingRender = deferred
