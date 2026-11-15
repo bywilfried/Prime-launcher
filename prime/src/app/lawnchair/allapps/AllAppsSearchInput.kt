@@ -476,8 +476,10 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
     }
 
     override fun setFocusedResultTitle(title: CharSequence?, sub: CharSequence?, showArrow: Boolean) {
-        focusedResultTitle = title?.toString().orEmpty()
-        updateHint()
+        // Search suggestions remain in the result list, never inline in the editor.
+        focusedResultTitle = ""
+        hint.text = ""
+        hint.isInvisible = true
     }
 
     override fun refreshResults() {
@@ -485,28 +487,9 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
     }
 
     private fun updateHint() {
-        val inputString = input.text.toString()
-        val inputLowerCase = inputString.lowercase(Locale.getDefault())
-        val focusedLowerCase = focusedResultTitle.lowercase(Locale.getDefault())
-        if (canShowHint &&
-            inputLowerCase.isNotEmpty() &&
-            focusedLowerCase.isNotEmpty() &&
-            focusedLowerCase.matches(Regex("^[\\x00-\\x7F]*$")) &&
-            focusedLowerCase.startsWith(inputLowerCase)
-        ) {
-            val hintColor = ThemeColors.resolve(
-                context,
-                ThemeProfile.current(context),
-                ThemeColorRole.DRAWER_SEARCH_HINT,
-                context.effectiveThemeVariant(),
-            )
-            val hintText = SpannableStringBuilder(inputString)
-                .append(focusedLowerCase.substring(inputLowerCase.length))
-            hintText.setSpan(ForegroundColorSpan(Color.TRANSPARENT), 0, inputLowerCase.length, SPAN_POINT_MARK)
-            hintText.setSpan(ForegroundColorSpan(hintColor), inputLowerCase.length, hintText.length, SPAN_POINT_MARK)
-            hint.text = hintText
-            hint.isVisible = true
-        }
+        // Do not append the focused result title to the user's actual query.
+        hint.text = ""
+        hint.isInvisible = true
     }
 
     override fun onGlobalLayout() {
