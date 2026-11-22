@@ -10,6 +10,7 @@ import android.graphics.Paint;
 import android.graphics.Typeface;
 import com.android.launcher3.icons.BitmapInfo;
 import android.net.Uri;
+import android.util.Log;
 import android.os.Process;
 
 import com.android.launcher3.LauncherSettings;
@@ -27,6 +28,7 @@ import java.security.MessageDigest;
  */
 public final class PrimeWebDrawerEntries {
     private PrimeWebDrawerEntries() {}
+    private static final String TAG = "PrimeWebDrawer";
 
     public static void append(Context context, AllAppsList allApps) {
         final String serialized = context.getSharedPreferences("prime_web_apps", Context.MODE_PRIVATE)
@@ -41,8 +43,10 @@ public final class PrimeWebDrawerEntries {
                 final Uri uri = Uri.parse(url);
                 if (name.isEmpty() || !"https".equalsIgnoreCase(uri.getScheme())
                         || uri.getHost() == null || uri.getHost().isEmpty()
-                        || uri.getUserInfo() != null) continue;
+                        || uri.getUserInfo() != null || uri.getPort() == 0
+                        || uri.getPort() > 65535) continue;
 
+                try {
                 final String identifier = sha256(url);
                 final ComponentName component = new ComponentName(
                         context.getPackageName(),
@@ -56,9 +60,12 @@ public final class PrimeWebDrawerEntries {
                 app.bitmap = makeIcon(name, identifier);
                 app.sectionName = name.substring(0, 1).toUpperCase(java.util.Locale.getDefault());
                 allApps.data.add(app);
+                } catch (Exception error) {
+                    Log.w(TAG, "Skipping invalid Web drawer entry", error);
+                }
             }
-        } catch (Exception ignored) {
-            // Malformed persisted entries must never prevent the regular drawer from loading.
+        } catch (Exception error) {
+            Log.w(TAG, "Unable to parse saved Web drawer entries", error);
         }
     }
 
