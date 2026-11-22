@@ -79,6 +79,18 @@ fun WebAppsPreferences() {
             if (error != null && !showAddDialog) {
                 Text(error!!)
             }
+            Text("Sites de test")
+            OutlinedButton(onClick = {
+                name = "Spliit Cloud"
+                url = "https://spliit.cloud/"
+                showAddDialog = true
+            }) { Text("Ajouter Spliit Cloud") }
+            OutlinedButton(onClick = {
+                name = "SUTOM"
+                url = "https://sutom.nocle.fr/#"
+                showAddDialog = true
+            }) { Text("Ajouter SUTOM") }
+            Text("Ces deux exemples sont des raccourcis gérés par Prime ; leur enregistrement ne prouve pas une installation WebAPK.")
             Text("Raccourcis Web enregistrés dans Prime")
             savedApps.forEach { app ->
                 Text(app.name)
