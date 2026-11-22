@@ -680,7 +680,7 @@ public class LoaderTask implements Runnable {
             allActivityList.addAll(apps);
         }
 
-        if (FeatureFlags.PROMISE_APPS_IN_ALL_APPS.get()) {
+        // Prime-owned HTTPS links participate in the same app drawer and tab/folder model.\n        PrimeWebDrawerEntries.append(mContext, mBgAllAppsList);\n\n        if (FeatureFlags.PROMISE_APPS_IN_ALL_APPS.get()) {
             // get all active sessions and add them to the all apps list
             for (PackageInstaller.SessionInfo info :
                     mSessionHelper.getAllVerifiedSessions()) {
