@@ -51,7 +51,10 @@ fun WebAppsPreferences() {
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) refreshKey++
+            if (event == Lifecycle.Event.ON_RESUME) {
+                refreshKey++
+                savedApps = repository.getAll()
+            }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
@@ -79,7 +82,7 @@ fun WebAppsPreferences() {
             if (error != null && !showAddDialog) {
                 Text(error!!)
             }
-            Text("Raccourcis Web enregistrés dans Prime")
+            Text("Liens Web enregistrés dans Prime (pas encore intégrés au tiroir)")
             savedApps.forEach { app ->
                 Text(app.name)
                 Text(app.url)
@@ -131,13 +134,13 @@ fun WebAppsPreferences() {
             Text(
                 "Attention : « Ajouter à l'écran d'accueil » peut créer un simple " +
                     "raccourci plutôt qu'une application installée. " +
-                    "L'intégration de ces raccourcis au tiroir est prévue séparément."
+                    "Les raccourcis du navigateur ne sont pas toujours accessibles à Prime."
             )
         }
     }
 
     if (showAddDialog) {
-        val normalized = normalizeWebAppUrl(url)
+        val normalized = PrimeWebAppsRepository.validateUrl(url)
         AlertDialog(
             onDismissRequest = { showAddDialog = false; error = null },
             title = { Text("Installer une application Web") },
@@ -206,17 +209,6 @@ fun WebAppsPreferences() {
             },
         )
     }
-}
-
-/** Only accept web URLs; never forward arbitrary schemes to external apps. */
-private fun normalizeWebAppUrl(input: String): String? {
-    val trimmed = input.trim()
-    if (trimmed.isBlank()) return null
-    val candidate = if ("://" in trimmed) trimmed else "https://$trimmed"
-    val uri = runCatching { Uri.parse(candidate) }.getOrNull() ?: return null
-    if (uri.scheme != "https" || uri.host.isNullOrBlank()) return null
-    if (uri.encodedUserInfo != null) return null
-    return uri.toString()
 }
 
 private data class InstalledWebApk(
