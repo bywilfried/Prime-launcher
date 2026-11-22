@@ -2,6 +2,10 @@ package app.lawnchair.ui.preferences.destinations
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.ComponentName
+import android.content.pm.LauncherApps
+import android.os.Process
+import android.provider.Settings
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,6 +15,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,6 +39,8 @@ fun WebAppsPreferences() {
     var showAddDialog by remember { mutableStateOf(false) }
     var url by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+    var refreshKey by remember { mutableStateOf(0) }
+    val webApks = remember(context, refreshKey) { findInstalledWebApks(context) }
 
     PreferenceLayout(
         label = "Applications Web (PWA)",
@@ -53,6 +60,38 @@ fun WebAppsPreferences() {
                     "dans le tiroir. Leur mode hors ligne et leurs données restent " +
                     "gérés par le navigateur."
             )
+            Text("Applications Web installées (WebAPK)")
+            OutlinedButton(onClick = { refreshKey++ }) {
+                Text("Actualiser la liste")
+            }
+            if (webApks.isEmpty()) {
+                Text("Aucun WebAPK détecté. Installez une PWA depuis votre navigateur, puis actualisez.")
+            } else {
+                webApks.forEach { webApp ->
+                    Text(webApp.label)
+                    Button(onClick = {
+                        runCatching {
+                            context.getSystemService(LauncherApps::class.java)?.startMainActivity(
+                                webApp.component,
+                                Process.myUserHandle(),
+                                null,
+                                null,
+                            )
+                        }.onFailure { error = "Impossible de lancer ${webApp.label}." }
+                    }) {
+                        Text("Ouvrir ${webApp.label}")
+                    }
+                    OutlinedButton(onClick = {
+                        val details = Intent(
+                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.parse("package:${webApp.component.packageName}"),
+                        )
+                        runCatching { context.startActivity(details) }
+                    }) {
+                        Text("Informations sur ${webApp.label}")
+                    }
+                }
+            }
             Text(
                 "Attention : « Ajouter à l'écran d'accueil » peut créer un simple " +
                     "raccourci plutôt qu'une application installée. " +
@@ -122,4 +161,24 @@ private fun normalizeWebAppUrl(input: String): String? {
     if (uri.scheme != "https" || uri.host.isNullOrBlank()) return null
     if (uri.userInfo != null) return null
     return uri.toString()
+}
+
+private data class InstalledWebApk(
+    val label: String,
+    val component: ComponentName,
+)
+
+/**
+ * WebAPKs use the Chromium WebAPK package namespace and expose normal launcher
+ * activities. Do not confuse arbitrary browser shortcuts with installed WebAPKs.
+ */
+private fun findInstalledWebApks(context: android.content.Context): List<InstalledWebApk> {
+    val launcherApps = context.getSystemService(LauncherApps::class.java) ?: return emptyList()
+    return runCatching {
+        launcherApps.getActivityList(null, Process.myUserHandle())
+            .filter { it.componentName.packageName.startsWith("org.chromium.webapk.") }
+            .map { InstalledWebApk(it.label.toString(), it.componentName) }
+            .distinctBy { it.component }
+            .sortedBy { it.label.lowercase() }
+    }.getOrDefault(emptyList())
 }
