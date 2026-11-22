@@ -3,6 +3,12 @@ package com.android.launcher3.model;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Typeface;
+import com.android.launcher3.icons.BitmapInfo;
 import android.net.Uri;
 import android.os.Process;
 
@@ -47,12 +53,32 @@ public final class PrimeWebDrawerEntries {
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 final AppInfo app = new AppInfo(component, name, Process.myUserHandle(), launch);
                 app.container = LauncherSettings.Favorites.CONTAINER_ALL_APPS;
+                app.bitmap = makeIcon(name, identifier);
                 app.sectionName = name.substring(0, 1).toUpperCase(java.util.Locale.getDefault());
                 allApps.data.add(app);
             }
         } catch (Exception ignored) {
             // Malformed persisted entries must never prevent the regular drawer from loading.
         }
+    }
+
+    /** Deterministic, offline-capable icon while no browser icon is available. */
+    private static BitmapInfo makeIcon(String name, String identifier) {
+        final int size = 144;
+        final Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        final Canvas canvas = new Canvas(bitmap);
+        final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        final int hue = Integer.parseInt(identifier.substring(0, 2), 16) * 360 / 256;
+        final float[] hsv = {hue, 0.48f, 0.62f};
+        paint.setColor(Color.HSVToColor(hsv));
+        canvas.drawRoundRect(0, 0, size, size, 28, 28, paint);
+        paint.setColor(Color.WHITE);
+        paint.setTextAlign(Paint.Align.CENTER);
+        paint.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
+        paint.setTextSize(76);
+        final String letter = name.substring(0, 1).toUpperCase(java.util.Locale.getDefault());
+        canvas.drawText(letter, size / 2f, size / 2f - (paint.ascent() + paint.descent()) / 2f, paint);
+        return BitmapInfo.of(bitmap, Color.HSVToColor(hsv));
     }
 
     private static String sha256(String value) throws Exception {
