@@ -17,6 +17,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,6 +44,14 @@ fun WebAppsPreferences() {
     var url by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var refreshKey by remember { mutableStateOf(0) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) refreshKey++
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     val webApks = remember(context, refreshKey) { findInstalledWebApks(context) }
 
     PreferenceLayout(
@@ -60,6 +72,9 @@ fun WebAppsPreferences() {
                     "dans le tiroir. Leur mode hors ligne et leurs données restent " +
                     "gérés par le navigateur."
             )
+            if (error != null && !showAddDialog) {
+                Text(error!!)
+            }
             Text("Applications Web installées (WebAPK)")
             OutlinedButton(onClick = { refreshKey++ }) {
                 Text("Actualiser la liste")
@@ -71,7 +86,9 @@ fun WebAppsPreferences() {
                     Text(webApp.label)
                     Button(onClick = {
                         runCatching {
-                            context.getSystemService(LauncherApps::class.java)?.startMainActivity(
+                            val launcherApps = context.getSystemService(LauncherApps::class.java)
+                                ?: error("Service Android LauncherApps indisponible")
+                            launcherApps.startMainActivity(
                                 webApp.component,
                                 Process.myUserHandle(),
                                 null,
@@ -87,6 +104,7 @@ fun WebAppsPreferences() {
                             Uri.parse("package:${webApp.component.packageName}"),
                         )
                         runCatching { context.startActivity(details) }
+                            .onFailure { error = "Impossible d’ouvrir les informations de l’application." }
                     }) {
                         Text("Informations sur ${webApp.label}")
                     }
@@ -159,7 +177,7 @@ private fun normalizeWebAppUrl(input: String): String? {
     val candidate = if ("://" in trimmed) trimmed else "https://$trimmed"
     val uri = runCatching { Uri.parse(candidate) }.getOrNull() ?: return null
     if (uri.scheme != "https" || uri.host.isNullOrBlank()) return null
-    if (uri.userInfo != null) return null
+    if (uri.encodedUserInfo != null) return null
     return uri.toString()
 }
 
