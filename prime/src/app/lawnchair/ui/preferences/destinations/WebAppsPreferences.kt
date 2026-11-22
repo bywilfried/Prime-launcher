@@ -72,7 +72,7 @@ fun WebAppsPreferences() {
                     "son menu « Installer l'application » ou « Ajouter à l'écran d'accueil »."
             )
             Button(onClick = { showAddDialog = true }) {
-                Text("Installer une PWA depuis une URL")
+                Text("Ajouter une application Web")
             }
             Text(
                 "Les WebAPK installés apparaissent comme des applications Android " +
@@ -82,7 +82,7 @@ fun WebAppsPreferences() {
             if (error != null && !showAddDialog) {
                 Text(error!!)
             }
-            Text("Liens Web enregistrés dans Prime (pas encore intégrés au tiroir)")
+            Text("Liens Web enregistrés dans Prime")
             savedApps.forEach { app ->
                 Text(app.name)
                 Text(app.url)
@@ -143,7 +143,7 @@ fun WebAppsPreferences() {
         val normalized = PrimeWebAppsRepository.validateUrl(url)
         AlertDialog(
             onDismissRequest = { showAddDialog = false; error = null },
-            title = { Text("Installer une application Web") },
+            title = { Text("Ajouter une application Web") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("Saisissez l'adresse HTTPS de la PWA à installer.")
