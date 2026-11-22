@@ -87,7 +87,7 @@ fun WebAppsPreferences() {
                     Button(onClick = {
                         runCatching {
                             val launcherApps = context.getSystemService(LauncherApps::class.java)
-                                ?: error("Service Android LauncherApps indisponible")
+                                ?: throw IllegalStateException("Service Android LauncherApps indisponible")
                             launcherApps.startMainActivity(
                                 webApp.component,
                                 Process.myUserHandle(),
