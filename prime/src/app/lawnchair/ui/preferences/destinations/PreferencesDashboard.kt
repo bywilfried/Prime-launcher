@@ -61,6 +61,7 @@ import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
 import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
 import app.lawnchair.ui.preferences.components.layout.ProvideDescriptionTextStyle
 import app.lawnchair.ui.preferences.navigation.About
+import app.lawnchair.ui.preferences.navigation.WebApps
 import app.lawnchair.ui.preferences.navigation.AppDrawer
 import app.lawnchair.ui.preferences.navigation.BackupAndRestore
 import app.lawnchair.ui.preferences.navigation.DebugMenu
@@ -157,6 +158,14 @@ fun PreferencesDashboard(
                     isSelected = currentRoute is AppDrawer,
                 )
             }
+
+            PreferenceCategory(
+                label = "Applications Web (PWA)",
+                description = "Gérer les applications Web dans Prime Launcher",
+                iconResource = R.drawable.ic_apps,
+                onNavigate = { onNavigate(WebApps) },
+                isSelected = currentRoute is WebApps,
+            )
 
             PreferenceCategory(
                 label = stringResource(R.string.search_bar_label),
