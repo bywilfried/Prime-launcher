@@ -52,6 +52,7 @@ class PrimeWebAppsRepository(context: Context) {
             val candidate = if ("://" in raw) raw else "https://$raw"
             val uri = runCatching { Uri.parse(candidate) }.getOrNull() ?: return null
             if (uri.scheme != "https" || uri.host.isNullOrBlank() || uri.encodedUserInfo != null) return null
+            if (uri.port !in -1..65535 || uri.port == 0) return null
             return uri.toString()
         }
     }
