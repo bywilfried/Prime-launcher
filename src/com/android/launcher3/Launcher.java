@@ -1285,6 +1285,9 @@ public class Launcher extends StatefulActivity<LauncherState>
 
     @Override
     protected void onPause() {
+        // Capture the state before opening Preferences, including on first launch.
+        mPrimeWebAppsSnapshot = getSharedPreferences("prime_web_apps", MODE_PRIVATE)
+                .getString("entries", "[]");
         // Ensure that items added to Launcher are queued until Launcher returns
         ItemInstallQueue.INSTANCE.get(this).pauseModelPush(FLAG_ACTIVITY_PAUSED);
 
