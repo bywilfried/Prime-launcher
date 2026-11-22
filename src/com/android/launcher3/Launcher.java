@@ -1244,6 +1244,8 @@ public class Launcher extends StatefulActivity<LauncherState>
     }
 
     @Override
+    private String mPrimeWebAppsSnapshot;
+
     protected void onResume() {
         TraceHelper.INSTANCE.beginSection(ON_RESUME_EVT);
         super.onResume();
@@ -1253,6 +1255,14 @@ public class Launcher extends StatefulActivity<LauncherState>
         } else {
             mOverlayManager.onActivityResumed();
         }
+
+        // Reload the all-apps model only when Prime's Web entries changed while paused.
+        String primeWebApps = getSharedPreferences("prime_web_apps", MODE_PRIVATE)
+                .getString("entries", "[]");
+        if (mPrimeWebAppsSnapshot != null && !mPrimeWebAppsSnapshot.equals(primeWebApps)) {
+            mModel.forceReload();
+        }
+        mPrimeWebAppsSnapshot = primeWebApps;
 
         DragView.removeAllViews(this);
 
