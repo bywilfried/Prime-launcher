@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import app.lawnchair.prime.webapps.PrimeWebAppsRepository
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
 
@@ -42,6 +43,9 @@ fun WebAppsPreferences() {
     val context = LocalContext.current
     var showAddDialog by remember { mutableStateOf(false) }
     var url by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
+    val repository = remember(context) { PrimeWebAppsRepository(context) }
+    var savedApps by remember { mutableStateOf(repository.getAll()) }
     var error by remember { mutableStateOf<String?>(null) }
     var refreshKey by remember { mutableStateOf(0) }
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -74,6 +78,20 @@ fun WebAppsPreferences() {
             )
             if (error != null && !showAddDialog) {
                 Text(error!!)
+            }
+            Text("Raccourcis Web enregistrés dans Prime")
+            savedApps.forEach { app ->
+                Text(app.name)
+                Text(app.url)
+                Button(onClick = {
+                    runCatching {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(app.url)))
+                    }.onFailure { error = "Impossible d'ouvrir l'application Web." }
+                }) { Text("Ouvrir") }
+                OutlinedButton(onClick = {
+                    repository.remove(app.url)
+                    savedApps = repository.getAll()
+                }) { Text("Supprimer") }
             }
             Text("Applications Web installées (WebAPK)")
             OutlinedButton(onClick = { refreshKey++ }) {
@@ -127,6 +145,13 @@ fun WebAppsPreferences() {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("Saisissez l'adresse HTTPS de la PWA à installer.")
                     OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Nom de l'application") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
                         value = url,
                         onValueChange = { url = it; error = null },
                         label = { Text("Adresse du site") },
@@ -144,6 +169,15 @@ fun WebAppsPreferences() {
             },
             confirmButton = {
                 TextButton(
+                    enabled = normalized != null && name.isNotBlank(),
+                    onClick = {
+                        if (repository.add(name, normalized!!)) {
+                            savedApps = repository.getAll()
+                            showAddDialog = false
+                        }
+                    },
+                ) { Text("Enregistrer dans Prime") }
+                TextButton(
                     enabled = normalized != null,
                     onClick = {
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(normalized)).apply {
@@ -151,6 +185,10 @@ fun WebAppsPreferences() {
                         }
                         try {
                             context.startActivity(intent)
+                            if (name.isNotBlank()) {
+                                repository.add(name, normalized!!)
+                                savedApps = repository.getAll()
+                            }
                             showAddDialog = false
                             error = null
                         } catch (_: ActivityNotFoundException) {
