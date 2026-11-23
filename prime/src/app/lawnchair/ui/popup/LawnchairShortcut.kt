@@ -190,7 +190,8 @@ class LawnchairShortcut {
                 ) {
                     CustomizeAppDialog(
                         icon = icon,
-                        defaultTitle = appInfo.title.toString(),
+                        defaultTitle = com.android.launcher3.model.PrimePinnedDrawerShortcuts
+                            .getOriginalTitle(launcher, appInfo),
                         componentKey = appInfo.toComponentKey(),
                     ) {
                         launcher.model.forceReload()
