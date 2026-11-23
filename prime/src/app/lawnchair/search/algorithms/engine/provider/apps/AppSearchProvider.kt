@@ -55,7 +55,17 @@ object AppSearchProvider {
             normalSearch(searchableApps, queryNormalized, maxAppResults, hiddenApps, hiddenAppsInSearch)
         }
 
-        return appResults.map { SearchResult.App(data = it) }
+        // Prime-owned drawer shortcuts are not installed launcher activities.
+        // Include matching saved entries independently of the hidden-app filter,
+        // which can hide the Prime package that hosts their synthetic components.
+        val matches = stored.filter {
+            stripDiacritics(it.title.toString()).lowercase(Locale.getDefault())
+                .contains(queryNormalized)
+        }
+        val result = appResults.toMutableList()
+        val seen = result.mapNotNull { it.componentName }.toHashSet()
+        matches.forEach { if (seen.add(it.componentName)) result.add(it) }
+        return result.map { SearchResult.App(data = it) }
     }
 
     // Shared relevance order for Prime Search and drawer search.
