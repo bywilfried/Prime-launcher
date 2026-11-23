@@ -570,4 +570,6 @@
 
     <!-- English fallback strings for locale-only resource keys -->
     <string name="item_added_to_workspace">Item added to home screen</string>
+    <string name="prime_add_to_drawer">Ajouter au tiroir</string>
+    <string name="prime_remove_from_drawer">Retirer du tiroir</string>
 </resources>
