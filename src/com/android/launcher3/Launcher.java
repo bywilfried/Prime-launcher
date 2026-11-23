@@ -2231,6 +2231,9 @@ public class Launcher extends StatefulActivity<LauncherState>
             return result;
         }
 
+        if (intent != null && com.android.launcher3.model.PrimePinnedDrawerShortcuts.launchPinned(this, intent)) {
+            return new RunnableList();
+        }
         RunnableList result = super.startActivitySafely(v, intent, item);
         if (result != null && v instanceof BubbleTextView) {
             // This is set to the view that launched the activity that navigated the user away
@@ -3147,9 +3150,11 @@ public class Launcher extends StatefulActivity<LauncherState>
     public Stream<SystemShortcut.Factory> getSupportedShortcuts(int container) {
         if (enableLongPressRemoveShortcut()
                 && (container == CONTAINER_DESKTOP || container == CONTAINER_HOTSEAT)) {
-            return Stream.of(APP_INFO, WIDGETS, INSTALL, REMOVE);
+            return Stream.of(APP_INFO, WIDGETS, INSTALL, REMOVE,
+                    SystemShortcut.PRIME_DRAWER_SHORTCUT);
         }
-        return Stream.of(APP_INFO, WIDGETS, INSTALL);
+        return Stream.of(APP_INFO, WIDGETS, INSTALL,
+                SystemShortcut.PRIME_DRAWER_SHORTCUT);
     }
 
     /**
