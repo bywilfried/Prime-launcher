@@ -296,6 +296,13 @@ public abstract class SystemShortcut<T extends ActivityContext> extends ItemInfo
             if (success) {
                 com.android.launcher3.Launcher launcher =
                         com.android.launcher3.Launcher.getLauncher(context);
+                if (mSaved && mItemInfo instanceof com.android.launcher3.model.data.AppInfo) {
+                    android.content.ComponentName component =
+                            ((com.android.launcher3.model.data.AppInfo) mItemInfo).componentName;
+                    if (component != null) {
+                        launcher.getAppsView().getAppsStore().removePrimeDrawerShortcut(component);
+                    }
+                }
                 launcher.getModel().forceReload();
             } else {
                 android.widget.Toast.makeText(context,
