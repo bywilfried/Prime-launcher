@@ -65,16 +65,28 @@ public final class PrimePinnedDrawerShortcuts {
     }
 
     public static boolean isEligible(ItemInfo item) {
-        return item instanceof WorkspaceItemInfo
-                && (item.itemType == LauncherSettings.Favorites.ITEM_TYPE_SHORTCUT
-                || item.itemType == LauncherSettings.Favorites.ITEM_TYPE_DEEP_SHORTCUT
-                || (item.itemType == LauncherSettings.Favorites.ITEM_TYPE_APPLICATION
-                    && Intent.ACTION_VIEW.equals(item.getIntent() == null
-                            ? null : item.getIntent().getAction())
-                    && item.getIntent().getData() != null
-                    && ("https".equalsIgnoreCase(item.getIntent().getData().getScheme())
-                        || "http".equalsIgnoreCase(item.getIntent().getData().getScheme()))))
-                && item.getIntent() != null && Process.myUserHandle().equals(item.user);
+        if (!(item instanceof WorkspaceItemInfo)
+                || item.getIntent() == null || !Process.myUserHandle().equals(item.user)) {
+            return false;
+        }
+        if (item.itemType == LauncherSettings.Favorites.ITEM_TYPE_SHORTCUT
+                || item.itemType == LauncherSettings.Favorites.ITEM_TYPE_DEEP_SHORTCUT) {
+            return true;
+        }
+        if (item.itemType != LauncherSettings.Favorites.ITEM_TYPE_APPLICATION) return false;
+
+        // Browser-created home icons can be stored as ITEM_TYPE_APPLICATION,
+        // even though they are not regular installed apps. A standard launcher
+        // activity must NOT be duplicated in the drawer.
+        Intent intent = item.getIntent();
+        if (!Intent.ACTION_MAIN.equals(intent.getAction())
+                || !intent.hasCategory(Intent.CATEGORY_LAUNCHER)) {
+            return true;
+        }
+        // Some browsers wrap the web launch in an ACTION_MAIN intent, carrying
+        // the actual URL / app identity in extras or data.
+        return intent.getData() != null || (intent.getExtras() != null
+                && !intent.getExtras().isEmpty());
     }
 
     private static String identity(ItemInfo item) {
