@@ -215,7 +215,8 @@ public final class PrimePinnedDrawerShortcuts {
                 context.getPackageName() + ".prime.pinned.Shortcut_");
     }
 
-    public static void append(Context context, AllAppsList allApps) {
+    public static java.util.List<AppInfo> getEntries(Context context) {
+        java.util.ArrayList<AppInfo> result = new java.util.ArrayList<>();
         JSONArray entries = read(context);
         for (int i = 0; i < entries.length(); i++) {
             try {
@@ -245,11 +246,16 @@ public final class PrimePinnedDrawerShortcuts {
                 }
                 app.sectionName = title.isEmpty() ? "#" : title.substring(0, 1)
                         .toUpperCase(java.util.Locale.getDefault());
-                allApps.data.add(app);
+                result.add(app);
             } catch (Exception error) {
                 Log.w(TAG, "Skipping invalid saved shortcut", error);
             }
         }
+        return result;
+    }
+
+    public static void append(Context context, AllAppsList allApps) {
+        allApps.data.addAll(getEntries(context));
     }
 
     /** Dispatch pinned shortcuts via Android's launcher API, not via the browser URL. */
