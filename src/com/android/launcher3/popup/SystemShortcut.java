@@ -263,6 +263,48 @@ public abstract class SystemShortcut<T extends ActivityContext> extends ItemInfo
         }
     }
 
+    /** Move a native home shortcut into the drawer without changing its launch target. */
+    public static final Factory<ActivityContext> PRIME_DRAWER_SHORTCUT =
+            (context, itemInfo, originalView) -> {
+                if (originalView == null) return null;
+                boolean saved = com.android.launcher3.model.PrimePinnedDrawerShortcuts
+                        .isDrawerEntry(originalView.getContext(), itemInfo);
+                if (!saved && !com.android.launcher3.model.PrimePinnedDrawerShortcuts
+                        .isEligible(itemInfo)) return null;
+                return new PrimeDrawerShortcut<>(context, itemInfo, originalView, saved);
+            };
+
+    public static class PrimeDrawerShortcut<T extends ActivityContext> extends SystemShortcut<T> {
+        private final boolean mSaved;
+
+        public PrimeDrawerShortcut(T target, ItemInfo itemInfo, View originalView, boolean saved) {
+            super(saved ? R.drawable.ic_remove_no_shadow : R.drawable.ic_install_no_shadow,
+                    saved ? R.string.prime_remove_from_drawer : R.string.prime_add_to_drawer,
+                    target, itemInfo, originalView, false);
+            mSaved = saved;
+        }
+
+        @Override
+        public void onClick(View view) {
+            android.content.Context context = view.getContext();
+            boolean success = mSaved
+                    ? com.android.launcher3.model.PrimePinnedDrawerShortcuts.remove(
+                            context, mItemInfo)
+                    : com.android.launcher3.model.PrimePinnedDrawerShortcuts.add(
+                            context, mItemInfo);
+            if (success) {
+                com.android.launcher3.Launcher launcher =
+                        com.android.launcher3.Launcher.getLauncher(context);
+                launcher.getModel().forceReload();
+            } else {
+                android.widget.Toast.makeText(context,
+                        "Impossible de modifier ce raccourci", android.widget.Toast.LENGTH_SHORT)
+                        .show();
+            }
+            AbstractFloatingView.closeAllOpenViews(mTarget);
+        }
+    }
+
     public static final Factory<ActivityContext> REMOVE = (context, itemInfo, originalView) -> {
         if (isHomeLocked(context)) {
             return null;
