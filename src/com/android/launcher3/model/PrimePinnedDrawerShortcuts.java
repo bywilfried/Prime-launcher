@@ -255,7 +255,40 @@ public final class PrimePinnedDrawerShortcuts {
     }
 
     public static void append(Context context, AllAppsList allApps) {
-        allApps.data.addAll(getEntries(context));
+        JSONArray entries = read(context);
+        for (int i = 0; i < entries.length(); i++) {
+            try {
+                JSONObject entry = entries.optJSONObject(i);
+                if (entry == null) continue;
+                String id = entry.getString("id");
+                String title = entry.getString("title");
+                Intent launch;
+                if ("pinned".equals(entry.optString("kind"))) {
+                    launch = new Intent(ACTION_PINNED)
+                            .putExtra(EXTRA_PACKAGE, entry.getString("package"))
+                            .putExtra(EXTRA_ID, entry.getString("shortcutId"));
+                } else {
+                    launch = Intent.parseUri(entry.getString("intent"), Intent.URI_INTENT_SCHEME);
+                }
+                launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                ComponentName component = new ComponentName(context.getPackageName(),
+                        context.getPackageName() + ".prime.pinned.Shortcut_" + id);
+                AppInfo app = new AppInfo(component, title, Process.myUserHandle(), launch);
+                app.itemType = LauncherSettings.Favorites.ITEM_TYPE_APPLICATION;
+                app.container = LauncherSettings.Favorites.CONTAINER_ALL_APPS;
+                String encoded = entry.optString("icon");
+                if (!encoded.isEmpty()) {
+                    byte[] bytes = Base64.decode(encoded, Base64.DEFAULT);
+                    Bitmap icon = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                    if (icon != null) app.bitmap = BitmapInfo.of(icon, Color.GRAY);
+                }
+                app.sectionName = title.isEmpty() ? "#" : title.substring(0, 1)
+                        .toUpperCase(java.util.Locale.getDefault());
+                allApps.data.add(app);
+            } catch (Exception error) {
+                Log.w(TAG, "Skipping invalid saved shortcut", error);
+            }
+        }
     }
 
     /** Dispatch pinned shortcuts via Android's launcher API, not via the browser URL. */
