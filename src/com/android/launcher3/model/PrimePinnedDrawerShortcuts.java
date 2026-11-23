@@ -215,6 +215,20 @@ public final class PrimePinnedDrawerShortcuts {
                 context.getPackageName() + ".prime.pinned.Shortcut_");
     }
 
+    public static String getOriginalTitle(Context context, ItemInfo item) {
+        if (!isDrawerEntry(context, item)) return String.valueOf(item.title);
+        String prefix = context.getPackageName() + ".prime.pinned.Shortcut_";
+        String id = ((AppInfo) item).componentName.getClassName().substring(prefix.length());
+        JSONArray entries = read(context);
+        for (int i = 0; i < entries.length(); i++) {
+            JSONObject entry = entries.optJSONObject(i);
+            if (entry != null && id.equals(entry.optString("id"))) {
+                return entry.optString("title", String.valueOf(item.title));
+            }
+        }
+        return String.valueOf(item.title);
+    }
+
     public static java.util.List<AppInfo> getEntries(Context context) {
         java.util.ArrayList<AppInfo> result = new java.util.ArrayList<>();
         JSONArray entries = read(context);
