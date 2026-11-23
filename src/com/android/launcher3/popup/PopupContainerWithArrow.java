@@ -225,6 +225,16 @@ public class PopupContainerWithArrow<T extends Context & ActivityContext>
                 .map(s -> s.getShortcut(launcher, item, icon))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+        // Browser-installed PWAs are often Android deep shortcuts (itemType=6).
+        // Ensure the native drawer action is present even if an intermediate
+        // launcher subclass omits its factory from the supported shortcut stream.
+        if (item.itemType == com.android.launcher3.LauncherSettings.Favorites.ITEM_TYPE_DEEP_SHORTCUT
+                && systemShortcuts.stream().noneMatch(
+                        shortcut -> shortcut instanceof SystemShortcut.PrimeDrawerShortcut)) {
+            SystemShortcut<?> drawerAction = SystemShortcut.PRIME_DRAWER_SHORTCUT
+                    .getShortcut(launcher, item, icon);
+            if (drawerAction != null) systemShortcuts.add((SystemShortcut) drawerAction);
+        }
         container = (PopupContainerWithArrow) launcher.getLayoutInflater().inflate(
                 R.layout.popup_container, launcher.getDragLayer(), false);
         if (launcher.isInState(com.android.launcher3.LauncherState.ALL_APPS)) {
