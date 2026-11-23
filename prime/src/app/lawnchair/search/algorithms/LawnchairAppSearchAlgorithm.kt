@@ -89,11 +89,19 @@ class LawnchairAppSearchAlgorithm(context: Context) : LawnchairSearchAlgorithm(c
             SearchUtils.normalSearch(searchableApps, query, maxResultsCount, hiddenApps, hiddenAppsInSearch)
         }
 
+        // Saved browser shortcuts are independent of Prime's package visibility.
+        // Search their persisted titles even when the launcher package is hidden.
+        val storedMatches = PrimePinnedDrawerShortcuts.getEntries(context).filter {
+            it.title.toString().contains(query, ignoreCase = true)
+        }
+        val existing = appResults.mapNotNull { it.componentName }.toHashSet()
+        val visibleResults = appResults + storedMatches.filter { existing.add(it.componentName) }
+
         val searchTargets = mutableListOf<SearchTargetCompat>()
 
-        if (appResults.isNotEmpty()) {
-            if (appResults.size == 1 && context.isDefaultLauncher()) {
-                val singleAppResult = appResults.firstOrNull()
+        if (visibleResults.isNotEmpty()) {
+            if (visibleResults.size == 1 && context.isDefaultLauncher()) {
+                val singleAppResult = visibleResults.firstOrNull()
                 val shortcuts = singleAppResult?.let { SearchUtils.getShortcuts(it, context) }
                 if (shortcuts != null && shortcuts.isNotEmpty()) {
                     // Show app as a row alongside its shortcuts (no duplicate icon)
@@ -101,7 +109,7 @@ class LawnchairAppSearchAlgorithm(context: Context) : LawnchairSearchAlgorithm(c
                     searchTargets.addAll(shortcuts.map(searchTargetFactory::createShortcutTarget))
                 } else {
                     // No shortcuts: show as icon
-                    appResults.mapTo(searchTargets, searchTargetFactory::createAppSearchTarget)
+                    visibleResults.mapTo(searchTargets, searchTargetFactory::createAppSearchTarget)
                 }
             } else {
                 // Multiple results: show as icons
