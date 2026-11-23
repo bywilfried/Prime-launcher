@@ -203,6 +203,15 @@ public class SecondaryDropTarget extends ButtonDropTarget implements OnAlarmList
             intent = item.getIntent();
             user = item.user;
         }
+        // A Web shortcut may be represented as an application entry while its VIEW
+        // intent resolves to the browser. Never offer to uninstall that browser.
+        // Only genuine launcher activities are eligible for uninstall.
+        if (intent != null && !Intent.ACTION_MAIN.equals(intent.getAction())) {
+            return null;
+        }
+        if (intent != null && !intent.hasCategory(Intent.CATEGORY_LAUNCHER)) {
+            return null;
+        }
         if (intent != null) {
             LauncherActivityInfo info = context.getSystemService(LauncherApps.class)
                     .resolveActivity(intent, user);
