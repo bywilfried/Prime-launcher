@@ -1243,9 +1243,9 @@ public class Launcher extends StatefulActivity<LauncherState>
         return Optional.of(LAUNCHER_ALLAPPS_EXIT);
     }
 
-    @Override
     private String mPrimeWebAppsSnapshot;
 
+    @Override
     protected void onResume() {
         TraceHelper.INSTANCE.beginSection(ON_RESUME_EVT);
         super.onResume();
