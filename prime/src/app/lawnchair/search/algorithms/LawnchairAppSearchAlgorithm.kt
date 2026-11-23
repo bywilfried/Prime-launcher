@@ -10,6 +10,7 @@ import app.lawnchair.util.isDefaultLauncher
 import com.android.launcher3.LauncherAppState
 import com.android.launcher3.allapps.BaseAllAppsAdapter
 import com.android.launcher3.model.data.AppInfo
+import com.android.launcher3.model.PrimePinnedDrawerShortcuts
 import com.android.launcher3.search.SearchCallback
 import com.android.launcher3.util.Executors
 import com.patrykmichalik.opto.core.onEach
@@ -79,10 +80,13 @@ class LawnchairAppSearchAlgorithm(context: Context) : LawnchairSearchAlgorithm(c
         apps: MutableList<AppInfo>,
         query: String,
     ): ArrayList<BaseAllAppsAdapter.AdapterItem> {
+        val existingComponents = apps.mapNotNull { it.componentName }.toHashSet()
+        val searchableApps = apps + PrimePinnedDrawerShortcuts.getEntries(context)
+            .filter { it.componentName !in existingComponents }
         val appResults = if (enableFuzzySearch) {
-            SearchUtils.fuzzySearch(apps, query, maxResultsCount, hiddenApps, hiddenAppsInSearch)
+            SearchUtils.fuzzySearch(searchableApps, query, maxResultsCount, hiddenApps, hiddenAppsInSearch)
         } else {
-            SearchUtils.normalSearch(apps, query, maxResultsCount, hiddenApps, hiddenAppsInSearch)
+            SearchUtils.normalSearch(searchableApps, query, maxResultsCount, hiddenApps, hiddenAppsInSearch)
         }
 
         val searchTargets = mutableListOf<SearchTargetCompat>()
