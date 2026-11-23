@@ -67,7 +67,13 @@ public final class PrimePinnedDrawerShortcuts {
     public static boolean isEligible(ItemInfo item) {
         return item instanceof WorkspaceItemInfo
                 && (item.itemType == LauncherSettings.Favorites.ITEM_TYPE_SHORTCUT
-                || item.itemType == LauncherSettings.Favorites.ITEM_TYPE_DEEP_SHORTCUT)
+                || item.itemType == LauncherSettings.Favorites.ITEM_TYPE_DEEP_SHORTCUT
+                || (item.itemType == LauncherSettings.Favorites.ITEM_TYPE_APPLICATION
+                    && Intent.ACTION_VIEW.equals(item.getIntent() == null
+                            ? null : item.getIntent().getAction())
+                    && item.getIntent().getData() != null
+                    && ("https".equalsIgnoreCase(item.getIntent().getData().getScheme())
+                        || "http".equalsIgnoreCase(item.getIntent().getData().getScheme()))))
                 && item.getIntent() != null && Process.myUserHandle().equals(item.user);
     }
 
