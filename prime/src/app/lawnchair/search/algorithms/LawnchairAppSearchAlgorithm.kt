@@ -95,7 +95,7 @@ class LawnchairAppSearchAlgorithm(context: Context) : LawnchairSearchAlgorithm(c
             it.title.toString().contains(query, ignoreCase = true)
         }
         val existing = appResults.mapNotNull { it.componentName }.toHashSet()
-        val visibleResults = appResults + storedMatches.filter { existing.add(it.componentName) }
+        val visibleResults = appResults + storedMatches.filter { it.componentName?.let(existing::add) == true }
 
         val searchTargets = mutableListOf<SearchTargetCompat>()
 
