@@ -246,6 +246,7 @@ public final class PrimePinnedDrawerShortcuts {
                 }
                 app.sectionName = title.isEmpty() ? "#" : title.substring(0, 1)
                         .toUpperCase(java.util.Locale.getDefault());
+                app.lawnchair.prime.drawer.PrimeWebShortcutCustomization.apply(context, app);
                 result.add(app);
             } catch (Exception error) {
                 Log.w(TAG, "Skipping invalid saved shortcut", error);
@@ -284,6 +285,7 @@ public final class PrimePinnedDrawerShortcuts {
                 }
                 app.sectionName = title.isEmpty() ? "#" : title.substring(0, 1)
                         .toUpperCase(java.util.Locale.getDefault());
+                app.lawnchair.prime.drawer.PrimeWebShortcutCustomization.apply(context, app);
                 allApps.data.add(app);
             } catch (Exception error) {
                 Log.w(TAG, "Skipping invalid saved shortcut", error);
