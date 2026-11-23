@@ -105,6 +105,23 @@ public final class PrimePinnedDrawerShortcuts {
                 entry.put("kind", "pinned");
                 entry.put("package", shortcut.getPackageName());
                 entry.put("shortcutId", shortcut.getId());
+                // Keep the shortcut pinned when its home-screen icon is later removed.
+                // pinShortcuts replaces this launcher's pinned set for the package,
+                // so preserve every currently pinned shortcut first.
+                LauncherApps launcherApps = context.getSystemService(LauncherApps.class);
+                LauncherApps.ShortcutQuery query = new LauncherApps.ShortcutQuery()
+                        .setPackage(shortcut.getPackageName())
+                        .setQueryFlags(LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED);
+                java.util.List<android.content.pm.ShortcutInfo> pinned =
+                        launcherApps.getShortcuts(query, item.user);
+                java.util.ArrayList<String> ids = new java.util.ArrayList<>();
+                if (pinned != null) {
+                    for (android.content.pm.ShortcutInfo existing : pinned) {
+                        if (!ids.contains(existing.getId())) ids.add(existing.getId());
+                    }
+                }
+                if (!ids.contains(shortcut.getId())) ids.add(shortcut.getId());
+                launcherApps.pinShortcuts(shortcut.getPackageName(), ids, item.user);
             } else {
                 entry.put("kind", "legacy");
                 entry.put("intent", item.getIntent().toUri(Intent.URI_INTENT_SCHEME));
