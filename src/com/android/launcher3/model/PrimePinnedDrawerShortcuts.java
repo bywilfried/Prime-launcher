@@ -64,7 +64,7 @@ public final class PrimePinnedDrawerShortcuts {
         }
     }
 
-    public static boolean isEligible(ItemInfo item) {
+    public static boolean isEligible(Context context, ItemInfo item) {
         if (!(item instanceof WorkspaceItemInfo)
                 || item.getIntent() == null || !Process.myUserHandle().equals(item.user)) {
             return false;
@@ -85,12 +85,31 @@ public final class PrimePinnedDrawerShortcuts {
         }
         // Some browsers wrap the web launch in an ACTION_MAIN intent, carrying
         // the actual URL / app identity in extras or data.
-        return intent.getData() != null || (intent.getExtras() != null
-                && !intent.getExtras().isEmpty());
+        if (intent.getData() != null || (intent.getExtras() != null
+                && !intent.getExtras().isEmpty())) return true;
+
+        // Brave and other browsers sometimes expose a home PWA as an
+        // ACTION_MAIN/LAUNCHER intent with no URL or extras. In that case
+        // the icon label differs from the browser application's own label.
+        String pkg = item.getTargetPackage();
+        if (pkg == null || item.title == null) return false;
+        try {
+            android.content.pm.PackageManager pm = context.getPackageManager();
+            android.content.pm.ApplicationInfo app = pm.getApplicationInfo(pkg, 0);
+            String installedLabel = pm.getApplicationLabel(app).toString();
+            if (installedLabel.equalsIgnoreCase(item.title.toString().trim())) return false;
+            String lower = pkg.toLowerCase(java.util.Locale.ROOT);
+            return lower.contains("browser") || lower.contains("firefox")
+                    || lower.contains("vivaldi") || lower.contains("opera")
+                    || lower.contains("chrome") || lower.contains("chromium")
+                    || lower.contains("edge") || lower.contains("samsung.internet");
+        } catch (android.content.pm.PackageManager.NameNotFoundException error) {
+            return false;
+        }
     }
 
-    private static String identity(ItemInfo item) {
-        if (!isEligible(item)) return null;
+    private static String identity(Context context, ItemInfo item) {
+        if (!isEligible(context, item)) return null;
         if (item.itemType == LauncherSettings.Favorites.ITEM_TYPE_DEEP_SHORTCUT) {
             ShortcutKey shortcut = ShortcutKey.fromItemInfo(item);
             if (shortcut.getId() == null || shortcut.getPackageName() == null) return null;
@@ -100,7 +119,7 @@ public final class PrimePinnedDrawerShortcuts {
     }
 
     public static boolean contains(Context context, ItemInfo item) {
-        String id = identity(item);
+        String id = identity(context, item);
         if (id == null) return false;
         JSONArray entries = read(context);
         for (int i = 0; i < entries.length(); i++) {
@@ -111,7 +130,7 @@ public final class PrimePinnedDrawerShortcuts {
     }
 
     public static boolean add(Context context, ItemInfo item) {
-        String id = identity(item);
+        String id = identity(context, item);
         if (id == null) return false;
         if (contains(context, item)) return true;
         try {
@@ -165,7 +184,7 @@ public final class PrimePinnedDrawerShortcuts {
     }
 
     public static boolean remove(Context context, ItemInfo item) {
-        String id = identity(item);
+        String id = identity(context, item);
         if (id == null && item instanceof AppInfo) {
             ComponentName component = ((AppInfo) item).componentName;
             if (component != null && component.getClassName().startsWith(
