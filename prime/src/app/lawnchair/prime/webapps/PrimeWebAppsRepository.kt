@@ -2,6 +2,7 @@ package app.lawnchair.prime.webapps
 
 import android.content.Context
 import android.net.Uri
+import com.android.launcher3.model.PrimeWebIconCache
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -12,6 +13,7 @@ import org.json.JSONObject
 data class PrimeWebApp(val name: String, val url: String)
 
 class PrimeWebAppsRepository(context: Context) {
+    private val appContext = context.applicationContext
     private val preferences = context.applicationContext.getSharedPreferences(
         "prime_web_apps", Context.MODE_PRIVATE
     )
@@ -32,10 +34,14 @@ class PrimeWebAppsRepository(context: Context) {
         if (label.isEmpty()) return false
         val apps = getAll().filterNot { it.url == url } + PrimeWebApp(label, url)
         persist(apps)
+        PrimeWebIconCache.fetch(appContext, url)
         return true
     }
 
-    fun remove(url: String) = persist(getAll().filterNot { it.url == url })
+    fun remove(url: String) {
+        persist(getAll().filterNot { it.url == url })
+        PrimeWebIconCache.remove(appContext, url)
+    }
 
     private fun persist(apps: List<PrimeWebApp>) {
         val array = JSONArray()
