@@ -269,8 +269,27 @@ public abstract class SystemShortcut<T extends ActivityContext> extends ItemInfo
                 if (originalView == null) return null;
                 boolean saved = com.android.launcher3.model.PrimePinnedDrawerShortcuts
                         .isDrawerEntry(originalView.getContext(), itemInfo);
-                if (!saved && !com.android.launcher3.model.PrimePinnedDrawerShortcuts
-                        .isEligible(originalView.getContext(), itemInfo)) return null;
+                boolean eligible = com.android.launcher3.model.PrimePinnedDrawerShortcuts
+                        .isEligible(originalView.getContext(), itemInfo);
+                // Temporary on-device diagnostic for browser-owned PWA icons. Avoid
+                // logging URLs, shortcut IDs or extras values.
+                String targetPackage = itemInfo.getTargetPackage();
+                if (!saved && !eligible && targetPackage != null
+                        && (targetPackage.toLowerCase(java.util.Locale.ROOT).contains("brave")
+                        || targetPackage.toLowerCase(java.util.Locale.ROOT).contains("browser"))) {
+                    Intent launchIntent = itemInfo.getIntent();
+                    String detail = "Prime PWA: type=" + itemInfo.itemType
+                            + " class=" + itemInfo.getClass().getSimpleName()
+                            + " action=" + (launchIntent == null ? "null" : launchIntent.getAction())
+                            + " pkg=" + targetPackage
+                            + " extras=" + (launchIntent != null
+                            && launchIntent.getExtras() != null
+                            && !launchIntent.getExtras().isEmpty());
+                    Log.i(TAG, detail);
+                    android.widget.Toast.makeText(originalView.getContext(), detail,
+                            android.widget.Toast.LENGTH_LONG).show();
+                }
+                if (!saved && !eligible) return null;
                 return new PrimeDrawerShortcut<>(context, itemInfo, originalView, saved);
             };
 
