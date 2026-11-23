@@ -270,7 +270,7 @@ public abstract class SystemShortcut<T extends ActivityContext> extends ItemInfo
                 boolean saved = com.android.launcher3.model.PrimePinnedDrawerShortcuts
                         .isDrawerEntry(originalView.getContext(), itemInfo);
                 if (!saved && !com.android.launcher3.model.PrimePinnedDrawerShortcuts
-                        .isEligible(itemInfo)) return null;
+                        .isEligible(originalView.getContext(), itemInfo)) return null;
                 return new PrimeDrawerShortcut<>(context, itemInfo, originalView, saved);
             };
 
