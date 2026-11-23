@@ -1264,6 +1264,25 @@ public class Launcher extends StatefulActivity<LauncherState>
         }
         mPrimeWebAppsSnapshot = primeWebApps;
 
+        // After an in-place APK update, the initial All Apps snapshot may be
+        // published before Prime's persisted browser shortcuts are restored.
+        // Reload once per APK install/update; do not touch saved entries.
+        try {
+            long apkUpdatedAt = getPackageManager()
+                    .getPackageInfo(getPackageName(), 0).lastUpdateTime;
+            android.content.SharedPreferences shortcutPrefs =
+                    getSharedPreferences("prime_pinned_drawer_shortcuts", MODE_PRIVATE);
+            long lastSeenApkUpdate = shortcutPrefs.getLong(
+                    "last_launcher_apk_update_time", -1L);
+            if (apkUpdatedAt != lastSeenApkUpdate) {
+                shortcutPrefs.edit().putLong(
+                        "last_launcher_apk_update_time", apkUpdatedAt).apply();
+                mModel.forceReload();
+            }
+        } catch (android.content.pm.PackageManager.NameNotFoundException error) {
+            android.util.Log.w("PrimeDrawer", "Unable to check APK update time", error);
+        }
+
         DragView.removeAllViews(this);
 
         // Prime Home-folder settings are edited in PreferenceActivity while Launcher is paused.
