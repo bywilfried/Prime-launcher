@@ -64,7 +64,9 @@ object AppSearchProvider {
         }
         val result = appResults.toMutableList()
         val seen = result.mapNotNull { it.componentName }.toHashSet()
-        matches.forEach { if (seen.add(it.componentName)) result.add(it) }
+        matches.forEach { app ->
+            if (app.componentName?.let(seen::add) == true) result.add(app)
+        }
         return result.map { SearchResult.App(data = it) }
     }
 
