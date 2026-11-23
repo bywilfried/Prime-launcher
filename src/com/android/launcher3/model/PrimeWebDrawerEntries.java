@@ -57,7 +57,7 @@ public final class PrimeWebDrawerEntries {
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 final AppInfo app = new AppInfo(component, name, Process.myUserHandle(), launch);
                 app.container = LauncherSettings.Favorites.CONTAINER_ALL_APPS;
-                app.bitmap = makeIcon(name, identifier);
+                app.bitmap = makeIcon(context, url, name, identifier);
                 app.sectionName = name.substring(0, 1).toUpperCase(java.util.Locale.getDefault());
                 allApps.data.add(app);
                 } catch (Exception error) {
@@ -70,7 +70,9 @@ public final class PrimeWebDrawerEntries {
     }
 
     /** Deterministic, offline-capable icon while no browser icon is available. */
-    private static BitmapInfo makeIcon(String name, String identifier) {
+    private static BitmapInfo makeIcon(Context context, String url, String name, String identifier) {
+        Bitmap siteIcon = PrimeWebIconCache.load(context, url);
+        if (siteIcon != null) return BitmapInfo.of(siteIcon, Color.GRAY);
         final int size = 144;
         final Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
         final Canvas canvas = new Canvas(bitmap);
