@@ -110,6 +110,15 @@ class LawnchairShortcut {
                 if (prefs2.lockHomeScreen.firstCached()) {
                     return@Factory null
                 }
+                // Never offer to uninstall the browser behind a web shortcut.
+                // Only a genuine launcher activity (including a WebAPK) is uninstallable.
+                if (itemInfo.itemType != ITEM_TYPE_APPLICATION ||
+                    com.android.launcher3.SecondaryDropTarget.getUninstallTarget(
+                        activity.asContext(), itemInfo,
+                    ) == null
+                ) {
+                    return@Factory null
+                }
                 if (itemInfo.targetComponent == null) {
                     return@Factory null
                 }
