@@ -214,6 +214,15 @@ public class PopupContainerWithArrow<T extends Context & ActivityContext>
                 .map(s -> s.getShortcut(launcher, item, icon))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+        // Synthetic drawer entries have no installed activity of their own.
+        // Do not expose Prime's widgets or Prime's application-info action.
+        if (com.android.launcher3.model.PrimePinnedDrawerShortcuts
+                .isDrawerEntry(icon.getContext(), item)) {
+            systemShortcuts.removeIf(shortcut ->
+                    shortcut instanceof SystemShortcut.Widgets
+                    || shortcut instanceof SystemShortcut.AppInfo);
+            deepShortcutCount = 0;
+        }
         // Browser-installed PWAs are often Android deep shortcuts (itemType=6).
         // Ensure the native drawer action is present even if an intermediate
         // launcher subclass omits its factory from the supported shortcut stream.
@@ -261,7 +270,10 @@ public class PopupContainerWithArrow<T extends Context & ActivityContext>
         
         container.populateAndShowRows(icon, deepShortcutCount,
                 shouldHideSystemShortcuts ? Collections.emptyList() : systemShortcuts);
-        launcher.refreshAndBindWidgetsForPackageUser(PackageUserKey.fromItemInfo(item));
+        if (!com.android.launcher3.model.PrimePinnedDrawerShortcuts
+                .isDrawerEntry(icon.getContext(), item)) {
+            launcher.refreshAndBindWidgetsForPackageUser(PackageUserKey.fromItemInfo(item));
+        }
         container.requestFocus();
         return container;
     }
