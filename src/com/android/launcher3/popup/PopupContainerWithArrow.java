@@ -203,6 +203,17 @@ public class PopupContainerWithArrow<T extends Context & ActivityContext>
             return null;
         }
         ItemInfo item = (ItemInfo) icon.getTag();
+        // Temporary diagnostic at the popup entry point: runs regardless of the
+        // browser package name or Prime shortcut eligibility. Do not expose URLs.
+        android.content.Intent diagnosticIntent = item == null ? null : item.getIntent();
+        String diagnostic = "Prime icon: type=" + (item == null ? "null" : item.itemType)
+                + " class=" + (item == null ? "null" : item.getClass().getSimpleName())
+                + " pkg=" + (item == null ? "null" : item.getTargetPackage())
+                + " action=" + (diagnosticIntent == null ? "null" : diagnosticIntent.getAction())
+                + " supported=" + (item != null && ShortcutUtil.supportsShortcuts(item));
+        android.util.Log.i("PrimePwaDiagnostic", diagnostic);
+        android.widget.Toast.makeText(icon.getContext(), diagnostic,
+                android.widget.Toast.LENGTH_LONG).show();
         if (!ShortcutUtil.supportsShortcuts(item)) {
             return null;
         }
