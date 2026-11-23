@@ -35,31 +35,37 @@ public final class PrimeWebIconCache {
                         || uri.getUserInfo() != null) return;
                 File file = fileFor(app, url);
                 if (file.isFile()) return;
-                Uri favicon = uri.buildUpon().path("/favicon.ico").clearQuery().fragment(null).build();
-                HttpURLConnection connection = (HttpURLConnection) new URL(favicon.toString()).openConnection();
-                connection.setConnectTimeout(4000);
-                connection.setReadTimeout(4000);
-                connection.setInstanceFollowRedirects(false);
-                try {
-                    if (connection.getResponseCode() != 200) return;
-                    if (connection.getContentLengthLong() > 524288) return;
-                    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-                    byte[] buffer = new byte[8192];
-                    try (java.io.InputStream stream = connection.getInputStream()) {
-                        int count;
-                        while ((count = stream.read(buffer)) != -1) {
-                            if (bytes.size() + count > 524288) return;
-                            bytes.write(buffer, 0, count);
+                // Android does not reliably decode ICO containers; prefer PNG first.
+                String[] candidates = {"/apple-touch-icon.png", "/favicon.png", "/favicon.ico"};
+                for (String path : candidates) {
+                    Uri favicon = uri.buildUpon().path(path).clearQuery().fragment(null).build();
+                    HttpURLConnection connection = (HttpURLConnection) new URL(favicon.toString()).openConnection();
+                    connection.setConnectTimeout(4000);
+                    connection.setReadTimeout(4000);
+                    connection.setInstanceFollowRedirects(false);
+                    try {
+                        if (connection.getResponseCode() != 200
+                                || connection.getContentLengthLong() > 524288) continue;
+                        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                        byte[] buffer = new byte[8192];
+                        try (java.io.InputStream stream = connection.getInputStream()) {
+                            int count;
+                            while ((count = stream.read(buffer)) != -1) {
+                                if (bytes.size() + count > 524288) break;
+                                bytes.write(buffer, 0, count);
+                            }
                         }
+                        if (bytes.size() > 524288) continue;
+                        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes.toByteArray(), 0, bytes.size());
+                        if (bitmap == null) continue;
+                        Bitmap scaled = Bitmap.createScaledBitmap(bitmap, 144, 144, true);
+                        try (FileOutputStream output = new FileOutputStream(file)) {
+                            scaled.compress(Bitmap.CompressFormat.PNG, 100, output);
+                        }
+                        return;
+                    } finally {
+                        connection.disconnect();
                     }
-                    Bitmap bitmap = BitmapFactory.decodeByteArray(bytes.toByteArray(), 0, bytes.size());
-                    if (bitmap == null) return;
-                    Bitmap scaled = Bitmap.createScaledBitmap(bitmap, 144, 144, true);
-                    try (FileOutputStream output = new FileOutputStream(file)) {
-                        scaled.compress(Bitmap.CompressFormat.PNG, 100, output);
-                    }
-                } finally {
-                    connection.disconnect();
                 }
             } catch (Exception error) {
                 Log.d(TAG, "Site icon unavailable", error);
