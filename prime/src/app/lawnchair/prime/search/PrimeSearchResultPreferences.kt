@@ -28,6 +28,13 @@ object PrimeSearchResultPreferences {
     private fun surfacePrefs(context: Context, surface: Surface) =
         context.getSharedPreferences(surface.store, Context.MODE_PRIVATE)
 
+    fun downloadWebIcons(context: Context, surface: Surface): Boolean =
+        surfacePrefs(context, surface).getBoolean("download_web_icons", false)
+
+    fun setDownloadWebIcons(context: Context, surface: Surface, enabled: Boolean) {
+        surfacePrefs(context, surface).edit().putBoolean("download_web_icons", enabled).apply()
+    }
+
     fun showCompletedTasks(context: Context, surface: Surface): Boolean =
         surfacePrefs(context, surface).getBoolean("show_completed_tasks", false)
 
