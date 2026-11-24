@@ -998,22 +998,7 @@ object PrimeSearchOverlay {
                             }
                             val drawable = try { packageName?.let { packageManager.getApplicationIcon(it) } }
                                 catch (_: Exception) { null }
-                            val localIcon = when (engine) {
-                                PrimeSearchResultPreferences.WebEngine.GOOGLE,
-                                PrimeSearchResultPreferences.WebEngine.MODE_AI -> com.android.launcher3.R.drawable.ic_super_g_color
-                                PrimeSearchResultPreferences.WebEngine.DUCKDUCKGO -> com.android.launcher3.R.drawable.ic_duckduckgo
-                                PrimeSearchResultPreferences.WebEngine.BRAVE,
-                                PrimeSearchResultPreferences.WebEngine.BRAVE_BROWSER -> com.android.launcher3.R.drawable.ic_brave
-                                PrimeSearchResultPreferences.WebEngine.BING -> com.android.launcher3.R.drawable.ic_bing
-                                PrimeSearchResultPreferences.WebEngine.ECOSIA -> com.android.launcher3.R.drawable.ic_ecosia
-                                PrimeSearchResultPreferences.WebEngine.STARTPAGE -> com.android.launcher3.R.drawable.ic_startpage
-                                PrimeSearchResultPreferences.WebEngine.YOUTUBE -> com.android.launcher3.R.drawable.ic_youtube
-                                PrimeSearchResultPreferences.WebEngine.WIKIPEDIA -> com.android.launcher3.R.drawable.ic_wikipedia
-                                PrimeSearchResultPreferences.WebEngine.GITHUB -> com.android.launcher3.R.drawable.ic_github
-                                PrimeSearchResultPreferences.WebEngine.KAGI -> com.android.launcher3.R.drawable.ic_kagi
-                                PrimeSearchResultPreferences.WebEngine.FDROID -> com.android.launcher3.R.drawable.ic_prime_fdroid
-                                else -> 0
-                            }
+                            val localIcon = PrimeWebIcons.localResource(engine)
                             if (drawable != null) {
                                 setImageDrawable(drawable)
                             } else if (localIcon != 0) {
