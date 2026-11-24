@@ -11,7 +11,7 @@ After validation and merge to main, manually run Publish Prime Stable. It create
 F-Droid build command:
 ```sh
 git submodule update --init --recursive
-./gradlew -PprimeStable=true assembleLawnWithQuickstepFdroidRelease
+./gradlew -PprimeStable=true assemblePrimeWithQuickstepFdroidRelease
 ```
 Java 21; Android SDK 37 minor API 2 and build tools 37.0.0 as required by current Gradle configuration. Confirm availability in F-Droid build infrastructure.
 
@@ -31,7 +31,7 @@ Builds:
     commit: REPLACE_WITH_APPROVED_STABLE_COMMIT_SHA
     submodules: true
     gradle:
-      - lawnWithQuickstepFdroid
+      - primeWithQuickstepFdroid
     gradleprops:
       - primeStable=true
 ```
