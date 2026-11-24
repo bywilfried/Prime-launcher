@@ -340,6 +340,10 @@ android {
             manifest.srcFile "github/AndroidManifest.xml"
         }
 
+        fdroid {
+            manifest.srcFile "github/AndroidManifest.xml"
+        }
+
         nightly {
             manifest.srcFile "nightly/AndroidManifest.xml"
             res.srcDirs = ["nightly/res"]
