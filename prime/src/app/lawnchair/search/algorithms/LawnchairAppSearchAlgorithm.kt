@@ -113,7 +113,7 @@ class LawnchairAppSearchAlgorithm(context: Context) : LawnchairSearchAlgorithm(c
                 }
             } else {
                 // Multiple results: show as icons
-                appResults.mapTo(searchTargets, searchTargetFactory::createAppSearchTarget)
+                visibleResults.mapTo(searchTargets, searchTargetFactory::createAppSearchTarget)
             }
             searchTargets.add(searchTargetFactory.createHeaderTarget(SPACE))
         }
