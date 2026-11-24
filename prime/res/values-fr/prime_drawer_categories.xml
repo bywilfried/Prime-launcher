@@ -25,4 +25,6 @@
     <string name="prime_drawer_category_delete_category">Supprimer cette catégorie ?</string>
     <string name="prime_drawer_category_alphabetical">Ordre alphabétique</string>
     <string name="prime_drawer_category_custom">Ordre personnalisé</string>
+    <string name="prime_drawer_category_folder_name">Dossier : %1$s</string>
+    <string name="prime_drawer_category_folder_names">Dossiers : %1$s</string>
 </resources>
