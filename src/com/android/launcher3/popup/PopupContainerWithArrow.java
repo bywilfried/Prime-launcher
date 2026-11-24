@@ -235,6 +235,12 @@ public class PopupContainerWithArrow<T extends Context & ActivityContext>
                     .getShortcut(launcher, item, icon);
             if (drawerAction != null) systemShortcuts.add((SystemShortcut) drawerAction);
         }
+        if (com.android.launcher3.model.PrimePinnedDrawerShortcuts
+                .isDrawerEntry(icon.getContext(), item)) {
+            SystemShortcut<?> repair = SystemShortcut.PRIME_REPAIR_WEBAPP
+                    .getShortcut(launcher, item, icon);
+            if (repair != null) systemShortcuts.add((SystemShortcut) repair);
+        }
         container = (PopupContainerWithArrow) launcher.getLayoutInflater().inflate(
                 R.layout.popup_container, launcher.getDragLayer(), false);
         if (launcher.isInState(com.android.launcher3.LauncherState.ALL_APPS)) {
