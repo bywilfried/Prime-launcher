@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_overlay_detail_sms">Send a text message to %1$s</string>
+    <string name="prime_overlay_detail_call">Call %1$s</string>
+    <string name="prime_overlay_detail_more_apps">More apps</string>
+    <string name="prime_overlay_detail_more_contacts">More contacts</string>
+    <string name="prime_overlay_detail_more_files">More files</string>
+    <string name="prime_overlay_detail_more_shortcuts">More shortcuts</string>
+    <string name="prime_overlay_detail_more_results">More results</string>
+    <string name="prime_overlay_detail_device_files">Device files</string>
+    <string name="prime_overlay_detail_display">Display</string>
+    <string name="prime_overlay_detail_sound">Sound</string>
+    <string name="prime_overlay_detail_battery">Battery</string>
+    <string name="prime_overlay_detail_date_time">Date &amp; time</string>
+    <string name="prime_overlay_detail_android_settings">Android settings</string>
+</resources>
