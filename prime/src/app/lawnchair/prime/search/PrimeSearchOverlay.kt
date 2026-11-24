@@ -446,7 +446,7 @@ object PrimeSearchOverlay {
                 scaleType = ImageView.ScaleType.CENTER_INSIDE
                 setPadding((10 * density).toInt(), (10 * density).toInt(),
                     (10 * density).toInt(), (10 * density).toInt())
-                contentDescription = "Options Prime Search"
+                contentDescription = launcher.getString(com.android.launcher3.R.string.prime_overlay_options)
                 setOnClickListener {
                     PrimeSearchOverlay.dismiss()
                     launcher.startActivity(
@@ -502,7 +502,7 @@ object PrimeSearchOverlay {
             }
             if (selectedTab != 2 && !hasUsageAccess) {
                 val permission = TextView(launcher).apply {
-                    text = "Autoriser l’accès aux données d’utilisation pour afficher les applications fréquentes et récentes.\nAppuyer pour ouvrir les paramètres Android."
+                    text = launcher.getString(com.android.launcher3.R.string.prime_overlay_usage)
                     textSize = 12f
                     gravity = Gravity.CENTER
                     setTextColor(themed(ThemeColorRole.PRIME_SEARCH_TEXT))
@@ -745,7 +745,7 @@ object PrimeSearchOverlay {
                                 setColor(Color.HSVToColor(floatArrayOf(hue.toFloat(), 0.34f, 0.66f)))
                             }
                             clipToOutline = true
-                            contentDescription = "Contact : " + contact.name
+                            contentDescription = launcher.getString(com.android.launcher3.R.string.prime_overlay_contact, contact.name)
                             setOnClickListener {
                                 dialog.hideKeyboardForSelection()
                                 runCatching {
@@ -950,7 +950,7 @@ object PrimeSearchOverlay {
                             gravity = Gravity.CENTER
                             setPadding((4 * density).toInt(), (5 * density).toInt(),
                                 (4 * density).toInt(), (8 * density).toInt())
-                            contentDescription = "Rechercher sur ${engine.title}"
+                            contentDescription = launcher.getString(com.android.launcher3.R.string.prime_overlay_engine, engine.title)
                             setOnClickListener {
                                 dialog.hideKeyboardForSelection()
                                 val url = engine.url + Uri.encode(query)
@@ -1095,7 +1095,7 @@ object PrimeSearchOverlay {
             addView(detailContent)
         }
         val detailBack = TextView(launcher).apply {
-            text = "‹  Retour à la recherche"
+            text = launcher.getString(com.android.launcher3.R.string.prime_overlay_back)
             textSize = 16f
             setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
             setPadding((16 * density).toInt(), (12 * density).toInt(),
@@ -1150,7 +1150,7 @@ object PrimeSearchOverlay {
             }
         }
         val detailReduce = TextView(launcher).apply {
-            text = "⌃  Réduire"
+            text = launcher.getString(com.android.launcher3.R.string.prime_overlay_collapse)
             gravity = Gravity.CENTER
             textSize = 15f
             setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
