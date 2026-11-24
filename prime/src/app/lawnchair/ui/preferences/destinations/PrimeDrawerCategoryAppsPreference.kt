@@ -232,9 +232,9 @@ fun PrimeDrawerCategoryAppsPreference(tabId: String) {
                         description = {
                             Text(
                                 if (item.folderTitles.size == 1) {
-                                    "Dossier : " + item.folderTitles.first()
+                                    androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_folder_name, item.folderTitles.first())
                                 } else {
-                                    "Dossiers : " + item.folderTitles.joinToString(", ")
+                                    androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_folder_names, item.folderTitles.joinToString(", "))
                                 },
                             )
                         },
