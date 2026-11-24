@@ -1,0 +1,33 @@
+import groovy.json.JsonOutput
+import java.security.MessageDigest
+import java.util.zip.ZipFile
+
+gradle.projectsEvaluated {
+    def root = gradle.rootProject
+    root.tasks.register("primeNativeProvenance") {
+        doLast {
+            def config = root.configurations.getByName("primeWithQuickstepFdroidReleaseRuntimeClasspath")
+            def artifacts = config.incoming.artifactView { }.artifacts.artifacts
+            def rows = []
+            artifacts.each { artifact ->
+                if (!artifact.file.name.endsWith(".aar") && !artifact.file.name.endsWith(".jar")) return
+                new ZipFile(artifact.file).withCloseable { zip ->
+                    zip.entries().each { entry ->
+                        if (!entry.directory && entry.name.endsWith(".so")) {
+                            def hash = zip.getInputStream(entry).withCloseable { stream ->
+                                def digest = MessageDigest.getInstance("SHA-256")
+                                byte[] buffer = new byte[65536]
+                                int count
+                                while ((count = stream.read(buffer)) != -1) digest.update(buffer, 0, count)
+                                digest.digest().encodeHex().toString()
+                            }
+                            rows << [component: artifact.id.componentIdentifier.displayName,
+                                     artifact: artifact.file.name, entry: entry.name, sha256: hash]
+                        }
+                    }
+                }
+            }
+            new File(root.projectDir, "native-dependencies.json").text = JsonOutput.prettyPrint(JsonOutput.toJson(rows))
+        }
+    }
+}
