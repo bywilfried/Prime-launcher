@@ -762,7 +762,7 @@ fun PrimeSearchPreference() {
                             selected == PrimeSearchResultPreferences.Category.CONTACTS ||
                             selected == PrimeSearchResultPreferences.Category.REMINDERS) {
                             if (!PrimeSearchPermissions.granted(context, selected)) {
-                                Text(PrimeSearchPermissions.explanation(selected))
+                                Text(PrimeSearchPermissions.explanation(context, selected))
                                 TextButton(onClick = { requestCategory(selected) }) { Text(stringResource(R.string.prime_search_advanced_allow)) }
                             }
                         } else {
@@ -788,7 +788,7 @@ fun PrimeSearchPreference() {
                             }
                             if (PrimeSearchPermissions.required(selected)) {
                                 val granted = PrimeSearchPermissions.granted(context, selected)
-                                Text(if (granted) stringResource(R.string.prime_search_pref_granted) else PrimeSearchPermissions.explanation(selected))
+                                Text(if (granted) stringResource(R.string.prime_search_pref_granted) else PrimeSearchPermissions.explanation(context, selected))
                                 if (!granted) TextButton(onClick = { requestCategory(selected) }) { Text(stringResource(R.string.prime_search_advanced_allow)) }
                             }
                             Text(stringResource(R.string.prime_search_advanced_providers_desc))
