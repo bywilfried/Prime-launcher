@@ -39,12 +39,12 @@ object PrimeSearchResultPreferences {
         surfacePrefs(context, surface).contains(category.key)
 
     fun enabled(context: Context, category: Category, surface: Surface): Boolean =
-        surfacePrefs(context, surface).getBoolean(category.key, true) &&
+        surfacePrefs(context, surface).getBoolean(category.key, category != Category.WEB) &&
             (!PrimeSearchPermissions.required(category) || PrimeSearchPermissions.granted(context, category))
 
     fun setEnabled(context: Context, category: Category, enabled: Boolean, surface: Surface) {
         val preferences = surfacePrefs(context, surface)
-        val previous = preferences.getBoolean(category.key, true)
+        val previous = preferences.getBoolean(category.key, category != Category.WEB)
         preferences.edit().putBoolean(category.key, enabled).apply()
         if (previous != enabled && category == Category.APPS) {
             app.lawnchair.search.algorithms.PrimeSearchWarmup.refresh(context)
@@ -263,7 +263,7 @@ object PrimeSearchResultPreferences {
 
     fun suggestionProvider(context: Context): SuggestionProvider =
         runCatching { SuggestionProvider.valueOf(prefs(context).getString("suggestion_provider", "DUCKDUCKGO") ?: "DUCKDUCKGO") }
-            .getOrDefault(SuggestionProvider.GOOGLE)
+            .getOrDefault(SuggestionProvider.DUCKDUCKGO)
 
     fun setSuggestionProvider(context: Context, provider: SuggestionProvider) {
         prefs(context).edit().putString("suggestion_provider", provider.name).apply()
@@ -433,7 +433,7 @@ object PrimeSearchResultPreferences {
         context.getSharedPreferences(STORE, Context.MODE_PRIVATE)
 
     fun enabled(context: Context, category: Category): Boolean =
-        prefs(context).getBoolean(category.key, true) &&
+        prefs(context).getBoolean(category.key, category != Category.WEB) &&
             (!PrimeSearchPermissions.required(category) || PrimeSearchPermissions.granted(context, category))
 
     fun setEnabled(context: Context, category: Category, enabled: Boolean) {
