@@ -75,7 +75,7 @@ fun PrimeDrawerCategoryPreference(tabId: String) {
                     onClick = { navController.navigate(PrimeDrawerCategoryFolders(tab.id)) },
                 )
                 ClickablePreference(
-                    label = "Supprimer",
+                    label = androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_delete),
                     onClick = { deleteOpen = true },
                 )
             }
@@ -84,10 +84,10 @@ fun PrimeDrawerCategoryPreference(tabId: String) {
                 onClick = { navController.navigate(PrimeDrawerCategoryAdvanced(tab.id)) },
             )
         }
-        PreferenceGroup(heading = "Tri") {
+        PreferenceGroup(heading = androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_sort)) {
             ClickablePreference(
                 label = "A → Z",
-                subtitle = if (tab.sortMode == "alphabetical") "Sélectionné" else null,
+                subtitle = if (tab.sortMode == "alphabetical") androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_selected) else null,
                 onClick = {
                     repository.setTabSortMode(tab.id, "alphabetical")
                     configuration = repository.getConfiguration()
@@ -95,7 +95,7 @@ fun PrimeDrawerCategoryPreference(tabId: String) {
             )
             ClickablePreference(
                 label = "Z → A",
-                subtitle = if (tab.sortMode == "alphabetical_desc") "Sélectionné" else null,
+                subtitle = if (tab.sortMode == "alphabetical_desc") androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_selected) else null,
                 onClick = {
                     repository.setTabSortMode(tab.id, "alphabetical_desc")
                     configuration = repository.getConfiguration()
@@ -103,8 +103,8 @@ fun PrimeDrawerCategoryPreference(tabId: String) {
             )
             if (!tab.isSystem) {
                 ClickablePreference(
-                    label = "Manuel",
-                    subtitle = if (tab.sortMode == "custom") "Sélectionné" else null,
+                    label = androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_manual),
+                    subtitle = if (tab.sortMode == "custom") androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_selected) else null,
                     onClick = {
                         repository.setTabSortMode(tab.id, "custom")
                         configuration = repository.getConfiguration()
@@ -117,8 +117,8 @@ fun PrimeDrawerCategoryPreference(tabId: String) {
     if (deleteOpen) {
         AlertDialog(
             onDismissRequest = { deleteOpen = false },
-            title = { Text("Supprimer") },
-            text = { Text("Supprimer cette catégorie ?") },
+            title = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_delete)) },
+            text = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_delete_category)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -126,7 +126,7 @@ fun PrimeDrawerCategoryPreference(tabId: String) {
                         repository.deleteTab(tab.id)
                         navController.popBackStack()
                     },
-                ) { Text("Supprimer") }
+                ) { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_delete)) }
             },
             dismissButton = {
                 TextButton(onClick = { deleteOpen = false }) {
