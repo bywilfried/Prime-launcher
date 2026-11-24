@@ -452,7 +452,13 @@ object PrimeSearchResultPreferences {
     enum class AppResultsAlignment(val label: String) {
         CENTER("Centré"),
         LEFT("Aligné à gauche"),
-        RIGHT("Aligné à droite"),
+        RIGHT("Aligné à droite");
+
+        fun localizedLabel(context: Context): String = context.getString(when (this) {
+            CENTER -> com.android.launcher3.R.string.prime_drawer_search_center
+            LEFT -> com.android.launcher3.R.string.prime_drawer_search_left
+            RIGHT -> com.android.launcher3.R.string.prime_drawer_search_right
+        })
     }
 
     fun appResultsAlignment(context: Context): AppResultsAlignment =
