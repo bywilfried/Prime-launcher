@@ -19,6 +19,36 @@ jobs:
         run: ./gradlew -PprimeStable=true dependencies --configuration lawnWithQuickstepFdroidReleaseRuntimeClasspath > runtime-dependencies.txt
       - name: Build unsigned stable APK
         run: ./gradlew -PprimeStable=true assembleLawnWithQuickstepFdroidRelease
+      - name: Sign test APK with Prime key
+        shell: bash
+        env:
+          PRIME_KEYSTORE_BASE64: ${{ secrets.PRIME_KEYSTORE_BASE64 }}
+          PRIME_KEYSTORE_PASSWORD: ${{ secrets.PRIME_KEYSTORE_PASSWORD }}
+          PRIME_KEY_ALIAS: ${{ secrets.PRIME_KEY_ALIAS }}
+          PRIME_KEY_PASSWORD: ${{ secrets.PRIME_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$PRIME_KEYSTORE_BASE64"
+          test -n "$PRIME_KEYSTORE_PASSWORD"
+          test -n "$PRIME_KEY_ALIAS"
+          test -n "$PRIME_KEY_PASSWORD"
+          key="$(mktemp)"
+          trap 'rm -f "$key"' EXIT
+          printf '%s' "$PRIME_KEYSTORE_BASE64" | base64 --decode > "$key"
+          apk="$(find build/outputs/apk -type f -path '*/release/*' -name '*.apk' -print -quit)"
+          test -n "$apk"
+          tools="$ANDROID_HOME/build-tools/37.0.0"
+          mkdir -p signed-test
+          "$tools/zipalign" -P 16 -f 4 "$apk" "$RUNNER_TEMP/prime-aligned.apk"
+          "$tools/apksigner" sign --ks "$key" --ks-key-alias "$PRIME_KEY_ALIAS" --ks-pass env:PRIME_KEYSTORE_PASSWORD --key-pass env:PRIME_KEY_PASSWORD --out signed-test/Prime-Launcher-FDroid-Test.apk "$RUNNER_TEMP/prime-aligned.apk"
+          "$tools/apksigner" verify signed-test/Prime-Launcher-FDroid-Test.apk
+          "$tools/aapt" dump badging signed-test/Prime-Launcher-FDroid-Test.apk | grep -F "package: name='com.bywilfried.prime.fdroid'"
+      - name: Upload signed test APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: Prime-Launcher-FDroid-Test
+          path: signed-test/Prime-Launcher-FDroid-Test.apk
+          if-no-files-found: error
       - name: Upload audit outputs
         if: always()
         uses: actions/upload-artifact@v7
