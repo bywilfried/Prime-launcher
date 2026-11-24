@@ -260,12 +260,12 @@ private fun DrawerAdvancedSearchPreferences() {
             if (missing.isNotEmpty()) permissionLauncher.launch(missing.toTypedArray())
         }
     }
-    PreferenceGroup(heading = "Recherche du tiroir d'applications") {
-        Text("Réglages indépendants de Prime Search. Les résultats du tiroir utilisent des cartes arrondies et les couleurs définies dans Personnalisation → Tiroirs.")
+    PreferenceGroup(heading = stringResource(R.string.prime_drawer_search_drawer_heading)) {
+        Text(stringResource(R.string.prime_drawer_search_drawer_desc))
         var fuzzyEnabled by remember { mutableStateOf(PrimeSearchResultPreferences.fuzzyApps(context, PrimeSearchResultPreferences.Surface.DRAWER)) }
         PreferenceTemplate(
-            title = { Text("Tolérer les fautes de frappe") },
-            description = { Text("Autoriser les petites erreurs dans les noms d’applications, sans modifier Prime Search") },
+            title = { Text(stringResource(R.string.prime_search_pref_fuzzy)) },
+            description = { Text(stringResource(R.string.prime_drawer_search_fuzzy_desc)) },
             endWidget = {
                 androidx.compose.material3.Switch(
                     checked = fuzzyEnabled,
@@ -285,8 +285,8 @@ private fun DrawerAdvancedSearchPreferences() {
             mutableStateOf(PrimeSearchResultPreferences.autoShowKeyboard(context, drawerSurface))
         }
         PreferenceTemplate(
-            title = { Text("Afficher le clavier automatiquement") },
-            description = { Text("Ouvrir le clavier lors de l'affichage de la recherche du tiroir") },
+            title = { Text(stringResource(R.string.prime_drawer_search_keyboard)) },
+            description = { Text(stringResource(R.string.prime_drawer_search_keyboard_desc)) },
             endWidget = {
                 androidx.compose.material3.Switch(
                     checked = drawerAutoKeyboard,
@@ -305,7 +305,7 @@ private fun DrawerAdvancedSearchPreferences() {
             mutableStateOf(PrimeSearchResultPreferences.twoLineAppLabels(context, drawerSurface))
         }
         PreferenceTemplate(
-            title = { Text("Libellés sur deux lignes") },
+            title = { Text(stringResource(R.string.prime_drawer_search_two_lines)) },
             endWidget = {
                 androidx.compose.material3.Switch(
                     checked = drawerTwoLines,
@@ -323,7 +323,7 @@ private fun DrawerAdvancedSearchPreferences() {
         val drawerCategories = PrimeSearchResultPreferences.order(context, drawerSurface)
         var drawerOrder by remember { mutableStateOf(drawerCategories) }
         var categorySettings by remember { mutableStateOf<PrimeSearchResultPreferences.Category?>(null) }
-        Text("Afficher dans les résultats de recherche")
+        Text(stringResource(R.string.prime_search_advanced_results))
         val sharedDrag = remember { CategoryDragState() }
         fun moveDrawerCategory(from: Int, to: Int) {
             if (from !in drawerOrder.indices || to !in drawerOrder.indices || from == to) return
@@ -356,7 +356,7 @@ private fun DrawerAdvancedSearchPreferences() {
         androidx.compose.material3.TextButton(onClick = {
             PrimeSearchResultPreferences.resetOrder(context, drawerSurface)
             drawerOrder = PrimeSearchResultPreferences.order(context, drawerSurface)
-        }) { Text("Réinitialiser l'ordre") }
+        }) { Text(stringResource(R.string.prime_search_advanced_reset_order)) }
         categorySettings?.let { selected ->
             SharedCategorySettingsDialog(
                 category = selected,
@@ -378,7 +378,7 @@ private fun DrawerAdvancedSearchPreferences() {
                         mutableStateOf(PrimeSearchResultPreferences.appResultsAlignment(context, drawerSurface))
                     }
                     var showAlignment by remember(selected) { mutableStateOf(false) }
-                    Text("Applications par ligne : $columns")
+                    Text(stringResource(R.string.prime_search_pref_columns, columns))
                     androidx.compose.material3.Slider(
                         value = columns.toFloat(),
                         onValueChange = {
@@ -389,7 +389,7 @@ private fun DrawerAdvancedSearchPreferences() {
                         valueRange = 3f..5f,
                         steps = 1,
                     )
-                    Text("Nombre maximal de lignes : $rows")
+                    Text(stringResource(R.string.prime_search_advanced_max_rows, rows))
                     androidx.compose.material3.Slider(
                         value = rows.toFloat(),
                         onValueChange = {
@@ -400,7 +400,7 @@ private fun DrawerAdvancedSearchPreferences() {
                         valueRange = 1f..3f,
                         steps = 1,
                     )
-                    Text("Taille des icônes : $iconSize %")
+                    Text(stringResource(R.string.prime_search_pref_icon_size, iconSize))
                     androidx.compose.material3.Slider(
                         value = iconSize.toFloat(),
                         onValueChange = {
@@ -421,14 +421,14 @@ private fun DrawerAdvancedSearchPreferences() {
                             .map { pm.getApplicationLabel(it).toString() to it.packageName }
                             .toList()
                     }
-                    Text("Aperçu des résultats d'applications")
+                    Text(stringResource(R.string.prime_search_advanced_preview))
                     androidx.compose.material3.Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                         color = androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant,
                     ) {
                         androidx.compose.foundation.layout.Column(modifier = Modifier.padding(8.dp)) {
-                            Text("Applications", modifier = Modifier.padding(6.dp))
+                            Text(stringResource(R.string.prime_search_pref_apps), modifier = Modifier.padding(6.dp))
                             val geometry = app.lawnchair.prime.search.PrimeAppGridGeometry
                             val density = context.resources.displayMetrics.density
                             val twoLines = PrimeSearchResultPreferences.twoLineAppLabels(context, drawerSurface)
@@ -487,14 +487,14 @@ private fun DrawerAdvancedSearchPreferences() {
                             }
                         }
                     }
-                    Text("Alignement des applications")
+                    Text(stringResource(R.string.prime_search_advanced_alignment))
                     androidx.compose.material3.OutlinedButton(onClick = { showAlignment = true }) {
                         Text(alignment.label)
                     }
                     if (showAlignment) {
                         androidx.compose.material3.AlertDialog(
                             onDismissRequest = { showAlignment = false },
-                            title = { Text("Alignement des applications") },
+                            title = { Text(stringResource(R.string.prime_search_advanced_alignment)) },
                             text = {
                                 androidx.compose.foundation.layout.Column {
                                     PrimeSearchResultPreferences.AppResultsAlignment.entries.forEach { option ->
@@ -507,14 +507,14 @@ private fun DrawerAdvancedSearchPreferences() {
                                                     showAlignment = false
                                                 },
                                             )
-                                            Text(option.label)
+                                            Text(option.localizedLabel(context))
                                         }
                                     }
                                 }
                             },
                             confirmButton = {
                                 androidx.compose.material3.TextButton(onClick = { showAlignment = false }) {
-                                    Text("Fermer")
+                                    Text(stringResource(R.string.prime_search_shared_close))
                                 }
                             },
                         )
@@ -523,7 +523,7 @@ private fun DrawerAdvancedSearchPreferences() {
                 if (PrimeSearchPermissions.required(selected) && !PrimeSearchPermissions.granted(context, selected)) {
                     Text(PrimeSearchPermissions.explanation(context, selected))
                     androidx.compose.material3.TextButton(onClick = { requestCategory(selected, drawerSurface) }) {
-                        Text("Autoriser l'accès")
+                        Text(stringResource(R.string.prime_search_advanced_allow))
                     }
                 }
             }
