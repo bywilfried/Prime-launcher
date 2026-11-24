@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_category_apps_title">Apps</string>
+    <string name="prime_category_apps_description">Installed apps</string>
+    <string name="prime_category_app_shortcuts_title">App shortcuts</string>
+    <string name="prime_category_app_shortcuts_description">Application shortcuts</string>
+    <string name="prime_category_web_title">Web suggestions</string>
+    <string name="prime_category_web_description">Web suggestions while typing</string>
+    <string name="prime_category_web_shortcuts_title">Web shortcuts</string>
+    <string name="prime_category_web_shortcuts_description">Shortcuts to search engines</string>
+    <string name="prime_category_contacts_title">Contacts</string>
+    <string name="prime_category_contacts_description">Contacts and others</string>
+    <string name="prime_category_calendar_title">Calendar events</string>
+    <string name="prime_category_calendar_description">Calendar events</string>
+    <string name="prime_category_reminders_title">Tasks</string>
+    <string name="prime_category_reminders_description">Local and synced tasks</string>
+    <string name="prime_category_notifications_title">Notifications</string>
+    <string name="prime_category_notifications_description">App notifications</string>
+    <string name="prime_category_notes_title">Notes</string>
+    <string name="prime_category_notes_description">Available notes</string>
+    <string name="prime_category_files_title">Files</string>
+    <string name="prime_category_files_description">Media and files</string>
+    <string name="prime_category_settings_title">Device settings</string>
+    <string name="prime_category_settings_description">System settings</string>
+    <string name="prime_category_history_title">Search history</string>
+    <string name="prime_category_history_description">Recent searches</string>
+    <string name="prime_category_calculator_title">Calculator</string>
+    <string name="prime_category_calculator_description">Calculation results</string>
+</resources>
