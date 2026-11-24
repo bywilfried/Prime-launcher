@@ -283,7 +283,12 @@ android {
         }
 
         github {
-            applicationId (primeStable ? 'com.bywilfried.prime.fdroid' : 'com.bywilfried.prime')
+            applicationId (primeStable ? 'com.bywilfried.prime.stable' : 'com.bywilfried.prime')
+            dimension "channel"
+        }
+
+        fdroid {
+            applicationId "com.bywilfried.prime.fdroid"
             dimension "channel"
         }
 
@@ -341,6 +346,10 @@ android {
         }
 
         lawnWithQuickstepGithub {
+            manifest.srcFile "quickstep/AndroidManifest-launcher.xml"
+        }
+
+        lawnWithQuickstepFdroid {
             manifest.srcFile "quickstep/AndroidManifest-launcher.xml"
         }
 
