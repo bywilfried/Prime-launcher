@@ -133,10 +133,9 @@ object WebSuggestionProvider : SearchProvider {
             val suggestions = try {
                 fetchSuggestions(selected)
             } catch (error: Exception) {
-                Log.w(TAG, "Drawer web suggestions failed for $selected; trying DuckDuckGo", error)
-                runCatching {
-                    fetchSuggestions(app.lawnchair.prime.search.PrimeSearchResultPreferences.SuggestionProvider.DUCKDUCKGO)
-                }.getOrDefault(emptyList())
+                if (error is kotlinx.coroutines.CancellationException) throw error
+                Log.w(TAG, "Drawer web suggestions failed for $selected", error)
+                emptyList()
             }
             val results: List<SearchResult> = suggestions.distinct().take(limit).map {
                 SearchResult.WebSuggestion(it, selected.name.lowercase(java.util.Locale.ROOT))
