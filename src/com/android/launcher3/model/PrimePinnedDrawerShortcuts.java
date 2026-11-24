@@ -205,6 +205,100 @@ public final class PrimePinnedDrawerShortcuts {
      * The synthetic component ID remains unchanged, preserving Prime customizations
      * and category membership.
      */
+    /** URL is optional: browsers often deliberately hide it in opaque shortcut intents. */
+    private static String webIdentity(Intent intent) {
+        if (intent == null) return null;
+        Uri data = intent.getData();
+        if (data == null) {
+            for (String key : new String[] {"url", "android.intent.extra.TEXT", "webapp_url"}) {
+                String value = intent.getStringExtra(key);
+                if (value == null) continue;
+                Uri candidate = Uri.parse(value);
+                if ("https".equalsIgnoreCase(candidate.getScheme())
+                        || "http".equalsIgnoreCase(candidate.getScheme())) {
+                    data = candidate;
+                    break;
+                }
+            }
+        }
+        if (data == null || data.getHost() == null) return null;
+        String scheme = data.getScheme();
+        if (!"https".equalsIgnoreCase(scheme) && !"http".equalsIgnoreCase(scheme)) return null;
+        return data.buildUpon().fragment(null).build().normalizeScheme().toString();
+    }
+
+    private static String sourcePackage(JSONObject entry) {
+        if ("pinned".equals(entry.optString("kind"))) return entry.optString("package");
+        try {
+            Intent intent = Intent.parseUri(entry.getString("intent"), Intent.URI_INTENT_SCHEME);
+            ComponentName component = intent.getComponent();
+            return component != null ? component.getPackageName() : intent.getPackage();
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    /** Whether a saved source is installed and its native shortcut is still published. */
+    public static boolean isAvailable(Context context, ItemInfo item) {
+        if (!isDrawerEntry(context, item)) return true;
+        String id = ((AppInfo) item).componentName.getClassName()
+                .substring((context.getPackageName() + ".prime.pinned.Shortcut_").length());
+        JSONArray entries = read(context);
+        for (int i = 0; i < entries.length(); i++) {
+            JSONObject entry = entries.optJSONObject(i);
+            if (entry == null || !id.equals(entry.optString("id"))) continue;
+            String pkg = sourcePackage(entry);
+            if (pkg == null || pkg.isEmpty()) return true;
+            try {
+                context.getPackageManager().getApplicationInfo(pkg, 0);
+                if (!"pinned".equals(entry.optString("kind"))) return true;
+                LauncherApps apps = context.getSystemService(LauncherApps.class);
+                if (apps == null) return false;
+                LauncherApps.ShortcutQuery query = new LauncherApps.ShortcutQuery()
+                        .setPackage(pkg)
+                        .setQueryFlags(LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED
+                                | LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC
+                                | LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST);
+                java.util.List<android.content.pm.ShortcutInfo> shortcuts =
+                        apps.getShortcuts(query, Process.myUserHandle());
+                if (shortcuts != null) for (android.content.pm.ShortcutInfo shortcut : shortcuts) {
+                    if (entry.optString("shortcutId").equals(shortcut.getId())) return true;
+                }
+                return false;
+            } catch (Exception ignored) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    /** Open the original browser or explain how to recreate an unavailable shortcut. */
+    public static void repair(Context context, ItemInfo item) {
+        if (!isDrawerEntry(context, item)) return;
+        String id = ((AppInfo) item).componentName.getClassName()
+                .substring((context.getPackageName() + ".prime.pinned.Shortcut_").length());
+        JSONArray entries = read(context);
+        for (int i = 0; i < entries.length(); i++) {
+            JSONObject entry = entries.optJSONObject(i);
+            if (entry == null || !id.equals(entry.optString("id"))) continue;
+            String pkg = sourcePackage(entry);
+            if (pkg != null) {
+                Intent launch = context.getPackageManager().getLaunchIntentForPackage(pkg);
+                if (launch != null) {
+                    try {
+                        context.startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                    } catch (Exception error) {
+                        Log.w(TAG, "Unable to open browser for repair", error);
+                    }
+                }
+            }
+            android.widget.Toast.makeText(context,
+                    "Recréez la WebApp dans son navigateur, puis choisissez Ajouter au tiroir",
+                    android.widget.Toast.LENGTH_LONG).show();
+            return;
+        }
+    }
+
     private static boolean reconnect(Context context, ItemInfo item) {
         String newId = identity(context, item);
         if (newId == null || item.title == null) return false;
@@ -223,6 +317,7 @@ public final class PrimePinnedDrawerShortcuts {
         JSONArray entries = read(context);
         JSONObject candidate = null;
         String title = item.title.toString().trim();
+        String url = webIdentity(item.getIntent());
         for (int i = 0; i < entries.length(); i++) {
             JSONObject entry = entries.optJSONObject(i);
             if (entry == null) continue;
@@ -236,7 +331,11 @@ public final class PrimePinnedDrawerShortcuts {
                     continue;
                 }
             }
-            if (!pkg.equals(oldPkg) || !title.equalsIgnoreCase(entry.optString("title").trim())
+            String savedUrl = entry.optString("webUrl");
+            boolean sameWebApp = url != null && !savedUrl.isEmpty()
+                    ? url.equals(savedUrl)
+                    : title.equalsIgnoreCase(entry.optString("title").trim());
+            if (!pkg.equals(oldPkg) || !sameWebApp
                     || newId.equals(entry.optString("id"))) continue;
             if (candidate != null) return false; // Ambiguous: never replace the wrong WebApp.
             candidate = entry;
@@ -268,6 +367,7 @@ public final class PrimePinnedDrawerShortcuts {
                 candidate.remove("package");
                 candidate.remove("shortcutId");
             }
+            if (url != null) candidate.put("webUrl", url);
             save(context, entries);
             return true;
         } catch (Exception error) {
@@ -285,6 +385,8 @@ public final class PrimePinnedDrawerShortcuts {
             JSONObject entry = new JSONObject();
             entry.put("id", id);
             entry.put("title", String.valueOf(item.title));
+            String webUrl = webIdentity(item.getIntent());
+            if (webUrl != null) entry.put("webUrl", webUrl);
             if (item.itemType == LauncherSettings.Favorites.ITEM_TYPE_DEEP_SHORTCUT) {
                 ShortcutKey shortcut = ShortcutKey.fromItemInfo(item);
                 entry.put("kind", "pinned");
