@@ -152,6 +152,7 @@ internal fun SharedCategoryOptions(category: Prefs.Category, surface: Prefs.Surf
                 Text("Les termes saisis sont transmis au fournisseur sélectionné.")
             }
             Prefs.Category.WEB_SHORTCUTS -> {
+                WebIconDownloadOption(surface)
                 Prefs.WebEngine.entries.forEach { engine ->
                     var active by remember(surface, engine) { mutableStateOf(engine in Prefs.enabledWebEngines(context, surface)) }
                     Row {
@@ -307,4 +308,20 @@ internal fun SharedCategorySettingsDialog(
             TextButton(onClick = onDismiss) { Text("Fermer") }
         },
     )
+}
+
+@Composable
+internal fun WebIconDownloadOption(surface: Prefs.Surface) {
+    val context = LocalContext.current
+    var enabled by remember(surface) { mutableStateOf(Prefs.downloadWebIcons(context, surface)) }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Checkbox(checked = enabled, onCheckedChange = {
+            enabled = it
+            Prefs.setDownloadWebIcons(context, surface, it)
+        })
+        Column(modifier = Modifier.weight(1f)) {
+            Text("Télécharger les icônes Web")
+            Text("Privilégier les logos en ligne et les conserver hors connexion.")
+        }
+    }
 }
