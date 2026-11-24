@@ -47,6 +47,24 @@ public final class PrimePinnedDrawerShortcuts {
         }
     }
 
+    /** Native pins owned by drawer entries, independently of workspace items. */
+    public static java.util.Map<String, java.util.Set<String>> getDrawerPinnedIds(
+            Context context, android.os.UserHandle user) {
+        java.util.Map<String, java.util.Set<String>> result = new java.util.HashMap<>();
+        if (!Process.myUserHandle().equals(user)) return result;
+        JSONArray entries = read(context);
+        for (int i = 0; i < entries.length(); i++) {
+            JSONObject entry = entries.optJSONObject(i);
+            if (entry == null || !"pinned".equals(entry.optString("kind"))) continue;
+            String pkg = entry.optString("package");
+            String id = entry.optString("shortcutId");
+            if (!pkg.isEmpty() && !id.isEmpty()) {
+                result.computeIfAbsent(pkg, unused -> new java.util.HashSet<>()).add(id);
+            }
+        }
+        return result;
+    }
+
     /** Portable backup payload; retains titles, original launch intents and icon PNGs. */
     public static String exportBackup(Context context) {
         return read(context).toString();
