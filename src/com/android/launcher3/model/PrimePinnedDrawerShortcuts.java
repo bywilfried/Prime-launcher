@@ -47,6 +47,35 @@ public final class PrimePinnedDrawerShortcuts {
         }
     }
 
+    /** Portable backup payload; retains titles, original launch intents and icon PNGs. */
+    public static String exportBackup(Context context) {
+        return read(context).toString();
+    }
+
+    /** Restore entries by stable ID, without duplicating existing drawer shortcuts. */
+    public static void importBackup(Context context, String payload) throws org.json.JSONException {
+        JSONArray incoming = new JSONArray(payload);
+        JSONArray merged = read(context);
+        java.util.HashSet<String> ids = new java.util.HashSet<>();
+        for (int i = 0; i < merged.length(); i++) {
+            JSONObject entry = merged.optJSONObject(i);
+            if (entry != null) ids.add(entry.optString("id"));
+        }
+        for (int i = 0; i < incoming.length(); i++) {
+            JSONObject entry = incoming.optJSONObject(i);
+            if (entry == null || !entry.has("id") || !entry.has("title")
+                    || !entry.has("kind")) continue;
+            String id = entry.optString("id");
+            String kind = entry.optString("kind");
+            if (id.isEmpty() || (!"pinned".equals(kind) && !"legacy".equals(kind))) continue;
+            if ("pinned".equals(kind)
+                    && (!entry.has("package") || !entry.has("shortcutId"))) continue;
+            if ("legacy".equals(kind) && !entry.has("intent")) continue;
+            if (ids.add(id)) merged.put(entry);
+        }
+        save(context, merged);
+    }
+
     private static void save(Context context, JSONArray entries) {
         context.getSharedPreferences(PREFS, 0).edit().putString(ENTRIES, entries.toString()).apply();
     }
