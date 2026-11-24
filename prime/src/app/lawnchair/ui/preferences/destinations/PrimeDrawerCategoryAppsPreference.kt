@@ -158,42 +158,42 @@ fun PrimeDrawerCategoryAppsPreference(tabId: String) {
                 showStandardActions = false,
                 extraItems = { hideMenu ->
                     DropdownMenuItem(
-                        text = { Text("Tri des applications") },
+                        text = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_sort_apps)) },
                         enabled = false,
                         onClick = {},
                     )
                     DropdownMenuItem(
-                        text = { Text("Applications : A → Z") },
+                        text = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_asc)) },
                         trailingIcon = { if (tab.sortMode == "alphabetical") Icon(Icons.Rounded.Check, null) },
                         onClick = { repository.setTabSortMode(tabId, "alphabetical"); hideMenu() },
                     )
                     DropdownMenuItem(
-                        text = { Text("Applications : Z → A") },
+                        text = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_desc)) },
                         trailingIcon = { if (tab.sortMode == "alphabetical_desc") Icon(Icons.Rounded.Check, null) },
                         onClick = { repository.setTabSortMode(tabId, "alphabetical_desc"); hideMenu() },
                     )
                     DropdownMenuItem(
-                        text = { Text("Applications : ordre manuel") },
+                        text = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_manual_apps)) },
                         trailingIcon = { if (tab.sortMode == "custom") Icon(Icons.Rounded.Check, null) },
                         onClick = { repository.setTabSortMode(tabId, "custom"); hideMenu() },
                     )
                     DropdownMenuItem(
-                        text = { Text("Position des dossiers") },
+                        text = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_placement)) },
                         enabled = false,
                         onClick = {},
                     )
                     DropdownMenuItem(
-                        text = { Text("Dossiers au début") },
+                        text = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_start)) },
                         trailingIcon = { if (tab.folderPlacement == "start") Icon(Icons.Rounded.Check, null) },
                         onClick = { repository.setTabFolderPlacement(tabId, "start"); hideMenu() },
                     )
                     DropdownMenuItem(
-                        text = { Text("Dossiers à la fin") },
+                        text = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_end)) },
                         trailingIcon = { if (tab.folderPlacement == "end") Icon(Icons.Rounded.Check, null) },
                         onClick = { repository.setTabFolderPlacement(tabId, "end"); hideMenu() },
                     )
                     DropdownMenuItem(
-                        text = { Text("Dossiers mélangés aux applications") },
+                        text = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_mixed)) },
                         trailingIcon = { if (tab.folderPlacement == "mixed") Icon(Icons.Rounded.Check, null) },
                         onClick = { repository.setTabFolderPlacement(tabId, "mixed"); hideMenu() },
                     )
@@ -216,13 +216,13 @@ fun PrimeDrawerCategoryAppsPreference(tabId: String) {
                     )
                     is PrimeCategoryListItem.FolderItem -> PreferenceTemplate(
                         title = { Text(item.folder.title) },
-                        description = { Text("Dossier") },
+                        description = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_folder)) },
                         startWidget = dragHandle,
                     )
                     is PrimeCategoryListItem.FolderAppItem -> Unit
                 }
             },
-            middleSectionHeading = if (folderApps.isNotEmpty()) "Éléments actifs dans des dossiers" else null,
+            middleSectionHeading = if (folderApps.isNotEmpty()) androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_active) else null,
             middleItems = folderApps,
             middleItemKey = { it.key },
             middleItemContent = { item ->
@@ -244,7 +244,7 @@ fun PrimeDrawerCategoryAppsPreference(tabId: String) {
                                     repository.removeAppFromTabAndFolders(tabId, item.app.key)
                                 },
                             ) {
-                                Icon(Icons.Rounded.Remove, contentDescription = "Retirer de la catégorie")
+                                Icon(Icons.Rounded.Remove, contentDescription = androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_remove))
                             }
                         },
                     )
