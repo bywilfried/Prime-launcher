@@ -22,6 +22,7 @@ import com.android.launcher3.BuildConfig
 import com.android.launcher3.LauncherAppState
 import com.android.launcher3.LauncherFiles
 import com.android.launcher3.R
+import com.android.launcher3.model.PrimePinnedDrawerShortcuts
 import com.android.launcher3.model.DeviceGridState
 import com.android.launcher3.provider.RestoreDbTask
 import com.google.protobuf.Timestamp
@@ -66,6 +67,9 @@ class LawnchairBackup(
         val contents = selectedContents and info.contents
         if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
             handlers[PREFS_FILE_NAME] = { restoreLauncherPreferences(it) }
+            handlers[WEB_SHORTCUTS_FILE_NAME] = { input ->
+                PrimePinnedDrawerShortcuts.importBackup(context, input.bufferedReader().readText())
+            }
             handlers.putAll(
                 getFiles(context, forRestore = true)
                     .filterKeys { it != PREFS_FILE_NAME }
@@ -220,6 +224,7 @@ class LawnchairBackup(
         const val INCLUDE_WALLPAPER = 1 shl 1
         const val INCLUDE_THEME_CUSTOMIZATIONS = 1 shl 2
         private const val THEME_FILE_NAME = "prime_theme_preferences.json"
+        private const val WEB_SHORTCUTS_FILE_NAME = "prime_drawer_web_shortcuts.json"
 
         const val MIME_TYPE = "application/zip"
         val EXTRA_MIME_TYPES = arrayOf(MIME_TYPE, "application/x-zip", "application/octet-stream")
@@ -285,6 +290,11 @@ class LawnchairBackup(
                         if (contents.hasFlag(INCLUDE_THEME_CUSTOMIZATIONS)) {
                             out.putNextEntry(ZipEntry(THEME_FILE_NAME))
                             PrimeThemeBackup.write(context, out)
+                            out.closeEntry()
+                        }
+                        if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
+                            out.putNextEntry(ZipEntry(WEB_SHORTCUTS_FILE_NAME))
+                            out.write(PrimePinnedDrawerShortcuts.exportBackup(context).toByteArray(Charsets.UTF_8))
                             out.closeEntry()
                         }
                         getFiles(context, forRestore = false).entries.forEach {

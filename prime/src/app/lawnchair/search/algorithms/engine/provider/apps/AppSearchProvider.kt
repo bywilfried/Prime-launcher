@@ -6,6 +6,7 @@ import app.lawnchair.preferences2.firstCached
 import app.lawnchair.search.algorithms.engine.SearchResult
 import app.lawnchair.search.algorithms.filterHiddenApps
 import com.android.launcher3.model.AllAppsList
+import com.android.launcher3.model.PrimePinnedDrawerShortcuts
 import com.android.launcher3.model.data.AppInfo
 import com.android.launcher3.search.StringMatcherUtility
 import java.text.Normalizer
@@ -39,16 +40,34 @@ object AppSearchProvider {
         val enableFuzzySearch = fuzzyOverride ?: prefs.enableFuzzySearch.firstCached()
 
         val queryNormalized = stripDiacritics(query).lowercase(Locale.getDefault())
+        // The model can publish a filtered app snapshot while Prime's native
+        // pinned shortcuts live in its separate persistent drawer store.
+        // Merge by component so entries remain searchable without duplicates.
+        val stored = PrimePinnedDrawerShortcuts.getEntries(context)
+        val modelComponents = allApps.data.mapNotNull { it.componentName }.toHashSet()
+        val searchableApps = allApps.data + stored.filter { it.componentName !in modelComponents }
 
         val appResults = if (strictTypos) {
-            strictTypoSearch(allApps.data, queryNormalized, maxAppResults, hiddenApps, hiddenAppsInSearch)
+            strictTypoSearch(searchableApps, queryNormalized, maxAppResults, hiddenApps, hiddenAppsInSearch)
         } else if (enableFuzzySearch) {
-            fuzzySearch(allApps.data, queryNormalized, maxAppResults, hiddenApps, hiddenAppsInSearch)
+            fuzzySearch(searchableApps, queryNormalized, maxAppResults, hiddenApps, hiddenAppsInSearch)
         } else {
-            normalSearch(allApps.data, queryNormalized, maxAppResults, hiddenApps, hiddenAppsInSearch)
+            normalSearch(searchableApps, queryNormalized, maxAppResults, hiddenApps, hiddenAppsInSearch)
         }
 
-        return appResults.map { SearchResult.App(data = it) }
+        // Prime-owned drawer shortcuts are not installed launcher activities.
+        // Include matching saved entries independently of the hidden-app filter,
+        // which can hide the Prime package that hosts their synthetic components.
+        val matches = stored.filter {
+            stripDiacritics(it.title.toString()).lowercase(Locale.getDefault())
+                .contains(queryNormalized)
+        }
+        val result = appResults.toMutableList()
+        val seen = result.mapNotNull { it.componentName }.toHashSet()
+        matches.forEach { app ->
+            if (app.componentName?.let(seen::add) == true) result.add(app)
+        }
+        return result.map { SearchResult.App(data = it) }
     }
 
     // Shared relevance order for Prime Search and drawer search.

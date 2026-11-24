@@ -10,6 +10,7 @@ import app.lawnchair.util.isDefaultLauncher
 import com.android.launcher3.LauncherAppState
 import com.android.launcher3.allapps.BaseAllAppsAdapter
 import com.android.launcher3.model.data.AppInfo
+import com.android.launcher3.model.PrimePinnedDrawerShortcuts
 import com.android.launcher3.search.SearchCallback
 import com.android.launcher3.util.Executors
 import com.patrykmichalik.opto.core.onEach
@@ -79,17 +80,28 @@ class LawnchairAppSearchAlgorithm(context: Context) : LawnchairSearchAlgorithm(c
         apps: MutableList<AppInfo>,
         query: String,
     ): ArrayList<BaseAllAppsAdapter.AdapterItem> {
+        val existingComponents = apps.mapNotNull { it.componentName }.toHashSet()
+        val searchableApps = apps + PrimePinnedDrawerShortcuts.getEntries(context)
+            .filter { it.componentName !in existingComponents }
         val appResults = if (enableFuzzySearch) {
-            SearchUtils.fuzzySearch(apps, query, maxResultsCount, hiddenApps, hiddenAppsInSearch)
+            SearchUtils.fuzzySearch(searchableApps, query, maxResultsCount, hiddenApps, hiddenAppsInSearch)
         } else {
-            SearchUtils.normalSearch(apps, query, maxResultsCount, hiddenApps, hiddenAppsInSearch)
+            SearchUtils.normalSearch(searchableApps, query, maxResultsCount, hiddenApps, hiddenAppsInSearch)
         }
+
+        // Saved browser shortcuts are independent of Prime's package visibility.
+        // Search their persisted titles even when the launcher package is hidden.
+        val storedMatches = PrimePinnedDrawerShortcuts.getEntries(context).filter {
+            it.title.toString().contains(query, ignoreCase = true)
+        }
+        val existing = appResults.mapNotNull { it.componentName }.toHashSet()
+        val visibleResults = appResults + storedMatches.filter { it.componentName?.let(existing::add) == true }
 
         val searchTargets = mutableListOf<SearchTargetCompat>()
 
-        if (appResults.isNotEmpty()) {
-            if (appResults.size == 1 && context.isDefaultLauncher()) {
-                val singleAppResult = appResults.firstOrNull()
+        if (visibleResults.isNotEmpty()) {
+            if (visibleResults.size == 1 && context.isDefaultLauncher()) {
+                val singleAppResult = visibleResults.firstOrNull()
                 val shortcuts = singleAppResult?.let { SearchUtils.getShortcuts(it, context) }
                 if (shortcuts != null && shortcuts.isNotEmpty()) {
                     // Show app as a row alongside its shortcuts (no duplicate icon)
@@ -97,11 +109,11 @@ class LawnchairAppSearchAlgorithm(context: Context) : LawnchairSearchAlgorithm(c
                     searchTargets.addAll(shortcuts.map(searchTargetFactory::createShortcutTarget))
                 } else {
                     // No shortcuts: show as icon
-                    appResults.mapTo(searchTargets, searchTargetFactory::createAppSearchTarget)
+                    visibleResults.mapTo(searchTargets, searchTargetFactory::createAppSearchTarget)
                 }
             } else {
                 // Multiple results: show as icons
-                appResults.mapTo(searchTargets, searchTargetFactory::createAppSearchTarget)
+                visibleResults.mapTo(searchTargets, searchTargetFactory::createAppSearchTarget)
             }
             searchTargets.add(searchTargetFactory.createHeaderTarget(SPACE))
         }

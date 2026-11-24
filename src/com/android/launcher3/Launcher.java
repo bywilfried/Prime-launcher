@@ -1243,6 +1243,8 @@ public class Launcher extends StatefulActivity<LauncherState>
         return Optional.of(LAUNCHER_ALLAPPS_EXIT);
     }
 
+    private String mPrimeWebAppsSnapshot;
+
     @Override
     protected void onResume() {
         TraceHelper.INSTANCE.beginSection(ON_RESUME_EVT);
@@ -1252,6 +1254,33 @@ public class Launcher extends StatefulActivity<LauncherState>
             scheduleDeferredCheck();
         } else {
             mOverlayManager.onActivityResumed();
+        }
+
+        // Reload the all-apps model only when Prime's Web entries changed while paused.
+        String primeWebApps = getSharedPreferences("prime_web_apps", MODE_PRIVATE)
+                .getString("entries", "[]");
+        if (mPrimeWebAppsSnapshot != null && !mPrimeWebAppsSnapshot.equals(primeWebApps)) {
+            mModel.forceReload();
+        }
+        mPrimeWebAppsSnapshot = primeWebApps;
+
+        // After an in-place APK update, the initial All Apps snapshot may be
+        // published before Prime's persisted browser shortcuts are restored.
+        // Reload once per APK install/update; do not touch saved entries.
+        try {
+            long apkUpdatedAt = getPackageManager()
+                    .getPackageInfo(getPackageName(), 0).lastUpdateTime;
+            android.content.SharedPreferences shortcutPrefs =
+                    getSharedPreferences("prime_pinned_drawer_shortcuts", MODE_PRIVATE);
+            long lastSeenApkUpdate = shortcutPrefs.getLong(
+                    "last_launcher_apk_update_time", -1L);
+            if (apkUpdatedAt != lastSeenApkUpdate) {
+                shortcutPrefs.edit().putLong(
+                        "last_launcher_apk_update_time", apkUpdatedAt).apply();
+                mModel.forceReload();
+            }
+        } catch (android.content.pm.PackageManager.NameNotFoundException error) {
+            android.util.Log.w("PrimeDrawer", "Unable to check APK update time", error);
         }
 
         DragView.removeAllViews(this);
@@ -1275,6 +1304,9 @@ public class Launcher extends StatefulActivity<LauncherState>
 
     @Override
     protected void onPause() {
+        // Capture the state before opening Preferences, including on first launch.
+        mPrimeWebAppsSnapshot = getSharedPreferences("prime_web_apps", MODE_PRIVATE)
+                .getString("entries", "[]");
         // Ensure that items added to Launcher are queued until Launcher returns
         ItemInstallQueue.INSTANCE.get(this).pauseModelPush(FLAG_ACTIVITY_PAUSED);
 
@@ -2218,6 +2250,9 @@ public class Launcher extends StatefulActivity<LauncherState>
             return result;
         }
 
+        if (intent != null && com.android.launcher3.model.PrimePinnedDrawerShortcuts.launchPinned(this, intent)) {
+            return new RunnableList();
+        }
         RunnableList result = super.startActivitySafely(v, intent, item);
         if (result != null && v instanceof BubbleTextView) {
             // This is set to the view that launched the activity that navigated the user away
@@ -3134,9 +3169,11 @@ public class Launcher extends StatefulActivity<LauncherState>
     public Stream<SystemShortcut.Factory> getSupportedShortcuts(int container) {
         if (enableLongPressRemoveShortcut()
                 && (container == CONTAINER_DESKTOP || container == CONTAINER_HOTSEAT)) {
-            return Stream.of(APP_INFO, WIDGETS, INSTALL, REMOVE);
+            return Stream.of(APP_INFO, WIDGETS, INSTALL, REMOVE,
+                    SystemShortcut.PRIME_DRAWER_SHORTCUT);
         }
-        return Stream.of(APP_INFO, WIDGETS, INSTALL);
+        return Stream.of(APP_INFO, WIDGETS, INSTALL,
+                SystemShortcut.PRIME_DRAWER_SHORTCUT);
     }
 
     /**

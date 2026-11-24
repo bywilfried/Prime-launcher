@@ -319,8 +319,20 @@ public class AllAppsList {
         }
     }
 
+    private boolean isPrimeSyntheticDrawerEntry(AppInfo info) {
+        if (info.componentName == null) return false;
+        String pkg = info.componentName.getPackageName();
+        String cls = info.componentName.getClassName();
+        return cls.startsWith(pkg + ".prime.pinned.Shortcut_")
+                || cls.startsWith(pkg + ".prime.webapps.Web_");
+    }
+
     public void updateIconsAndLabels(HashSet<String> packages, UserHandle user) {
         for (AppInfo info : data) {
+            // Prime drawer shortcuts use synthetic components under Prime's package.
+            // They are not launcher activities: the icon cache must never replace
+            // their saved website titles/icons with Prime Launcher's own metadata.
+            if (isPrimeSyntheticDrawerEntry(info)) continue;
             if (info.user.equals(user) && packages.contains(info.componentName.getPackageName())) {
                 CharSequence oldTitle = info.title;
                 String oldSectionName = info.sectionName;
@@ -349,6 +361,7 @@ public class AllAppsList {
             // to the removed list.
             for (int i = data.size() - 1; i >= 0; i--) {
                 final AppInfo applicationInfo = data.get(i);
+                if (isPrimeSyntheticDrawerEntry(applicationInfo)) continue;
                 if (user.equals(applicationInfo.user)
                         && packageName.equals(applicationInfo.componentName.getPackageName())) {
                     if (!findActivity(matches, applicationInfo.componentName)) {

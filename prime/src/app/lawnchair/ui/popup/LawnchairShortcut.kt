@@ -110,6 +110,15 @@ class LawnchairShortcut {
                 if (prefs2.lockHomeScreen.firstCached()) {
                     return@Factory null
                 }
+                // Never offer to uninstall the browser behind a web shortcut.
+                // Only a genuine launcher activity (including a WebAPK) is uninstallable.
+                if (itemInfo.itemType != ITEM_TYPE_APPLICATION ||
+                    com.android.launcher3.SecondaryDropTarget.getUninstallTarget(
+                        activity.asContext(), itemInfo,
+                    ) == null
+                ) {
+                    return@Factory null
+                }
                 if (itemInfo.targetComponent == null) {
                     return@Factory null
                 }
@@ -169,6 +178,28 @@ class LawnchairShortcut {
     ) : SystemShortcut<LawnchairLauncher>(R.drawable.ic_edit, R.string.action_customize, launcher, itemInfo, originalView) {
 
         override fun onClick(v: View) {
+            if (com.android.launcher3.model.PrimePinnedDrawerShortcuts
+                    .isDrawerEntry(launcher, appInfo)) {
+                val icon = android.graphics.drawable.BitmapDrawable(
+                    launcher.resources, appInfo.bitmap.icon,
+                )
+                AbstractFloatingView.closeAllOpenViews(launcher)
+                ComposeBottomSheet.show(
+                    context = launcher,
+                    contentPaddings = PaddingValues(bottom = 64.dp),
+                ) {
+                    CustomizeAppDialog(
+                        icon = icon,
+                        defaultTitle = com.android.launcher3.model.PrimePinnedDrawerShortcuts
+                            .getOriginalTitle(launcher, appInfo),
+                        componentKey = appInfo.toComponentKey(),
+                    ) {
+                        launcher.model.forceReload()
+                        close(true)
+                    }
+                }
+                return
+            }
             val outObj = Array<Any?>(1) { null }
             var icon = Utilities.loadFullDrawableWithoutTheme(launcher, appInfo, 0, 0, outObj)
             if (mItemInfo.screenId != NO_ID && Utilities.ATLEAST_T) {

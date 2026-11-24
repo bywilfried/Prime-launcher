@@ -221,6 +221,8 @@ class SearchResultIcon(context: Context, attrs: AttributeSet?) :
 
     private fun bindFromApp(componentName: ComponentName, user: UserHandle) {
         val appInfo = launcher.appsView.appsStore.getApp(ComponentKey(componentName, user))
+            ?: com.android.launcher3.model.PrimePinnedDrawerShortcuts.getEntries(context)
+                .firstOrNull { it.componentName == componentName && it.user == user }
         if (appInfo == null) {
             isVisible = false
             return
