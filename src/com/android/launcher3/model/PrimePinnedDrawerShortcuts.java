@@ -377,6 +377,25 @@ public final class PrimePinnedDrawerShortcuts {
         }
     }
 
+    /** Warn about a missing browser without removing its saved drawer entry. */
+    public static boolean warnIfBrowserMissing(Context context, ItemInfo item) {
+        if (!isDrawerEntry(context, item)) return false;
+        Intent intent = item.getIntent();
+        if (intent == null || ACTION_PINNED.equals(intent.getAction())) return false;
+        ComponentName target = intent.getComponent();
+        String pkg = target != null ? target.getPackageName() : intent.getPackage();
+        if (pkg == null || pkg.isEmpty()) return false;
+        try {
+            context.getPackageManager().getApplicationInfo(pkg, 0);
+            return false;
+        } catch (android.content.pm.PackageManager.NameNotFoundException error) {
+            android.widget.Toast.makeText(context,
+                    "Application source indisponible : réinstallez le navigateur pour réessayer",
+                    android.widget.Toast.LENGTH_LONG).show();
+            return true;
+        }
+    }
+
     /** Dispatch pinned shortcuts via Android's launcher API, not via the browser URL. */
     public static boolean launchPinned(Context context, Intent intent) {
         if (!ACTION_PINNED.equals(intent.getAction())) return false;
