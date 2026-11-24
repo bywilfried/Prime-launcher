@@ -42,7 +42,7 @@ The tag filter and UpdateCheckData use the documented F-Droid Tags syntax. Valid
 - Verify all prebuilt JARs, including AOSP SystemUI-statsd and WindowManager-Shell packaged dependencies, against source and F-Droid policy. See prebuilts/libs/README.md. Do not remove required JARs.
 - Inspect resolved runtime dependency report, including JitPack artifacts, and scan the final APK for non-free libraries.
 - Test Google Fonts, optional feed and web suggestions on a device without Google Play Services; inspect defaults and network requests.
-- Fastlane currently contains English (en-US) and French (fr-FR) Prime Launcher descriptions only. Verify images/icon.png and images/phoneScreenshots/device-frame.jpg against current branding; replace if inherited or misleading. App resource translations are a separate audit.
+- Fastlane currently contains English (en-US) and French (fr-FR) Prime Launcher descriptions only. The placeholder device-frame.jpg was removed. The maintainer will supply final screenshots at the end of preparation. Verify images/icon.png against current branding. App resource translations are a separate audit.
 - Run fdroidserver lint, checkupdates and build with actual fdroiddata metadata.
 - Verify signing and reproducibility separately. GitHub and F-Droid APKs use distinct application IDs and signing certificates.
 - No F-Droid submission or stable release has been made by this preparation.
