@@ -20,9 +20,22 @@ Suggested fdroiddata settings for metadata/com.bywilfried.prime.fdroid.yml (not 
 RepoType: git
 Repo: https://github.com/bywilfried/Prime-launcher.git
 UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
-AutoUpdateMode: Version
+UpdateCheckData: 'version.properties|^VERSION_CODE=([0-9]+)|.|^VERSION_NAME=([0-9.]+)'
+AutoUpdateMode: None
 ```
-The build recipe must enable submodules, select lawnWithQuickstepFdroid and pass -PprimeStable=true. Update detection must read version.properties (or use a validated custom update-check configuration). Do not enable automatic updates until checkupdates and build succeed.
+Draft build block (replace the placeholder with the full approved stable commit hash and confirm version values before submission):
+```yaml
+Builds:
+  - versionName: '0.10.0'
+    versionCode: 11000000
+    commit: REPLACE_WITH_APPROVED_STABLE_COMMIT_SHA
+    submodules: true
+    gradle:
+      - lawnWithQuickstepFdroid
+    gradleprops:
+      - primeStable=true
+```
+The tag filter and UpdateCheckData use the documented F-Droid Tags syntax. Validate with fdroidserver before changing AutoUpdateMode from None to Version. No scanner exceptions are proposed until binary provenance is established.
 
 ## Remaining blockers
 - Audit GPL-3.0-or-later source headers versus LICENSE.txt; retain copyright notices and provide full applicable license texts. Do not relicense upstream code.
