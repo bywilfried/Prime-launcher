@@ -218,17 +218,17 @@ internal fun SharedCategoryCard(
             scaleY = lift
             shadowElevation = if (dragging) 12.dp.toPx() else 0f
         },
-        title = { Text(category.title) },
+        title = { Text(category.localizedTitle(context)) },
         description = {
             Text(
-                if (needsPermission) PrimeSearchPermissions.explanation(context, category) else category.description,
+                if (needsPermission) PrimeSearchPermissions.explanation(context, category) else category.localizedDescription(context),
                 color = if (needsPermission) androidx.compose.ui.graphics.Color.Gray else androidx.compose.ui.graphics.Color.Unspecified,
             )
         },
         endWidget = {
             Row {
                 IconButton(onClick = onSettings) {
-                    Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.prime_search_shared_settings, category.title))
+                    Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.prime_search_shared_settings, category.localizedTitle(context)))
                 }
                 Icon(
                     Icons.Default.DragHandle,
@@ -297,12 +297,13 @@ internal fun SharedCategorySettingsDialog(
     onDismiss: () -> Unit,
     extra: @Composable () -> Unit,
 ) {
+    val context = LocalContext.current
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(category.title) },
+        title = { Text(category.localizedTitle(context)) },
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                Text(category.description)
+                Text(category.localizedDescription(context))
                 SharedCategoryOptions(category, surface, permissionRefresh)
                 extra()
             }
