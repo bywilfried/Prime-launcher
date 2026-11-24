@@ -1308,23 +1308,15 @@ object PrimeSearchOverlay {
             parent.removeView(card)
             val category = card.tag as? PrimeSearchResultPreferences.Category
             val heading = when (category) {
-                PrimeSearchResultPreferences.Category.APPS -> "Applications"
-                PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> "Raccourcis d'app"
-                PrimeSearchResultPreferences.Category.CONTACTS -> "Contacts"
-                PrimeSearchResultPreferences.Category.FILES -> "Fichiers"
-                PrimeSearchResultPreferences.Category.WEB -> "Suggestions Web"
-                PrimeSearchResultPreferences.Category.WEB_SHORTCUTS -> "Raccourcis Web"
-                PrimeSearchResultPreferences.Category.CALENDAR -> "Événements de l'agenda"
-                PrimeSearchResultPreferences.Category.REMINDERS -> "Tâches"
-                PrimeSearchResultPreferences.Category.NOTIFICATIONS -> "Historique des notifications"
-                PrimeSearchResultPreferences.Category.SETTINGS -> "Paramètres de l'appareil"
-                else -> null
+                PrimeSearchResultPreferences.Category.NOTIFICATIONS -> launcher.getString(com.android.launcher3.R.string.prime_overlay_history)
+                PrimeSearchResultPreferences.Category.REMINDERS -> launcher.getString(com.android.launcher3.R.string.prime_overlay_tasks)
+                else -> category?.localizedTitle(launcher)
             }
             // Many sections already contain their own heading. Add a matching
             // header only when one is missing, keeping the compact position.
             val existingHeading = (0 until card.childCount).any { index ->
                 val child = card.getChildAt(index)
-                child is TextView && child.text?.toString() == heading
+                child is TextView && (child.text?.toString() == heading || (category != null && child.tag == category))
             }
             detailHeading.text = heading.orEmpty()
             // The compact card's header can be clipped or hidden by filtering.
@@ -1332,7 +1324,7 @@ object PrimeSearchOverlay {
             // existing identical heading to prevent duplicates.
             for (index in 0 until card.childCount) {
                 val child = card.getChildAt(index)
-                if (child is TextView && child.text?.toString() == heading) {
+                if (child is TextView && (child.text?.toString() == heading || (category != null && child.tag == category))) {
                     child.visibility = View.GONE
                 }
             }
@@ -1360,7 +1352,7 @@ object PrimeSearchOverlay {
             // category title solely in the fixed detail heading.
             for (index in 0 until card.childCount) {
                 val child = card.getChildAt(index)
-                if (child is TextView && child.text?.toString() == heading) child.visibility = View.GONE
+                if (child is TextView && (child.text?.toString() == heading || (category != null && child.tag == category))) child.visibility = View.GONE
             }
             dialog.hideKeyboardForSelection()
             scroll.animate().cancel()
