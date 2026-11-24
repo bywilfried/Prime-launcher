@@ -203,6 +203,7 @@ data object WebShortcutsSectionBuilder : SectionBuilder {
                     searchUrl = action.searchUrl,
                     providerIconRes = action.providerIconRes,
                     tintIcon = action.tintIcon,
+                    webShortcut = true,
                 ),
             )
         }
