@@ -124,7 +124,7 @@ internal fun SharedCategoryOptions(category: Prefs.Category, surface: Prefs.Surf
                 Prefs.FileOption.entries.forEach { option ->
                     var active by remember(surface, option) { mutableStateOf(Prefs.fileOptionEnabled(context, option, surface)) }
                     Row {
-                        Text(option.label, modifier = Modifier.weight(1f))
+                        Text(option.localizedLabel(context), modifier = Modifier.weight(1f))
                         Switch(checked = active, onCheckedChange = {
                             active = it
                             Prefs.setFileOptionEnabled(context, option, it, surface)
@@ -175,7 +175,7 @@ internal fun SharedCategoryOptions(category: Prefs.Category, surface: Prefs.Surf
                             retention = option
                             Prefs.setNotificationRetention(context, option, surface)
                         })
-                        Text(option.label)
+                        Text(option.localizedLabel(context))
                     }
                 }
             }
