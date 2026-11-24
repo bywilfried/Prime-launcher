@@ -1487,7 +1487,8 @@ object PrimeSearchOverlay {
             while (webPanel.childCount > 0) {
                 val child = webPanel.getChildAt(0)
                 webPanel.removeViewAt(0)
-                val headingCategory = PrimeSearchCategoryPresentation.categoryForHeading((child as? TextView)?.text?.toString())
+                val headingCategory = (child.tag as? PrimeSearchResultPreferences.Category)
+                    ?: PrimeSearchCategoryPresentation.categoryForHeading((child as? TextView)?.text?.toString(), launcher)
                 if (headingCategory != null) currentCategory = headingCategory
                 val category = currentCategory
                 if (category == PrimeSearchResultPreferences.Category.APPS) {
