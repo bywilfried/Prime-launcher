@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_diag_no_icons">Aucun diagnostic d’icône pour le moment. Ouvrez le tiroir ou la recherche, puis appuyez sur Actualiser.</string>
+    <string name="prime_diag_refresh">Actualiser</string>
+    <string name="prime_diag_icons">Icônes</string>
+    <string name="prime_diag_all">Tous les journaux</string>
+    <string name="prime_diag_export">Exporter les logs des widgets</string>
+    <string name="prime_diag_export_desc">Récupérer et partager les journaux accessibles à Prime Launcher</string>
+    <string name="prime_diag_popup">Diagnostic des menus contextuels</string>
+    <string name="prime_diag_popup_desc">Afficher et partager les couleurs et fonds des menus de l’accueil</string>
+    <string name="prime_diag_no_trace">Aucune trace. Effectuez un appui long sur une zone vide de l’accueil, puis revenez ici.</string>
+    <string name="prime_diag_search">Diagnostic de recherche</string>
+    <string name="prime_diag_search_desc">Tracer les recherches et le clavier sans Logcat</string>
+    <string name="prime_diag_swipe">Diagnostic swipe</string>
+    <string name="prime_diag_swipe_desc">Afficher les traces du swipe entre les catégories du tiroir</string>
+    <string name="prime_diag_copy">Copier</string>
+    <string name="prime_diag_share_title">Partager le diagnostic</string>
+    <string name="prime_diag_share">Partager</string>
+    <string name="prime_diag_cleared">Journal effacé. Effectuez un nouvel appui long sur une zone vide.</string>
+    <string name="prime_diag_clear">Effacer</string>
+    <string name="prime_diag_capture_on">Capture activée</string>
+    <string name="prime_diag_capture_off">Capture désactivée</string>
+    <string name="prime_diag_prime_swipe">Diagnostic swipe Prime</string>
+</resources>
