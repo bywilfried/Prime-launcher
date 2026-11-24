@@ -313,6 +313,30 @@ public abstract class SystemShortcut<T extends ActivityContext> extends ItemInfo
         }
     }
 
+    public static final Factory<ActivityContext> PRIME_REPAIR_WEBAPP =
+            (context, itemInfo, originalView) -> {
+                if (originalView == null
+                        || !com.android.launcher3.model.PrimePinnedDrawerShortcuts
+                                .isDrawerEntry(originalView.getContext(), itemInfo)
+                        || com.android.launcher3.model.PrimePinnedDrawerShortcuts
+                                .isAvailable(originalView.getContext(), itemInfo)) return null;
+                return new PrimeRepairWebApp<>(context, itemInfo, originalView);
+            };
+
+    public static class PrimeRepairWebApp<T extends ActivityContext> extends SystemShortcut<T> {
+        public PrimeRepairWebApp(T target, ItemInfo itemInfo, View originalView) {
+            super(R.drawable.ic_install_no_shadow, R.string.prime_repair_webapp,
+                    target, itemInfo, originalView, false);
+        }
+
+        @Override
+        public void onClick(View view) {
+            AbstractFloatingView.closeAllOpenViews(mTarget);
+            com.android.launcher3.model.PrimePinnedDrawerShortcuts.repair(
+                    view.getContext(), mItemInfo);
+        }
+    }
+
     public static final Factory<ActivityContext> REMOVE = (context, itemInfo, originalView) -> {
         if (isHomeLocked(context)) {
             return null;
