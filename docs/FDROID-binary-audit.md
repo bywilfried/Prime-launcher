@@ -59,3 +59,9 @@ Retain all existing JARs, including historical/reference files, pending fdroidse
 
 ## Bundled font
 The repository contains prime/res/font/googlesansflex_variable.ttf. Verify the exact upstream font revision, embedded copyright and license metadata, and redistribution terms; include the applicable license and notices before publication. Do not infer the license from the filename.
+
+### Upstream license findings
+Google Sans Flex upstream switched to OFL-1.1 in release 3.007 (2025-11-07). Official sources: https://github.com/googlefonts/googlesans-flex and https://github.com/google/fonts/blob/main/ofl/googlesansflex/OFL.txt . The bundled binary's revision and license are not yet established. Retain pending verification; if it predates the open release, use a verified OFL release after visual regression testing. Preserve license and copyright notices in the distributed app.
+
+### Native dependency candidates
+The version catalog declares androidx.graphics:graphics-core:1.0.4, androidx.graphics:graphics-path:1.1.0, io.github.hokofly:hoko-blur:1.5.5 and libsu core/service 6.0.0. These are investigation leads, not proof of the origin of every APK native library. Trace the remaining datastore_shared_counter and nrb binaries to resolved artifacts and verify exact source revisions and licenses.
