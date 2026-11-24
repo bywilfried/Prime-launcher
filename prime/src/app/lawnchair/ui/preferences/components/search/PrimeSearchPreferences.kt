@@ -120,6 +120,7 @@ fun PrimeSearchPreference() {
                 title = { Text("Sources de recherche Web") },
                 text = {
                     androidx.compose.foundation.lazy.LazyColumn {
+                        item { WebIconDownloadOption(PrimeSearchResultPreferences.Surface.PRIME_SEARCH) }
                         items(engines.size) { index ->
                             val engine = engines[index]
                             var enabled by remember(engine) {
