@@ -198,6 +198,7 @@ internal fun SharedCategoryCard(
     onPermission: () -> Unit,
     dragState: CategoryDragState,
 ) {
+    val context = LocalContext.current
     val dragging = dragState.active == category
     val rowPixels = with(LocalDensity.current) { 112.dp.toPx() }
     val targetIndex = (dragState.origin + (dragState.offset / rowPixels).roundToInt()).coerceIn(0, lastIndex)
@@ -220,7 +221,7 @@ internal fun SharedCategoryCard(
         title = { Text(category.title) },
         description = {
             Text(
-                if (needsPermission) PrimeSearchPermissions.explanation(category) else category.description,
+                if (needsPermission) PrimeSearchPermissions.explanation(context, category) else category.description,
                 color = if (needsPermission) androidx.compose.ui.graphics.Color.Gray else androidx.compose.ui.graphics.Color.Unspecified,
             )
         },
