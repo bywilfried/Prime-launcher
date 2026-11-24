@@ -169,9 +169,9 @@ private fun PrimeFolderItem(
     if (deleteOpen) {
         AlertDialog(
             onDismissRequest = { deleteOpen = false },
-            title = { Text("Supprimer") },
-            text = { Text("Supprimer ce dossier ?") },
-            confirmButton = { TextButton(onClick = { deleteOpen = false; onDelete() }) { Text("Supprimer") } },
+            title = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_delete)) },
+            text = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_delete_folder)) },
+            confirmButton = { TextButton(onClick = { deleteOpen = false; onDelete() }) { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_delete)) } },
             dismissButton = { TextButton(onClick = { deleteOpen = false }) { Text(stringResource(android.R.string.cancel)) } },
         )
     }
