@@ -95,6 +95,7 @@ jobs:
           set -euo pipefail
           aapt="$ANDROID_HOME/build-tools/37.0.0/aapt"
           badging="$("$aapt" dump badging artifact/Prime-Launcher-Stable.apk)"
+          grep -F "package: name='com.bywilfried.prime.fdroid'" <<< "$badging"
           grep -F "versionCode='$PRIME_VERSION_CODE'" <<< "$badging"
           grep -F "versionName='$PRIME_RELEASE_VERSION'" <<< "$badging"
 
