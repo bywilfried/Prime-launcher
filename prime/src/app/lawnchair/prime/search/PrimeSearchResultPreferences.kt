@@ -212,7 +212,19 @@ object PrimeSearchResultPreferences {
         AUDIO("Audio", true),
         APKS("APKs", true),
         OTHER("Autre", true),
-        SYSTEM("Fichiers système", false),
+        SYSTEM("Fichiers système", false);
+
+        fun localizedLabel(context: Context): String = context.getString(when (this) {
+            PREVIEW -> com.android.launcher3.R.string.prime_option_fileoption_preview
+            FOLDERS -> com.android.launcher3.R.string.prime_option_fileoption_folders
+            DOCUMENTS -> com.android.launcher3.R.string.prime_option_fileoption_documents
+            IMAGES -> com.android.launcher3.R.string.prime_option_fileoption_images
+            VIDEOS -> com.android.launcher3.R.string.prime_option_fileoption_videos
+            AUDIO -> com.android.launcher3.R.string.prime_option_fileoption_audio
+            APKS -> com.android.launcher3.R.string.prime_option_fileoption_apks
+            OTHER -> com.android.launcher3.R.string.prime_option_fileoption_other
+            SYSTEM -> com.android.launcher3.R.string.prime_option_fileoption_system
+        })
     }
 
     fun fileOptionEnabled(context: Context, option: FileOption): Boolean =
@@ -313,7 +325,16 @@ object PrimeSearchResultPreferences {
         THREE_MONTHS("3 mois", 3),
         SIX_MONTHS("6 mois", 6),
         TWELVE_MONTHS("12 mois", 12),
-        FOREVER("Toujours", 0),
+        FOREVER("Toujours", 0);
+
+        fun localizedLabel(context: Context): String = context.getString(when (this) {
+            ONE_MONTH -> com.android.launcher3.R.string.prime_option_notificationretention_one_month
+            TWO_MONTHS -> com.android.launcher3.R.string.prime_option_notificationretention_two_months
+            THREE_MONTHS -> com.android.launcher3.R.string.prime_option_notificationretention_three_months
+            SIX_MONTHS -> com.android.launcher3.R.string.prime_option_notificationretention_six_months
+            TWELVE_MONTHS -> com.android.launcher3.R.string.prime_option_notificationretention_twelve_months
+            FOREVER -> com.android.launcher3.R.string.prime_option_notificationretention_forever
+        })
     }
 
     fun notificationRetention(context: Context, surface: Surface): NotificationRetention =
@@ -355,7 +376,14 @@ object PrimeSearchResultPreferences {
         LAST("Dernière consultée"),
         FREQUENT("Fréquentes"),
         RECENT("Récentes"),
-        NEW("Nouvelles"),
+        NEW("Nouvelles");
+
+        fun localizedLabel(context: Context): String = context.getString(when (this) {
+            LAST -> com.android.launcher3.R.string.prime_option_openingtab_last
+            FREQUENT -> com.android.launcher3.R.string.prime_option_openingtab_frequent
+            RECENT -> com.android.launcher3.R.string.prime_option_openingtab_recent
+            NEW -> com.android.launcher3.R.string.prime_option_openingtab_new
+        })
     }
 
     fun openingTab(context: Context): OpeningTab =
