@@ -19,7 +19,7 @@
     <string name="app_filter_class" translatable="false">app.lawnchair.DefaultAppFilter</string>
     <string name="calendar_component_name" translatable="false">com.google.android.calendar/com.android.calendar.AllInOneActivity</string>
     <dimen name="settingslib_preferred_minimum_touch_target">48dp</dimen>
-    <string-array name="dynamic_calendar_components_name">
+    <string-array name="dynamic_calendar_components_name" translatable="false">
         <item>com.android.calendar</item>
         <item>com.blackberry.calendar</item>
         <item>com.huawei.calendar</item>
@@ -48,7 +48,7 @@
 
     <bool name="config_header_protection_supported">true</bool>
 
-    <string-array name="filtered_components">
+    <string-array name="filtered_components" translatable="false">
         <!-- Voice search -->
         <item>com.google.android.googlequicksearchbox/.VoiceSearchActivity</item>
         <!-- GNL -->
