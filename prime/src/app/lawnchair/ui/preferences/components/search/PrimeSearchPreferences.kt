@@ -650,7 +650,7 @@ fun PrimeSearchPreference() {
                                                             showAlignmentDialog = false
                                                         },
                                                     )
-                                                    Text(option.label)
+                                                    Text(option.localizedLabel(context))
                                                 }
                                             }
                                         }
