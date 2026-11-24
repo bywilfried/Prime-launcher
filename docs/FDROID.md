@@ -36,3 +36,13 @@ The build recipe must enable submodules, select lawnWithQuickstepFdroid and pass
 
 Official policy: https://f-droid.org/docs/Inclusion_Policy/
 Metadata: https://f-droid.org/docs/Build_Metadata_Reference/
+
+## Mandatory localization audit before first public release
+
+- Audit all user-facing hardcoded strings in Java, Kotlin, Compose and XML, especially French-only additions.
+- Ensure complete default English resources and matching French translations for all Prime features.
+- Compare resource keys, placeholders, plurals and formatting across inherited locales; identify missing and obsolete translations.
+- Verify fallback to English, language selection, truncation and RTL layouts on device.
+- Review Prime Search, WebApps, gestures, settings, backup, menus, accessibility labels and error messages.
+- Review localized Fastlane metadata separately; remove or correct misleading inherited Lawnchair descriptions.
+- Complete and validate this audit before the first F-Droid publication; do not treat this checklist as evidence that translations have already been checked.
