@@ -521,7 +521,7 @@ private fun DrawerAdvancedSearchPreferences() {
                     }
                 }
                 if (PrimeSearchPermissions.required(selected) && !PrimeSearchPermissions.granted(context, selected)) {
-                    Text(PrimeSearchPermissions.explanation(selected))
+                    Text(PrimeSearchPermissions.explanation(context, selected))
                     androidx.compose.material3.TextButton(onClick = { requestCategory(selected, drawerSurface) }) {
                         Text("Autoriser l'accès")
                     }
