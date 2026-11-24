@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_overlay_tasks">Tasks · Tasks.org</string>
+    <string name="prime_overlay_history">Notification history</string>
+    <string name="prime_overlay_notif_disabled">Notification access disabled · tap to allow</string>
+    <string name="prime_overlay_notif_empty">No matching recorded notifications</string>
+</resources>
