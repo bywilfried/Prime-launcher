@@ -28,6 +28,10 @@ jobs:
           mkdir -p unsigned-audit
           cp "$apk" unsigned-audit/Prime-Launcher-FDroid-unsigned.apk
           ./gradlew -PprimeStable=true -PprimeFdroidCheck=true assemblePrimeWithQuickstepFdroidRelease
+      - name: Audit native library provenance
+        run: |
+          ./gradlew -PprimeStable=true --no-configuration-cache -I scripts/native-artifacts.init.gradle primeNativeArtifactInventory
+          python3 scripts/audit_native_libraries.py native-artifacts.json unsigned-audit/Prime-Launcher-FDroid-unsigned.apk native-library-audit.json
       - name: Sign test APK with Prime key
         shell: bash
         env:
@@ -65,4 +69,5 @@ jobs:
           name: prime-fdroid-audit
           path: |
             runtime-dependencies.txt
+            native-library-audit.json
             unsigned-audit/*.apk
