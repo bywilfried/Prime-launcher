@@ -56,7 +56,7 @@ object PrimeCalendarSearch {
                     val start = cursor.getLong(3)
                     val location = cursor.getString(4).orEmpty()
                     val date = java.text.DateFormat.getDateTimeInstance().format(java.util.Date(start))
-                    results.add(Result(title.ifBlank { "Événement" },
+                    results.add(Result(title.ifBlank { context.getString(com.android.launcher3.R.string.prime_provider_event) },
                         listOf(date, location, description.take(120)).filter { it.isNotBlank() }.joinToString(" · "),
                         android.content.ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, id)))
                 }
