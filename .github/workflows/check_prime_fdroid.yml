@@ -19,6 +19,15 @@ jobs:
         run: ./gradlew -PprimeStable=true dependencies --configuration lawnWithQuickstepFdroidReleaseRuntimeClasspath > runtime-dependencies.txt
       - name: Build unsigned stable APK
         run: ./gradlew -PprimeStable=true assembleLawnWithQuickstepFdroidRelease
+      - name: Preserve unsigned production APK and build named test APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="$(find build/outputs/apk -type f -path '*/release/*' -name '*.apk' -print -quit)"
+          test -n "$apk"
+          mkdir -p unsigned-audit
+          cp "$apk" unsigned-audit/Prime-Launcher-FDroid-unsigned.apk
+          ./gradlew -PprimeStable=true -PprimeFdroidCheck=true assembleLawnWithQuickstepFdroidRelease
       - name: Sign test APK with Prime key
         shell: bash
         env:
@@ -56,4 +65,4 @@ jobs:
           name: prime-fdroid-audit
           path: |
             runtime-dependencies.txt
-            build/outputs/apk/**/release/*.apk
+            unsigned-audit/*.apk
