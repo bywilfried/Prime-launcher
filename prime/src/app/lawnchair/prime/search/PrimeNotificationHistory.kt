@@ -43,11 +43,12 @@ object PrimeNotificationHistory {
                 if (it.moveToFirst()) it.getInt(0) else 0
             }
         }
-        val status = if (prefs.getBoolean("connected", false)) "Service connecté"
-            else "Service non connecté"
+        val status = if (prefs.getBoolean("connected", false)) context.getString(com.android.launcher3.R.string.prime_provider_connected)
+            else context.getString(com.android.launcher3.R.string.prime_provider_disconnected)
         val error = prefs.getString("error", null)
-        return "$status · $count notification(s) enregistrée(s)" +
-            (if (error != null) " · Erreur : $error" else "")
+        val countLabel = context.resources.getQuantityString(com.android.launcher3.R.plurals.prime_provider_notification_count, count, count)
+        return "$status · $countLabel" +
+            (if (error != null) " · " + context.getString(com.android.launcher3.R.string.prime_provider_error, error) else "")
     }
 
     fun isGranted(context: Context): Boolean {
