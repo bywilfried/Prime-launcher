@@ -41,7 +41,13 @@ data object PrimeEntriesSectionBuilder : SectionBuilder {
         return entries.groupBy { it.category }.toList().sortedBy { (category, _) ->
             categoryOrder[category] ?: Int.MAX_VALUE
         }.flatMap { (category, group) ->
-            listOf(factory.createHeaderTarget(category)) +
+            val displayTitle = when (category) {
+                "Agenda" -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALENDAR.localizedTitle(context)
+                "Tâches" -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.REMINDERS.localizedTitle(context)
+                "Notifications" -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.NOTIFICATIONS.localizedTitle(context)
+                else -> app.lawnchair.prime.search.PrimeSearchCategoryPresentation.categoryForHeading(category, context)?.localizedTitle(context) ?: category
+            }
+            listOf(factory.createHeaderTarget(displayTitle)) +
                 group.map { factory.createPrimeEntryTarget(it) } +
                 listOf(factory.createHeaderTarget(SPACE))
         }
