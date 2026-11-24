@@ -1,0 +1,13 @@
+// Audit only: resolve original runtime artifacts, not transformed Android classes.
+gradle.projectsEvaluated {
+    def p = gradle.rootProject
+    p.tasks.register("primeNativeArtifactInventory") {
+        doLast {
+            def cfg = p.configurations.getByName("primeWithQuickstepFdroidReleaseRuntimeClasspath")
+            def rows = cfg.incoming.artifacts.artifacts.collect { a ->
+                [component: a.id.componentIdentifier.displayName, file: a.file.absolutePath]
+            }
+            p.file("native-artifacts.json").text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(rows))
+        }
+    }
+}
