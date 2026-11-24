@@ -77,7 +77,15 @@ sealed class LawnchairSearchAlgorithm(
     protected fun transformSearchResults(results: List<SearchTargetCompat>): List<SearchAdapterItem> {
         val filtered = results
             .asSequence()
-            .filter { it.packageName != BuildConfig.APPLICATION_ID }
+            .filter { target ->
+                // Virtual browser shortcuts intentionally use Prime's package.
+                // Keep those application results, but continue hiding Prime's
+                // own internal search targets.
+                target.packageName != BuildConfig.APPLICATION_ID ||
+                    (target.resultType == RESULT_TYPE_APPLICATION &&
+                        target.extras.getString("class")
+                            ?.startsWith(BuildConfig.APPLICATION_ID + ".prime.pinned.Shortcut_") == true)
+            }
             .filter { LawnchairSearchAdapterProvider.viewTypeMap[it.layoutType] != null }
             .removeDuplicateDividers()
             .toList()
