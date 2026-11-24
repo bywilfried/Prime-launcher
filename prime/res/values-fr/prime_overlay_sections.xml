@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_overlay_tasks">Tâches · Tasks.org</string>
+    <string name="prime_overlay_history">Historique des notifications</string>
+    <string name="prime_overlay_notif_disabled">Accès aux notifications désactivé · toucher pour autoriser</string>
+    <string name="prime_overlay_notif_empty">Aucune notification correspondante enregistrée</string>
+</resources>
