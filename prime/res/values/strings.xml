@@ -1198,9 +1198,9 @@
     <string name="show_widget_suggestions_description">Show or hide suggested widget categories in the widget picker</string>
     <string name="configure_prime_preview_widget">Configure Prime Launcher Preview widget</string>
     <string name="gesture_handler_toggle_flashlight">Toggle flashlight</string>
-    <string name="gesture_handler_show_volume">Afficher le panneau de volume</string>
+    <string name="gesture_handler_show_volume">Show volume panel</string>
     <string name="gesture_handler_toggle_prime_theme">Toggle light / dark theme</string>
     <string name="gesture_handler_open_prime_settings">Open Prime Launcher settings</string>
-    <string name="prime_haptic_gestures_group">Gestes</string>
+    <string name="prime_haptic_gestures_group">Gestures</string>
     <string name="prime_haptic_gestures">Gesture intensity</string>
 </resources>
