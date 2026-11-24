@@ -68,3 +68,6 @@ The version catalog declares androidx.graphics:graphics-core:1.0.4, androidx.gra
 
 ## Source license verification
 The calculator's original MIT license (Copyright 2018 Keelar) has been copied verbatim to prime/assets/licenses/calculator-MIT.txt. Verify inclusion in the next APK and accessibility from third-party notices. GoogleFontsListing.kt explicitly states GPL-3.0-or-later; retain the header and investigate the upstream licensing history and combined distribution obligations before declaring an application-wide license. The README already credits Launcher3 and Lawnchair. No relicensing has been performed.
+
+## Verified bundled font and latest Dev validation
+The earlier F-Droid APK contains res/P0.ttf, whose Git blob SHA-1 (83f272d2271c17ade8b4cda6363d7dfc777cd3eb) matches the current repository font exactly. OpenType name records identify Google Sans Flex version 3.007;[58cd9cb9b], copyright 2015 Google LLC, and SIL Open Font License 1.1. The upstream OFL notice is now included in prime/assets/licenses/google-sans-flex-OFL.txt. Verify inclusion in the next APK and user access to notices. No font replacement needed on license grounds. Maintainer reports successful Dev compilation after variant rename and FR/EN externalization; functional regression and current F-Droid build remain pending.
