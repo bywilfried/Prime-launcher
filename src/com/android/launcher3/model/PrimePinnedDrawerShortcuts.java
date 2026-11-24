@@ -199,10 +199,88 @@ public final class PrimePinnedDrawerShortcuts {
         return false;
     }
 
+    /**
+     * Reconnect an existing drawer entry when the user recreates its home shortcut.
+     * Only match within the same source package and an unambiguous original title.
+     * The synthetic component ID remains unchanged, preserving Prime customizations
+     * and category membership.
+     */
+    private static boolean reconnect(Context context, ItemInfo item) {
+        String newId = identity(context, item);
+        if (newId == null || item.title == null) return false;
+        String pkg;
+        String shortcutId = null;
+        if (item.itemType == LauncherSettings.Favorites.ITEM_TYPE_DEEP_SHORTCUT) {
+            ShortcutKey key = ShortcutKey.fromItemInfo(item);
+            pkg = key.getPackageName();
+            shortcutId = key.getId();
+        } else {
+            Intent intent = item.getIntent();
+            ComponentName component = intent.getComponent();
+            pkg = component != null ? component.getPackageName() : intent.getPackage();
+        }
+        if (pkg == null || pkg.isEmpty()) return false;
+        JSONArray entries = read(context);
+        JSONObject candidate = null;
+        String title = item.title.toString().trim();
+        for (int i = 0; i < entries.length(); i++) {
+            JSONObject entry = entries.optJSONObject(i);
+            if (entry == null) continue;
+            String oldPkg = entry.optString("package");
+            if ("legacy".equals(entry.optString("kind"))) {
+                try {
+                    Intent old = Intent.parseUri(entry.getString("intent"), Intent.URI_INTENT_SCHEME);
+                    ComponentName component = old.getComponent();
+                    oldPkg = component != null ? component.getPackageName() : old.getPackage();
+                } catch (Exception ignored) {
+                    continue;
+                }
+            }
+            if (!pkg.equals(oldPkg) || !title.equalsIgnoreCase(entry.optString("title").trim())
+                    || newId.equals(entry.optString("id"))) continue;
+            if (candidate != null) return false; // Ambiguous: never replace the wrong WebApp.
+            candidate = entry;
+        }
+        if (candidate == null) return false;
+        try {
+            if (shortcutId != null) {
+                // Keep the new home shortcut pinned before it can be removed.
+                LauncherApps apps = context.getSystemService(LauncherApps.class);
+                if (apps == null) return false;
+                LauncherApps.ShortcutQuery query = new LauncherApps.ShortcutQuery()
+                        .setPackage(pkg)
+                        .setQueryFlags(LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED);
+                java.util.List<android.content.pm.ShortcutInfo> pinned =
+                        apps.getShortcuts(query, Process.myUserHandle());
+                java.util.ArrayList<String> ids = new java.util.ArrayList<>();
+                if (pinned != null) for (android.content.pm.ShortcutInfo info : pinned) {
+                    if (!ids.contains(info.getId())) ids.add(info.getId());
+                }
+                if (!ids.contains(shortcutId)) ids.add(shortcutId);
+                apps.pinShortcuts(pkg, ids, Process.myUserHandle());
+                candidate.put("kind", "pinned");
+                candidate.put("package", pkg);
+                candidate.put("shortcutId", shortcutId);
+                candidate.remove("intent");
+            } else {
+                candidate.put("kind", "legacy");
+                candidate.put("intent", item.getIntent().toUri(Intent.URI_INTENT_SCHEME));
+                candidate.remove("package");
+                candidate.remove("shortcutId");
+            }
+            save(context, entries);
+            return true;
+        } catch (Exception error) {
+            Log.w(TAG, "Unable to reconnect recreated web shortcut", error);
+            return false;
+        }
+    }
+
     public static boolean add(Context context, ItemInfo item) {
         String id = identity(context, item);
         if (id == null) return false;
         if (contains(context, item)) return true;
+        if (reconnect(context, item)) return true;
         try {
             JSONObject entry = new JSONObject();
             entry.put("id", id);
