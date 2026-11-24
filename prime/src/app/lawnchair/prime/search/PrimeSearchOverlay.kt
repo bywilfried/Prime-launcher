@@ -1039,6 +1039,7 @@ object PrimeSearchOverlay {
                                     iconSize / 2f, iconSize / 2f - (paint.ascent() + paint.descent()) / 2f, paint)
                                 setImageBitmap(bitmap)
                             }
+                            PrimeWebIcons.bind(this, engine, preferenceSurface, drawable != null || localIcon != 0)
                         }
                         cell.addView(icon)
                         cell.addView(TextView(launcher).apply {
