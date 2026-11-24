@@ -133,17 +133,17 @@ final def buildCommit = providers.exec {
 // The final component identifies the CI build, for both debug and release.
 // Release 0.9 numbering starts at GitHub Actions release run #69.
 // Dev builds deliberately keep the existing 0.8 / run-number scheme.
-final def isPrime09Release = System.getenv("PRIME_RELEASE_09") == "true"
+final def primeStable = providers.gradleProperty("primeStable").orNull == "true"
+final def isPrime09Release = !primeStable && System.getenv("PRIME_RELEASE_09") == "true"
 final def primeMajor = 0
 final def primeMinor = isPrime09Release ? 9 : 8
 final def ciRunNumber = (System.getenv("GITHUB_RUN_NUMBER") ?: "").trim()
-final def ciBuildNumber = (providers.gradleProperty("primeBuildNumber").orNull
+final def ciBuildNumber = primeStable ? 0 : (providers.gradleProperty("primeBuildNumber").orNull
         ?: (ciRunNumber ? ciRunNumber : (isPrime09Release ? "69" : "0"))).toInteger()
 final def primeBuildNumber = isPrime09Release ? ciBuildNumber - 69 : ciBuildNumber
 if (primeBuildNumber < 0 || primeBuildNumber > 999999) {
     throw new GradleException("primeBuildNumber must be between 0 and 999999")
 }
-final def primeStable = providers.gradleProperty("primeStable").orNull == "true"
 final def stableVersion = new Properties()
 if (primeStable) {
     rootProject.file("version.properties").withInputStream { stableVersion.load(it) }
