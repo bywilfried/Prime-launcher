@@ -283,7 +283,7 @@ android {
         }
 
         github {
-            applicationId 'com.bywilfried.prime'
+            applicationId (primeStable ? 'com.bywilfried.prime.fdroid' : 'com.bywilfried.prime')
             dimension "channel"
         }
 
