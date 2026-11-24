@@ -22,9 +22,10 @@ import com.android.launcher3.R
 fun PrimeDiagnosticLogsPreference() {
     val logs = remember { mutableStateOf(PrimeDebugLog.getText()) }
     val iconsOnly = remember { mutableStateOf(false) }
+    val noIconDiagnostics = stringResource(R.string.prime_diag_no_icons)
     val visibleLogs = if (iconsOnly.value) {
         logs.value.lineSequence().filter { it.contains("PrimeIconCompare") }.joinToString("\n")
-            .ifEmpty { "Aucun diagnostic d’icône pour le moment. Ouvrez le tiroir ou la recherche, puis appuyez sur Actualiser." }
+            .ifEmpty { noIconDiagnostics }
     } else {
         logs.value
     }
