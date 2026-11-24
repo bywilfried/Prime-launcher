@@ -26,7 +26,7 @@ Other historical JARs (including libGoogleFeed.jar) have no explicit references 
 
 ## Validation status
 
-Check Prime F-Droid build #1 compiled successfully according to the maintainer. The runtime dependency report showed no explicit GMS or Firebase modules in the prior review. Local JAR contents, final APK contents, network behavior, device behavior without GMS, and fdroidserver validation remain unverified. No binaries removed or license terms changed by this audit.
+Check Prime F-Droid build #1 compiled successfully according to the maintainer. The runtime dependency report showed no explicit GMS or Firebase modules in the prior review. A preliminary APK inventory found five native library families (androidx.graphics.path, datastore_shared_counter, graphics-core, hoko_blur and nrb) across four ABIs. No explicit proprietary SDK was identified in that preliminary inspection. Exact native source provenance, local JAR contents, network behavior, device behavior without GMS, and fdroidserver validation remain unverified. No binaries removed or license terms changed by this audit.
 
 ## Privacy changes pending build validation
 
@@ -39,7 +39,7 @@ Check Prime F-Droid build #1 compiled successfully according to the maintainer. 
 
 ## Test before merging
 
-Run Build Prime Dev APK on feature/fdroid-support, then Check Prime F-Droid build. Test clean installation and restored settings, both search surfaces with suggestions disabled/enabled, unavailable selected provider, web shortcuts, fonts without GMS, and WebApps. Inspect network traffic. The source edits have not been compiled.
+Run Build Prime Dev APK on feature/fdroid-support, then Check Prime F-Droid build. Test clean installation and restored settings, both search surfaces with suggestions disabled/enabled, unavailable selected provider, web shortcuts, fonts without GMS, and WebApps. Inspect network traffic. The maintainer subsequently confirmed a successful Dev build and initial functional tests of the privacy changes. This predates the Gradle variant rename; the renamed Dev and F-Droid variants still require build validation.
 
 ## Outstanding release blockers
 
