@@ -27,3 +27,20 @@ Other historical JARs (including libGoogleFeed.jar) have no explicit references 
 ## Validation status
 
 Check Prime F-Droid build #1 compiled successfully according to the maintainer. The runtime dependency report showed no explicit GMS or Firebase modules in the prior review. Local JAR contents, final APK contents, network behavior, device behavior without GMS, and fdroidserver validation remain unverified. No binaries removed or license terms changed by this audit.
+
+## Privacy changes pending build validation
+
+- Web suggestions default to disabled in both Prime Search and drawer, including the legacy preference.
+- Failed requests no longer fall back to a different provider in either surface.
+- Prime Search web shortcut icons use installed application icons or local monograms instead of Google favicon requests.
+- Google downloadable fonts use the system default when the expected provider is absent.
+- Feed provider preference defaults to empty.
+- Existing explicit user settings remain unchanged.
+
+## Test before merging
+
+Run Build Prime Dev APK on feature/fdroid-support, then Check Prime F-Droid build. Test clean installation and restored settings, both search surfaces with suggestions disabled/enabled, unavailable selected provider, web shortcuts, fonts without GMS, and WebApps. Inspect network traffic. The source edits have not been compiled.
+
+## Outstanding release blockers
+
+Full source and asset license inventory, exact binary provenance and F-Droid build recipe validation, native library source verification, full English/French and inherited locale audit, and actual fdroidserver scanner/build remain outstanding. Do not treat a successful Dev build as F-Droid approval.
