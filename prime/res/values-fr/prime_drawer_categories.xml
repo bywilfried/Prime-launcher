@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_drawer_category_add">Ajouter une catégorie</string>
+    <string name="prime_drawer_category_add_desc">Créer un nouvel onglet dans le tiroir</string>
+    <string name="prime_drawer_category_new">Nouvelle catégorie</string>
+    <string name="prime_drawer_category_name">Nom de la catégorie</string>
+    <string name="prime_drawer_category_create">Créer</string>
+    <string name="prime_drawer_category_cancel">Annuler</string>
+    <string name="prime_drawer_category_sort_apps">Tri des applications</string>
+    <string name="prime_drawer_category_asc">Applications : A → Z</string>
+    <string name="prime_drawer_category_desc">Applications : Z → A</string>
+    <string name="prime_drawer_category_manual_apps">Applications : ordre manuel</string>
+    <string name="prime_drawer_category_placement">Position des dossiers</string>
+    <string name="prime_drawer_category_start">Dossiers au début</string>
+    <string name="prime_drawer_category_end">Dossiers à la fin</string>
+    <string name="prime_drawer_category_mixed">Dossiers mélangés aux applications</string>
+    <string name="prime_drawer_category_folder">Dossier</string>
+    <string name="prime_drawer_category_active">Éléments actifs dans des dossiers</string>
+    <string name="prime_drawer_category_remove">Retirer de la catégorie</string>
+    <string name="prime_drawer_category_delete">Supprimer</string>
+    <string name="prime_drawer_category_delete_folder">Supprimer ce dossier ?</string>
+    <string name="prime_drawer_category_sort">Tri</string>
+    <string name="prime_drawer_category_selected">Sélectionné</string>
+    <string name="prime_drawer_category_manual">Manuel</string>
+    <string name="prime_drawer_category_delete_category">Supprimer cette catégorie ?</string>
+    <string name="prime_drawer_category_alphabetical">Ordre alphabétique</string>
+    <string name="prime_drawer_category_custom">Ordre personnalisé</string>
+</resources>
