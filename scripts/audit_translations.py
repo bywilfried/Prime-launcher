@@ -26,7 +26,9 @@ def read(directory):
     return entries, duplicates
 
 def placeholders(node):
-    return collections.Counter(re.findall(r"%(?:\d+\$)?[a-zA-Z]", "".join(node.itertext()).replace("%%", "")))
+    tokens = re.findall(r"%(?:\d+\$)?[a-zA-Z]", "".join(node.itertext()).replace("%%", ""))
+    # Repeating an explicitly indexed argument does not change the argument contract.
+    return collections.Counter([t for t in tokens if "$" not in t] + sorted({t for t in tokens if "$" in t}))
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
