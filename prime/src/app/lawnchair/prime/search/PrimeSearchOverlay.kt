@@ -987,17 +987,7 @@ object PrimeSearchOverlay {
                             val iconSize = (36 * density).toInt()
                             layoutParams = LinearLayout.LayoutParams(iconSize, iconSize)
                             contentDescription = engine.title
-                            // Start with an installed app icon when available.
-                            val packageName = when (engine) {
-                                PrimeSearchResultPreferences.WebEngine.SPOTIFY -> "com.spotify.music"
-                                PrimeSearchResultPreferences.WebEngine.DUCKDUCKGO -> "com.duckduckgo.mobile.android"
-                                PrimeSearchResultPreferences.WebEngine.WIKIPEDIA -> "org.wikipedia"
-                                PrimeSearchResultPreferences.WebEngine.YOUTUBE -> "com.google.android.youtube"
-                                PrimeSearchResultPreferences.WebEngine.REDDIT -> "com.reddit.frontpage"
-                                else -> null
-                            }
-                            val drawable = try { packageName?.let { packageManager.getApplicationIcon(it) } }
-                                catch (_: Exception) { null }
+                            val drawable = PrimeWebIcons.installedIcon(launcher, engine)
                             val localIcon = PrimeWebIcons.localResource(engine)
                             if (drawable != null) {
                                 setImageDrawable(drawable)
