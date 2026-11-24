@@ -10,6 +10,23 @@ import java.util.concurrent.Executors
 
 /** Optional first-party favicon retrieval. Never sends search terms. */
 internal object PrimeWebIcons {
+    fun localResource(engine: PrimeSearchResultPreferences.WebEngine): Int = when (engine) {
+        PrimeSearchResultPreferences.WebEngine.GOOGLE,
+        PrimeSearchResultPreferences.WebEngine.MODE_AI -> com.android.launcher3.R.drawable.ic_super_g_color
+        PrimeSearchResultPreferences.WebEngine.DUCKDUCKGO -> com.android.launcher3.R.drawable.ic_duckduckgo
+        PrimeSearchResultPreferences.WebEngine.BRAVE,
+        PrimeSearchResultPreferences.WebEngine.BRAVE_BROWSER -> com.android.launcher3.R.drawable.ic_brave
+        PrimeSearchResultPreferences.WebEngine.BING -> com.android.launcher3.R.drawable.ic_bing
+        PrimeSearchResultPreferences.WebEngine.ECOSIA -> com.android.launcher3.R.drawable.ic_ecosia
+        PrimeSearchResultPreferences.WebEngine.STARTPAGE -> com.android.launcher3.R.drawable.ic_startpage
+        PrimeSearchResultPreferences.WebEngine.YOUTUBE -> com.android.launcher3.R.drawable.ic_youtube
+        PrimeSearchResultPreferences.WebEngine.WIKIPEDIA -> com.android.launcher3.R.drawable.ic_wikipedia
+        PrimeSearchResultPreferences.WebEngine.GITHUB -> com.android.launcher3.R.drawable.ic_github
+        PrimeSearchResultPreferences.WebEngine.KAGI -> com.android.launcher3.R.drawable.ic_kagi
+        PrimeSearchResultPreferences.WebEngine.FDROID -> com.android.launcher3.R.drawable.ic_prime_fdroid
+        else -> 0
+    }
+
     private val worker = Executors.newFixedThreadPool(2)
     private val pending = mutableMapOf<String, MutableList<(Bitmap?) -> Unit>>()
     private val attempted = mutableMapOf<String, Long>()
