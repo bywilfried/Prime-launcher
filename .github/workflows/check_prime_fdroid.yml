@@ -16,9 +16,9 @@ jobs:
           java-version: 21
       - uses: gradle/actions/setup-gradle@v6
       - name: Resolve runtime dependencies
-        run: ./gradlew -PprimeStable=true dependencies --configuration lawnWithQuickstepFdroidReleaseRuntimeClasspath > runtime-dependencies.txt
+        run: ./gradlew -PprimeStable=true dependencies --configuration primeWithQuickstepFdroidReleaseRuntimeClasspath > runtime-dependencies.txt
       - name: Build unsigned stable APK
-        run: ./gradlew -PprimeStable=true assembleLawnWithQuickstepFdroidRelease
+        run: ./gradlew -PprimeStable=true assemblePrimeWithQuickstepFdroidRelease
       - name: Preserve unsigned production APK and build named test APK
         shell: bash
         run: |
@@ -27,7 +27,7 @@ jobs:
           test -n "$apk"
           mkdir -p unsigned-audit
           cp "$apk" unsigned-audit/Prime-Launcher-FDroid-unsigned.apk
-          ./gradlew -PprimeStable=true -PprimeFdroidCheck=true assembleLawnWithQuickstepFdroidRelease
+          ./gradlew -PprimeStable=true -PprimeFdroidCheck=true assemblePrimeWithQuickstepFdroidRelease
       - name: Sign test APK with Prime key
         shell: bash
         env:
