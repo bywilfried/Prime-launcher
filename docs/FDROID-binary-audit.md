@@ -53,3 +53,9 @@ Full source and asset license inventory, exact binary provenance and F-Droid bui
 - Exercise all 28 engines; direct favicon endpoints and Android image decoder support have not been verified.
 - Confirm drawer rendering actually uses the shared overlay path; check compact and expanded drawer results separately.
 - Audit bundled logo rights separately; downloading does not establish trademark permission.
+
+## Maintainer decision: historical binaries
+Retain all existing JARs, including historical/reference files, pending fdroidserver scanner results. Resolve any scanner findings individually; do not add blanket scanner exclusions. The presence of a JAR in the repository does not establish that it is packaged in the APK.
+
+## Bundled font
+The repository contains prime/res/font/googlesansflex_variable.ttf. Verify the exact upstream font revision, embedded copyright and license metadata, and redistribution terms; include the applicable license and notices before publication. Do not infer the license from the filename.
