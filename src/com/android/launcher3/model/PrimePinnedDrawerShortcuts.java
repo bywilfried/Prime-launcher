@@ -479,6 +479,26 @@ public final class PrimePinnedDrawerShortcuts {
         return String.valueOf(item.title);
     }
 
+    /** Small warning marker on saved icons when the browser or native shortcut is gone. */
+    private static void markUnavailable(Context context, AppInfo app) {
+        if (isAvailable(context, app) || app.bitmap == null || app.bitmap.icon == null) return;
+        Bitmap source = app.bitmap.icon;
+        Bitmap decorated = source.copy(Bitmap.Config.ARGB_8888, true);
+        if (decorated == null) return;
+        android.graphics.Canvas canvas = new android.graphics.Canvas(decorated);
+        float size = decorated.getWidth();
+        float radius = size * 0.19f;
+        android.graphics.Paint paint = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        paint.setColor(Color.rgb(230, 145, 25));
+        canvas.drawCircle(size - radius, size - radius, radius, paint);
+        paint.setColor(Color.WHITE);
+        paint.setTextAlign(android.graphics.Paint.Align.CENTER);
+        paint.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        paint.setTextSize(radius * 1.65f);
+        canvas.drawText("!", size - radius, size - radius + radius * 0.56f, paint);
+        app.bitmap = BitmapInfo.of(decorated, Color.GRAY);
+    }
+
     public static java.util.List<AppInfo> getEntries(Context context) {
         java.util.ArrayList<AppInfo> result = new java.util.ArrayList<>();
         JSONArray entries = read(context);
@@ -511,6 +531,7 @@ public final class PrimePinnedDrawerShortcuts {
                 app.sectionName = title.isEmpty() ? "#" : title.substring(0, 1)
                         .toUpperCase(java.util.Locale.getDefault());
                 PrimeWebShortcutCustomization.apply(context, app);
+                markUnavailable(context, app);
                 result.add(app);
             } catch (Exception error) {
                 Log.w(TAG, "Skipping invalid saved shortcut", error);
@@ -550,6 +571,7 @@ public final class PrimePinnedDrawerShortcuts {
                 app.sectionName = title.isEmpty() ? "#" : title.substring(0, 1)
                         .toUpperCase(java.util.Locale.getDefault());
                 PrimeWebShortcutCustomization.apply(context, app);
+                markUnavailable(context, app);
                 allApps.data.add(app);
             } catch (Exception error) {
                 Log.w(TAG, "Skipping invalid saved shortcut", error);
