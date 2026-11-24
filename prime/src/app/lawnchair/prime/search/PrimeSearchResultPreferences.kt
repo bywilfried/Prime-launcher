@@ -163,6 +163,37 @@ object PrimeSearchResultPreferences {
         SETTINGS("settings", "Paramètres de l’appareil", "Réglages du système"),
         HISTORY("history", "Historique des recherches", "Recherches récentes"),
         CALCULATOR("calculator", "Calculatrice", "Résultats de calcul"),
+        fun localizedTitle(context: Context): String = context.getString(when (this) {
+            APPS -> com.android.launcher3.R.string.prime_category_apps_title
+            APP_SHORTCUTS -> com.android.launcher3.R.string.prime_category_app_shortcuts_title
+            WEB -> com.android.launcher3.R.string.prime_category_web_title
+            WEB_SHORTCUTS -> com.android.launcher3.R.string.prime_category_web_shortcuts_title
+            CONTACTS -> com.android.launcher3.R.string.prime_category_contacts_title
+            CALENDAR -> com.android.launcher3.R.string.prime_category_calendar_title
+            REMINDERS -> com.android.launcher3.R.string.prime_category_reminders_title
+            NOTIFICATIONS -> com.android.launcher3.R.string.prime_category_notifications_title
+            NOTES -> com.android.launcher3.R.string.prime_category_notes_title
+            FILES -> com.android.launcher3.R.string.prime_category_files_title
+            SETTINGS -> com.android.launcher3.R.string.prime_category_settings_title
+            HISTORY -> com.android.launcher3.R.string.prime_category_history_title
+            CALCULATOR -> com.android.launcher3.R.string.prime_category_calculator_title
+        })
+
+        fun localizedDescription(context: Context): String = context.getString(when (this) {
+            APPS -> com.android.launcher3.R.string.prime_category_apps_description
+            APP_SHORTCUTS -> com.android.launcher3.R.string.prime_category_app_shortcuts_description
+            WEB -> com.android.launcher3.R.string.prime_category_web_description
+            WEB_SHORTCUTS -> com.android.launcher3.R.string.prime_category_web_shortcuts_description
+            CONTACTS -> com.android.launcher3.R.string.prime_category_contacts_description
+            CALENDAR -> com.android.launcher3.R.string.prime_category_calendar_description
+            REMINDERS -> com.android.launcher3.R.string.prime_category_reminders_description
+            NOTIFICATIONS -> com.android.launcher3.R.string.prime_category_notifications_description
+            NOTES -> com.android.launcher3.R.string.prime_category_notes_description
+            FILES -> com.android.launcher3.R.string.prime_category_files_description
+            SETTINGS -> com.android.launcher3.R.string.prime_category_settings_description
+            HISTORY -> com.android.launcher3.R.string.prime_category_history_description
+            CALCULATOR -> com.android.launcher3.R.string.prime_category_calculator_description
+        })
     }
 
     fun maxFileResults(context: Context): Int =
