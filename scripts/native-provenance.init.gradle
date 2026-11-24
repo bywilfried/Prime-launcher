@@ -7,7 +7,10 @@ gradle.projectsEvaluated {
     root.tasks.register("primeNativeProvenance") {
         doLast {
             def config = root.configurations.getByName("primeWithQuickstepFdroidReleaseRuntimeClasspath")
-            def artifacts = config.incoming.artifactView { }.artifacts.artifacts
+            def view = config.incoming.artifactView {
+                componentFilter { id -> id instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier }
+            }
+            def artifacts = view.artifacts.artifacts
             def rows = []
             artifacts.each { artifact ->
                 if (!artifact.file.name.endsWith(".aar") && !artifact.file.name.endsWith(".jar")) return
