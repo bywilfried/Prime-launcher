@@ -206,7 +206,8 @@ class SearchResultIcon(context: Context, attrs: AttributeSet?) :
                         if (engine != null) {
                             app.lawnchair.prime.search.PrimeWebIcons.load(context, engine,
                                 app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER,
-                                app.lawnchair.prime.search.PrimeWebIcons.localResource(engine) != 0) { bitmap ->
+                                app.lawnchair.prime.search.PrimeWebIcons.localResource(engine) != 0 ||
+                                    app.lawnchair.prime.search.PrimeWebIcons.installedIcon(context, engine) != null) { bitmap ->
                                 if (boundId == targetId) {
                                     LauncherIcons.obtain(context).use { li ->
                                         info.bitmap = li.createBadgedIconBitmap(android.graphics.drawable.BitmapDrawable(resources, bitmap), BaseIconFactory.IconOptions().setUser(info.user))
@@ -284,12 +285,14 @@ class SearchResultIcon(context: Context, attrs: AttributeSet?) :
             val engine = app.lawnchair.prime.search.PrimeSearchResultPreferences.WebEngine.entries.firstOrNull {
                 it.title == target.extras.getString("prime_web_engine")
             }
+            val installed = engine?.let { app.lawnchair.prime.search.PrimeWebIcons.installedIcon(context, it) }
             val localRes = engine?.let { app.lawnchair.prime.search.PrimeWebIcons.localResource(it) } ?: 0
             val icon = if (localRes != 0) android.graphics.drawable.Icon.createWithResource(context, localRes) else action.icon
 
             val packageIcon = getPackageIcon(target.packageName, target.userHandle)
 
             info.bitmap = when {
+                installed != null -> li.createBadgedIconBitmap(installed, BaseIconFactory.IconOptions().setUser(info.user))
                 engine != null && localRes == 0 ->
                     li.createIconBitmap(engine.title.take(1).uppercase(java.util.Locale.ROOT), packageIcon.color)
 
