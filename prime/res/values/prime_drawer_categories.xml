@@ -25,4 +25,6 @@
     <string name="prime_drawer_category_delete_category">Delete this category?</string>
     <string name="prime_drawer_category_alphabetical">Alphabetical order</string>
     <string name="prime_drawer_category_custom">Custom order</string>
+    <string name="prime_drawer_category_folder_name">Folder: %1$s</string>
+    <string name="prime_drawer_category_folder_names">Folders: %1$s</string>
 </resources>
