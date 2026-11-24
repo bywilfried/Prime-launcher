@@ -66,7 +66,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          ./gradlew assembleLawnWithQuickstepGithubRelease --warning-mode=none 2>&1 | sed \
+          ./gradlew assemblePrimeWithQuickstepGithubRelease --warning-mode=none 2>&1 | sed \
             -e '/^w: /d' \
             -e '/^warning: /d' \
             -e '/^Warning: /d' \
