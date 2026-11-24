@@ -21,3 +21,16 @@ Evaluate Weblate or Crowdin after the English/French source audit. Connect only 
 
 ## Before release
 Audit hardcoded strings, complete English/French, review inherited translations and new Prime translations, validate formatting and RTL on device, and build Dev and F-Droid variants. Fastlane metadata is maintained separately; final screenshots are supplied by the maintainer.
+
+
+## Mandatory FR/EN regression test before F-Droid submission
+
+Following overlay section localization (commit `6d81b49`), dynamic headings use category tags rather than displayed text. Before merging/releasing, test in both French and English:
+
+- [ ] Custom category order is respected and persists after restart and language changes.
+- [ ] Dynamic sections show the correct localized headings and results.
+- [ ] No duplicate contacts or device settings sections; no missing or incorrectly grouped results.
+- [ ] Expand/collapse and detailed result views preserve the correct category and heading.
+- [ ] Verify Prime Search and drawer search independently, including disabled categories and permission-denied states.
+
+Status: pending compilation and device testing; do not mark validated until tested.
