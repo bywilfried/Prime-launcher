@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_overlay_detail_sms">Envoyer un SMS à %1$s</string>
+    <string name="prime_overlay_detail_call">Appeler %1$s</string>
+    <string name="prime_overlay_detail_more_apps">Plus d’applications</string>
+    <string name="prime_overlay_detail_more_contacts">Plus de contacts</string>
+    <string name="prime_overlay_detail_more_files">Plus de fichiers</string>
+    <string name="prime_overlay_detail_more_shortcuts">Plus de raccourcis</string>
+    <string name="prime_overlay_detail_more_results">Plus de résultats</string>
+    <string name="prime_overlay_detail_device_files">Fichiers de l’appareil</string>
+    <string name="prime_overlay_detail_display">Affichage</string>
+    <string name="prime_overlay_detail_sound">Son</string>
+    <string name="prime_overlay_detail_battery">Batterie</string>
+    <string name="prime_overlay_detail_date_time">Date et heure</string>
+    <string name="prime_overlay_detail_android_settings">Paramètres Android</string>
+</resources>
