@@ -418,7 +418,7 @@ fun PrimeSearchPreference() {
             valueRange = 3f..6f,
             steps = 2,
         )
-        Text("Nombre de lignes : $rows")
+        Text(stringResource(R.string.prime_search_advanced_rows, rows))
         androidx.compose.material3.Slider(
             value = rows.toFloat(),
             onValueChange = {
@@ -437,7 +437,7 @@ fun PrimeSearchPreference() {
             valueRange = 60f..150f,
         )
         PreferenceTemplate(
-            title = { Text("Noms des applications sur deux lignes") },
+            title = { Text(stringResource(R.string.prime_search_advanced_two_lines)) },
             endWidget = {
                 androidx.compose.material3.Switch(
                     checked = twoLines,
@@ -521,7 +521,7 @@ fun PrimeSearchPreference() {
     var categorySettings by remember { mutableStateOf<PrimeSearchResultPreferences.Category?>(null) }
     var confirmNotificationClear by remember { mutableStateOf(false) }
     val sharedDrag = remember { CategoryDragState() }
-    PreferenceGroup(heading = "Afficher dans les résultats de recherche") {
+    PreferenceGroup(heading = stringResource(R.string.prime_search_advanced_results)) {
         categories.forEachIndexed { index, category ->
             var checked by remember(category, permissionRefresh) {
                 mutableStateOf(PrimeSearchResultPreferences.enabled(context, category))
@@ -586,7 +586,7 @@ fun PrimeSearchPreference() {
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                             ) {
-                                Text("Suivre les paramètres de Prime Search",
+                                Text(stringResource(R.string.prime_search_advanced_follow),
                                     modifier = Modifier.weight(1f))
                                 androidx.compose.material3.Switch(
                                     checked = followGeneral,
@@ -597,7 +597,7 @@ fun PrimeSearchPreference() {
                                 )
                             }
                             if (!followGeneral) {
-                                Text("Applications par ligne : $resultColumns")
+                                Text(stringResource(R.string.prime_search_pref_columns, resultColumns))
                                 androidx.compose.material3.Slider(
                                     value = resultColumns.toFloat(),
                                     onValueChange = {
@@ -606,7 +606,7 @@ fun PrimeSearchPreference() {
                                     },
                                     valueRange = 3f..5f, steps = 1,
                                 )
-                                Text("Nombre maximal de lignes : $resultRows")
+                                Text(stringResource(R.string.prime_search_advanced_max_rows, resultRows))
                                 androidx.compose.material3.Slider(
                                     value = resultRows.toFloat(),
                                     onValueChange = {
@@ -615,7 +615,7 @@ fun PrimeSearchPreference() {
                                     },
                                     valueRange = 1f..3f, steps = 1,
                                 )
-                                Text("Taille des icônes : $resultIconPercent %")
+                                Text(stringResource(R.string.prime_search_pref_icon_size, resultIconPercent))
                                 androidx.compose.material3.Slider(
                                     value = resultIconPercent.toFloat(),
                                     onValueChange = {
@@ -625,7 +625,7 @@ fun PrimeSearchPreference() {
                                     valueRange = 60f..150f,
                                 )
                             }
-                            Text("Alignement des applications")
+                            Text(stringResource(R.string.prime_search_advanced_alignment))
                             androidx.compose.material3.OutlinedButton(
                                 onClick = { showAlignmentDialog = true },
                             ) {
@@ -634,7 +634,7 @@ fun PrimeSearchPreference() {
                             if (showAlignmentDialog) {
                                 androidx.compose.material3.AlertDialog(
                                     onDismissRequest = { showAlignmentDialog = false },
-                                    title = { Text("Alignement des applications") },
+                                    title = { Text(stringResource(R.string.prime_search_advanced_alignment)) },
                                     text = {
                                         Column {
                                             PrimeSearchResultPreferences.AppResultsAlignment.entries.forEach { option ->
@@ -686,7 +686,7 @@ fun PrimeSearchPreference() {
                                     }
                                 }
                             }
-                            Text("Aperçu des résultats d'applications")
+                            Text(stringResource(R.string.prime_search_advanced_preview))
                             val resultCardColor = ThemeColors.resolve(
                                 context, ThemeProfile.current(context),
                                 ThemeColorRole.PRIME_SEARCH_CARD_BACKGROUND, variant)
@@ -750,29 +750,29 @@ fun PrimeSearchPreference() {
                             }
                         } else if (selected == PrimeSearchResultPreferences.Category.NOTIFICATIONS) {
                             val granted = PrimeSearchPermissions.granted(context, selected)
-                            Text(if (granted) "Accès aux notifications autorisé" else "Accès aux notifications non autorisé")
+                            Text(if (granted) stringResource(R.string.prime_search_advanced_notif_yes) else stringResource(R.string.prime_search_advanced_notif_no))
                             TextButton(onClick = {
                                 requestCategory(selected)
-                            }) { Text(if (granted) "Gérer l'autorisation Android" else "Autoriser l'accès aux notifications") }
+                            }) { Text(if (granted) stringResource(R.string.prime_search_advanced_manage_permission) else stringResource(R.string.prime_search_advanced_allow_notif)) }
                             TextButton(onClick = { confirmNotificationClear = true }) {
-                                Text("Effacer l'historique des notifications")
+                                Text(stringResource(R.string.prime_search_advanced_clear_history))
                             }
-                            Text("L'enregistrement nécessite l'accès aux notifications Android.")
+                            Text(stringResource(R.string.prime_search_advanced_notif_desc))
                         } else if (selected == PrimeSearchResultPreferences.Category.CALENDAR ||
                             selected == PrimeSearchResultPreferences.Category.CONTACTS ||
                             selected == PrimeSearchResultPreferences.Category.REMINDERS) {
                             if (!PrimeSearchPermissions.granted(context, selected)) {
                                 Text(PrimeSearchPermissions.explanation(selected))
-                                TextButton(onClick = { requestCategory(selected) }) { Text("Autoriser l'accès") }
+                                TextButton(onClick = { requestCategory(selected) }) { Text(stringResource(R.string.prime_search_advanced_allow)) }
                             }
                         } else {
                             if (selected == PrimeSearchResultPreferences.Category.FILES &&
                                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                                 val allFilesGranted = Environment.isExternalStorageManager()
                                 Text(if (allFilesGranted)
-                                    "Accès à tous les fichiers : autorisé"
-                                    else "Accès à tous les fichiers : non autorisé")
-                                Text("Cet accès permet de rechercher les documents, APK, archives et dossiers dans le stockage partagé, dans Prime Search et dans le tiroir.")
+                                    stringResource(R.string.prime_search_advanced_files_yes)
+                                    else stringResource(R.string.prime_search_advanced_files_no))
+                                Text(stringResource(R.string.prime_search_advanced_files_desc))
                                 TextButton(onClick = {
                                     val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
                                         Uri.parse("package:${context.packageName}"))
@@ -782,16 +782,16 @@ fun PrimeSearchPreference() {
                                         }
                                     }
                                 }) {
-                                    Text(if (allFilesGranted) "Gérer l'accès à tous les fichiers"
-                                        else "Autoriser l'accès à tous les fichiers")
+                                    Text(if (allFilesGranted) stringResource(R.string.prime_search_advanced_manage_files)
+                                        else stringResource(R.string.prime_search_advanced_allow_files))
                                 }
                             }
                             if (PrimeSearchPermissions.required(selected)) {
                                 val granted = PrimeSearchPermissions.granted(context, selected)
                                 Text(if (granted) stringResource(R.string.prime_search_pref_granted) else PrimeSearchPermissions.explanation(selected))
-                                if (!granted) TextButton(onClick = { requestCategory(selected) }) { Text("Autoriser l’accès") }
+                                if (!granted) TextButton(onClick = { requestCategory(selected) }) { Text(stringResource(R.string.prime_search_advanced_allow)) }
                             }
-                            Text("Les résultats dépendent des fournisseurs disponibles et des autorisations Android.")
+                            Text(stringResource(R.string.prime_search_advanced_providers_desc))
                         }
 
             }
@@ -799,23 +799,23 @@ fun PrimeSearchPreference() {
         if (confirmNotificationClear) {
             androidx.compose.material3.AlertDialog(
                 onDismissRequest = { confirmNotificationClear = false },
-                title = { Text("Effacer l'historique ?") },
-                text = { Text("Cette action supprimera les notifications enregistrées dans Prime Launcher.") },
+                title = { Text(stringResource(R.string.prime_search_advanced_clear_question)) },
+                text = { Text(stringResource(R.string.prime_search_advanced_clear_desc)) },
                 confirmButton = {
                     TextButton(onClick = {
                         PrimeSearchResultPreferences.clearNotificationHistory(context)
                         confirmNotificationClear = false
-                    }) { Text("Effacer") }
+                    }) { Text(stringResource(R.string.prime_search_advanced_clear)) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { confirmNotificationClear = false }) { Text("Annuler") }
+                    TextButton(onClick = { confirmNotificationClear = false }) { Text(stringResource(R.string.prime_search_advanced_cancel)) }
                 },
             )
         }
         TextButton(onClick = {
             PrimeSearchResultPreferences.resetOrder(context)
             categories = PrimeSearchResultPreferences.order(context)
-        }) { Text("Réinitialiser l'ordre") }
+        }) { Text(stringResource(R.string.prime_search_advanced_reset_order)) }
     }
 
 }
