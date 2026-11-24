@@ -51,6 +51,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import app.lawnchair.prime.search.PrimeSearchResultPreferences
+import androidx.compose.ui.res.stringResource
+import com.android.launcher3.R
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import app.lawnchair.theme.ThemeColorRole
@@ -73,16 +75,16 @@ fun PrimeSearchPreference() {
     val variant = context.effectiveThemeVariant()
     var showSources by remember { mutableStateOf(false) }
     var showSuggestionSettings by remember { mutableStateOf(false) }
-    PreferenceGroup(heading = "Suggestions et moteurs Web") {
+    PreferenceGroup(heading = stringResource(R.string.prime_search_pref_web_heading)) {
         if (showSuggestionSettings) {
             var provider by remember { mutableStateOf(PrimeSearchResultPreferences.suggestionProvider(context)) }
             var suggestionCount by remember { mutableStateOf(PrimeSearchResultPreferences.webSuggestionCount(context)) }
             androidx.compose.material3.AlertDialog(
                 onDismissRequest = { showSuggestionSettings = false },
-                title = { Text("Suggestions Web") },
+                title = { Text(stringResource(R.string.prime_search_pref_web_suggestions)) },
                 text = {
                     Column {
-                        Text("Nombre de suggestions : $suggestionCount")
+                        Text(stringResource(R.string.prime_search_shared_suggestion_count, suggestionCount))
                         androidx.compose.material3.Slider(
                             value = suggestionCount.toFloat(),
                             onValueChange = {
@@ -92,7 +94,7 @@ fun PrimeSearchPreference() {
                             valueRange = 0f..8f,
                             steps = 7,
                         )
-                        Text("Fournisseur de suggestions")
+                        Text(stringResource(R.string.prime_search_shared_provider))
                         PrimeSearchResultPreferences.SuggestionProvider.entries.forEach { option ->
                             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                                 androidx.compose.material3.RadioButton(
@@ -105,11 +107,11 @@ fun PrimeSearchPreference() {
                                 Text(option.title)
                             }
                         }
-                        Text("Les termes saisis sont transmis au fournisseur sélectionné.")
+                        Text(stringResource(R.string.prime_search_shared_privacy))
                     }
                 },
                 confirmButton = {
-                    TextButton(onClick = { showSuggestionSettings = false }) { Text("Terminé") }
+                    TextButton(onClick = { showSuggestionSettings = false }) { Text(stringResource(R.string.prime_search_pref_done)) }
                 },
             )
         }
@@ -117,7 +119,7 @@ fun PrimeSearchPreference() {
             var engines by remember { mutableStateOf(PrimeSearchResultPreferences.webEngineOrder(context)) }
             androidx.compose.material3.AlertDialog(
                 onDismissRequest = { showSources = false },
-                title = { Text("Sources de recherche Web") },
+                title = { Text(stringResource(R.string.prime_search_pref_sources)) },
                 text = {
                     androidx.compose.foundation.lazy.LazyColumn {
                         item { WebIconDownloadOption(PrimeSearchResultPreferences.Surface.PRIME_SEARCH) }
@@ -146,7 +148,7 @@ fun PrimeSearchPreference() {
                                         PrimeSearchResultPreferences.saveWebEngineOrder(context, reordered)
                                     }
                                 }, enabled = index > 0) {
-                                    Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Monter")
+                                    Icon(Icons.Default.KeyboardArrowUp, contentDescription = stringResource(R.string.prime_search_shared_up))
                                 }
                                 IconButton(onClick = {
                                     if (index < engines.lastIndex) {
@@ -156,7 +158,7 @@ fun PrimeSearchPreference() {
                                         PrimeSearchResultPreferences.saveWebEngineOrder(context, reordered)
                                     }
                                 }, enabled = index < engines.lastIndex) {
-                                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Descendre")
+                                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = stringResource(R.string.prime_search_shared_down))
                                 }
                             }
                         }
@@ -164,17 +166,17 @@ fun PrimeSearchPreference() {
                 },
                 confirmButton = {
                     androidx.compose.material3.TextButton(onClick = { showSources = false }) {
-                        Text("Terminé")
+                        Text(stringResource(R.string.prime_search_pref_done))
                     }
                 },
             )
         }
     }
-    PreferenceGroup(heading = "Fenêtre Prime Search") {
+    PreferenceGroup(heading = stringResource(R.string.prime_search_pref_window)) {
         var autoKeyboard by remember { mutableStateOf(PrimeSearchResultPreferences.autoShowKeyboard(context)) }
         PreferenceTemplate(
-            title = { Text("Ouvrir automatiquement le clavier") },
-            description = { Text("Afficher le clavier dès l’ouverture de Prime Search") },
+            title = { Text(stringResource(R.string.prime_search_pref_keyboard)) },
+            description = { Text(stringResource(R.string.prime_search_pref_keyboard_desc)) },
             endWidget = {
                 androidx.compose.material3.Switch(
                     checked = autoKeyboard,
@@ -191,8 +193,8 @@ fun PrimeSearchPreference() {
         )
         var floating by remember { mutableStateOf(PrimeSearchResultPreferences.floatingWindow(context)) }
         PreferenceTemplate(
-            title = { Text("Fenêtre flottante (overlay)") },
-            description = { Text("Afficher Prime Search au-dessus de l'accueil avec des marges visibles. Désactiver pour le plein écran.") },
+            title = { Text(stringResource(R.string.prime_search_pref_floating)) },
+            description = { Text(stringResource(R.string.prime_search_pref_floating_desc)) },
             endWidget = {
                 androidx.compose.material3.Switch(
                     checked = floating,
@@ -208,18 +210,18 @@ fun PrimeSearchPreference() {
             },
         )
     }
-    PreferenceGroup(heading = "Applications à l'ouverture") {
+    PreferenceGroup(heading = stringResource(R.string.prime_search_pref_opening)) {
         var openingTab by remember { mutableStateOf(PrimeSearchResultPreferences.openingTab(context)) }
         var showOpeningChoices by remember { mutableStateOf(false) }
         PreferenceTemplate(
-            title = { Text("Onglet affiché à l'ouverture") },
+            title = { Text(stringResource(R.string.prime_search_pref_opening_tab)) },
             description = { Text(openingTab.label) },
             onClick = { showOpeningChoices = true },
         )
         if (showOpeningChoices) {
             androidx.compose.material3.AlertDialog(
                 onDismissRequest = { showOpeningChoices = false },
-                title = { Text("Ouvrir Prime Search sur") },
+                title = { Text(stringResource(R.string.prime_search_pref_open_on)) },
                 text = {
                     androidx.compose.foundation.layout.Column {
                         PrimeSearchResultPreferences.OpeningTab.entries.forEach { option ->
@@ -242,33 +244,33 @@ fun PrimeSearchPreference() {
                     }
                 },
                 confirmButton = {
-                    androidx.compose.material3.TextButton(onClick = { showOpeningChoices = false }) { Text("Fermer") }
+                    androidx.compose.material3.TextButton(onClick = { showOpeningChoices = false }) { Text(stringResource(R.string.prime_search_shared_close)) }
                 },
             )
         }
     }
-    PreferenceGroup(heading = "Accès aux données d’utilisation") {
+    PreferenceGroup(heading = stringResource(R.string.prime_search_pref_usage)) {
         val usageGranted = try {
             val ops = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
             ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), context.packageName) ==
                 AppOpsManager.MODE_ALLOWED
         } catch (_: Exception) { false }
         PreferenceTemplate(
-            title = { Text("Applications fréquentes et récentes") },
+            title = { Text(stringResource(R.string.prime_search_pref_frequent_recent)) },
             description = {
-                Text(if (usageGranted) "Autorisation accordée"
-                    else "Autorisation nécessaire pour afficher les applications fréquentes et récentes. Appuyer pour ouvrir les paramètres Android.")
+                Text(if (usageGranted) stringResource(R.string.prime_search_pref_granted)
+                    else stringResource(R.string.prime_search_pref_usage_desc))
             },
             onClick = {
                 context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
             },
         )
     }
-    PreferenceGroup(heading = "Recherche d'applications") {
+    PreferenceGroup(heading = stringResource(R.string.prime_search_pref_app_search)) {
         var fuzzyEnabled by remember { mutableStateOf(PrimeSearchResultPreferences.fuzzyApps(context)) }
         PreferenceTemplate(
-            title = { Text("Tolérer les fautes de frappe") },
-            description = { Text("Recherche approximative des noms d'applications, indépendante du tiroir") },
+            title = { Text(stringResource(R.string.prime_search_pref_fuzzy)) },
+            description = { Text(stringResource(R.string.prime_search_pref_fuzzy_desc)) },
             endWidget = {
                 androidx.compose.material3.Switch(
                     checked = fuzzyEnabled,
@@ -284,7 +286,7 @@ fun PrimeSearchPreference() {
             },
         )
     }
-    PreferenceGroup(heading = "Apparence de Prime Search") {
+    PreferenceGroup(heading = stringResource(R.string.prime_search_pref_appearance)) {
         var rows by remember { mutableStateOf(PrimeSearchResultPreferences.zeroStateRows(context)) }
         var columns by remember { mutableStateOf(PrimeSearchResultPreferences.appsPerRow(context)) }
         var iconPercent by remember { mutableStateOf(PrimeSearchResultPreferences.iconSizePercent(context)) }
@@ -334,7 +336,7 @@ fun PrimeSearchPreference() {
                 }
                 androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(5.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    listOf("Fréquentes", "Récentes", "Nouvelles").forEachIndexed { index, name ->
+                    listOf(stringResource(R.string.prime_search_pref_frequent), stringResource(R.string.prime_search_pref_recent), stringResource(R.string.prime_search_pref_new)).forEachIndexed { index, name ->
                         androidx.compose.material3.TextButton(onClick = { previewTab = index }) {
                             Text(
                                 name,
@@ -361,7 +363,7 @@ fun PrimeSearchPreference() {
                         1.dp, androidx.compose.ui.graphics.Color(previewCardBorder)),
                 ) {
                     Column(modifier = Modifier.padding(8.dp)) {
-                        Text("Applications", style = androidx.compose.material3.MaterialTheme.typography.titleSmall)
+                        Text(stringResource(R.string.prime_search_pref_apps), style = androidx.compose.material3.MaterialTheme.typography.titleSmall)
                 // PrimeSearchOverlay uses 48dp * percentage, with no 64dp cap.
                 val iconDp = (48f * iconPercent / 100f).dp
                 val offset = previewTab * 2
@@ -406,7 +408,7 @@ fun PrimeSearchPreference() {
                 }
             }
         }
-        Text("Applications par ligne : $columns")
+        Text(stringResource(R.string.prime_search_pref_columns, columns))
         androidx.compose.material3.Slider(
             value = columns.toFloat(),
             onValueChange = {
@@ -425,7 +427,7 @@ fun PrimeSearchPreference() {
             },
             valueRange = 1f..2f,
         )
-        Text("Taille des icônes : $iconPercent %")
+        Text(stringResource(R.string.prime_search_pref_icon_size, iconPercent))
         androidx.compose.material3.Slider(
             value = iconPercent.toFloat(),
             onValueChange = {
@@ -460,7 +462,7 @@ fun PrimeSearchPreference() {
             PrimeSearchResultPreferences.setIconSizePercent(context, iconPercent)
             PrimeSearchResultPreferences.setTwoLineAppLabels(context, twoLines)
         }) {
-            Text("Réinitialiser l'apparence")
+            Text(stringResource(R.string.prime_search_pref_reset_appearance))
         }
     }
     var permissionRefresh by remember { mutableStateOf(0) }
@@ -655,7 +657,7 @@ fun PrimeSearchPreference() {
                                     },
                                     confirmButton = {
                                         TextButton(onClick = { showAlignmentDialog = false }) {
-                                            Text("Fermer")
+                                            Text(stringResource(R.string.prime_search_shared_close))
                                         }
                                     },
                                 )
@@ -699,7 +701,7 @@ fun PrimeSearchPreference() {
                                     1.dp, androidx.compose.ui.graphics.Color(resultCardBorder)),
                             ) {
                                 Column(modifier = Modifier.padding(8.dp)) {
-                                    Text("Applications", modifier = Modifier.padding(6.dp),
+                                    Text(stringResource(R.string.prime_search_pref_apps), modifier = Modifier.padding(6.dp),
                                         style = androidx.compose.material3.MaterialTheme.typography.titleSmall)
                                     val geometry = app.lawnchair.prime.search.PrimeAppGridGeometry
                                     val lines = if (PrimeSearchResultPreferences.twoLineAppLabels(context)) 2 else 1
@@ -786,7 +788,7 @@ fun PrimeSearchPreference() {
                             }
                             if (PrimeSearchPermissions.required(selected)) {
                                 val granted = PrimeSearchPermissions.granted(context, selected)
-                                Text(if (granted) "Autorisation accordée" else PrimeSearchPermissions.explanation(selected))
+                                Text(if (granted) stringResource(R.string.prime_search_pref_granted) else PrimeSearchPermissions.explanation(selected))
                                 if (!granted) TextButton(onClick = { requestCategory(selected) }) { Text("Autoriser l’accès") }
                             }
                             Text("Les résultats dépendent des fournisseurs disponibles et des autorisations Android.")
