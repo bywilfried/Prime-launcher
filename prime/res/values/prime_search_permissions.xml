@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_permission_contacts">Allow contact access to search contacts.</string>
+    <string name="prime_permission_calendar">Allow calendar access to search events.</string>
+    <string name="prime_permission_reminders">Allow access to Tasks.org tasks to search them.</string>
+    <string name="prime_permission_files">Allow media access to search supported files.</string>
+    <string name="prime_permission_notifications">Enable notification access in Android settings to record notification history.</string>
+</resources>
