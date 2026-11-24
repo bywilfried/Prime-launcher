@@ -52,13 +52,14 @@ object PrimeSearchCategoryPresentation {
         "Raccourcis Web" to PrimeSearchResultPreferences.Category.WEB_SHORTCUTS,
     )
 
-    fun categoryForHeading(title: String?): PrimeSearchResultPreferences.Category? {
+    fun categoryForHeading(title: String?, context: Context? = null): PrimeSearchResultPreferences.Category? {
         val normalized = title?.trim()?.takeIf { it.isNotEmpty() } ?: return null
         // Prefer explicit aliases for provider-specific headings, then fall back
         // to the canonical category title so every shared category is recognized.
         return headings[normalized]
             ?: PrimeSearchResultPreferences.Category.values().firstOrNull {
-                it.title.equals(normalized, ignoreCase = true)
+                it.title.equals(normalized, ignoreCase = true) ||
+                    (context != null && it.localizedTitle(context).equals(normalized, ignoreCase = true))
             }
     }
 
