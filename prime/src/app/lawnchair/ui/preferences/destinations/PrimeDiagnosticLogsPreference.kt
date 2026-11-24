@@ -40,7 +40,7 @@ fun PrimeDiagnosticLogsPreference() {
         ) {
             Row {
                 Button(onClick = { logs.value = PrimeDebugLog.getText() }) {
-                    Text("Actualiser")
+                    Text(stringResource(R.string.prime_diag_refresh))
                 }
                 Button(
                 onClick = {
@@ -52,8 +52,8 @@ fun PrimeDiagnosticLogsPreference() {
                 }
             }
             Row {
-                Button(onClick = { iconsOnly.value = true }) { Text("Icônes") }
-                Button(onClick = { iconsOnly.value = false }) { Text("Tous les journaux") }
+                Button(onClick = { iconsOnly.value = true }) { Text(stringResource(R.string.prime_diag_icons)) }
+                Button(onClick = { iconsOnly.value = false }) { Text(stringResource(R.string.prime_diag_all)) }
             }
             SelectionContainer {
                 Text(
