@@ -828,8 +828,8 @@ object PrimeSearchOverlay {
                                 contactRow.addView(button, LinearLayout.LayoutParams(
                                     (48 * density).toInt(), (44 * density).toInt()))
                             }
-                            actionIcon(android.R.drawable.ic_dialog_email, "Envoyer un SMS à ${contact.name}", Uri.fromParts("smsto", phone, null))
-                            actionIcon(android.R.drawable.ic_menu_call, "Appeler ${contact.name}", Uri.fromParts("tel", phone, null))
+                            actionIcon(android.R.drawable.ic_dialog_email, launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_sms, contact.name), Uri.fromParts("smsto", phone, null))
+                            actionIcon(android.R.drawable.ic_menu_call, launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_call, contact.name), Uri.fromParts("tel", phone, null))
                         }
                         webPanel.addView(contactRow, LinearLayout.LayoutParams(-1, -2))
                     }
@@ -893,25 +893,14 @@ object PrimeSearchOverlay {
                 val settingsActions = listOf(
                     Triple("Wi-Fi", android.provider.Settings.ACTION_WIFI_SETTINGS, listOf("wifi", "wi-fi", "réseau", "network")),
                     Triple("Bluetooth", android.provider.Settings.ACTION_BLUETOOTH_SETTINGS, listOf("bluetooth")),
-                    Triple("Affichage", android.provider.Settings.ACTION_DISPLAY_SETTINGS, listOf("affichage", "écran", "display", "screen")),
-                    Triple("Son", android.provider.Settings.ACTION_SOUND_SETTINGS, listOf("son", "audio", "sound")),
-                    Triple("Batterie", android.provider.Settings.ACTION_BATTERY_SAVER_SETTINGS, listOf("batterie", "économie", "battery")),
-                    Triple("Date et heure", android.provider.Settings.ACTION_DATE_SETTINGS, listOf("date", "heure", "time")),
-                    Triple("Applications", android.provider.Settings.ACTION_APPLICATION_SETTINGS, listOf("application", "appli", "apps")),
-                    Triple("Paramètres Android", android.provider.Settings.ACTION_SETTINGS, listOf("paramètre", "réglage", "settings"))
+                    Triple(launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_display), android.provider.Settings.ACTION_DISPLAY_SETTINGS, listOf("affichage", "écran", "display", "screen")),
+                    Triple(launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_sound), android.provider.Settings.ACTION_SOUND_SETTINGS, listOf("son", "audio", "sound")),
+                    Triple(launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_battery), android.provider.Settings.ACTION_BATTERY_SAVER_SETTINGS, listOf("batterie", "économie", "battery")),
+                    Triple(launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_date_time), android.provider.Settings.ACTION_DATE_SETTINGS, listOf("date", "heure", "time")),
+                    Triple(PrimeSearchResultPreferences.Category.APPS.localizedTitle(launcher), android.provider.Settings.ACTION_APPLICATION_SETTINGS, listOf("application", "appli", "apps")),
+                    Triple(launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_android_settings), android.provider.Settings.ACTION_SETTINGS, listOf("paramètre", "réglage", "settings"))
                 )
-                val locale = launcher.resources.configuration.locales[0].language
-                val labels = if (locale == "fr") settingsActions else settingsActions.map { (name, action, keywords) ->
-                    Triple(when (name) {
-                        "Affichage" -> "Display"
-                        "Son" -> "Sound"
-                        "Batterie" -> "Battery"
-                        "Date et heure" -> "Date & time"
-                        "Applications" -> "Apps"
-                        "Paramètres Android" -> "Android Settings"
-                        else -> name
-                    }, action, keywords)
-                }
+                val labels = settingsActions
                 val term = query.trim()
                 val generic = listOf("param", "régl", "setting").any { term.contains(it, ignoreCase = true) }
                 val matches = labels.filter { (name, _, keywords) ->
@@ -1588,12 +1577,12 @@ object PrimeSearchOverlay {
                         height = if (isApps && compactAppsTruncated) appViewportHeight.coerceAtLeast(1) else if (showAllSingleCategory) -2 else if (isApps) appViewportHeight.coerceAtLeast(1) else limit
                     }
                     val more = compactMoreButtons.getOrPut(category) { TextView(launcher).apply {
-                        text = "Plus de " + when (category) {
-                            PrimeSearchResultPreferences.Category.APPS -> "applications"
-                            PrimeSearchResultPreferences.Category.CONTACTS -> "contacts"
-                            PrimeSearchResultPreferences.Category.FILES -> "fichiers"
-                            PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> "raccourcis"
-                            else -> "résultats"
+                        text = when (category) {
+                            PrimeSearchResultPreferences.Category.APPS -> launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_more_apps)
+                            PrimeSearchResultPreferences.Category.CONTACTS -> launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_more_contacts)
+                            PrimeSearchResultPreferences.Category.FILES -> launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_more_files)
+                            PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_more_shortcuts)
+                            else -> launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_more_results)
                         } + "  ⌄"
                         gravity = Gravity.CENTER
                         textSize = 13f
@@ -1631,7 +1620,7 @@ object PrimeSearchOverlay {
                         wrapper.removeAllViews()
                         if (isApps) {
                             val heading = TextView(launcher).apply {
-                                text = "Applications"
+                                text = PrimeSearchResultPreferences.Category.APPS.localizedTitle(launcher)
                                 setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
                                 setTypeface(typeface, android.graphics.Typeface.BOLD)
                                 setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
@@ -2212,7 +2201,7 @@ object PrimeSearchOverlay {
                         parent.removeView(view)
                         if (renderedFilesInSection == 0) {
                             val fileHeading = TextView(launcher).apply {
-                                text = "Fichiers de l'appareil"
+                                text = launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_device_files)
                                 setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
                                 setTypeface(typeface, android.graphics.Typeface.BOLD)
                                 textSize = 15f
