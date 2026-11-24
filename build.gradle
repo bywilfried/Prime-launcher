@@ -273,7 +273,7 @@ android {
     flavorDimensions += ["app", "recents", "channel"]
 
     productFlavors {
-        lawn {
+        prime {
             dimension "app"
         }
 
@@ -322,7 +322,7 @@ android {
             }
         }
 
-        lawn {
+        prime {
             java.srcDirs = ['src_flags', 'src_shortcuts_overrides', 'prime/src', 'tests/shared']
             kotlin.directories.addAll('src_flags', 'src_shortcuts_overrides', 'prime/src', 'tests/shared')
             aidl.srcDirs = ['prime/aidl']
@@ -349,19 +349,19 @@ android {
             res.srcDirs = ["nightly/res"]
         }
 
-        lawnWithQuickstepGithub {
+        primeWithQuickstepGithub {
             manifest.srcFile "quickstep/AndroidManifest-launcher.xml"
         }
 
-        lawnWithQuickstepFdroid {
+        primeWithQuickstepFdroid {
             manifest.srcFile "quickstep/AndroidManifest-launcher.xml"
         }
 
-        lawnWithQuickstepNightly {
+        primeWithQuickstepNightly {
             manifest.srcFile "quickstep/AndroidManifest-launcher.xml"
         }
 
-        lawnWithQuickstepPlay {
+        primeWithQuickstepPlay {
             manifest.srcFile "quickstep/AndroidManifest-launcher.xml"
         }
 
