@@ -74,6 +74,45 @@ public final class PrimePinnedDrawerShortcuts {
             if (ids.add(id)) merged.put(entry);
         }
         save(context, merged);
+        // A restored launcher may not own Android's previous shortcut pins.
+        // Re-pin only shortcuts whose browser is currently installed; keep
+        // unavailable entries untouched so they can be recovered later.
+        java.util.HashMap<String, java.util.ArrayList<String>> byPackage = new java.util.HashMap<>();
+        for (int i = 0; i < merged.length(); i++) {
+            JSONObject entry = merged.optJSONObject(i);
+            if (entry == null || !"pinned".equals(entry.optString("kind"))) continue;
+            String pkg = entry.optString("package");
+            String shortcutId = entry.optString("shortcutId");
+            if (!pkg.isEmpty() && !shortcutId.isEmpty()) {
+                java.util.ArrayList<String> idsForPackage = byPackage.computeIfAbsent(
+                        pkg, unused -> new java.util.ArrayList<>());
+                if (!idsForPackage.contains(shortcutId)) idsForPackage.add(shortcutId);
+            }
+        }
+        LauncherApps launcherApps = context.getSystemService(LauncherApps.class);
+        if (launcherApps != null) {
+            for (java.util.Map.Entry<String, java.util.ArrayList<String>> group : byPackage.entrySet()) {
+                try {
+                    LauncherApps.ShortcutQuery query = new LauncherApps.ShortcutQuery()
+                            .setPackage(group.getKey())
+                            .setQueryFlags(LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED);
+                    java.util.List<android.content.pm.ShortcutInfo> existing =
+                            launcherApps.getShortcuts(query, Process.myUserHandle());
+                    java.util.ArrayList<String> idsForPackage = new java.util.ArrayList<>();
+                    if (existing != null) {
+                        for (android.content.pm.ShortcutInfo shortcut : existing) {
+                            if (!idsForPackage.contains(shortcut.getId())) idsForPackage.add(shortcut.getId());
+                        }
+                    }
+                    for (String id : group.getValue()) {
+                        if (!idsForPackage.contains(id)) idsForPackage.add(id);
+                    }
+                    launcherApps.pinShortcuts(group.getKey(), idsForPackage, Process.myUserHandle());
+                } catch (Exception error) {
+                    Log.w(TAG, "Browser shortcut unavailable during restore: " + group.getKey(), error);
+                }
+            }
+        }
     }
 
     private static void save(Context context, JSONArray entries) {
