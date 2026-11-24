@@ -77,4 +77,9 @@
     <string name="show_widget_suggestions_label">Afficher les suggestions de widgets</string>
     <string name="show_widget_suggestions_description">Afficher ou masquer les catégories suggérées dans le sélecteur de widgets</string>
     <string name="configure_prime_preview_widget">Configurer le widget Aperçu de Prime Launcher</string>
+    <string name="smartspace_widget">Aperçu</string>
+    <string name="gesture_handler_toggle_flashlight">Activer / désactiver la lampe torche</string>
+    <string name="gesture_handler_toggle_prime_theme">Basculer le thème clair / sombre</string>
+    <string name="gesture_handler_open_prime_settings">Ouvrir les paramètres de Prime Launcher</string>
+    <string name="prime_haptic_gestures">Intensité des gestes</string>
 </resources>
