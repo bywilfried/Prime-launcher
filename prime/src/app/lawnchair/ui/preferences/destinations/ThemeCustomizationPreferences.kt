@@ -80,10 +80,10 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             context.contentResolver.openOutputStream(uri)?.use { ThemeShareFile.export(context, it) }
                 ?: error("Unable to open destination")
         }.onSuccess {
-            Toast.makeText(context, "Thème exporté", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(com.android.launcher3.R.string.prime_theme_ui_exported), Toast.LENGTH_SHORT).show()
         }.onFailure {
             Log.e("ThemeCustomization", "Theme export failed", it)
-            Toast.makeText(context, "Échec de l'export du thème", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(com.android.launcher3.R.string.prime_theme_ui_export_failed), Toast.LENGTH_SHORT).show()
         }
     }
     val importTheme = rememberLauncherForActivityResult(
@@ -94,37 +94,37 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
                 ?: error("Unable to open theme file")
         }.onSuccess {
             bulkResetRevision++
-            Toast.makeText(context, "Thème importé", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(com.android.launcher3.R.string.prime_theme_ui_imported), Toast.LENGTH_SHORT).show()
         }.onFailure {
             Log.e("ThemeCustomization", "Theme import failed", it)
-            Toast.makeText(context, "Fichier de thème invalide", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(com.android.launcher3.R.string.prime_theme_ui_invalid), Toast.LENGTH_SHORT).show()
         }
     }
 
 
     PreferenceLayout(
         backArrowVisible = !LocalIsExpandedScreen.current,
-        label = if (folderKey != null) "Couleurs du dossier" else if (categoryTabId == null) "Personnaliser les couleurs du thème" else "Couleurs de la catégorie",
+        label = if (folderKey != null) androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_folder) else if (categoryTabId == null) androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_customize) else androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_category),
         modifier = modifier,
     ) {
         PreferenceGroup(heading = "Legacy") {
             PreferenceTemplate(
-                title = { Text("Variante") },
+                title = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_variant)) },
                 endWidget = {
                     Row {
                         val light = variant == ThemeVariant.LIGHT
-                        if (light) Button(onClick = { variantName = ThemeVariant.LIGHT.name }) { Text("Clair") }
-                        else OutlinedButton(onClick = { variantName = ThemeVariant.LIGHT.name }) { Text("Clair") }
+                        if (light) Button(onClick = { variantName = ThemeVariant.LIGHT.name }) { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_light)) }
+                        else OutlinedButton(onClick = { variantName = ThemeVariant.LIGHT.name }) { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_light)) }
                         val dark = variant == ThemeVariant.DARK
-                        if (dark) Button(onClick = { variantName = ThemeVariant.DARK.name }) { Text("Sombre") }
-                        else OutlinedButton(onClick = { variantName = ThemeVariant.DARK.name }) { Text("Sombre") }
+                        if (dark) Button(onClick = { variantName = ThemeVariant.DARK.name }) { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_dark)) }
+                        else OutlinedButton(onClick = { variantName = ThemeVariant.DARK.name }) { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_dark)) }
                     }
                 },
             )
         }
 
         if (categoryTabId == null && folderKey == null) ThemeSection(
-            title = "Global",
+            title = androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_global),
             variant = variant,
             section = ThemeColorRole.Section.GLOBAL,
             expanded = expanded,
@@ -132,7 +132,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             onToggle = { expandedName = if (expanded == it) null else it.name },
         )
         if (categoryTabId == null && folderKey == null) ThemeSection(
-            title = "Accueil",
+            title = androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_home),
             variant = variant,
             section = ThemeColorRole.Section.HOME,
             expanded = expanded,
@@ -148,7 +148,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             onToggle = { expandedName = if (expanded == it) null else it.name },
         )
         if (folderKey != null) ThemeSection(
-            title = "Couleurs du dossier",
+            title = androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_folder),
             categoryTabId = categoryTabId,
             folderKey = folderKey,
             variant = variant,
@@ -166,7 +166,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             onToggle = { expandedName = if (expanded == it) null else it.name },
         )
         if (folderKey == null) ThemeSection(
-            title = "Tiroir des applications",
+            title = androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_drawer),
             categoryTabId = categoryTabId,
             variant = variant,
             section = ThemeColorRole.Section.DRAWER,
@@ -175,26 +175,26 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             onToggle = { expandedName = if (expanded == it) null else it.name },
         )
 
-        PreferenceGroup(heading = if (folderKey != null) "Gestion du dossier" else if (categoryTabId == null) "Gestion du thème" else "Gestion de la catégorie") {
+        PreferenceGroup(heading = if (folderKey != null) androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_manage_folder) else if (categoryTabId == null) androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_manage_theme) else androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_manage_category)) {
             PreferenceTemplate(
-                title = { Text("Réinitialiser la variante") },
-                description = { Text("Supprimera les personnalisations de la variante affichée.") },
+                title = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_reset_variant)) },
+                description = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_reset_variant_desc)) },
                 onClick = { confirmVariantReset = true },
             )
             PreferenceTemplate(
-                title = { Text("Réinitialiser le thème") },
-                description = { Text("Restaurera les valeurs officielles du thème sélectionné.") },
+                title = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_reset_theme)) },
+                description = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_reset_theme_desc)) },
                 onClick = { confirmThemeReset = true },
             )
             PreferenceTemplate(
-                title = { Text("Exporter le thème") },
-                description = { Text("Partager le thème général, sa palette et ses couleurs.") },
+                title = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_export)) },
+                description = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_export_desc)) },
                 enabled = categoryTabId == null && folderKey == null,
                 onClick = { exportTheme.launch("Prime-theme.primetheme") },
             )
             PreferenceTemplate(
-                title = { Text("Importer un thème") },
-                description = { Text("Importer un fichier .primetheme sans modifier l’accueil.") },
+                title = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_import)) },
+                description = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_import_desc)) },
                 enabled = categoryTabId == null && folderKey == null,
                 onClick = { importTheme.launch(arrayOf("*/*")) },
             )
@@ -204,9 +204,9 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
     if (confirmVariantReset) {
         AlertDialog(
             onDismissRequest = { confirmVariantReset = false },
-            title = { Text("Réinitialiser la variante ?") },
+            title = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_reset_variant_question)) },
             text = {
-                Text("Toutes les personnalisations de la variante ${if (variant == ThemeVariant.LIGHT) "Clair" else "Sombre"} seront supprimées. L’autre variante sera conservée.")
+                Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_reset_variant_message, if (variant == ThemeVariant.LIGHT) androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_light) else androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_dark)))
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -216,12 +216,12 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
                     bulkResetRevision++
                     confirmVariantReset = false
                 }) {
-                    Text("Réinitialiser")
+                    Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_reset))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { confirmVariantReset = false }) {
-                    Text("Annuler")
+                    Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_cancel))
                 }
             },
         )
@@ -230,8 +230,8 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
     if (confirmThemeReset) {
         AlertDialog(
             onDismissRequest = { confirmThemeReset = false },
-            title = { Text("Réinitialiser le thème ?") },
-            text = { Text("Toutes les personnalisations des variantes Clair et Sombre seront supprimées.") },
+            title = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_reset_theme_question)) },
+            text = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_reset_both)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -242,12 +242,12 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
                         confirmThemeReset = false
                     },
                 ) {
-                    Text("Réinitialiser")
+                    Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_reset))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { confirmThemeReset = false }) {
-                    Text("Annuler")
+                    Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_cancel))
                 }
             },
         )
@@ -270,7 +270,7 @@ private fun ThemeSection(
     PreferenceGroup {
         PreferenceTemplate(
             title = { Text(title) },
-            description = { Text(if (expanded == section) "Masquer les couleurs" else "Afficher les couleurs") },
+            description = { Text(if (expanded == section) androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_hide) else androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_show)) },
             onClick = { onToggle(section) },
         )
         ExpandAndShrink(visible = expanded == section) {
@@ -416,12 +416,12 @@ private fun ThemeSection(
                                 role == ThemeColorRole.DRAWER_FOLDER_ICON_TEXT ||
                                 role == ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT),
                             description = if (override == ColorOption.LegacyBehavior) {
-                                "Comportement Legacy (fixé)"
+                                androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_legacy)
                             } else if (override == ColorOption.Default) {
                                 if (role == ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE ||
                                     role == ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE)
-                                    "Contraste automatique (noir/blanc)"
-                                else if (folderKey != null) "Hérité des couleurs du parent" else if (categoryTabId != null) "Hérité du thème principal ou de sa personnalisation" else "Valeur du thème"
+                                    androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_contrast)
+                                else if (folderKey != null) androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_parent) else if (categoryTabId != null) androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_parent_theme) else androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_theme_value)
                             } else {
                                 override.colorPreferenceEntry.label()
                             },
@@ -449,7 +449,7 @@ private fun ThemeSection(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Refresh,
-                                    contentDescription = "Rétablir la valeur par défaut de ${roleLabel(context, role)}",
+                                    contentDescription = androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_reset_role, roleLabel(context, role)),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
