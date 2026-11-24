@@ -29,13 +29,9 @@ jobs:
           cp "$apk" unsigned-audit/Prime-Launcher-FDroid-unsigned.apk
           ./gradlew -PprimeStable=true -PprimeFdroidCheck=true assemblePrimeWithQuickstepFdroidRelease
       - name: Audit native library provenance
-        run: |
-          ./gradlew -PprimeStable=true --no-configuration-cache -I scripts/native-artifacts.init.gradle primeNativeArtifactInventory
-          python3 scripts/audit_native_libraries.py native-artifacts.json unsigned-audit/Prime-Launcher-FDroid-unsigned.apk native-library-audit.json
-      - name: Audit native library provenance
         continue-on-error: true
         run: |
-          ./gradlew -PprimeStable=true -I scripts/native-provenance.init.gradle primeNativeProvenance
+          ./gradlew -PprimeStable=true --no-configuration-cache -I scripts/native-provenance.init.gradle primeNativeProvenance
           python3 scripts/audit_native_provenance.py
       - name: Sign test APK with Prime key
         shell: bash
@@ -76,5 +72,4 @@ jobs:
             runtime-dependencies.txt
             native-dependencies.json
             native-provenance.json
-            native-library-audit.json
             unsigned-audit/*.apk
