@@ -215,7 +215,7 @@ fun PrimeSearchPreference() {
         var showOpeningChoices by remember { mutableStateOf(false) }
         PreferenceTemplate(
             title = { Text(stringResource(R.string.prime_search_pref_opening_tab)) },
-            description = { Text(openingTab.label) },
+            description = { Text(openingTab.localizedLabel(context)) },
             onClick = { showOpeningChoices = true },
         )
         if (showOpeningChoices) {
@@ -238,7 +238,7 @@ fun PrimeSearchPreference() {
                                     openingTab = option
                                     PrimeSearchResultPreferences.setOpeningTab(context, option)
                                     showOpeningChoices = false
-                                }) { Text(option.label) }
+                                }) { Text(option.localizedLabel(context)) }
                             }
                         }
                     }
