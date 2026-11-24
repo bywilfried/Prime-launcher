@@ -1008,18 +1008,18 @@ object PrimeSearchOverlay {
                                         themed(ThemeColorRole.PRIME_SEARCH_BORDER))
                                 }
                                 background = fallback
-                                val site = Uri.parse(engine.url).host.orEmpty()
-                                Thread {
-                                    val bitmap = try {
-                                        val connection = URL("https://www.google.com/s2/favicons?domain=" +
-                                            Uri.encode(site) + "&sz=96").openConnection() as HttpURLConnection
-                                        connection.connectTimeout = 2000
-                                        connection.readTimeout = 2000
-                                        try { connection.inputStream.use { android.graphics.BitmapFactory.decodeStream(it) } }
-                                        finally { connection.disconnect() }
-                                    } catch (_: Exception) { null }
-                                    if (bitmap != null) post { setImageBitmap(bitmap) }
-                                }.start()
+                                // Use a local monogram rather than contacting a third-party favicon service.
+                                val bitmap = android.graphics.Bitmap.createBitmap(iconSize.coerceAtLeast(1),
+                                    iconSize.coerceAtLeast(1), android.graphics.Bitmap.Config.ARGB_8888)
+                                val canvas = android.graphics.Canvas(bitmap)
+                                val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                                    color = foreground
+                                    textAlign = android.graphics.Paint.Align.CENTER
+                                    textSize = iconSize * 0.48f
+                                }
+                                canvas.drawText(engine.title.take(1).uppercase(java.util.Locale.ROOT),
+                                    iconSize / 2f, iconSize / 2f - (paint.ascent() + paint.descent()) / 2f, paint)
+                                setImageBitmap(bitmap)
                             }
                         }
                         cell.addView(icon)
@@ -1745,6 +1745,8 @@ object PrimeSearchOverlay {
                 !PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB, preferenceSurface)) return
             // Keep network I/O off the main thread; ignore stale responses.
             webHandler.postDelayed({
+                if (request != webRequestSerial || !PrimeSearchResultPreferences.enabled(launcher,
+                        PrimeSearchResultPreferences.Category.WEB, preferenceSurface)) return@postDelayed
                 Thread {
                 val suggestions = try {
                     val provider = PrimeSearchResultPreferences.suggestionProvider(launcher, preferenceSurface)
@@ -1787,20 +1789,7 @@ object PrimeSearchOverlay {
                         }
                     } finally { connection.disconnect() }
                 } catch (_: Exception) {
-                    // Google suggestions can be unavailable on some networks.
-                    // DuckDuckGo provides a compatible fallback.
-                    try {
-                        val connection = URL("https://duckduckgo.com/ac/?q=" + Uri.encode(query))
-                            .openConnection() as HttpURLConnection
-                        connection.connectTimeout = 2500
-                        connection.readTimeout = 2500
-                        try {
-                            val entries = JSONArray(connection.inputStream.bufferedReader().use { it.readText() })
-                            (0 until minOf(entries.length(), count)).mapNotNull {
-                                entries.optJSONObject(it)?.optString("phrase")?.takeIf(String::isNotBlank)
-                            }
-                        } finally { connection.disconnect() }
-                    } catch (_: Exception) { emptyList() }
+                    emptyList()
                 }
                 webHandler.post {
                     if (request == webRequestSerial && !detailOpen && !detailClosing &&
