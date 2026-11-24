@@ -27,6 +27,25 @@ internal object PrimeWebIcons {
         else -> 0
     }
 
+    fun installedIcon(context: android.content.Context, engine: PrimeSearchResultPreferences.WebEngine): android.graphics.drawable.Drawable? {
+        val packages = when (engine.name) {
+            "SPOTIFY" -> listOf("com.spotify.music")
+            "DUCKDUCKGO" -> listOf("com.duckduckgo.mobile.android")
+            "WIKIPEDIA" -> listOf("org.wikipedia")
+            "YOUTUBE" -> listOf("com.google.android.youtube")
+            "REDDIT" -> listOf("com.reddit.frontpage")
+            "FDROID" -> listOf("org.fdroid.fdroid", "com.machiav3lli.fdroid")
+            "GOOGLE_PLAY" -> listOf("com.android.vending")
+            "GOOGLE_MAPS" -> listOf("com.google.android.apps.maps")
+            "GOOGLE_DRIVE" -> listOf("com.google.android.apps.docs")
+            "GOOGLE_PHOTOS" -> listOf("com.google.android.apps.photos")
+            "CHATGPT" -> listOf("com.openai.chatgpt")
+            "X" -> listOf("com.twitter.android")
+            else -> emptyList()
+        }
+        return packages.firstNotNullOfOrNull { runCatching { context.packageManager.getApplicationIcon(it) }.getOrNull() }
+    }
+
     private val worker = Executors.newFixedThreadPool(2)
     private val pending = mutableMapOf<String, MutableList<(Bitmap?) -> Unit>>()
     private val attempted = mutableMapOf<String, Long>()
@@ -37,7 +56,8 @@ internal object PrimeWebIcons {
     fun bind(view: ImageView, engine: PrimeSearchResultPreferences.WebEngine,
              surface: PrimeSearchResultPreferences.Surface, hasLocalIcon: Boolean) {
         load(view.context, engine, surface, hasLocalIcon) { bitmap ->
-            view.post { view.background = null; view.setImageBitmap(bitmap) }
+            view.background = null
+            view.setImageBitmap(bitmap)
         }
     }
 
