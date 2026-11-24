@@ -320,8 +320,8 @@ internal fun WebIconDownloadOption(surface: Prefs.Surface) {
             Prefs.setDownloadWebIcons(context, surface, it)
         })
         Column(modifier = Modifier.weight(1f)) {
-            Text("Télécharger les icônes Web")
-            Text("Privilégier les logos en ligne et les conserver hors connexion.")
+            Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_download_web_icons))
+            Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_download_web_icons_description))
         }
     }
 }
