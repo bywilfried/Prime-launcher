@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_advanced_advanced">Advanced options</string>
+    <string name="prime_advanced_reset">Reset everything to default</string>
+    <string name="prime_advanced_reset_category_desc">Remove all customizations for this category and restore inheritance.</string>
+    <string name="prime_advanced_reset_category_confirm">Reset everything to default for this category?</string>
+    <string name="prime_advanced_style">Style</string>
+    <string name="prime_advanced_folder_colors">Folder color customization</string>
+    <string name="prime_advanced_category_inherit">Colors by theme and light/dark variant, inherited from the category</string>
+    <string name="prime_advanced_reset_folder_desc">Remove all customizations for this folder and restore inheritance.</string>
+    <string name="prime_advanced_reset_folder_confirm">Reset everything to default for this folder?</string>
+    <string name="prime_advanced_parent_inherit">Colors by theme and light/dark variant, inherited from the parent</string>
+    <string name="prime_advanced_closed">Closed folder</string>
+    <string name="prime_advanced_closed_label">Show closed folder name</string>
+    <string name="prime_advanced_open">Open folder</string>
+    <string name="prime_advanced_open_icons">Icons in open folder</string>
+    <string name="prime_advanced_child_shape">Folder icon shape</string>
+    <string name="prime_advanced_inherited">Inherited value</string>
+    <string name="prime_advanced_custom">Customized</string>
+    <string name="prime_advanced_category_colors">Category color customization</string>
+    <string name="prime_advanced_theme_inherit">Colors by theme and variant, inherited from the parent theme</string>
+    <string name="prime_advanced_icon_shape">Icon shape</string>
+    <string name="prime_advanced_closed_color">Closed folder color</string>
+    <string name="prime_advanced_open_color">Open folder color</string>
+    <string name="prime_advanced_text_color">Folder text color</string>
+    <string name="prime_advanced_enabled">Enabled</string>
+    <string name="prime_advanced_disabled">Disabled</string>
+    <string name="prime_advanced_inherited_status">Inherited value • %1$s</string>
+    <string name="prime_advanced_custom_status">Customized • ↶ Inherited value: %1$s</string>
+    <string name="prime_advanced_custom_switch">Customized • %1$s • ↶ Inherited value: %2$s</string>
+</resources>
