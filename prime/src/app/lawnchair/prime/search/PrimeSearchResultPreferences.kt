@@ -162,7 +162,7 @@ object PrimeSearchResultPreferences {
         FILES("files", "Fichiers", "Contenu multimédia et fichiers"),
         SETTINGS("settings", "Paramètres de l’appareil", "Réglages du système"),
         HISTORY("history", "Historique des recherches", "Recherches récentes"),
-        CALCULATOR("calculator", "Calculatrice", "Résultats de calcul"),
+        CALCULATOR("calculator", "Calculatrice", "Résultats de calcul");
         fun localizedTitle(context: Context): String = context.getString(when (this) {
             APPS -> com.android.launcher3.R.string.prime_category_apps_title
             APP_SHORTCUTS -> com.android.launcher3.R.string.prime_category_app_shortcuts_title
