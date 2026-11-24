@@ -3,7 +3,7 @@
 ## Stable releases
 
 Set VERSION_NAME and VERSION_CODE in version.properties before merging to main.
-The proposed initial code 11000000 exceeds the maximum of the existing 0.9 RC formula (10999998). Verify against all previously distributed APKs and increment for every stable release. Existing RC APKs share the public application ID and may have a lower code than stable; Android will reject a downgrade. Dev APKs have a separate debug ID. Consider a separate RC application ID in a future change.
+The proposed initial stable code is 11000000; increment for every stable release. Public stable GitHub and F-Droid builds use com.bywilfried.prime.fdroid. Existing personal RC builds retain com.bywilfried.prime and Dev builds retain their debug ID. Existing GitHub users moving to the public stable app will install a separate application.
 
 Run Check Prime F-Droid build on the feature branch first. It does not publish.
 After validation and merge to main, manually run Publish Prime Stable. It creates a GitHub release and vX.Y.Z tag only after compilation and APK version checks.
@@ -15,7 +15,7 @@ git submodule update --init --recursive
 ```
 Java 21; Android SDK 37 minor API 2 and build tools 37.0.0 as required by current Gradle configuration. Confirm availability in F-Droid build infrastructure.
 
-Suggested fdroiddata settings (not submitted or validated):
+Suggested fdroiddata settings for metadata/com.bywilfried.prime.fdroid.yml (not submitted or validated):
 ```yaml
 RepoType: git
 Repo: https://github.com/bywilfried/Prime-launcher.git
