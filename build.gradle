@@ -143,10 +143,24 @@ final def primeBuildNumber = isPrime09Release ? ciBuildNumber - 69 : ciBuildNumb
 if (primeBuildNumber < 0 || primeBuildNumber > 999999) {
     throw new GradleException("primeBuildNumber must be between 0 and 999999")
 }
-final def primeBaseVersion = "${primeMajor}.${primeMinor}.${primeBuildNumber}"
+final def primeStable = providers.gradleProperty("primeStable").orNull == "true"
+final def stableVersion = new Properties()
+if (primeStable) {
+    rootProject.file("version.properties").withInputStream { stableVersion.load(it) }
+    if (!(stableVersion.getProperty("VERSION_NAME") ==~ /[0-9]+\.[0-9]+\.[0-9]+/)) {
+        throw new GradleException("Invalid stable VERSION_NAME")
+    }
+    if (!(stableVersion.getProperty("VERSION_CODE") ==~ /[0-9]+/)) {
+        throw new GradleException("Invalid stable VERSION_CODE")
+    }
+    if (stableVersion.getProperty("VERSION_CODE").toLong() < 11000000 || stableVersion.getProperty("VERSION_CODE").toLong() > 2100000000) {
+        throw new GradleException("Stable VERSION_CODE outside allowed range")
+    }
+}
+final def primeBaseVersion = primeStable ? stableVersion.getProperty("VERSION_NAME") : "${primeMajor}.${primeMinor}.${primeBuildNumber}"
 final def primeDebugVersion = "${primeBaseVersion}-debug"
 final def primeVersionCode = (isPrime09Release ? 9000000 : 8000000) + primeBuildNumber
-final def majorVersion = "${primeMajor}"
+final def majorVersion = primeStable ? primeBaseVersion.tokenize(".")[0] : "${primeMajor}"
 
 final def quickstepMinSdk = "35"
 final def quickstepMaxSdk = "36"
@@ -154,7 +168,7 @@ final def quickstepMaxSdk = "36"
 android {
     namespace "com.android.launcher3"
     defaultConfig {
-        versionCode primeVersionCode + primeBuildNumber
+        versionCode (primeStable ? stableVersion.getProperty("VERSION_CODE").toInteger() : primeVersionCode + primeBuildNumber)
         versionName primeBaseVersion
         buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${primeBaseVersion}\""
         buildConfigField "String", "MAJOR_VERSION", "\"${majorVersion}\""
@@ -216,7 +230,7 @@ android {
             storePassword keystoreProperties['storePassword']
         }
     } catch (Exception ignored) {
-        releaseSigning = signingConfigs.debug
+        releaseSigning = primeStable ? null : signingConfigs.debug
     }
 
     buildTypes {
