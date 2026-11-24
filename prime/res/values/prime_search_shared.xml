@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_search_shared_completed">Show completed tasks</string>
+    <string name="prime_search_shared_future">Future events only</string>
+    <string name="prime_search_shared_calendars">Calendars used for search</string>
+    <string name="prime_search_shared_tasks">Tasks.org lists used for search</string>
+    <string name="prime_search_shared_contacts">Contact accounts used for search</string>
+    <string name="prime_search_shared_no_sources">No sources available on this device.</string>
+    <string name="prime_search_shared_select_all">Select all</string>
+    <string name="prime_search_shared_file_limit">Maximum number of files: %1$d</string>
+    <string name="prime_search_shared_file_access">Accessible files depend on Android permissions.</string>
+    <string name="prime_search_shared_suggestion_count">Number of suggestions: %1$d</string>
+    <string name="prime_search_shared_provider">Suggestion provider</string>
+    <string name="prime_search_shared_privacy">Search terms are sent to the selected provider.</string>
+    <string name="prime_search_shared_retention">Keep notifications for:</string>
+    <string name="prime_search_shared_settings">Settings for %1$s</string>
+    <string name="prime_search_shared_reorder">Touch and hold, then drag to reorder</string>
+    <string name="prime_search_shared_up">Move up</string>
+    <string name="prime_search_shared_down">Move down</string>
+    <string name="prime_search_shared_close">Close</string>
+</resources>
