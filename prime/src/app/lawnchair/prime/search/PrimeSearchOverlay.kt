@@ -472,7 +472,7 @@ object PrimeSearchOverlay {
         var installed: List<android.content.pm.ApplicationInfo> = cachedApps.orEmpty()
         var usage: Map<String, android.app.usage.UsageStats> = cachedUsage.orEmpty()
         var hasUsageAccess = cachedUsageGranted
-        val sections = listOf("FRÉQUENTES", "RÉCENTES", "NOUVELLES")
+        val sections = listOf(PrimeSearchResultPreferences.OpeningTab.FREQUENT, PrimeSearchResultPreferences.OpeningTab.RECENT, PrimeSearchResultPreferences.OpeningTab.NEW).map { it.localizedLabel(launcher).uppercase(java.util.Locale.getDefault()) }
         var selectedTab = when (PrimeSearchResultPreferences.openingTab(launcher, preferenceSurface)) {
             PrimeSearchResultPreferences.OpeningTab.LAST -> PrimeSearchResultPreferences.lastOpenedTab(launcher, preferenceSurface)
             PrimeSearchResultPreferences.OpeningTab.FREQUENT -> 0
@@ -656,14 +656,10 @@ object PrimeSearchOverlay {
             webPanel.removeAllViews()
             if (query.isBlank()) return
             val foreground = themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT)
-            fun row(title: String, action: () -> Unit) {
-                val isHeading = title in setOf(
-                    "Suggestions Web", "Raccourcis Web", "Contacts",
-                    "Événements de l'agenda", "Tâches · Tasks.org",
-                    "Historique des notifications", "Paramètres de l'appareil",
-                    "Device settings",
-                )
+            fun row(title: String, category: PrimeSearchResultPreferences.Category? = null, action: () -> Unit) {
+                val isHeading = category != null
                 val label = TextView(launcher).apply {
+                    tag = category
                     text = title
                     textSize = 15f
                     setTextColor(foreground)
@@ -684,7 +680,7 @@ object PrimeSearchOverlay {
                 webPanel.addView(label, LinearLayout.LayoutParams(-1, -2))
             }
             if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB, preferenceSurface) && currentSuggestions.isNotEmpty()) {
-                row("Suggestions Web") {}
+                row(PrimeSearchResultPreferences.Category.WEB.localizedTitle(launcher), PrimeSearchResultPreferences.Category.WEB) {}
                 currentSuggestions.forEach { suggestion ->
                     row(suggestion) {
                         val provider = PrimeSearchResultPreferences.suggestionProvider(launcher, preferenceSurface)
@@ -721,7 +717,7 @@ object PrimeSearchOverlay {
                 }
                 val contacts = contactResults
                 if (contacts.isNotEmpty()) {
-                    row("Contacts") {}
+                    row(PrimeSearchResultPreferences.Category.CONTACTS.localizedTitle(launcher), PrimeSearchResultPreferences.Category.CONTACTS) {}
                     contacts.forEach { contact ->
                         val contactRow = LinearLayout(launcher).apply {
                             orientation = LinearLayout.HORIZONTAL
@@ -842,7 +838,7 @@ object PrimeSearchOverlay {
             if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.CALENDAR, preferenceSurface)) {
                 val events = PrimeCalendarSearch.events(launcher, query)
                 if (events.isNotEmpty()) {
-                    row("Événements de l'agenda") {}
+                    row(PrimeSearchResultPreferences.Category.CALENDAR.localizedTitle(launcher), PrimeSearchResultPreferences.Category.CALENDAR) {}
                     events.forEach { event ->
                         row("${event.title}\n${event.detail}") {
                             runCatching {
@@ -856,7 +852,7 @@ object PrimeSearchOverlay {
             if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.REMINDERS, preferenceSurface)) {
                 val tasks = PrimeTasksSearch.search(launcher, query)
                 if (tasks.isNotEmpty()) {
-                    row("Tâches · Tasks.org") {}
+                    row(launcher.getString(com.android.launcher3.R.string.prime_overlay_tasks), PrimeSearchResultPreferences.Category.REMINDERS) {}
                     tasks.forEach { task ->
                         row(task.title + task.detail.takeIf { it.isNotBlank() }?.let { "\n$it" }.orEmpty()) {
                             runCatching {
@@ -872,7 +868,7 @@ object PrimeSearchOverlay {
                 val matches = runCatching { PrimeNotificationHistory.search(launcher, query) }
                     .getOrDefault(emptyList())
                 if (matches.isNotEmpty()) {
-                    row("Historique des notifications") {}
+                    row(launcher.getString(com.android.launcher3.R.string.prime_overlay_history), PrimeSearchResultPreferences.Category.NOTIFICATIONS) {}
                     val formatter = java.text.DateFormat.getDateTimeInstance(
                         java.text.DateFormat.SHORT, java.text.DateFormat.SHORT
                     )
@@ -880,13 +876,13 @@ object PrimeSearchOverlay {
                         row("${entry.app} · ${entry.title}\n${entry.body.take(180)}\n${formatter.format(java.util.Date(entry.posted))}") {}
                     }
                 } else if (query.contains("notif", ignoreCase = true)) {
-                    row("Historique des notifications") {}
+                    row(launcher.getString(com.android.launcher3.R.string.prime_overlay_history), PrimeSearchResultPreferences.Category.NOTIFICATIONS) {}
                     if (!PrimeNotificationHistory.isGranted(launcher)) {
-                        row("Accès aux notifications désactivé · toucher pour autoriser") {
+                        row(launcher.getString(com.android.launcher3.R.string.prime_overlay_notif_disabled)) {
                             launcher.startActivity(PrimeNotificationHistory.accessIntent(launcher))
                         }
                     } else {
-                        row("Aucune notification correspondante enregistrée") {}
+                        row(launcher.getString(com.android.launcher3.R.string.prime_overlay_notif_empty)) {}
                         row(runCatching { PrimeNotificationHistory.diagnostic(launcher) }
                             .getOrElse { "Diagnostic indisponible : " + it.javaClass.simpleName }) {}
                     }
@@ -923,7 +919,7 @@ object PrimeSearchOverlay {
                         keywords.any { it.contains(term, ignoreCase = true) || term.contains(it, ignoreCase = true) }
                 }
                 if (term.length >= 2 && matches.isNotEmpty()) {
-                    row(if (locale == "fr") "Paramètres de l'appareil" else "Device settings") {}
+                    row(PrimeSearchResultPreferences.Category.SETTINGS.localizedTitle(launcher), PrimeSearchResultPreferences.Category.SETTINGS) {}
                     matches.forEach { (name, action, _) ->
                         row(name) {
                             runCatching {
@@ -937,7 +933,7 @@ object PrimeSearchOverlay {
             val engines = if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB_SHORTCUTS, preferenceSurface))
                 PrimeSearchResultPreferences.enabledWebEngines(launcher, preferenceSurface) else emptyList()
             if (engines.isNotEmpty()) {
-                row("Raccourcis Web") {}
+                row(PrimeSearchResultPreferences.Category.WEB_SHORTCUTS.localizedTitle(launcher), PrimeSearchResultPreferences.Category.WEB_SHORTCUTS) {}
                 val columns = 5
                 engines.chunked(columns).forEach { group ->
                     val icons = LinearLayout(launcher).apply {
@@ -1032,22 +1028,12 @@ object PrimeSearchOverlay {
             }
             // Sort complete dynamic sections (heading plus rows) by user preference.
             val order = PrimeSearchResultPreferences.order(launcher, preferenceSurface)
-            val headings = mapOf(
-                "Suggestions Web" to PrimeSearchResultPreferences.Category.WEB,
-                "Contacts" to PrimeSearchResultPreferences.Category.CONTACTS,
-                "Événements de l'agenda" to PrimeSearchResultPreferences.Category.CALENDAR,
-                "Tâches · Tasks.org" to PrimeSearchResultPreferences.Category.REMINDERS,
-                "Historique des notifications" to PrimeSearchResultPreferences.Category.NOTIFICATIONS,
-                "Paramètres de l'appareil" to PrimeSearchResultPreferences.Category.SETTINGS,
-                "Device settings" to PrimeSearchResultPreferences.Category.SETTINGS,
-                "Raccourcis Web" to PrimeSearchResultPreferences.Category.WEB_SHORTCUTS,
-            )
             val sections = mutableListOf<Pair<PrimeSearchResultPreferences.Category, MutableList<View>>>()
             var current: MutableList<View>? = null
             while (webPanel.childCount > 0) {
                 val child = webPanel.getChildAt(0)
                 webPanel.removeViewAt(0)
-                val category = (child as? TextView)?.text?.toString()?.let(headings::get)
+                val category = (child as? TextView)?.tag as? PrimeSearchResultPreferences.Category
                 if (category != null) {
                     val group = mutableListOf<View>()
                     current = group
@@ -1473,16 +1459,13 @@ object PrimeSearchOverlay {
             // Both providers can return the same "Applications" action.
             val hasPrimeSettings = (0 until webPanel.childCount).any { index ->
                 val child = webPanel.getChildAt(index)
-                child is TextView && (
-                    child.text?.toString() == "Paramètres de l'appareil" ||
-                    child.text?.toString() == "Device settings"
-                )
+                child is TextView && child.tag == PrimeSearchResultPreferences.Category.SETTINGS
             }
             // Prime's own contact rows include avatars and call/message actions.
             // Do not also show the drawer's contact tiles for the same query.
             val hasPrimeContacts = (0 until webPanel.childCount).any { index ->
                 val child = webPanel.getChildAt(index)
-                child is TextView && child.text?.toString() == "Contacts"
+                child is TextView && child.tag == PrimeSearchResultPreferences.Category.CONTACTS
             }
             val native = (0 until results.childCount).map { results.getChildAt(it) }
                 .filter { it !== webPanel }
