@@ -200,6 +200,21 @@ class SearchResultIcon(context: Context, attrs: AttributeSet?) :
                     if (boundId == targetId) {
                         applyFromItemInfoWithIcon(info)
                         setPrimeIconShape(PreferenceManager2.getInstance(context).iconShape.firstCached())
+                        val engine = app.lawnchair.prime.search.PrimeSearchResultPreferences.WebEngine.entries.firstOrNull {
+                            it.title == target.extras.getString("prime_web_engine")
+                        }
+                        if (engine != null) {
+                            app.lawnchair.prime.search.PrimeWebIcons.load(context, engine,
+                                app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER, false) { bitmap ->
+                                if (boundId == targetId) {
+                                    LauncherIcons.obtain(context).use { li ->
+                                        info.bitmap = li.createBadgedIconBitmap(android.graphics.drawable.BitmapDrawable(resources, bitmap), BaseIconFactory.IconOptions().setUser(info.user))
+                                    }
+                                    applyFromItemInfoWithIcon(info)
+                                    setPrimeIconShape(PreferenceManager2.getInstance(context).iconShape.firstCached())
+                                }
+                            }
+                        }
                     }
                 }
             }
