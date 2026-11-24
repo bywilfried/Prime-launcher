@@ -32,7 +32,7 @@ Check Prime F-Droid build #1 compiled successfully according to the maintainer. 
 
 - Web suggestions default to disabled in both Prime Search and drawer, including the legacy preference.
 - Failed requests no longer fall back to a different provider in either surface.
-- Prime Search web shortcut icons use installed application icons or local monograms instead of Google favicon requests.
+- Web shortcuts use installed icons, bundled resources or local monograms. Optional first-party favicon retrieval is disabled by default per surface; persistent shared storage is excluded from backup. When enabled, cached web icons take priority and refresh after 30 days on use. No query text is transmitted. Direct HTTPS /favicon.ico requests do not follow redirects; unsupported formats or missing endpoints retain the fallback. Failed attempts are throttled for one hour.
 - Google downloadable fonts use the system default when the expected provider is absent.
 - Feed provider preference defaults to empty.
 - Existing explicit user settings remain unchanged.
@@ -44,3 +44,12 @@ Run Build Prime Dev APK on feature/fdroid-support, then Check Prime F-Droid buil
 ## Outstanding release blockers
 
 Full source and asset license inventory, exact binary provenance and F-Droid build recipe validation, native library source verification, full English/French and inherited locale audit, and actual fdroidserver scanner/build remain outstanding. Do not treat a successful Dev build as F-Droid approval.
+
+## Web icon validation checklist
+
+- Verify both settings appear above the source list and are independently off on clean install.
+- Verify no favicon requests with both settings off, and no search text in favicon requests when enabled.
+- Verify cached icons survive restart, offline operation and app update; verify stale cache survives refresh failure.
+- Exercise all 28 engines; direct favicon endpoints and Android image decoder support have not been verified.
+- Confirm drawer rendering actually uses the shared overlay path; check compact and expanded drawer results separately.
+- Audit bundled logo rights separately; downloading does not establish trademark permission.
