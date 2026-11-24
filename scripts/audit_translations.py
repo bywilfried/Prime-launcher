@@ -3,6 +3,7 @@
 import argparse
 import collections
 import json
+import sys
 from pathlib import Path
 import re
 import xml.etree.ElementTree as ET
@@ -31,6 +32,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--res", type=Path, default=Path("prime/res"))
     parser.add_argument("--json", type=Path)
+    parser.add_argument("--check-fr-en", action="store_true", help="Fail on duplicate resources or French format warnings")
     args = parser.parse_args()
     base, duplicates = read(args.res / "values")
     if not base:
@@ -40,6 +42,8 @@ def main():
     resources = {}
     for directory in sorted(args.res.glob("values-*")):
         # Exclude non-language configurations (night, land, API levels, etc.).
+        if directory.name == "values-car":
+            continue
         if not re.fullmatch(r"values-(?:[a-z]{2,3}(?:-r[A-Z]{2})?|b\+[A-Za-z0-9+]+)", directory.name):
             continue
         localized, dup = read(directory)
@@ -66,9 +70,28 @@ def main():
     print("Default translatable resources:", len(base))
     for locale, data in report["locales"].items():
         print(f"{locale:22} {data['direct_coverage_percent']:6.1f}%  combined={data['generic_plus_region_coverage_percent']:6.1f}%  missing={len(data['generic_plus_region_missing'])}  format warnings={len(data['placeholder_warnings'])}")
+    issues = []
+    if duplicates:
+        issues.append("Default duplicate resources: " + ", ".join(duplicates))
+    for locale in ("values-fr", "values-fr-rFR", "values-fr-rCA"):
+        data = report["locales"].get(locale)
+        if data is None:
+            if locale == "values-fr":
+                issues.append("Missing generic French resources")
+            continue
+        for field in ("duplicates", "placeholder_warnings"):
+            if data[field]:
+                issues.append(locale + " " + field + ": " + ", ".join(data[field]))
+    report["fr_en_validation_issues"] = issues
     if args.json:
         args.json.parent.mkdir(parents=True, exist_ok=True)
         args.json.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
+    if args.check_fr_en and issues:
+        for issue in issues:
+            print(issue, file=sys.stderr)
+        return 1
+    return 0
+
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
