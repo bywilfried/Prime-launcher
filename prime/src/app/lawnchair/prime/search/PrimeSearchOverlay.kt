@@ -1011,6 +1011,7 @@ object PrimeSearchOverlay {
                                 PrimeSearchResultPreferences.WebEngine.WIKIPEDIA -> com.android.launcher3.R.drawable.ic_wikipedia
                                 PrimeSearchResultPreferences.WebEngine.GITHUB -> com.android.launcher3.R.drawable.ic_github
                                 PrimeSearchResultPreferences.WebEngine.KAGI -> com.android.launcher3.R.drawable.ic_kagi
+                                PrimeSearchResultPreferences.WebEngine.FDROID -> com.android.launcher3.R.drawable.ic_prime_fdroid
                                 else -> 0
                             }
                             if (drawable != null) {
