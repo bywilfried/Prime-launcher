@@ -65,3 +65,6 @@ Google Sans Flex upstream switched to OFL-1.1 in release 3.007 (2025-11-07). Off
 
 ### Native dependency candidates
 The version catalog declares androidx.graphics:graphics-core:1.0.4, androidx.graphics:graphics-path:1.1.0, io.github.hokofly:hoko-blur:1.5.5 and libsu core/service 6.0.0. These are investigation leads, not proof of the origin of every APK native library. Trace the remaining datastore_shared_counter and nrb binaries to resolved artifacts and verify exact source revisions and licenses.
+
+## Source license verification
+The calculator's original MIT license (Copyright 2018 Keelar) has been copied verbatim to prime/assets/licenses/calculator-MIT.txt. Verify inclusion in the next APK and accessibility from third-party notices. GoogleFontsListing.kt explicitly states GPL-3.0-or-later; retain the header and investigate the upstream licensing history and combined distribution obligations before declaring an application-wide license. The README already credits Launcher3 and Lawnchair. No relicensing has been performed.
