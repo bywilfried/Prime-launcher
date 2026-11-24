@@ -252,7 +252,7 @@ android {
         }
 
         release {
-            resValue("string", "derived_app_name", "Prime Launcher")
+            resValue("string", "derived_app_name", providers.gradleProperty("primeFdroidCheck").orNull == "true" ? "Prime Launcher (F-Droid Check)" : "Prime Launcher")
             minifyEnabled true
             shrinkResources true
             pseudoLocalesEnabled false
