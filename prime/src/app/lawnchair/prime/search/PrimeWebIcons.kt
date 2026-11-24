@@ -19,15 +19,21 @@ internal object PrimeWebIcons {
 
     fun bind(view: ImageView, engine: PrimeSearchResultPreferences.WebEngine,
              surface: PrimeSearchResultPreferences.Surface, hasLocalIcon: Boolean) {
-        val context = view.context.applicationContext
+        load(view.context, engine, surface, hasLocalIcon) { bitmap ->
+            view.post { view.background = null; view.setImageBitmap(bitmap) }
+        }
+    }
+
+    fun load(sourceContext: android.content.Context, engine: PrimeSearchResultPreferences.WebEngine,
+             surface: PrimeSearchResultPreferences.Surface, hasLocalIcon: Boolean, apply: (Bitmap) -> Unit) {
+        val context = sourceContext.applicationContext
         val online = PrimeSearchResultPreferences.downloadWebIcons(context, surface)
         val host = android.net.Uri.parse(engine.url).host ?: return
         val file = File(File(context.noBackupFilesDir, "web-icons"), engine.name + ".png")
         val callback: (Bitmap?) -> Unit = { bitmap ->
-            if (bitmap != null) view.post {
+            if (bitmap != null) android.os.Handler(android.os.Looper.getMainLooper()).post {
                 if (PrimeSearchResultPreferences.downloadWebIcons(context, surface) || !hasLocalIcon) {
-                    view.background = null
-                    view.setImageBitmap(bitmap)
+                    apply(bitmap)
                 }
             }
         }
