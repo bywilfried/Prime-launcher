@@ -1,0 +1,29 @@
+name: Check Prime F-Droid build
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+      - uses: actions/setup-java@v6
+        with:
+          distribution: zulu
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Resolve runtime dependencies
+        run: ./gradlew -PprimeStable=true dependencies --configuration lawnWithQuickstepGithubReleaseRuntimeClasspath > runtime-dependencies.txt
+      - name: Build unsigned stable APK
+        run: ./gradlew -PprimeStable=true assembleLawnWithQuickstepGithubRelease
+      - name: Upload audit outputs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: prime-fdroid-audit
+          path: |
+            runtime-dependencies.txt
+            build/outputs/apk/**/release/*.apk
