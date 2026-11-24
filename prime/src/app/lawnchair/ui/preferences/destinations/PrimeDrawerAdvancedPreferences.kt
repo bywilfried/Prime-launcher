@@ -60,14 +60,14 @@ fun PrimeDrawerCategoryAdvancedPreference(tabId: String) {
         repository.setTabVisualOverrides(tabId, value)
     }
 
-    PreferenceLayout(label = "Options avancées", backArrowVisible = true) {
+    PreferenceLayout(label = stringResource(R.string.prime_advanced_advanced), backArrowVisible = true) {
         PrimeCategoryDrawerOptions(tabId, overrides.value, ::update)
         PrimeCategoryFolderOptions(tabId, overrides.value, ::update)
         PreferenceGroup {
             ClickablePreference(
-                label = "Tout remettre par défaut",
-                subtitle = "Supprime toutes les personnalisations de cette catégorie et rétablit l’héritage.",
-                confirmationText = "Tout remettre par défaut pour cette catégorie ?",
+                label = stringResource(R.string.prime_advanced_reset),
+                subtitle = stringResource(R.string.prime_advanced_reset_category_desc),
+                confirmationText = stringResource(R.string.prime_advanced_reset_category_confirm),
                 onClick = {
                     update(PrimeDrawerVisualOverrides())
                     app.lawnchair.theme.CategoryThemeColorOverrides(context).resetCategory(tabId)
@@ -98,19 +98,19 @@ fun PrimeDrawerFolderAdvancedPreference(tabId: String, folderId: String) {
     }
 
     PreferenceLayout(label = stringResource(id = R.string.folders_label), backArrowVisible = true) {
-        PreferenceGroup(heading = "Style") {
+        PreferenceGroup(heading = stringResource(R.string.prime_advanced_style)) {
             ClickablePreference(
-                label = "Personnalisation des couleurs du dossier",
-                subtitle = "Couleurs par thème et variante clair/sombre, héritées de la catégorie",
+                label = stringResource(R.string.prime_advanced_folder_colors),
+                subtitle = stringResource(R.string.prime_advanced_category_inherit),
                 onClick = { navController.navigate(app.lawnchair.ui.preferences.navigation.ThemeCustomization(categoryTabId = tabId, folderKey = app.lawnchair.theme.FolderThemeColorOverrides.category(tabId, folderId), folderSection = "DRAWER")) },
             )
         }
         PrimeFolderOptions(tabId, folderId, overrides.value, inherited, ::update)
         PreferenceGroup {
             ClickablePreference(
-                label = "Tout remettre par défaut",
-                subtitle = "Supprime toutes les personnalisations de ce dossier et rétablit l’héritage.",
-                confirmationText = "Tout remettre par défaut pour ce dossier ?",
+                label = stringResource(R.string.prime_advanced_reset),
+                subtitle = stringResource(R.string.prime_advanced_reset_folder_desc),
+                confirmationText = stringResource(R.string.prime_advanced_reset_folder_confirm),
                 onClick = {
                     update(PrimeDrawerFolderVisualOverrides())
                     app.lawnchair.theme.FolderThemeColorOverrides(context).resetFolder(app.lawnchair.theme.FolderThemeColorOverrides.category(tabId, folderId))
@@ -154,38 +154,38 @@ fun PrimeHomeFolderAdvancedPreference(folderId: Int, drawer: Boolean = false) {
     val defaultFolderColor = app.lawnchair.util.resolveFolderBackgroundColor(context)
 
     PreferenceLayout(label = stringResource(id = R.string.folders_label), backArrowVisible = true) {
-        PreferenceGroup(heading = "Style") {
+        PreferenceGroup(heading = stringResource(R.string.prime_advanced_style)) {
             ClickablePreference(
-                label = "Personnalisation des couleurs du dossier",
-                subtitle = "Couleurs par thème et variante clair/sombre, héritées du parent",
+                label = stringResource(R.string.prime_advanced_folder_colors),
+                subtitle = stringResource(R.string.prime_advanced_parent_inherit),
                 onClick = { navController.navigate(app.lawnchair.ui.preferences.navigation.ThemeCustomization(
                     folderKey = if (drawer) app.lawnchair.theme.FolderThemeColorOverrides.drawer(folderId) else app.lawnchair.theme.FolderThemeColorOverrides.home(folderId),
                     folderSection = if (drawer) "DRAWER" else "HOME",
                 )) },
             )
         }
-        PreferenceGroup(heading = "Dossier fermé") {
+        PreferenceGroup(heading = stringResource(R.string.prime_advanced_closed)) {
             HomeFolderShapePreference(stringResource(id = R.string.folder_shape_label), value.shape, prefs2.folderShape.getAdapter().state.value, folderId, "folderShape", drawer)
             NullableFloatSlider(stringResource(id = R.string.folder_preview_bg_opacity_label), value.previewOpacity, prefs2.folderPreviewBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, true) { update(value.copy(previewOpacity = it)) }
-            NullableSwitch("Afficher le nom du dossier fermé", value.showFolderLabel, true) { update(value.copy(showFolderLabel = it)) }
+            NullableSwitch(stringResource(R.string.prime_advanced_closed_label), value.showFolderLabel, true) { update(value.copy(showFolderLabel = it)) }
         }
-        PreferenceGroup(heading = "Dossier ouvert") {
+        PreferenceGroup(heading = stringResource(R.string.prime_advanced_open)) {
             NullableFloatSlider(stringResource(id = R.string.folder_bg_opacity_label), value.backgroundOpacity, prefs2.folderBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, true) { update(value.copy(backgroundOpacity = it)) }
         }
         PreferenceGroup(heading = stringResource(id = R.string.grid)) {
             NullableIntSlider(stringResource(id = R.string.max_folder_columns), value.columns, prefs2.folderColumns.getAdapter().state.value, 2..5) { update(value.copy(columns = it)) }
             NullableIntSlider(stringResource(id = R.string.max_folder_rows), value.rows, prefs.folderRows.getAdapter().state.value, 2..5) { update(value.copy(rows = it)) }
         }
-        PreferenceGroup(heading = "Icônes dans le dossier ouvert") {
-            HomeFolderShapePreference("Forme des icônes dans les dossiers", value.childIconShape, prefs2.iconShape.getAdapter().state.value, folderId, "folderChildIcon", drawer)
+        PreferenceGroup(heading = stringResource(R.string.prime_advanced_open_icons)) {
+            HomeFolderShapePreference(stringResource(R.string.prime_advanced_child_shape), value.childIconShape, prefs2.iconShape.getAdapter().state.value, folderId, "folderChildIcon", drawer)
             NullableSwitch(stringResource(id = R.string.show_labels), value.showLabels, prefs2.showIconLabelsOnHomeScreenFolder.getAdapter().state.value) { update(value.copy(showLabels = it)) }
             NullableFloatSlider(stringResource(id = R.string.label_size), value.labelSize, prefs2.homeIconLabelFolderSizeFactor.getAdapter().state.value, 0.5f..1.5f, 0.1f, true) { update(value.copy(labelSize = it)) }
         }
         PreferenceGroup {
             ClickablePreference(
-                label = "Tout remettre par défaut",
-                subtitle = "Supprime toutes les personnalisations de ce dossier et rétablit l’héritage.",
-                confirmationText = "Tout remettre par défaut pour ce dossier ?",
+                label = stringResource(R.string.prime_advanced_reset),
+                subtitle = stringResource(R.string.prime_advanced_reset_folder_desc),
+                confirmationText = stringResource(R.string.prime_advanced_reset_folder_confirm),
                 onClick = {
                     update(PrimeDrawerFolderVisualOverrides())
                     app.lawnchair.theme.FolderThemeColorOverrides(context).resetFolder(if (drawer) app.lawnchair.theme.FolderThemeColorOverrides.drawer(folderId) else app.lawnchair.theme.FolderThemeColorOverrides.home(folderId))
@@ -204,7 +204,7 @@ private fun HomeFolderShapePreference(label: String, value: String?, inherited: 
     PreferenceTemplate(
         title = { Text(label) },
         modifier = Modifier.alpha(if (value == null) 0.55f else 1f),
-        description = if (value == null) ({ Text("Valeur parente") }) else ({ Text("Personnalisé") }),
+        description = if (value == null) ({ Text(stringResource(R.string.prime_advanced_inherited)) }) else ({ Text(stringResource(R.string.prime_advanced_custom)) }),
         endWidget = { IconShapePreview(iconShape = effective) },
         onClick = { navController.navigate(PrimeHomeFolderShape(folderId, shapeKey, label, drawer)) },
     )
@@ -217,7 +217,7 @@ private fun HomeFolderColorPreference(label: String, value: Int?, inherited: Int
         label = label,
         selectedColor = value?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default,
         modifier = Modifier.alpha(if (value == null) 0.55f else 1f),
-        description = if (value == null) "Valeur parente" else "Personnalisé",
+        description = if (value == null) stringResource(R.string.prime_advanced_inherited) else stringResource(R.string.prime_advanced_custom),
         previewColor = ColorOption.CustomColor(value ?: inherited),
         onClick = { navController.navigate(PrimeHomeFolderColor(folderId, label, colorKey, drawer)) },
     )
@@ -268,8 +268,8 @@ private fun PrimeCategoryDrawerOptions(
     val defaultTabColor = modeTabColor ?: masterTabColor
     PreferenceGroup(heading = stringResource(id = R.string.style)) {
         ClickablePreference(
-            label = "Personnalisation des couleurs de la catégorie",
-            subtitle = "Couleurs par thème et variante, avec héritage du thème parent",
+            label = stringResource(R.string.prime_advanced_category_colors),
+            subtitle = stringResource(R.string.prime_advanced_theme_inherit),
             onClick = { navController.navigate(ThemeCustomization(categoryTabId = tabId)) },
         )
         NullableFloatSlider(stringResource(id = R.string.background_opacity), value.drawerBackgroundOpacity, prefs.drawerOpacity.getAdapter().state.value, 0f..1f, 0.1f, showAsPercentage = true) {
@@ -291,7 +291,7 @@ private fun PrimeCategoryDrawerOptions(
         }
     }
     PreferenceGroup(heading = stringResource(id = R.string.icons)) {
-        NullableShapePreference("Forme des icônes", value.drawerIconShape, prefs2.iconShape.getAdapter().state.value, tabId, "drawerIcon")
+        NullableShapePreference(stringResource(R.string.prime_advanced_icon_shape), value.drawerIconShape, prefs2.iconShape.getAdapter().state.value, tabId, "drawerIcon")
         NullableFloatSlider(stringResource(id = R.string.icon_sizes), value.drawerIconSize, prefs2.drawerIconSizeFactor.getAdapter().state.value, 0.5f..1.5f, 0.1f, showAsPercentage = true) {
             update(value.copy(drawerIconSize = it))
         }
@@ -329,9 +329,9 @@ private fun PrimeCategoryFolderOptions(
     val defaultFolderColor = app.lawnchair.util.resolveFolderBackgroundColor(context)
     PreferenceGroup(heading = stringResource(id = R.string.general_label)) {
         NullableShapePreference(stringResource(id = R.string.folder_shape_label), value.folderShape, prefs2.folderShape.getAdapter().state.value, tabId, "folderShape")
-        NullableColorPreference("Couleur du dossier fermé", value.folderColor, app.lawnchair.util.resolveFolderPreviewColor(context, true), tabId, "folderColor")
-        NullableColorPreference("Couleur du dossier ouvert", value.folderOpenColor, defaultFolderColor, tabId, "folderOpenColor")
-        NullableColorPreference("Couleur du texte dans les dossiers", value.folderTextColor, defaultTextColor, tabId, "folderText")
+        NullableColorPreference(stringResource(R.string.prime_advanced_closed_color), value.folderColor, app.lawnchair.util.resolveFolderPreviewColor(context, true), tabId, "folderColor")
+        NullableColorPreference(stringResource(R.string.prime_advanced_open_color), value.folderOpenColor, defaultFolderColor, tabId, "folderOpenColor")
+        NullableColorPreference(stringResource(R.string.prime_advanced_text_color), value.folderTextColor, defaultTextColor, tabId, "folderText")
         NullableFloatSlider(stringResource(id = R.string.folder_preview_bg_opacity_label), value.folderPreviewOpacity, prefs2.folderPreviewBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, showAsPercentage = true) {
             update(value.copy(folderPreviewOpacity = it))
         }
@@ -348,7 +348,7 @@ private fun PrimeCategoryFolderOptions(
         }
     }
     PreferenceGroup(heading = stringResource(id = R.string.icons)) {
-        NullableShapePreference("Forme des icônes dans les dossiers", value.folderChildIconShape, prefs2.iconShape.getAdapter().state.value, tabId, "folderChildIcon")
+        NullableShapePreference(stringResource(R.string.prime_advanced_child_shape), value.folderChildIconShape, prefs2.iconShape.getAdapter().state.value, tabId, "folderChildIcon")
         NullableSwitch(stringResource(id = R.string.show_labels), value.folderShowLabels, prefs2.showIconLabelsOnHomeScreenFolder.getAdapter().state.value) {
             update(value.copy(folderShowLabels = it))
         }
@@ -370,17 +370,17 @@ private fun PrimeFolderOptions(
     val prefs = preferenceManager()
     val prefs2 = preferenceManager2()
 
-    PreferenceGroup(heading = "Dossier fermé") {
+    PreferenceGroup(heading = stringResource(R.string.prime_advanced_closed)) {
         NullableShapePreference(stringResource(id = R.string.folder_shape_label), value.shape, resolveInheritedShape(context, inherited.shape, prefs2.folderShape.getAdapter().state.value), tabId, "folderShape", folderId)
         NullableFloatSlider(stringResource(id = R.string.folder_preview_bg_opacity_label), value.previewOpacity, inherited.previewOpacity ?: prefs2.folderPreviewBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, showAsPercentage = true) {
             update(value.copy(previewOpacity = it))
         }
-        NullableSwitch("Afficher le nom du dossier fermé", value.showFolderLabel, inherited.showFolderLabel ?: true) {
+        NullableSwitch(stringResource(R.string.prime_advanced_closed_label), value.showFolderLabel, inherited.showFolderLabel ?: true) {
             update(value.copy(showFolderLabel = it))
         }
     }
 
-    PreferenceGroup(heading = "Dossier ouvert") {
+    PreferenceGroup(heading = stringResource(R.string.prime_advanced_open)) {
         NullableFloatSlider(stringResource(id = R.string.folder_bg_opacity_label), value.backgroundOpacity, inherited.backgroundOpacity ?: prefs2.folderBackgroundOpacity.getAdapter().state.value, 0f..1f, 0.1f, showAsPercentage = true) {
             update(value.copy(backgroundOpacity = it))
         }
@@ -395,8 +395,8 @@ private fun PrimeFolderOptions(
         }
     }
 
-    PreferenceGroup(heading = "Icônes dans le dossier ouvert") {
-        NullableShapePreference("Forme des icônes dans les dossiers", value.childIconShape, resolveInheritedShape(context, inherited.childIconShape, prefs2.iconShape.getAdapter().state.value), tabId, "folderChildIcon", folderId)
+    PreferenceGroup(heading = stringResource(R.string.prime_advanced_open_icons)) {
+        NullableShapePreference(stringResource(R.string.prime_advanced_child_shape), value.childIconShape, resolveInheritedShape(context, inherited.childIconShape, prefs2.iconShape.getAdapter().state.value), tabId, "folderChildIcon", folderId)
         NullableSwitch(stringResource(id = R.string.show_labels), value.showLabels, inherited.showLabels ?: prefs2.showIconLabelsOnHomeScreenFolder.getAdapter().state.value) {
             update(value.copy(showLabels = it))
         }
@@ -425,7 +425,7 @@ private fun NullableShapePreference(
     PreferenceTemplate(
         title = { Text(label) },
         modifier = Modifier.alpha(if (value == null) 0.55f else 1f),
-        description = if (value == null) ({ Text("Valeur parente") }) else ({ Text("Personnalisé") }),
+        description = if (value == null) ({ Text(stringResource(R.string.prime_advanced_inherited)) }) else ({ Text(stringResource(R.string.prime_advanced_custom)) }),
         endWidget = { IconShapePreview(iconShape = effective) },
         onClick = { navController.navigate(PrimeDrawerShape(tabId, shapeKey, label, folderId)) },
     )
@@ -445,7 +445,7 @@ private fun NullableColorPreference(
         label = label,
         selectedColor = value?.let { ColorOption.CustomColor(it) } ?: ColorOption.Default,
         modifier = Modifier.alpha(if (value == null) 0.55f else 1f),
-        description = if (value == null) "Valeur parente" else "Personnalisé",
+        description = if (value == null) stringResource(R.string.prime_advanced_inherited) else stringResource(R.string.prime_advanced_custom),
         previewColor = ColorOption.CustomColor(value ?: inherited),
         onClick = { navController.navigate(PrimeDrawerCategoryColor(tabId, colorKey, label, folderId)) },
     )
@@ -461,9 +461,9 @@ private fun NullableSwitch(label: String, value: Boolean?, inherited: Boolean, u
         label = label,
         modifier = Modifier.alpha(if (isInherited) 0.55f else 1f),
         description = if (isInherited) {
-            "Valeur parente • ${if (inherited) "Activé" else "Désactivé"}"
+            stringResource(R.string.prime_advanced_inherited_status, if (inherited) stringResource(R.string.prime_advanced_enabled) else stringResource(R.string.prime_advanced_disabled))
         } else {
-            "Personnalisé • ${if (effective) "Activé" else "Désactivé"} • ↶ Valeur parente : ${if (inherited) "Activé" else "Désactivé"}"
+            stringResource(R.string.prime_advanced_custom_switch, if (effective) stringResource(R.string.prime_advanced_enabled) else stringResource(R.string.prime_advanced_disabled), if (inherited) stringResource(R.string.prime_advanced_enabled) else stringResource(R.string.prime_advanced_disabled))
         },
         onClick = if (isInherited) null else ({ update(null) }),
     )
@@ -489,9 +489,9 @@ private fun NullableFloatSlider(
         showAsPercentage = showAsPercentage,
         modifier = Modifier.alpha(if (isInherited) 0.55f else 1f),
         status = if (isInherited) {
-            "Valeur parente • ${formatAdvancedValue(inherited, showAsPercentage)}"
+            stringResource(R.string.prime_advanced_inherited_status, formatAdvancedValue(inherited, showAsPercentage))
         } else {
-            "Personnalisé • ↶ Valeur parente : ${formatAdvancedValue(inherited, showAsPercentage)}"
+            stringResource(R.string.prime_advanced_custom_status, formatAdvancedValue(inherited, showAsPercentage))
         },
         onReset = if (isInherited) null else ({ update(null) }),
     )
@@ -507,7 +507,7 @@ private fun NullableIntSlider(label: String, value: Int?, inherited: Int, range:
         valueRange = range.start.toFloat()..range.endInclusive.toFloat(),
         step = 1f,
         modifier = Modifier.alpha(if (isInherited) 0.55f else 1f),
-        status = if (isInherited) "Valeur parente • $inherited" else "Personnalisé • ↶ Valeur parente : $inherited",
+        status = if (isInherited) stringResource(R.string.prime_advanced_inherited_status, inherited.toString()) else stringResource(R.string.prime_advanced_custom_status, inherited.toString()),
         onReset = if (isInherited) null else ({ update(null) }),
     )
 }
