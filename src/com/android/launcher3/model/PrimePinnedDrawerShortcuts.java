@@ -211,7 +211,12 @@ public final class PrimePinnedDrawerShortcuts {
         Uri data = intent.getData();
         if (data == null) {
             for (String key : new String[] {"url", "android.intent.extra.TEXT", "webapp_url"}) {
-                String value = intent.getStringExtra(key);
+                String value;
+                try {
+                    value = intent.getStringExtra(key);
+                } catch (ClassCastException error) {
+                    continue;
+                }
                 if (value == null) continue;
                 Uri candidate = Uri.parse(value);
                 if ("https".equalsIgnoreCase(candidate.getScheme())
@@ -483,7 +488,12 @@ public final class PrimePinnedDrawerShortcuts {
     private static void markUnavailable(Context context, AppInfo app) {
         if (isAvailable(context, app) || app.bitmap == null || app.bitmap.icon == null) return;
         Bitmap source = app.bitmap.icon;
-        Bitmap decorated = source.copy(Bitmap.Config.ARGB_8888, true);
+        Bitmap decorated;
+        try {
+            decorated = source.copy(Bitmap.Config.ARGB_8888, true);
+        } catch (RuntimeException error) {
+            return;
+        }
         if (decorated == null) return;
         android.graphics.Canvas canvas = new android.graphics.Canvas(decorated);
         float size = decorated.getWidth();
