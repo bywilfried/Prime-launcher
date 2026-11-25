@@ -1,0 +1,15 @@
+# Prime Launcher — privacy notice (draft / projet)
+
+## English
+Prime Search can access installed apps, contacts, calendar, files, notifications and other local results depending on enabled categories and Android permissions. Search history and launcher preferences may be stored on the device. Notification history has configurable retention (default one month in the reviewed preferences) and a clear-history control. Backups may contain personal launcher settings; protect exported files.
+
+Web suggestions are optional and disabled by default in the reviewed settings. When enabled, typed queries may be sent to the selected suggestion provider. Opening a web shortcut sends the search to the selected external service. Optional favicon retrieval is disabled by default per search surface; it requests HTTPS /favicon.ico from the service host without search terms, stores icons in private storage excluded from backup, and refreshes on use after 30 days. External services may receive IP addresses and ordinary connection metadata. Online fonts and optional feeds require separate verification. Third-party services apply their own privacy terms.
+
+Review permissions in Android settings. Questions: https://github.com/bywilfried/Prime-launcher/issues (do not post personal data). This draft requires maintainer approval and device/network validation; it does not claim absence of telemetry or all network traffic.
+
+## Français
+Prime Search peut accéder aux applications installées, contacts, agenda, fichiers, notifications et autres résultats locaux selon les catégories activées et les autorisations Android. L’historique de recherche et les réglages peuvent être conservés sur l’appareil. La durée de conservation des notifications est configurable (un mois par défaut dans les réglages examinés) et leur historique peut être effacé. Les sauvegardes peuvent contenir des réglages personnels ; protégez les fichiers exportés.
+
+Les suggestions Web sont facultatives et désactivées par défaut dans les réglages examinés. Si elles sont activées, la saisie peut être transmise au fournisseur sélectionné. L’ouverture d’un raccourci Web transmet la recherche au service externe choisi. Le téléchargement facultatif des favicons est désactivé par défaut pour chaque interface de recherche ; il utilise HTTPS /favicon.ico sans termes de recherche, conserve les icônes dans un stockage privé exclu des sauvegardes et les actualise à l’utilisation après 30 jours. Les services externes peuvent recevoir l’adresse IP et les métadonnées de connexion habituelles. Les polices en ligne et le flux facultatif restent à vérifier. Les services tiers appliquent leurs propres règles de confidentialité.
+
+Gérez les autorisations dans les paramètres Android. Questions : https://github.com/bywilfried/Prime-launcher/issues (ne publiez pas de données personnelles). Projet à valider par le mainteneur et par des tests réseau sur appareil ; aucune garantie d’absence de télémétrie ou de tout trafic réseau.

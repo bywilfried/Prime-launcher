@@ -1,0 +1,21 @@
+# DRAFT ONLY — not ready for submission. License and AntiFeatures pending review.
+Categories:
+  - System
+SourceCode: https://github.com/bywilfried/Prime-launcher
+IssueTracker: https://github.com/bywilfried/Prime-launcher/issues
+RepoType: git
+Repo: https://github.com/bywilfried/Prime-launcher.git
+
+Builds:
+  - versionName: '0.10.0'
+    versionCode: 11000000
+    commit: REPLACE_WITH_APPROVED_STABLE_COMMIT_SHA
+    submodules: true
+    gradle:
+      - primeWithQuickstepFdroid
+    gradleprops:
+      - primeStable=true
+
+AutoUpdateMode: None
+UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
+UpdateCheckData: 'version.properties|^VERSION_CODE=([0-9]+)|.|^VERSION_NAME=([0-9.]+)'
