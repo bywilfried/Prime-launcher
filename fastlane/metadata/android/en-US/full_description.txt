@@ -2,6 +2,6 @@ Prime Launcher is a free and open-source Android launcher based on AOSP Launcher
 
 Customize your home screen, widgets, gestures, icons, icon shapes, colors and fonts. Organize your app drawer with customizable tabs and folders.
 
-Prime Search helps you find local content, including apps and contacts depending on granted permissions, perform calculations and launch optional web searches. Access web shortcuts from compatible browsers in the app drawer.
+Prime Search helps you find local content, including apps and contacts depending on granted permissions, perform calculations and launch optional web searches. Add your own web apps (WebApps) directly to the app drawer, alongside web shortcuts from compatible browsers.
 
 Back up and restore your settings, themes and customization assets according to your selected options. Web suggestions and web icon downloads are optional.

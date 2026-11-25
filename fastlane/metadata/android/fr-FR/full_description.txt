@@ -2,6 +2,6 @@ Prime Launcher est un lanceur Android libre et open source basé sur Launcher3 (
 
 Personnalisez votre écran d’accueil, vos widgets, vos gestes, vos icônes, leurs formes, les couleurs et les polices. Organisez le tiroir d’applications avec des onglets personnalisables et des dossiers.
 
-Prime Search permet de retrouver des contenus locaux, notamment les applications et les contacts selon les autorisations accordées, d’effectuer des calculs et de lancer des recherches Web facultatives. Retrouvez également vos raccourcis Web issus des navigateurs compatibles dans le tiroir.
+Prime Search permet de retrouver des contenus locaux, notamment les applications et les contacts selon les autorisations accordées, d’effectuer des calculs et de lancer des recherches Web facultatives. Ajoutez vos propres applications Web (WebApps) directement dans le tiroir, et retrouvez également les raccourcis Web issus des navigateurs compatibles.
 
 Sauvegardez et restaurez vos réglages, vos thèmes et vos éléments de personnalisation selon les options choisies. Les suggestions Web et le téléchargement des icônes Web sont facultatifs.
