@@ -110,7 +110,10 @@ class PreferenceManager2 @Inject constructor(
         onSet = onSet,
     )
 
-    override val preferencesDataStore = context.preferencesDataStore
+    override val preferencesDataStore = context.let {
+        app.lawnchair.backup.PendingBackupRestore.applyDataStore(it)
+        it.preferencesDataStore
+    }
 
     @Volatile
     private var cachedPreferences: Preferences = runBlocking {

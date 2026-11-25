@@ -90,6 +90,7 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
         val INSTANCE = MainThreadInitializedObject { context ->
+            app.lawnchair.backup.PendingBackupRestore.applyRoom(context)
             Room.databaseBuilder(
                 context,
                 AppDatabase::class.java,

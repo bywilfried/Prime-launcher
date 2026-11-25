@@ -77,7 +77,7 @@ class LawnchairBackup(
             }
             handlers.putAll(
                 getFiles(context, forRestore = true)
-                    .filterKeys { it != PREFS_FILE_NAME }
+                    .filterKeys { it != PREFS_FILE_NAME && it != PREFS_DB_FILE_NAME && it != PREFS_DATASTORE_FILE_NAME }
                     .mapValues { entry ->
                     {
                         val file = entry.value
@@ -99,8 +99,20 @@ class LawnchairBackup(
         // Stage the workspace until all preferences have been restored. The archive's
         // entry order must not decide which grid-specific database receives the layout.
         val stagedWorkspace = File(context.cacheDir, "prime-workspace-restore.db")
+        val stagedRoom = File.createTempFile("prime-room-", ".db", context.cacheDir)
+        val stagedDataStore = File.createTempFile("prime-datastore-", ".preferences_pb", context.cacheDir)
+        var hasRoom = false
+        var hasDataStore = false
         try {
             if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
+                handlers[PREFS_DB_FILE_NAME] = { input ->
+                    stagedRoom.outputStream().use { input.copyTo(it) }
+                    hasRoom = true
+                }
+                handlers[PREFS_DATASTORE_FILE_NAME] = { input ->
+                    stagedDataStore.outputStream().use { input.copyTo(it) }
+                    hasDataStore = true
+                }
                 handlers[LAUNCHER_DB_FILE_NAME] = { input ->
                     stagedWorkspace.outputStream().use { output -> input.copyTo(output) }
                     SQLiteDatabase.openDatabase(
@@ -139,10 +151,14 @@ class LawnchairBackup(
 
                 // Perform profile remapping and widget validation on the next launcher
                 // startup, after its existing SQLite connections have been closed.
+                if (hasRoom) PendingBackupRestore.stageRoom(context, stagedRoom)
+                if (hasDataStore) PendingBackupRestore.stageDataStore(context, stagedDataStore)
                 RestoreDbTask.setPending(context)
             }
         } finally {
             stagedWorkspace.delete()
+            stagedRoom.delete()
+            stagedDataStore.delete()
         }
     }
 
@@ -357,7 +373,10 @@ class LawnchairBackup(
                         }
                         if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
                             writeAssets(context, out)
-                            getFiles(context, forRestore = false).entries.forEach {
+                            out.putNextEntry(ZipEntry(PREFS_FILE_NAME))
+                            writeExtraPreferences(LauncherPrefs.getPrefs(context), out)
+                            out.closeEntry()
+                            getFiles(context, forRestore = false).filterKeys { it != PREFS_FILE_NAME }.entries.forEach {
                                 if (!it.value.exists()) return@forEach
                                 out.putNextEntry(ZipEntry(it.key))
                                 it.value.inputStream().use { input -> input.copyTo(out) }
