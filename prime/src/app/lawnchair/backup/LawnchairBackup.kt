@@ -117,7 +117,7 @@ class LawnchairBackup(
                     }
                 }
             }
-            readZip(handlers)
+            readZip(handlers, restoreAssets = contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS))
             if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
                 DeviceGridState(info.gridState).writeToPrefs(context, true)
                 check(stagedWorkspace.exists()) { "Backup workspace database is missing" }
@@ -198,7 +198,10 @@ class LawnchairBackup(
         check(editor.commit()) { "Failed to restore launcher preferences" }
     }
 
-    private suspend fun readZip(handlers: Map<String, suspend (InputStream) -> Unit>) {
+    private suspend fun readZip(
+        handlers: Map<String, suspend (InputStream) -> Unit>,
+        restoreAssets: Boolean = false,
+    ) {
         withContext(Dispatchers.IO) {
             val pfd = context.contentResolver.openFileDescriptor(uri, "r")!!
             pfd.use {
@@ -208,11 +211,40 @@ class LawnchairBackup(
                         while (true) {
                             entry = zipIs.nextEntry
                             if (entry == null) break
-                            handlers[entry.name]?.invoke(zipIs)
+                            val handler = handlers[entry.name]
+                            if (handler != null) handler(zipIs)
+                            else if (restoreAssets && !entry.isDirectory) restoreAsset(entry.name, zipIs)
                         }
                     }
                 }
             }
+        }
+    }
+
+    private fun restoreAsset(name: String, input: InputStream) {
+        val parts = name.split('/')
+        if (parts.size != 3 || parts[0] != "assets" || parts[1] !in ASSET_DIRS) return
+        val filename = parts[2]
+        require(filename.isNotBlank() && filename != "." && filename != ".." && !filename.contains('\\'))
+        val directory = File(context.filesDir, parts[1]).apply { mkdirs() }
+        val target = File(directory, filename)
+        require(target.canonicalFile.parentFile == directory.canonicalFile)
+        val temporary = File.createTempFile("restore-", ".tmp", directory)
+        try {
+            temporary.outputStream().use { output ->
+                val buffer = ByteArray(8192)
+                var total = 0L
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    total += count
+                    require(total <= 64L * 1024 * 1024) { "Backup asset exceeds size limit" }
+                    output.write(buffer, 0, count)
+                }
+            }
+            check(temporary.renameTo(target)) { "Unable to restore asset" }
+        } finally {
+            temporary.delete()
         }
     }
 
@@ -324,6 +356,7 @@ class LawnchairBackup(
                             }
                         }
                         if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
+                            writeAssets(context, out)
                             getFiles(context, forRestore = false).entries.forEach {
                                 if (!it.value.exists()) return@forEach
                                 out.putNextEntry(ZipEntry(it.key))
@@ -332,6 +365,21 @@ class LawnchairBackup(
                         }
                     }
                 }
+            }
+        }
+
+        // Only user-imported fonts and wallpaper history images, never caches.
+        private val ASSET_DIRS = listOf("customFonts", "wallpapers")
+
+        private fun writeAssets(context: Context, out: ZipOutputStream) {
+            ASSET_DIRS.forEach { directory ->
+                File(context.filesDir, directory).listFiles().orEmpty()
+                    .filter { it.isFile && it.canonicalFile.parentFile == File(context.filesDir, directory).canonicalFile }
+                    .sortedBy { it.name }.forEach { file ->
+                        out.putNextEntry(ZipEntry("assets/$directory/${file.name}"))
+                        file.inputStream().use { it.copyTo(out) }
+                        out.closeEntry()
+                    }
             }
         }
 
