@@ -15,6 +15,8 @@ jobs:
           distribution: zulu
           java-version: 21
       - uses: gradle/actions/setup-gradle@v6
+      - name: Inventory source licenses and assets
+        run: python3 scripts/audit_source_licenses.py
       - name: Resolve runtime dependencies
         run: ./gradlew -PprimeStable=true dependencies --configuration primeWithQuickstepFdroidReleaseRuntimeClasspath > runtime-dependencies.txt
       - name: Build unsigned stable APK
@@ -69,6 +71,7 @@ jobs:
         with:
           name: prime-fdroid-audit
           path: |
+            source-license-audit.json
             runtime-dependencies.txt
             native-dependencies.json
             native-provenance.json
