@@ -807,7 +807,7 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
         // restored text line inside the measured FolderIcon instead of letting it be clipped below.
         PrimeDrawerFolderVisualOverrides overrides = mInfo == null ? null
                 : PrimeFolderLongPressHelper.getVisualOverrides(getContext(), mInfo);
-        if (overrides != null && Boolean.TRUE.equals(overrides.getShowFolderLabel())
+        if (!mPrimeDrawerLabel && overrides != null && Boolean.TRUE.equals(overrides.getShowFolderLabel())
                 && mFolderName.getTextSize() > 0f) {
             FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) mFolderName.getLayoutParams();
             Paint.FontMetrics fm = mFolderName.getPaint().getFontMetrics();
