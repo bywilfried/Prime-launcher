@@ -96,3 +96,17 @@ Inventory skipped paths: modules/widgetpicker/tests/multivalentTestsForDevice, p
 ### Dependency declaration comparison (2026-11-25)
 
 Compared Prime feature/fdroid-support against Lawnchair 16-dev: gradle/libs.versions.toml, root build.gradle and settings.gradle. No additional library aliases, root implementation dependencies or included Gradle modules were identified in Prime. Version differences exist (including Kotlin, AGP, DataStore, Compose, OkHttp). This is a declaration comparison, not a complete resolved transitive dependency or submodule audit. Both roots declare SystemUI-statsd-16.jar and WindowManager-Shell-16.jar as implementation dependencies; framework-16.jar is compileOnly, and SystemUI-core-16.jar is referenced in compileOnlyCommonJars. Do not classify all historical JARs as compile-only. Verify exact source revision and build recipe for each bundled JAR before proposing individual scanner handling. Preserve existing files pending verification. F-Droid policy: https://f-droid.org/en/docs/Inclusion_Policy/ .
+
+
+### Android 16 prebuilt JAR provenance (2026-11-25)
+
+Prime and upstream Lawnchair 16-dev have identical prebuilts/libs/README.md documentation and identical Git blob IDs for all four Android 16 JARs:
+
+| JAR | Git blob SHA-1 | AOSP build target |
+|---|---|---|
+| framework-16.jar | 4b73c3a034a5d6f1c5a85adae211792582129c4f | m framework |
+| SystemUI-core-16.jar | 141c1b24923990e961b9868bbbed7aac44945d49 | m SystemUI-core |
+| SystemUI-statsd-16.jar | 9cd41821a7646959c2b7319ccadbcc9d820f3001 | m SystemUI-statsd |
+| WindowManager-Shell-16.jar | 6e90a87b280e8b2532ecae3e6c08101b70eaabb7 | m WindowManager-Shell |
+
+Documented source tag: android-16.0.0_r3; lunch target: aosp_cf_x86_64_only_phone-aosp_current-userdebug. Source: https://android.googlesource.com/platform/frameworks/base/+/refs/tags/android-16.0.0_r3/ . Exact equality with upstream Git objects is established; independent AOSP source-to-binary rebuild and F-Droid scanner acceptance are not established. Historical JARs outside these four remain outside this comparison. No deletions or scanner exemptions.
