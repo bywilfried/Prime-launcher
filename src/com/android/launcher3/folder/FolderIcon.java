@@ -776,6 +776,17 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        // Drawer folder labels have no compound icon: the preview is drawn by FolderIcon.
+        // Let TextView wrap within the remaining cell height, using the drawer preference.
+        if (mInfo != null && mInfo.container == ItemInfo.NO_ID) {
+            boolean twoLines = mActivity.getDeviceProfile().inv.enableTwoLinesInAllApps;
+            int maxLines = twoLines ? 2 : 1;
+            if (mFolderName.getMaxLines() != maxLines) {
+                mFolderName.setSingleLine(!twoLines);
+                mFolderName.setMaxLines(maxLines);
+                mFolderName.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            }
+        }
         boolean shouldCenterIcon = mActivity.getDeviceProfile().iconCenterVertically;
         if (shouldCenterIcon) {
             int iconSize = mActivity.getDeviceProfile().iconSizePx;
