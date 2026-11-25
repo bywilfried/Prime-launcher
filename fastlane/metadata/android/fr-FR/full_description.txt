@@ -1,1 +1,7 @@
-Prime Launcher est un écran d’accueil Android libre et open source basé sur Launcher3 (AOSP) et Lawnchair. Personnalisez le bureau, le tiroir, les catégories, les icônes, les widgets et les gestes. Prime Search propose la recherche locale, une calculatrice et la recherche Web facultative. Organisez les raccourcis Web des navigateurs compatibles dans le tiroir et sauvegardez vos réglages.
+Prime Launcher est un lanceur Android libre et open source basé sur Launcher3 (AOSP) et Lawnchair.
+
+Personnalisez votre écran d’accueil, vos widgets, vos gestes, vos icônes, leurs formes, les couleurs et les polices. Organisez le tiroir d’applications avec des onglets personnalisables et des dossiers.
+
+Prime Search permet de retrouver des contenus locaux, notamment les applications et les contacts selon les autorisations accordées, d’effectuer des calculs et de lancer des recherches Web facultatives. Retrouvez également vos raccourcis Web issus des navigateurs compatibles dans le tiroir.
+
+Sauvegardez et restaurez vos réglages, vos thèmes et vos éléments de personnalisation selon les options choisies. Les suggestions Web et le téléchargement des icônes Web sont facultatifs.
