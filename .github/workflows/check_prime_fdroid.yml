@@ -17,6 +17,25 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       - name: Inventory source licenses and assets
         run: python3 scripts/audit_source_licenses.py
+      - name: Install official F-Droid scanner
+        run: |
+          python3 -m venv "$RUNNER_TEMP/fdroid-venv"
+          "$RUNNER_TEMP/fdroid-venv/bin/pip" install fdroidserver
+          echo "$RUNNER_TEMP/fdroid-venv/bin" >> "$GITHUB_PATH"
+      - name: Scan clean source checkout
+        run: |
+          set -euo pipefail
+          mkdir -p fdroid-scanner-report
+          audit="$RUNNER_TEMP/fdroid-source"
+          mkdir -p "$audit/build" "$audit/metadata"
+          git clone --local --recurse-submodules "$GITHUB_WORKSPACE" "$audit/build/com.bywilfried.prime.fdroid"
+          printf 'RepoType: git\nRepo: https://github.com/bywilfried/Prime-launcher.git\n' > "$audit/metadata/com.bywilfried.prime.fdroid.yml"
+          cd "$audit"
+          set +e
+          fdroid scanner --refresh --exit-code --json com.bywilfried.prime.fdroid > "$GITHUB_WORKSPACE/fdroid-scanner-report/source.json" 2> "$GITHUB_WORKSPACE/fdroid-scanner-report/source.log"
+          status=$?
+          echo "$status" > "$GITHUB_WORKSPACE/fdroid-scanner-report/source.exit"
+          exit 0
       - name: Resolve runtime dependencies
         run: ./gradlew -PprimeStable=true dependencies --configuration primeWithQuickstepFdroidReleaseRuntimeClasspath > runtime-dependencies.txt
       - name: Build unsigned stable APK
@@ -35,6 +54,16 @@ jobs:
         run: |
           ./gradlew -PprimeStable=true --no-configuration-cache -I scripts/native-provenance.init.gradle primeNativeProvenance
           python3 scripts/audit_native_provenance.py
+      - name: Scan unsigned production APK
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p fdroid-scanner-report
+          set +e
+          fdroid scanner --exit-code --verbose unsigned-audit/Prime-Launcher-FDroid-unsigned.apk > fdroid-scanner-report/apk.log 2>&1
+          status=$?
+          echo "$status" > fdroid-scanner-report/apk.exit
+          exit 0
       - name: Sign test APK with Prime key
         shell: bash
         env:
@@ -71,8 +100,14 @@ jobs:
         with:
           name: prime-fdroid-audit
           path: |
+            fdroid-scanner-report/
             source-license-audit.json
             runtime-dependencies.txt
             native-dependencies.json
             native-provenance.json
             unsigned-audit/*.apk
+      - name: Enforce scanner results
+        if: always()
+        run: |
+          test "$(cat fdroid-scanner-report/source.exit)" = 0
+          test "$(cat fdroid-scanner-report/apk.exit)" = 0
