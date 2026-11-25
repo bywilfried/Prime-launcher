@@ -38,7 +38,7 @@ Builds:
 The tag filter and UpdateCheckData use the documented F-Droid Tags syntax. Validate with fdroidserver before changing AutoUpdateMode from None to Version. No scanner exceptions are proposed until binary provenance is established.
 
 ## Remaining blockers
-- Audit GPL-3.0-or-later source headers versus LICENSE.txt; retain copyright notices and provide full applicable license texts. Do not relicense upstream code.
+- Prepare GPL-3.0-or-later distribution of the combined launcher, subject to completing the source and asset license inventory. Retain Apache-2.0 and other upstream notices, and confirm rights to Prime-specific contributions. GPLv3 text is included in prime/assets/licenses/GPL-3.0.txt. Update the root license declaration, README, in-app legal notices and draft F-Droid License field together after review.
 - Verify all prebuilt JARs, including AOSP SystemUI-statsd and WindowManager-Shell packaged dependencies, against source and F-Droid policy. See prebuilts/libs/README.md. Do not remove required JARs.
 - Inspect resolved runtime dependency report, including JitPack artifacts, and scan the final APK for non-free libraries.
 - Test Google Fonts, optional feed and web suggestions on a device without Google Play Services; inspect defaults and network requests.
