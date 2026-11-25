@@ -1,1 +1,1 @@
-Customizable open-source Android launcher with Prime Search.
+Customizable open-source Android launcher with Prime Search
