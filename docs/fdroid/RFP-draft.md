@@ -20,3 +20,6 @@ Metadata draft: com.bywilfried.prime.fdroid.yml.
 
 Prior CI: https://github.com/bywilfried/Prime-launcher/actions/runs/45578003085 (three builds successful; source scanner errors remain).
 Do not submit as a release-ready request until maintainer approves scope and remaining legal issues are addressed. No final license declaration, stable commit or tag approved.
+
+## Maintainer decision — FuzzyWuzzy
+Retain me.xdrop:fuzzywuzzy:1.4.0 and the existing search algorithm pending F-Droid reviewer feedback. GPL version 2 text is bundled; GPL-2.0-only versus GPL-2.0-or-later remains unconfirmed for the exact release. Request guidance explicitly. No change to root Apache-2.0 or claim of legal compatibility; resolve distribution rights before release. Replacement is deferred, not ruled out.
