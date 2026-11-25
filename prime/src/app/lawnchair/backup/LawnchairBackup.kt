@@ -67,7 +67,7 @@ class LawnchairBackup(
         val contents = selectedContents and info.contents
         if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
             handlers[PREFS_FILE_NAME] = { restoreLauncherPreferences(it) }
-            SEARCH_PREF_STORES.forEach { store ->
+            EXTRA_PREF_STORES.forEach { store ->
                 handlers["$store.xml"] = { input ->
                     restoreLauncherPreferences(input, context.getSharedPreferences(store, Context.MODE_PRIVATE))
                 }
@@ -219,11 +219,12 @@ class LawnchairBackup(
     companion object {
         private const val BACKUP_VERSION = 1
         private const val PREFS_FILE_NAME = "${LauncherFiles.SHARED_PREFERENCES_KEY}.xml"
-        private val SEARCH_PREF_STORES = listOf(
+        private val EXTRA_PREF_STORES = listOf(
             "prime_search_result_preferences",
             "prime_drawer_search_result_preferences",
             "prime_search_sources",
             "prime_drawer_search_sources",
+            "prime_web_apps",
         )
         private const val PREFS_DB_FILE_NAME = "preferences"
         private const val PREFS_DATASTORE_FILE_NAME = "preferences.preferences_pb"
@@ -266,6 +267,10 @@ class LawnchairBackup(
         @SuppressLint("MissingPermission")
         suspend fun create(context: Context, contents: Int, screenshotBitmap: Bitmap, fileUri: Uri) {
             val idp = LauncherAppState.getIDP(context)
+            if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
+                val database = app.lawnchair.data.AppDatabase.INSTANCE.get(context)
+                withContext(Dispatchers.IO) { database.checkpoint() }
+            }
             val createdAt = Timestamp.newBuilder()
                 .setSeconds(System.currentTimeMillis() / 1000)
             val colorHints = WallpaperManagerCompat.INSTANCE.get(context).wallpaperColors?.colorHints ?: 0
@@ -312,23 +317,25 @@ class LawnchairBackup(
                             out.closeEntry()
                         }
                         if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
-                            SEARCH_PREF_STORES.forEach { store ->
+                            EXTRA_PREF_STORES.forEach { store ->
                                 out.putNextEntry(ZipEntry("$store.xml"))
-                                writeSearchPreferences(context.getSharedPreferences(store, Context.MODE_PRIVATE), out)
+                                writeExtraPreferences(context.getSharedPreferences(store, Context.MODE_PRIVATE), out)
                                 out.closeEntry()
                             }
                         }
-                        getFiles(context, forRestore = false).entries.forEach {
-                            if (!it.value.exists()) return@forEach
-                            out.putNextEntry(ZipEntry(it.key))
-                            it.value.inputStream().use { input -> input.copyTo(out) }
+                        if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
+                            getFiles(context, forRestore = false).entries.forEach {
+                                if (!it.value.exists()) return@forEach
+                                out.putNextEntry(ZipEntry(it.key))
+                                it.value.inputStream().use { input -> input.copyTo(out) }
+                            }
                         }
                     }
                 }
             }
         }
 
-        private fun writeSearchPreferences(
+        private fun writeExtraPreferences(
             preferences: android.content.SharedPreferences,
             output: java.io.OutputStream,
         ) {
