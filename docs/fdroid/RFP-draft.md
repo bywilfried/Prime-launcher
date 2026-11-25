@@ -18,7 +18,7 @@ Metadata draft: com.bywilfried.prime.fdroid.yml.
 - Optional web services, fonts and feed: confirm network behavior and applicable AntiFeatures.
 - SDK availability, signing, reproducibility and fdroidserver validation pending.
 
-Prior CI: https://github.com/bywilfried/Prime-launcher/actions/runs/45578003085 (three builds successful; source scanner errors remain).
+Latest reviewed CI: https://github.com/bywilfried/Prime-launcher/actions/runs/45629838150 (three builds successful; APK scanner exit 0; ten source JSON errors remain; strict gate fails). Notice inventory: 173 artifact records, 119 occurrences, 14 distinct texts including APK-origin records; see docs/FDROID-binary-audit.md. This is a request for preliminary reviewer guidance, not a declaration of release readiness.
 Do not submit as a release-ready request until maintainer approves scope and remaining legal issues are addressed. No final license declaration, stable commit or tag approved.
 
 ## Maintainer decision — FuzzyWuzzy
