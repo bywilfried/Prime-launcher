@@ -1,11 +1,11 @@
-name: Build Prime Release APK
+name: Build Prime Release Perso APK
 
 on:
   workflow_dispatch:
 
 jobs:
   build-release-apk:
-    name: Build Prime Release APK
+    name: Build Prime Release Perso APK
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -13,7 +13,7 @@ jobs:
         with:
           submodules: true
 
-      - name: Display Prime Release version
+      - name: Display Prime Release Perso version
         shell: bash
         run: |
           set -euo pipefail
@@ -24,9 +24,9 @@ jobs:
           fi
           version="0.9.${build_number}"
           echo "PRIME_RELEASE_VERSION=$version" >> "$GITHUB_ENV"
-          echo "::notice title=Prime Launcher Release::Version $version (GitHub Run #$GITHUB_RUN_NUMBER)"
+          echo "::notice title=Prime Launcher Release Perso::Version $version (GitHub Run #$GITHUB_RUN_NUMBER)"
           {
-            echo "## Prime Launcher Release — $version"
+            echo "## Prime Launcher Release Perso — $version"
             echo ""
             echo "| Information | Valeur |"
             echo "| --- | --- |"
@@ -60,7 +60,7 @@ jobs:
             echo "storeFile=$GITHUB_WORKSPACE/key.jks"
           } > keystore.properties
 
-      - name: Build Release APK (${{ env.PRIME_RELEASE_VERSION }})
+      - name: Build Release Perso APK (${{ env.PRIME_RELEASE_VERSION }})
         env:
           PRIME_RELEASE_09: 'true'
         shell: bash
