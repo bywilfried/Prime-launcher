@@ -786,7 +786,7 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        boolean shouldCenterIcon = mActivity.getDeviceProfile().iconCenterVertically;
+        boolean shouldCenterIcon = mPrimeDrawerLabel || mActivity.getDeviceProfile().iconCenterVertically;
         if (shouldCenterIcon) {
             int iconSize = mPrimeDrawerLabel
                     ? mActivity.getDeviceProfile().getAllAppsProfile().getIconSizePx()
@@ -797,8 +797,9 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
                     : mFolderName.getCompoundDrawablePadding();
             int cellHeightPx = iconSize + drawablePadding
                     + (int) Math.ceil(fm.bottom - fm.top) * (mPrimeDrawerTwoLines ? 2 : 1);
-            setPadding(getPaddingLeft(), (MeasureSpec.getSize(heightMeasureSpec)
-                    - cellHeightPx) / 2, getPaddingRight(), getPaddingBottom());
+            int topPadding = (MeasureSpec.getSize(heightMeasureSpec) - cellHeightPx) / 2;
+            setPadding(getPaddingLeft(), mPrimeDrawerLabel ? Math.max(0, topPadding) : topPadding,
+                    getPaddingRight(), getPaddingBottom());
         }
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
