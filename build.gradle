@@ -133,20 +133,34 @@ final def buildCommit = providers.exec {
 // The final component identifies the CI build, for both debug and release.
 // Release 0.9 numbering starts at GitHub Actions release run #69.
 // Dev builds deliberately keep the existing 0.8 / run-number scheme.
-final def isPrime09Release = System.getenv("PRIME_RELEASE_09") == "true"
+final def primeStable = providers.gradleProperty("primeStable").orNull == "true"
+final def isPrime09Release = !primeStable && System.getenv("PRIME_RELEASE_09") == "true"
 final def primeMajor = 0
 final def primeMinor = isPrime09Release ? 9 : 8
 final def ciRunNumber = (System.getenv("GITHUB_RUN_NUMBER") ?: "").trim()
-final def ciBuildNumber = (providers.gradleProperty("primeBuildNumber").orNull
+final def ciBuildNumber = primeStable ? 0 : (providers.gradleProperty("primeBuildNumber").orNull
         ?: (ciRunNumber ? ciRunNumber : (isPrime09Release ? "69" : "0"))).toInteger()
 final def primeBuildNumber = isPrime09Release ? ciBuildNumber - 69 : ciBuildNumber
 if (primeBuildNumber < 0 || primeBuildNumber > 999999) {
     throw new GradleException("primeBuildNumber must be between 0 and 999999")
 }
-final def primeBaseVersion = "${primeMajor}.${primeMinor}.${primeBuildNumber}"
+final def stableVersion = new Properties()
+if (primeStable) {
+    rootProject.file("version.properties").withInputStream { stableVersion.load(it) }
+    if (!(stableVersion.getProperty("VERSION_NAME") ==~ /[0-9]+\.[0-9]+\.[0-9]+/)) {
+        throw new GradleException("Invalid stable VERSION_NAME")
+    }
+    if (!(stableVersion.getProperty("VERSION_CODE") ==~ /[0-9]+/)) {
+        throw new GradleException("Invalid stable VERSION_CODE")
+    }
+    if (stableVersion.getProperty("VERSION_CODE").toLong() < 11000000 || stableVersion.getProperty("VERSION_CODE").toLong() > 2100000000) {
+        throw new GradleException("Stable VERSION_CODE outside allowed range")
+    }
+}
+final def primeBaseVersion = primeStable ? stableVersion.getProperty("VERSION_NAME") : "${primeMajor}.${primeMinor}.${primeBuildNumber}"
 final def primeDebugVersion = "${primeBaseVersion}-debug"
 final def primeVersionCode = (isPrime09Release ? 9000000 : 8000000) + primeBuildNumber
-final def majorVersion = "${primeMajor}"
+final def majorVersion = primeStable ? primeBaseVersion.tokenize(".")[0] : "${primeMajor}"
 
 final def quickstepMinSdk = "35"
 final def quickstepMaxSdk = "36"
@@ -154,7 +168,7 @@ final def quickstepMaxSdk = "36"
 android {
     namespace "com.android.launcher3"
     defaultConfig {
-        versionCode primeVersionCode + primeBuildNumber
+        versionCode (primeStable ? stableVersion.getProperty("VERSION_CODE").toInteger() : primeVersionCode + primeBuildNumber)
         versionName primeBaseVersion
         buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${primeBaseVersion}\""
         buildConfigField "String", "MAJOR_VERSION", "\"${majorVersion}\""
@@ -216,7 +230,7 @@ android {
             storePassword keystoreProperties['storePassword']
         }
     } catch (Exception ignored) {
-        releaseSigning = signingConfigs.debug
+        releaseSigning = primeStable ? null : signingConfigs.debug
     }
 
     buildTypes {
@@ -238,7 +252,7 @@ android {
         }
 
         release {
-            resValue("string", "derived_app_name", "Prime Launcher")
+            resValue("string", "derived_app_name", providers.gradleProperty("primeFdroidCheck").orNull == "true" ? "Prime Launcher (F-Droid Check)" : "Prime Launcher")
             minifyEnabled true
             shrinkResources true
             pseudoLocalesEnabled false
@@ -259,7 +273,7 @@ android {
     flavorDimensions += ["app", "recents", "channel"]
 
     productFlavors {
-        lawn {
+        prime {
             dimension "app"
         }
 
@@ -269,7 +283,12 @@ android {
         }
 
         github {
-            applicationId 'com.bywilfried.prime'
+            applicationId (primeStable ? 'com.bywilfried.prime.stable' : 'com.bywilfried.prime')
+            dimension "channel"
+        }
+
+        fdroid {
+            applicationId "com.bywilfried.prime.fdroid"
             dimension "channel"
         }
 
@@ -303,7 +322,7 @@ android {
             }
         }
 
-        lawn {
+        prime {
             java.srcDirs = ['src_flags', 'src_shortcuts_overrides', 'prime/src', 'tests/shared']
             kotlin.directories.addAll('src_flags', 'src_shortcuts_overrides', 'prime/src', 'tests/shared')
             aidl.srcDirs = ['prime/aidl']
@@ -321,20 +340,28 @@ android {
             manifest.srcFile "github/AndroidManifest.xml"
         }
 
+        fdroid {
+            manifest.srcFile "github/AndroidManifest.xml"
+        }
+
         nightly {
             manifest.srcFile "nightly/AndroidManifest.xml"
             res.srcDirs = ["nightly/res"]
         }
 
-        lawnWithQuickstepGithub {
+        primeWithQuickstepGithub {
             manifest.srcFile "quickstep/AndroidManifest-launcher.xml"
         }
 
-        lawnWithQuickstepNightly {
+        primeWithQuickstepFdroid {
             manifest.srcFile "quickstep/AndroidManifest-launcher.xml"
         }
 
-        lawnWithQuickstepPlay {
+        primeWithQuickstepNightly {
+            manifest.srcFile "quickstep/AndroidManifest-launcher.xml"
+        }
+
+        primeWithQuickstepPlay {
             manifest.srcFile "quickstep/AndroidManifest-launcher.xml"
         }
 
@@ -351,7 +378,7 @@ androidComponents {
     onVariants(selector().all()) { variant ->
         def channel = variant.productFlavors.last().second
         variant.outputs.forEach { output ->
-            output.outputFileName.set("Lawnchair.${output.versionName.get()}.$channel.${variant.buildType}.apk")
+            output.outputFileName.set("${primeStable ? 'Prime-Launcher' : 'Lawnchair'}.${output.versionName.get()}.$channel.${variant.buildType}.apk")
         }
 
         // Lawnchair-TODO: A better way to sync proto file to the IDE preventing missing or outdated result. Please remove if this is the best solution we have right now

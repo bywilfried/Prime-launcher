@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_download_web_icons">Download web icons</string>
+    <string name="prime_download_web_icons_description">Prefer online logos and keep them for offline use.</string>
+</resources>

@@ -1,0 +1,17 @@
+import groovy.json.JsonOutput
+
+gradle.projectsEvaluated {
+    def root = gradle.rootProject
+    root.tasks.register("primeDependencyNoticeInventory") {
+        doLast {
+            def config = root.configurations.getByName("primeWithQuickstepFdroidReleaseRuntimeClasspath")
+            def artifacts = config.incoming.artifactView {
+                componentFilter { id -> id instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier }
+            }.artifacts.artifacts
+            def rows = artifacts.collect { artifact ->
+                [component: artifact.id.componentIdentifier.displayName, file: artifact.file.absolutePath]
+            }
+            new File(root.projectDir, "dependency-notice-input.json").text = JsonOutput.toJson(rows)
+        }
+    }
+}

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_search_pref_web_heading">Suggestions et moteurs Web</string>
+    <string name="prime_search_pref_web_suggestions">Suggestions Web</string>
+    <string name="prime_search_pref_sources">Sources de recherche Web</string>
+    <string name="prime_search_pref_done">Terminé</string>
+    <string name="prime_search_pref_window">Fenêtre Prime Search</string>
+    <string name="prime_search_pref_keyboard">Ouvrir automatiquement le clavier</string>
+    <string name="prime_search_pref_keyboard_desc">Afficher le clavier dès l’ouverture de Prime Search</string>
+    <string name="prime_search_pref_floating">Fenêtre flottante (overlay)</string>
+    <string name="prime_search_pref_floating_desc">Afficher Prime Search au-dessus de l\'accueil avec des marges visibles. Désactiver pour le plein écran.</string>
+    <string name="prime_search_pref_opening">Applications à l\'ouverture</string>
+    <string name="prime_search_pref_opening_tab">Onglet affiché à l\'ouverture</string>
+    <string name="prime_search_pref_open_on">Ouvrir Prime Search sur</string>
+    <string name="prime_search_pref_usage">Accès aux données d’utilisation</string>
+    <string name="prime_search_pref_frequent_recent">Applications fréquentes et récentes</string>
+    <string name="prime_search_pref_granted">Autorisation accordée</string>
+    <string name="prime_search_pref_usage_desc">Autorisation nécessaire pour afficher les applications fréquentes et récentes. Appuyer pour ouvrir les paramètres Android.</string>
+    <string name="prime_search_pref_app_search">Recherche d\'applications</string>
+    <string name="prime_search_pref_fuzzy">Tolérer les fautes de frappe</string>
+    <string name="prime_search_pref_fuzzy_desc">Recherche approximative des noms d\'applications, indépendante du tiroir</string>
+    <string name="prime_search_pref_appearance">Apparence de Prime Search</string>
+    <string name="prime_search_pref_frequent">Fréquentes</string>
+    <string name="prime_search_pref_recent">Récentes</string>
+    <string name="prime_search_pref_new">Nouvelles</string>
+    <string name="prime_search_pref_apps">Applications</string>
+    <string name="prime_search_pref_columns">Applications par ligne : %1$d</string>
+    <string name="prime_search_pref_icon_size">Taille des icônes : %1$d %%</string>
+    <string name="prime_search_pref_reset_appearance">Réinitialiser l\'apparence</string>
+</resources>

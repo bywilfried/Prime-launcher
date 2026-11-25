@@ -156,7 +156,7 @@ fun CreateBackupScreen(
                 flags = contents,
                 setFlags = viewModel::setBackupContents,
                 mask = LawnchairBackup.INCLUDE_THEME_CUSTOMIZATIONS,
-                label = "Thème et personnalisations avancées",
+                label = androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_backup_theme_customizations),
             )
             FlagSwitchPreference(
                 flags = contents,

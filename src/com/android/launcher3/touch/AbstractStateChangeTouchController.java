@@ -320,7 +320,8 @@ public abstract class AbstractStateChangeTouchController
                 successTransitionProgress = TABLET_BOTTOM_SHEET_SUCCESS_TRANSITION_PROGRESS;
             } else if (!mLauncher.getDeviceProfile().getDeviceProperties().isTablet()
                     && mToState == ALL_APPS && mFromState == NORMAL) {
-                successTransitionProgress = AllAppsSwipeController.ALL_APPS_STATE_TRANSITION_MANUAL;
+                // A shorter upward swipe should complete opening the app drawer.
+                successTransitionProgress = 0.25f;
             } else if (!mLauncher.getDeviceProfile().getDeviceProperties().isTablet()
                     && mToState == NORMAL && mFromState == ALL_APPS) {
                 successTransitionProgress =

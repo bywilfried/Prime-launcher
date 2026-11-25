@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_search_shared_completed">Afficher les tâches terminées</string>
+    <string name="prime_search_shared_future">Événements futurs uniquement</string>
+    <string name="prime_search_shared_calendars">Agendas utilisés pour la recherche</string>
+    <string name="prime_search_shared_tasks">Listes Tasks.org utilisées pour la recherche</string>
+    <string name="prime_search_shared_contacts">Comptes de contacts utilisés pour la recherche</string>
+    <string name="prime_search_shared_no_sources">Aucune source disponible sur cet appareil.</string>
+    <string name="prime_search_shared_select_all">Tout sélectionner</string>
+    <string name="prime_search_shared_file_limit">Nombre maximal de fichiers : %1$d</string>
+    <string name="prime_search_shared_file_access">Les fichiers accessibles dépendent des autorisations Android.</string>
+    <string name="prime_search_shared_suggestion_count">Nombre de suggestions : %1$d</string>
+    <string name="prime_search_shared_provider">Fournisseur de suggestions</string>
+    <string name="prime_search_shared_privacy">Les termes saisis sont transmis au fournisseur sélectionné.</string>
+    <string name="prime_search_shared_retention">Conserver les notifications pendant :</string>
+    <string name="prime_search_shared_settings">Paramètres de %1$s</string>
+    <string name="prime_search_shared_reorder">Maintenir puis glisser pour réorganiser</string>
+    <string name="prime_search_shared_up">Monter</string>
+    <string name="prime_search_shared_down">Descendre</string>
+    <string name="prime_search_shared_close">Fermer</string>
+</resources>

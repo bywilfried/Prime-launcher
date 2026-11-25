@@ -27,6 +27,62 @@ class LawnchairSearchAdapterProvider(
 ) : DefaultSearchAdapterProvider(launcher) {
 
     private val decorator = SearchItemDecorator(appsView)
+    private val categoryPageRenderer = DrawerSearchCategoryPageRenderer(
+        launcher,
+        appsView,
+        ::applySearchTextColor,
+    )
+    private val previewRenderer = DrawerSearchPreviewRenderer(appsView) { category, title, results ->
+        categoryPageRenderer.showCategoryPage(category, title, results)
+    }
+    private val resultsRenderer = DrawerSearchResultsRenderer(appsView, previewRenderer)
+    private val sectionRenderer = DrawerSearchSectionViewRenderer(
+        { category, title, results -> categoryPageRenderer.showCategoryPage(category, title, results) },
+        { result -> quickLaunchItem = result },
+    )
+
+
+    init {
+        // The adapter provider is created before mSearchRecyclerView is assigned.
+        // Defer observer installation until the container has completed inflation.
+        appsView.post {
+            appsView.mSearchRecyclerView?.let { recyclerView ->
+                // Reserve room for the last section's expansion control above
+                // the system navigation bar, without altering Prime Search.
+                val bottomSpace = dp(88, recyclerView)
+                if (recyclerView.paddingBottom < bottomSpace) {
+                    recyclerView.setPadding(
+                        recyclerView.paddingLeft, recyclerView.paddingTop,
+                        recyclerView.paddingRight, bottomSpace,
+                    )
+                    recyclerView.clipToPadding = false
+                }
+                recyclerView.adapter?.registerAdapterDataObserver(
+                    object : androidx.recyclerview.widget.RecyclerView.AdapterDataObserver() {
+                        override fun onChanged() = categoryPageRenderer.close()
+
+                        override fun onItemRangeChanged(positionStart: Int, itemCount: Int) =
+                            categoryPageRenderer.close()
+
+                        override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) =
+                            categoryPageRenderer.close()
+
+                        override fun onItemRangeInserted(positionStart: Int, itemCount: Int) =
+                            categoryPageRenderer.close()
+
+                        override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) =
+                            categoryPageRenderer.close()
+
+                        override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) =
+                            categoryPageRenderer.close()
+                    },
+                )
+            }
+        }
+    }
+    private fun dp(value: Int, view: View): Int =
+        (value * view.resources.displayMetrics.density).toInt()
+
     private val layoutIdMap = SparseIntArray().apply {
         append(SEARCH_RESULT_ICON, R.layout.search_result_icon)
         append(SEARCH_RESULT_ICON_ROW, R.layout.search_result_tall_icon_row)
@@ -53,16 +109,28 @@ class LawnchairSearchAdapterProvider(
             appsView.mSearchRecyclerView.invalidate()
         }
 
-    override fun isViewSupported(viewType: Int): Boolean = layoutIdMap.contains(viewType)
+    override fun isViewSupported(viewType: Int): Boolean =
+        viewType == DrawerSearchSectionAdapterItem.VIEW_TYPE || layoutIdMap.contains(viewType)
 
     override fun onBindView(holder: BaseAllAppsAdapter.ViewHolder, position: Int) {
-        val adapterItem = appsView.mSearchRecyclerView.mApps.adapterItems[position] as SearchAdapterItem
+        val current = appsView.mSearchRecyclerView.mApps.adapterItems[position]
+        if (current is DrawerSearchSectionAdapterItem) {
+            sectionRenderer.bind(holder.itemView as android.widget.LinearLayout, current)
+            return
+        }
+        val adapterItem = current as SearchAdapterItem
         adapterItem.setRippleEffect(holder.itemView)
         val itemView = holder.itemView as SearchResultView
         itemView.bind(
             adapterItem.searchTarget,
             emptyList(),
         )
+        val footerTitle = adapterItem.searchTarget.searchAction?.title?.toString().orEmpty()
+        val isExpansionFooter = adapterItem.searchTarget.layoutType == LayoutType.TEXT_HEADER &&
+            footerTitle.startsWith("Plus d'applications")
+        if (adapterItem.searchTarget.layoutType == LayoutType.TEXT_HEADER && !isExpansionFooter) {
+            previewRenderer.applyDrawerPreview(holder.itemView, position, adapterItem)
+        }
         // Match Prime Search's compact section headings and non-app result rows.
         // Applied after bind because individual result views restore their own heights.
         val density = holder.itemView.resources.displayMetrics.density
@@ -87,6 +155,18 @@ class LawnchairSearchAdapterProvider(
                 if (label.isNotBlank() && label != app.lawnchair.search.adapter.SPACE &&
                     label != app.lawnchair.search.adapter.SPACE_MINI) {
                     SearchResultGeometry.styleHeading(heading, holder.itemView)
+                    holder.itemView.setPadding(dp(6), dp(9), dp(6), dp(1))
+                    if (label.startsWith("Plus de ") || label.startsWith("Réduire")) {
+                        heading?.apply {
+                            gravity = android.view.Gravity.CENTER
+                            textAlignment = View.TEXT_ALIGNMENT_CENTER
+                            layoutParams = layoutParams.apply { width = ViewGroup.LayoutParams.MATCH_PARENT }
+                            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+                            setTypeface(typeface, Typeface.NORMAL)
+                        }
+                        holder.itemView.setPadding(dp(6), dp(4), dp(6), dp(4))
+                        holder.itemView.minimumHeight = dp(40)
+                    }
                 }
             }
             LayoutType.THUMBNAIL -> {
@@ -105,6 +185,49 @@ class LawnchairSearchAdapterProvider(
                 SearchResultGeometry.styleTextRow(holder.itemView)
             }
         }
+        if (adapterItem.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT) {
+            val surface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
+            val preferences = app.lawnchair.prime.search.PrimeSearchResultPreferences
+            (holder.itemView as? app.lawnchair.allapps.views.SearchResultIcon)?.apply {
+                setPrimeIconSize(app.lawnchair.prime.search.PrimeAppGridGeometry.iconPx(
+                    holder.itemView.context, preferences.appResultsIconSizePercent(context, surface),
+                ))
+                setTextVisibility(true)
+                setPrimeSearchLabelLayout(true)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, app.lawnchair.prime.search.PrimeAppGridGeometry.LABEL_SP)
+                includeFontPadding = false
+                maxLines = if (preferences.twoLineAppLabels(context, surface)) 2 else 1
+                ellipsize = android.text.TextUtils.TruncateAt.END
+                gravity = android.view.Gravity.TOP or android.view.Gravity.CENTER_HORIZONTAL
+            }
+        }
+        // Apply drawer-specific compact geometry AFTER SearchResultGeometry:
+        // styleTextRow/styleFileRow restore their 52dp Prime Search baseline, which
+        // otherwise silently overrides the earlier drawer sizing.
+        if (adapterItem.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT) {
+            val labelLines = if (app.lawnchair.prime.search.PrimeSearchResultPreferences.twoLineAppLabels(holder.itemView.context, app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER)) 2 else 1
+            val iconPercent = app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsIconSizePercent(holder.itemView.context, app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER)
+            holder.itemView.minimumHeight = 0
+            holder.itemView.layoutParams?.height = app.lawnchair.prime.search.PrimeAppGridGeometry.rowHeightPx(
+                holder.itemView.context, iconPercent, labelLines,
+            )
+        } else if (adapterItem.searchTarget.layoutType != LayoutType.TEXT_HEADER) {
+            // Use the same compact row contract as the embedded Prime Search
+            // renderer so files, contacts, suggestions and shortcuts share
+            // typography, spacing and exact row heights.
+            // Adapter positions include whole category cards. Never index a
+            // filtered SearchAdapterItem list with a RecyclerView position.
+            val category = DrawerSearchCategoryPresentation.categoryForResult(adapterItem.searchTarget)
+            val rowHeight = SearchResultGeometry.compactRowHeightDp(
+                adapterItem.searchTarget.layoutType,
+                isAppShortcut = category == app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS,
+            )
+            app.lawnchair.search.SearchResultGeometry.styleCompactResultRow(
+                holder.itemView,
+                rowHeight,
+                file = adapterItem.searchTarget.layoutType == LayoutType.THUMBNAIL,
+            )
+        }
         // Search results inherit the selected drawer/category palette, not the
         // launcher's default theme or Prime Search's independent palette.
         val context = holder.itemView.context
@@ -112,9 +235,43 @@ class LawnchairSearchAdapterProvider(
         val variant = context.effectiveThemeVariant()
         val role = if (adapterItem.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT)
             app.lawnchair.theme.ThemeColorRole.DRAWER_ICON_TEXT
-        else app.lawnchair.theme.ThemeColorRole.DRAWER_TEXT
+        else app.lawnchair.theme.ThemeColorRole.DRAWER_SEARCH_RESULT_TEXT
         val textColor = app.lawnchair.theme.ThemeColors.resolve(context, profile, role, variant)
         applySearchTextColor(holder.itemView, textColor)
+        if (adapterItem.searchTarget.layoutType != LayoutType.TEXT_HEADER) {
+            previewRenderer.applyDrawerPreview(holder.itemView, position, adapterItem)
+        }
+        if (isExpansionFooter) {
+            val all = appsView.mSearchRecyclerView.mApps.adapterItems.mapNotNull { it as? SearchAdapterItem }
+            val headerPosition = (position - 1 downTo 0).firstOrNull { index ->
+                all[index].searchTarget.layoutType == LayoutType.TEXT_HEADER &&
+                    !DrawerSearchSectionModel.isStructuralHeader(all[index]) &&
+                    !all[index].searchTarget.searchAction?.title.toString().startsWith("Plus de")
+            }
+            val entries = if (headerPosition == null) emptyList() else
+                all.subList(headerPosition + 1, position).filter {
+                    it.searchTarget.layoutType != LayoutType.TEXT_HEADER &&
+                        it.searchTarget.layoutType != LayoutType.EMPTY_DIVIDER
+                }
+            holder.itemView.apply {
+                visibility = View.VISIBLE
+                layoutParams?.height = dp(44)
+                isClickable = entries.isNotEmpty()
+                setOnClickListener {
+                    if (entries.isNotEmpty()) categoryPageRenderer.showCategoryPage(
+                        app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS,
+                        "Applications", entries,
+                    )
+                }
+                findViewById<TextView>(R.id.title)?.apply {
+                    text = "Plus d'applications ⌄"
+                    gravity = android.view.Gravity.CENTER
+                    textAlignment = View.TEXT_ALIGNMENT_CENTER
+                }
+            }
+        }
+        // Keep the native ripple drawable above the drawer-owned section surface.
+        resultsRenderer.styleBoundRow(holder.itemView, position, adapterItem)
         if (itemView.isQuickLaunch) {
             quickLaunchItem = itemView
         }
@@ -134,6 +291,9 @@ class LawnchairSearchAdapterProvider(
         parent: ViewGroup?,
         viewType: Int,
     ): BaseAllAppsAdapter.ViewHolder {
+        if (viewType == DrawerSearchSectionAdapterItem.VIEW_TYPE) {
+            return BaseAllAppsAdapter.ViewHolder(sectionRenderer.create(parent))
+        }
         val view = layoutInflater.inflate(layoutIdMap[viewType], parent, false)
         val grid: DeviceProfile = mLauncher.deviceProfile
         val leftMargin = grid.allAppsPadding.left
@@ -155,7 +315,20 @@ class LawnchairSearchAdapterProvider(
         return BaseAllAppsAdapter.ViewHolder(view)
     }
 
-    override fun getItemsPerRow(viewType: Int, appsPerRow: Int) = if (viewType != SEARCH_RESULT_ICON) 1 else super.getItemsPerRow(viewType, appsPerRow)
+    override fun getSupportedItemsPerRowArray(): IntArray = intArrayOf(
+        app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsColumns(
+            appsView.context,
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER,
+        ).coerceAtLeast(1),
+    )
+
+    override fun getItemsPerRow(viewType: Int, appsPerRow: Int): Int =
+        if (viewType == SEARCH_RESULT_ICON) {
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.appResultsColumns(
+                appsView.context,
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER,
+            ).coerceAtLeast(1)
+        } else 1
 
     override fun launchHighlightedItem(): Boolean = quickLaunchItem?.launch() ?: false
 

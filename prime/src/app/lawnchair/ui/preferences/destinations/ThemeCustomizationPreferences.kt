@@ -80,10 +80,10 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             context.contentResolver.openOutputStream(uri)?.use { ThemeShareFile.export(context, it) }
                 ?: error("Unable to open destination")
         }.onSuccess {
-            Toast.makeText(context, "Thème exporté", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(com.android.launcher3.R.string.prime_theme_ui_exported), Toast.LENGTH_SHORT).show()
         }.onFailure {
             Log.e("ThemeCustomization", "Theme export failed", it)
-            Toast.makeText(context, "Échec de l'export du thème", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(com.android.launcher3.R.string.prime_theme_ui_export_failed), Toast.LENGTH_SHORT).show()
         }
     }
     val importTheme = rememberLauncherForActivityResult(
@@ -94,37 +94,37 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
                 ?: error("Unable to open theme file")
         }.onSuccess {
             bulkResetRevision++
-            Toast.makeText(context, "Thème importé", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(com.android.launcher3.R.string.prime_theme_ui_imported), Toast.LENGTH_SHORT).show()
         }.onFailure {
             Log.e("ThemeCustomization", "Theme import failed", it)
-            Toast.makeText(context, "Fichier de thème invalide", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(com.android.launcher3.R.string.prime_theme_ui_invalid), Toast.LENGTH_SHORT).show()
         }
     }
 
 
     PreferenceLayout(
         backArrowVisible = !LocalIsExpandedScreen.current,
-        label = if (folderKey != null) "Couleurs du dossier" else if (categoryTabId == null) "Personnaliser les couleurs du thème" else "Couleurs de la catégorie",
+        label = if (folderKey != null) androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_folder) else if (categoryTabId == null) androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_customize) else androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_category),
         modifier = modifier,
     ) {
         PreferenceGroup(heading = "Legacy") {
             PreferenceTemplate(
-                title = { Text("Variante") },
+                title = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_variant)) },
                 endWidget = {
                     Row {
                         val light = variant == ThemeVariant.LIGHT
-                        if (light) Button(onClick = { variantName = ThemeVariant.LIGHT.name }) { Text("Clair") }
-                        else OutlinedButton(onClick = { variantName = ThemeVariant.LIGHT.name }) { Text("Clair") }
+                        if (light) Button(onClick = { variantName = ThemeVariant.LIGHT.name }) { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_light)) }
+                        else OutlinedButton(onClick = { variantName = ThemeVariant.LIGHT.name }) { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_light)) }
                         val dark = variant == ThemeVariant.DARK
-                        if (dark) Button(onClick = { variantName = ThemeVariant.DARK.name }) { Text("Sombre") }
-                        else OutlinedButton(onClick = { variantName = ThemeVariant.DARK.name }) { Text("Sombre") }
+                        if (dark) Button(onClick = { variantName = ThemeVariant.DARK.name }) { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_dark)) }
+                        else OutlinedButton(onClick = { variantName = ThemeVariant.DARK.name }) { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_dark)) }
                     }
                 },
             )
         }
 
         if (categoryTabId == null && folderKey == null) ThemeSection(
-            title = "Global",
+            title = androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_global),
             variant = variant,
             section = ThemeColorRole.Section.GLOBAL,
             expanded = expanded,
@@ -132,7 +132,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             onToggle = { expandedName = if (expanded == it) null else it.name },
         )
         if (categoryTabId == null && folderKey == null) ThemeSection(
-            title = "Accueil",
+            title = androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_home),
             variant = variant,
             section = ThemeColorRole.Section.HOME,
             expanded = expanded,
@@ -148,7 +148,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             onToggle = { expandedName = if (expanded == it) null else it.name },
         )
         if (folderKey != null) ThemeSection(
-            title = "Couleurs du dossier",
+            title = androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_folder),
             categoryTabId = categoryTabId,
             folderKey = folderKey,
             variant = variant,
@@ -166,7 +166,7 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             onToggle = { expandedName = if (expanded == it) null else it.name },
         )
         if (folderKey == null) ThemeSection(
-            title = "Tiroir des applications",
+            title = androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_drawer),
             categoryTabId = categoryTabId,
             variant = variant,
             section = ThemeColorRole.Section.DRAWER,
@@ -175,26 +175,26 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
             onToggle = { expandedName = if (expanded == it) null else it.name },
         )
 
-        PreferenceGroup(heading = if (folderKey != null) "Gestion du dossier" else if (categoryTabId == null) "Gestion du thème" else "Gestion de la catégorie") {
+        PreferenceGroup(heading = if (folderKey != null) androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_manage_folder) else if (categoryTabId == null) androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_manage_theme) else androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_manage_category)) {
             PreferenceTemplate(
-                title = { Text("Réinitialiser la variante") },
-                description = { Text("Supprimera les personnalisations de la variante affichée.") },
+                title = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_reset_variant)) },
+                description = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_reset_variant_desc)) },
                 onClick = { confirmVariantReset = true },
             )
             PreferenceTemplate(
-                title = { Text("Réinitialiser le thème") },
-                description = { Text("Restaurera les valeurs officielles du thème sélectionné.") },
+                title = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_reset_theme)) },
+                description = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_reset_theme_desc)) },
                 onClick = { confirmThemeReset = true },
             )
             PreferenceTemplate(
-                title = { Text("Exporter le thème") },
-                description = { Text("Partager le thème général, sa palette et ses couleurs.") },
+                title = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_export)) },
+                description = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_export_desc)) },
                 enabled = categoryTabId == null && folderKey == null,
                 onClick = { exportTheme.launch("Prime-theme.primetheme") },
             )
             PreferenceTemplate(
-                title = { Text("Importer un thème") },
-                description = { Text("Importer un fichier .primetheme sans modifier l’accueil.") },
+                title = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_import)) },
+                description = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_import_desc)) },
                 enabled = categoryTabId == null && folderKey == null,
                 onClick = { importTheme.launch(arrayOf("*/*")) },
             )
@@ -204,9 +204,9 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
     if (confirmVariantReset) {
         AlertDialog(
             onDismissRequest = { confirmVariantReset = false },
-            title = { Text("Réinitialiser la variante ?") },
+            title = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_reset_variant_question)) },
             text = {
-                Text("Toutes les personnalisations de la variante ${if (variant == ThemeVariant.LIGHT) "Clair" else "Sombre"} seront supprimées. L’autre variante sera conservée.")
+                Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_reset_variant_message, if (variant == ThemeVariant.LIGHT) androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_light) else androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_dark)))
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -216,12 +216,12 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
                     bulkResetRevision++
                     confirmVariantReset = false
                 }) {
-                    Text("Réinitialiser")
+                    Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_reset))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { confirmVariantReset = false }) {
-                    Text("Annuler")
+                    Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_cancel))
                 }
             },
         )
@@ -230,8 +230,8 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
     if (confirmThemeReset) {
         AlertDialog(
             onDismissRequest = { confirmThemeReset = false },
-            title = { Text("Réinitialiser le thème ?") },
-            text = { Text("Toutes les personnalisations des variantes Clair et Sombre seront supprimées.") },
+            title = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_reset_theme_question)) },
+            text = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_reset_both)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -242,12 +242,12 @@ fun ThemeCustomizationPreferences(modifier: Modifier = Modifier, openDrawerSecti
                         confirmThemeReset = false
                     },
                 ) {
-                    Text("Réinitialiser")
+                    Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_reset))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { confirmThemeReset = false }) {
-                    Text("Annuler")
+                    Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_cancel))
                 }
             },
         )
@@ -270,7 +270,7 @@ private fun ThemeSection(
     PreferenceGroup {
         PreferenceTemplate(
             title = { Text(title) },
-            description = { Text(if (expanded == section) "Masquer les couleurs" else "Afficher les couleurs") },
+            description = { Text(if (expanded == section) androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_hide) else androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_show)) },
             onClick = { onToggle(section) },
         )
         ExpandAndShrink(visible = expanded == section) {
@@ -387,7 +387,7 @@ private fun ThemeSection(
                         val rolePreferenceAlpha = if (isInherited) 0.58f else 1f
                         Box {
                         ColorPreference(
-                            label = roleLabel(role),
+                            label = roleLabel(context, role),
                             selectedColor = override,
                             modifier = Modifier.graphicsLayer { alpha = rolePreferenceAlpha },
                             previewColor = ColorOption.CustomColor(categoryPreview),
@@ -416,12 +416,12 @@ private fun ThemeSection(
                                 role == ThemeColorRole.DRAWER_FOLDER_ICON_TEXT ||
                                 role == ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT),
                             description = if (override == ColorOption.LegacyBehavior) {
-                                "Comportement Legacy (fixé)"
+                                androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_legacy)
                             } else if (override == ColorOption.Default) {
                                 if (role == ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE ||
                                     role == ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE)
-                                    "Contraste automatique (noir/blanc)"
-                                else if (folderKey != null) "Hérité des couleurs du parent" else if (categoryTabId != null) "Hérité du thème principal ou de sa personnalisation" else "Valeur du thème"
+                                    androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_contrast)
+                                else if (folderKey != null) androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_parent) else if (categoryTabId != null) androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_parent_theme) else androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_theme_value)
                             } else {
                                 override.colorPreferenceEntry.label()
                             },
@@ -449,7 +449,7 @@ private fun ThemeSection(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Refresh,
-                                    contentDescription = "Rétablir la valeur par défaut de ${roleLabel(role)}",
+                                    contentDescription = androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_theme_ui_reset_role, roleLabel(context, role)),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
@@ -473,89 +473,92 @@ private fun rolesForUi(section: ThemeColorRole.Section): List<ThemeColorRole> = 
     else -> ThemeColorRole.entries.filter { it.section == section }
 }
 
-private fun roleLabel(role: ThemeColorRole): String = when (role) {
-    ThemeColorRole.PRIME_SEARCH_WINDOW_BACKGROUND -> "Fenêtre — fond"
-    ThemeColorRole.PRIME_SEARCH_BAR_BACKGROUND -> "Barre — fond"
-    ThemeColorRole.PRIME_SEARCH_TEXT -> "Barre — texte"
-    ThemeColorRole.PRIME_SEARCH_HINT -> "Barre — indication"
-    ThemeColorRole.PRIME_SEARCH_ICON -> "Barre — icônes"
-    ThemeColorRole.PRIME_SEARCH_BORDER -> "Barre — bordure"
-    ThemeColorRole.PRIME_SEARCH_TAB_ACTIVE -> "Onglets — actif"
-    ThemeColorRole.PRIME_SEARCH_TAB_INACTIVE -> "Onglets — inactif"
-    ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND -> "Résultats — fond"
-    ThemeColorRole.PRIME_SEARCH_CARD_BACKGROUND -> "Cartes — fond"
-    ThemeColorRole.PRIME_SEARCH_CARD_BORDER -> "Cartes — bordure"
-    ThemeColorRole.PRIME_SEARCH_RESULT_TEXT -> "Résultats — texte"
-    ThemeColorRole.PRIME_SEARCH_APP_LABEL -> "Applications — noms"
-    ThemeColorRole.PRIME_SEARCH_SETTINGS_ICON -> "Paramètres — engrenage"
-    ThemeColorRole.GLOBAL_ACCENT -> "Couleur des éléments modifiables"
-    ThemeColorRole.GLOBAL_SETTINGS_BACKGROUND -> "Interface — fond des menus"
-    ThemeColorRole.GLOBAL_SETTINGS_CARD_BACKGROUND -> "Interface — fond des cartes"
-    ThemeColorRole.GLOBAL_NOTIFICATION_DOT -> "Pastille de notification — fond"
-    ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT -> "Pastille de notification — texte / compteur"
-    ThemeColorRole.HOME_ICON_TEXT -> "Texte des icônes"
-    ThemeColorRole.HOME_FOLDER_ICON_TEXT -> "Dossier ouvert — texte des icônes"
-    ThemeColorRole.HOME_HOTSEAT_BACKGROUND -> "Dock — fond"
-    ThemeColorRole.HOME_SEARCH_BACKGROUND -> "Recherche — fond"
-    ThemeColorRole.HOME_SEARCH_TEXT -> "Recherche — texte"
-    ThemeColorRole.HOME_SEARCH_HINT -> "Recherche — texte indicatif"
-    ThemeColorRole.HOME_SEARCH_ICON -> "Recherche — icônes"
-    ThemeColorRole.HOME_SEARCH_BORDER -> "Recherche — bordure"
-    ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND -> "Dossier fermé — fond"
-    ThemeColorRole.HOME_FOLDER_CLOSED_TEXT -> "Dossier fermé — texte"
-    ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND -> "Dossier ouvert — fond"
-    ThemeColorRole.HOME_FOLDER_OPEN_TEXT -> "Dossier ouvert — texte"
-    ThemeColorRole.HOME_FOLDER_OPEN_HINT -> "Dossier ouvert — texte indicatif"
-    ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE -> "Pages de l’accueil — indicateur actif"
-    ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE -> "Pages de l’accueil — indicateurs inactifs"
-    ThemeColorRole.HOME_FOLDER_PAGINATION -> "Dossiers — pagination"
-    ThemeColorRole.HOME_FOLDER_CLOSED_BORDER -> "Dossier fermé — bordure"
-    ThemeColorRole.HOME_FOLDER_OPEN_BORDER -> "Dossier ouvert — bordure"
-    ThemeColorRole.HOME_FOLDER_BORDER -> "Dossiers — bordure"
-    ThemeColorRole.HOME_POPUP_BACKGROUND -> "Menus contextuels — fond"
-    ThemeColorRole.HOME_POPUP_TEXT -> "Menus contextuels — texte"
-    ThemeColorRole.HOME_POPUP_ICON -> "Menus contextuels — icônes"
-    ThemeColorRole.DOCK_ICON_TEXT -> "Texte des icônes"
-    ThemeColorRole.DOCK_FOLDER_ICON_TEXT -> "Dossier ouvert — texte des icônes"
-    ThemeColorRole.DOCK_FOLDER_CLOSED_BACKGROUND -> "Dossier fermé — fond"
-    ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT -> "Dossier fermé — texte"
-    ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND -> "Dossier ouvert — fond"
-    ThemeColorRole.DOCK_FOLDER_OPEN_TEXT -> "Dossier ouvert — texte"
-    ThemeColorRole.DOCK_FOLDER_OPEN_HINT -> "Dossier ouvert — texte indicatif"
-    ThemeColorRole.DOCK_FOLDER_PAGINATION -> "Dossiers — pagination"
-    ThemeColorRole.DOCK_FOLDER_CLOSED_BORDER -> "Dossier fermé — bordure"
-    ThemeColorRole.DOCK_FOLDER_OPEN_BORDER -> "Dossier ouvert — bordure"
-    ThemeColorRole.DOCK_FOLDER_BORDER -> "Dossiers — bordure"
-    ThemeColorRole.DRAWER_BACKGROUND -> "Général — fond"
-    ThemeColorRole.DRAWER_TEXT -> "Général — texte"
-    ThemeColorRole.DRAWER_HANDLE -> "Général — poignée du tiroir"
-    ThemeColorRole.DRAWER_ICON_TEXT -> "Texte des icônes"
-    ThemeColorRole.DRAWER_FOLDER_ICON_TEXT -> "Dossier ouvert — texte des icônes"
-    ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE -> "Recherche — fond inactif"
-    ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE -> "Recherche — fond actif"
-    ThemeColorRole.DRAWER_SEARCH_TEXT -> "Recherche — texte"
-    ThemeColorRole.DRAWER_SEARCH_HINT -> "Recherche — texte indicatif"
-    ThemeColorRole.DRAWER_SEARCH_ICON -> "Recherche — icônes"
-    ThemeColorRole.DRAWER_SEARCH_BORDER -> "Recherche — bordure"
-    ThemeColorRole.DRAWER_SEARCH_SELECTED_RESULT_BACKGROUND -> "Recherche — résultat sélectionné"
-    ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND -> "Dossier fermé — fond"
-    ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> "Dossier fermé — texte"
-    ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND -> "Dossier ouvert — fond"
-    ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT -> "Dossier ouvert — texte"
-    ThemeColorRole.DRAWER_FOLDER_OPEN_HINT -> "Dossier ouvert — texte indicatif"
-    ThemeColorRole.DRAWER_FOLDER_PAGINATION -> "Dossiers — pagination"
-    ThemeColorRole.DRAWER_FOLDER_CLOSED_BORDER -> "Dossier fermé — bordure"
-    ThemeColorRole.DRAWER_FOLDER_OPEN_BORDER -> "Dossier ouvert — bordure"
-    ThemeColorRole.DRAWER_FOLDER_BORDER -> "Dossiers — bordure"
-    ThemeColorRole.DRAWER_PROFILE_TAB_SELECTED_BACKGROUND -> "Personnel / Travail — sélectionné"
-    ThemeColorRole.DRAWER_PROFILE_TAB_UNSELECTED_BACKGROUND -> "Personnel / Travail — non sélectionné"
-    ThemeColorRole.DRAWER_PROFILE_TAB_TEXT -> "Personnel / Travail — texte"
-    ThemeColorRole.DRAWER_POPUP_BACKGROUND -> "Menus contextuels — fond"
-    ThemeColorRole.DRAWER_POPUP_TEXT -> "Menus contextuels — texte"
-    ThemeColorRole.DRAWER_POPUP_ICON -> "Menus contextuels — icônes"
-    ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND -> "Onglets de catégorie — actif"
-    ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND -> "Onglets de catégorie — inactif"
-    ThemeColorRole.TABS_CATEGORY_TEXT -> "Onglets de catégorie — texte (ancien réglage)"
-    ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT -> "Onglets de catégorie — texte actif"
-    ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> "Onglets de catégorie — texte inactif"
-}
+private fun roleLabel(context: android.content.Context, role: ThemeColorRole): String = context.getString(when (role) {
+    ThemeColorRole.PRIME_SEARCH_WINDOW_BACKGROUND -> com.android.launcher3.R.string.prime_role_prime_search_window_background
+    ThemeColorRole.PRIME_SEARCH_BAR_BACKGROUND -> com.android.launcher3.R.string.prime_role_prime_search_bar_background
+    ThemeColorRole.PRIME_SEARCH_TEXT -> com.android.launcher3.R.string.prime_role_prime_search_text
+    ThemeColorRole.PRIME_SEARCH_HINT -> com.android.launcher3.R.string.prime_role_prime_search_hint
+    ThemeColorRole.PRIME_SEARCH_ICON -> com.android.launcher3.R.string.prime_role_prime_search_icon
+    ThemeColorRole.PRIME_SEARCH_BORDER -> com.android.launcher3.R.string.prime_role_prime_search_border
+    ThemeColorRole.PRIME_SEARCH_TAB_ACTIVE -> com.android.launcher3.R.string.prime_role_prime_search_tab_active
+    ThemeColorRole.PRIME_SEARCH_TAB_INACTIVE -> com.android.launcher3.R.string.prime_role_prime_search_tab_inactive
+    ThemeColorRole.PRIME_SEARCH_RESULT_BACKGROUND -> com.android.launcher3.R.string.prime_role_prime_search_result_background
+    ThemeColorRole.PRIME_SEARCH_CARD_BACKGROUND -> com.android.launcher3.R.string.prime_role_prime_search_card_background
+    ThemeColorRole.PRIME_SEARCH_CARD_BORDER -> com.android.launcher3.R.string.prime_role_prime_search_card_border
+    ThemeColorRole.PRIME_SEARCH_RESULT_TEXT -> com.android.launcher3.R.string.prime_role_prime_search_result_text
+    ThemeColorRole.PRIME_SEARCH_APP_LABEL -> com.android.launcher3.R.string.prime_role_prime_search_app_label
+    ThemeColorRole.PRIME_SEARCH_SETTINGS_ICON -> com.android.launcher3.R.string.prime_role_prime_search_settings_icon
+    ThemeColorRole.GLOBAL_ACCENT -> com.android.launcher3.R.string.prime_role_global_accent
+    ThemeColorRole.GLOBAL_SETTINGS_BACKGROUND -> com.android.launcher3.R.string.prime_role_global_settings_background
+    ThemeColorRole.GLOBAL_SETTINGS_CARD_BACKGROUND -> com.android.launcher3.R.string.prime_role_global_settings_card_background
+    ThemeColorRole.GLOBAL_NOTIFICATION_DOT -> com.android.launcher3.R.string.prime_role_global_notification_dot
+    ThemeColorRole.GLOBAL_NOTIFICATION_DOT_TEXT -> com.android.launcher3.R.string.prime_role_global_notification_dot_text
+    ThemeColorRole.HOME_ICON_TEXT -> com.android.launcher3.R.string.prime_role_home_icon_text
+    ThemeColorRole.HOME_FOLDER_ICON_TEXT -> com.android.launcher3.R.string.prime_role_home_folder_icon_text
+    ThemeColorRole.HOME_HOTSEAT_BACKGROUND -> com.android.launcher3.R.string.prime_role_home_hotseat_background
+    ThemeColorRole.HOME_SEARCH_BACKGROUND -> com.android.launcher3.R.string.prime_role_home_search_background
+    ThemeColorRole.HOME_SEARCH_TEXT -> com.android.launcher3.R.string.prime_role_home_search_text
+    ThemeColorRole.HOME_SEARCH_HINT -> com.android.launcher3.R.string.prime_role_home_search_hint
+    ThemeColorRole.HOME_SEARCH_ICON -> com.android.launcher3.R.string.prime_role_home_search_icon
+    ThemeColorRole.HOME_SEARCH_BORDER -> com.android.launcher3.R.string.prime_role_home_search_border
+    ThemeColorRole.HOME_FOLDER_CLOSED_BACKGROUND -> com.android.launcher3.R.string.prime_role_home_folder_closed_background
+    ThemeColorRole.HOME_FOLDER_CLOSED_TEXT -> com.android.launcher3.R.string.prime_role_home_folder_closed_text
+    ThemeColorRole.HOME_FOLDER_OPEN_BACKGROUND -> com.android.launcher3.R.string.prime_role_home_folder_open_background
+    ThemeColorRole.HOME_FOLDER_OPEN_TEXT -> com.android.launcher3.R.string.prime_role_home_folder_open_text
+    ThemeColorRole.HOME_FOLDER_OPEN_HINT -> com.android.launcher3.R.string.prime_role_home_folder_open_hint
+    ThemeColorRole.HOME_PAGE_INDICATOR_ACTIVE -> com.android.launcher3.R.string.prime_role_home_page_indicator_active
+    ThemeColorRole.HOME_PAGE_INDICATOR_INACTIVE -> com.android.launcher3.R.string.prime_role_home_page_indicator_inactive
+    ThemeColorRole.HOME_FOLDER_PAGINATION -> com.android.launcher3.R.string.prime_role_home_folder_pagination
+    ThemeColorRole.HOME_FOLDER_CLOSED_BORDER -> com.android.launcher3.R.string.prime_role_home_folder_closed_border
+    ThemeColorRole.HOME_FOLDER_OPEN_BORDER -> com.android.launcher3.R.string.prime_role_home_folder_open_border
+    ThemeColorRole.HOME_FOLDER_BORDER -> com.android.launcher3.R.string.prime_role_home_folder_border
+    ThemeColorRole.HOME_POPUP_BACKGROUND -> com.android.launcher3.R.string.prime_role_home_popup_background
+    ThemeColorRole.HOME_POPUP_TEXT -> com.android.launcher3.R.string.prime_role_home_popup_text
+    ThemeColorRole.HOME_POPUP_ICON -> com.android.launcher3.R.string.prime_role_home_popup_icon
+    ThemeColorRole.DOCK_ICON_TEXT -> com.android.launcher3.R.string.prime_role_dock_icon_text
+    ThemeColorRole.DOCK_FOLDER_ICON_TEXT -> com.android.launcher3.R.string.prime_role_dock_folder_icon_text
+    ThemeColorRole.DOCK_FOLDER_CLOSED_BACKGROUND -> com.android.launcher3.R.string.prime_role_dock_folder_closed_background
+    ThemeColorRole.DOCK_FOLDER_CLOSED_TEXT -> com.android.launcher3.R.string.prime_role_dock_folder_closed_text
+    ThemeColorRole.DOCK_FOLDER_OPEN_BACKGROUND -> com.android.launcher3.R.string.prime_role_dock_folder_open_background
+    ThemeColorRole.DOCK_FOLDER_OPEN_TEXT -> com.android.launcher3.R.string.prime_role_dock_folder_open_text
+    ThemeColorRole.DOCK_FOLDER_OPEN_HINT -> com.android.launcher3.R.string.prime_role_dock_folder_open_hint
+    ThemeColorRole.DOCK_FOLDER_PAGINATION -> com.android.launcher3.R.string.prime_role_dock_folder_pagination
+    ThemeColorRole.DOCK_FOLDER_CLOSED_BORDER -> com.android.launcher3.R.string.prime_role_dock_folder_closed_border
+    ThemeColorRole.DOCK_FOLDER_OPEN_BORDER -> com.android.launcher3.R.string.prime_role_dock_folder_open_border
+    ThemeColorRole.DOCK_FOLDER_BORDER -> com.android.launcher3.R.string.prime_role_dock_folder_border
+    ThemeColorRole.DRAWER_BACKGROUND -> com.android.launcher3.R.string.prime_role_drawer_background
+    ThemeColorRole.DRAWER_TEXT -> com.android.launcher3.R.string.prime_role_drawer_text
+    ThemeColorRole.DRAWER_HANDLE -> com.android.launcher3.R.string.prime_role_drawer_handle
+    ThemeColorRole.DRAWER_ICON_TEXT -> com.android.launcher3.R.string.prime_role_drawer_icon_text
+    ThemeColorRole.DRAWER_FOLDER_ICON_TEXT -> com.android.launcher3.R.string.prime_role_drawer_folder_icon_text
+    ThemeColorRole.DRAWER_SEARCH_BACKGROUND_INACTIVE -> com.android.launcher3.R.string.prime_role_drawer_search_background_inactive
+    ThemeColorRole.DRAWER_SEARCH_BACKGROUND_ACTIVE -> com.android.launcher3.R.string.prime_role_drawer_search_background_active
+    ThemeColorRole.DRAWER_SEARCH_TEXT -> com.android.launcher3.R.string.prime_role_drawer_search_text
+    ThemeColorRole.DRAWER_SEARCH_HINT -> com.android.launcher3.R.string.prime_role_drawer_search_hint
+    ThemeColorRole.DRAWER_SEARCH_ICON -> com.android.launcher3.R.string.prime_role_drawer_search_icon
+    ThemeColorRole.DRAWER_SEARCH_BORDER -> com.android.launcher3.R.string.prime_role_drawer_search_border
+    ThemeColorRole.DRAWER_SEARCH_SELECTED_RESULT_BACKGROUND -> com.android.launcher3.R.string.prime_role_drawer_search_selected_result_background
+    ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BACKGROUND -> com.android.launcher3.R.string.prime_role_drawer_search_result_card_background
+    ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BORDER -> com.android.launcher3.R.string.prime_role_drawer_search_result_card_border
+    ThemeColorRole.DRAWER_SEARCH_RESULT_TEXT -> com.android.launcher3.R.string.prime_role_drawer_search_result_text
+    ThemeColorRole.DRAWER_FOLDER_CLOSED_BACKGROUND -> com.android.launcher3.R.string.prime_role_drawer_folder_closed_background
+    ThemeColorRole.DRAWER_FOLDER_CLOSED_TEXT -> com.android.launcher3.R.string.prime_role_drawer_folder_closed_text
+    ThemeColorRole.DRAWER_FOLDER_OPEN_BACKGROUND -> com.android.launcher3.R.string.prime_role_drawer_folder_open_background
+    ThemeColorRole.DRAWER_FOLDER_OPEN_TEXT -> com.android.launcher3.R.string.prime_role_drawer_folder_open_text
+    ThemeColorRole.DRAWER_FOLDER_OPEN_HINT -> com.android.launcher3.R.string.prime_role_drawer_folder_open_hint
+    ThemeColorRole.DRAWER_FOLDER_PAGINATION -> com.android.launcher3.R.string.prime_role_drawer_folder_pagination
+    ThemeColorRole.DRAWER_FOLDER_CLOSED_BORDER -> com.android.launcher3.R.string.prime_role_drawer_folder_closed_border
+    ThemeColorRole.DRAWER_FOLDER_OPEN_BORDER -> com.android.launcher3.R.string.prime_role_drawer_folder_open_border
+    ThemeColorRole.DRAWER_FOLDER_BORDER -> com.android.launcher3.R.string.prime_role_drawer_folder_border
+    ThemeColorRole.DRAWER_PROFILE_TAB_SELECTED_BACKGROUND -> com.android.launcher3.R.string.prime_role_drawer_profile_tab_selected_background
+    ThemeColorRole.DRAWER_PROFILE_TAB_UNSELECTED_BACKGROUND -> com.android.launcher3.R.string.prime_role_drawer_profile_tab_unselected_background
+    ThemeColorRole.DRAWER_PROFILE_TAB_TEXT -> com.android.launcher3.R.string.prime_role_drawer_profile_tab_text
+    ThemeColorRole.DRAWER_POPUP_BACKGROUND -> com.android.launcher3.R.string.prime_role_drawer_popup_background
+    ThemeColorRole.DRAWER_POPUP_TEXT -> com.android.launcher3.R.string.prime_role_drawer_popup_text
+    ThemeColorRole.DRAWER_POPUP_ICON -> com.android.launcher3.R.string.prime_role_drawer_popup_icon
+    ThemeColorRole.TABS_CATEGORY_ACTIVE_BACKGROUND -> com.android.launcher3.R.string.prime_role_tabs_category_active_background
+    ThemeColorRole.TABS_CATEGORY_INACTIVE_BACKGROUND -> com.android.launcher3.R.string.prime_role_tabs_category_inactive_background
+    ThemeColorRole.TABS_CATEGORY_TEXT -> com.android.launcher3.R.string.prime_role_tabs_category_text
+    ThemeColorRole.TABS_CATEGORY_ACTIVE_TEXT -> com.android.launcher3.R.string.prime_role_tabs_category_active_text
+    ThemeColorRole.TABS_CATEGORY_INACTIVE_TEXT -> com.android.launcher3.R.string.prime_role_tabs_category_inactive_text
+})

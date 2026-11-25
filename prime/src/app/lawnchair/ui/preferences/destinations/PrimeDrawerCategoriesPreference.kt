@@ -47,8 +47,8 @@ fun PrimeDrawerCategoriesPreference() {
     ) {
         PreferenceGroup {
             ClickablePreference(
-                label = "Ajouter une catégorie",
-                subtitle = "Créer un nouvel onglet dans le tiroir",
+                label = androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_add),
+                subtitle = androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_add_desc),
                 onClick = { newCategoryName = ""; showAddDialog = true },
             )
         }
@@ -84,12 +84,12 @@ fun PrimeDrawerCategoriesPreference() {
     if (showAddDialog) {
         AlertDialog(
             onDismissRequest = { showAddDialog = false },
-            title = { Text("Nouvelle catégorie") },
+            title = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_new)) },
             text = {
                 OutlinedTextField(
                     value = newCategoryName,
                     onValueChange = { newCategoryName = it },
-                    label = { Text("Nom de la catégorie") },
+                    label = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_name)) },
                     singleLine = true,
                 )
             },
@@ -102,10 +102,10 @@ fun PrimeDrawerCategoriesPreference() {
                         showAddDialog = false
                         navController.navigate(PrimeDrawerCategory(created.id))
                     },
-                ) { Text("Créer") }
+                ) { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_create)) }
             },
             dismissButton = {
-                TextButton(onClick = { showAddDialog = false }) { Text("Annuler") }
+                TextButton(onClick = { showAddDialog = false }) { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_cancel)) }
             },
         )
     }

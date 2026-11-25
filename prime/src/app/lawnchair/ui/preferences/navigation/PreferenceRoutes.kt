@@ -55,8 +55,18 @@ data object Dock : PreferenceRootRoute, PreferenceDeepLink {
 }
 
 @Serializable
+data object Widgets : PreferenceRootRoute, PreferenceDeepLink {
+    override val deepLink = "$URI/widgets"
+}
+
+@Serializable
 data object AppDrawer : PreferenceRootRoute, PreferenceDeepLink {
     override val deepLink = "$URI/app-drawer"
+}
+
+@Serializable
+data object WebApps : PreferenceRootRoute, PreferenceDeepLink {
+    override val deepLink = "$URI/web-apps"
 }
 
 // technically the search screen, selectedId selects the default tab inside this

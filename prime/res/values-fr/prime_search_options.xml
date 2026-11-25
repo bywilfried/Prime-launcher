@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_option_fileoption_preview">Aperçu des fichiers</string>
+    <string name="prime_option_fileoption_folders">Dossiers</string>
+    <string name="prime_option_fileoption_documents">Documents</string>
+    <string name="prime_option_fileoption_images">Images</string>
+    <string name="prime_option_fileoption_videos">Vidéos</string>
+    <string name="prime_option_fileoption_audio">Audio</string>
+    <string name="prime_option_fileoption_apks">APKs</string>
+    <string name="prime_option_fileoption_other">Autre</string>
+    <string name="prime_option_fileoption_system">Fichiers système</string>
+    <string name="prime_option_notificationretention_one_month">1 mois</string>
+    <string name="prime_option_notificationretention_two_months">2 mois</string>
+    <string name="prime_option_notificationretention_three_months">3 mois</string>
+    <string name="prime_option_notificationretention_six_months">6 mois</string>
+    <string name="prime_option_notificationretention_twelve_months">12 mois</string>
+    <string name="prime_option_notificationretention_forever">Toujours</string>
+    <string name="prime_option_openingtab_last">Dernière consultée</string>
+    <string name="prime_option_openingtab_frequent">Fréquentes</string>
+    <string name="prime_option_openingtab_recent">Récentes</string>
+    <string name="prime_option_openingtab_new">Nouvelles</string>
+</resources>

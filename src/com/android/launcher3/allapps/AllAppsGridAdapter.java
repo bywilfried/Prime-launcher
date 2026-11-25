@@ -228,7 +228,12 @@ public class AllAppsGridAdapter<T extends Context & ActivityContext> extends
             }
             int viewType = items.get(position).viewType;
             if (isIconViewType(viewType)) {
-                return totalSpans / mAppsPerRow;
+                // Search providers may own a separate app-grid column count.
+                // The ordinary all-apps grid still uses mAppsPerRow.
+                int columns = mAdapterProvider.isViewSupported(viewType)
+                        ? mAdapterProvider.getItemsPerRow(viewType, mAppsPerRow)
+                        : mAppsPerRow;
+                return totalSpans / Math.max(1, columns);
             } else {
                 if (mAdapterProvider.isViewSupported(viewType)) {
                     return totalSpans / mAdapterProvider.getItemsPerRow(viewType, mAppsPerRow);

@@ -14,8 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Audit Prime resources
-        run: python3 scripts/audit_translations.py --json translation-audit.json
+        run: python3 scripts/audit_translations.py --json translation-audit.json --check-fr-en
       - uses: actions/upload-artifact@v7
+        if: always()
         with:
           name: translation-audit
           path: translation-audit.json

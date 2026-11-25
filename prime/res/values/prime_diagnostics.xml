@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_diag_no_icons">No icon diagnostics yet. Open the drawer or search, then tap Refresh.</string>
+    <string name="prime_diag_refresh">Refresh</string>
+    <string name="prime_diag_icons">Icons</string>
+    <string name="prime_diag_all">All logs</string>
+    <string name="prime_diag_export">Export widget logs</string>
+    <string name="prime_diag_export_desc">Retrieve and share logs available to Prime Launcher</string>
+    <string name="prime_diag_popup">Context menu diagnostics</string>
+    <string name="prime_diag_popup_desc">View and share home screen menu colors and backgrounds</string>
+    <string name="prime_diag_no_trace">No trace yet. Long-press an empty area of the home screen, then return here.</string>
+    <string name="prime_diag_search">Search diagnostics</string>
+    <string name="prime_diag_search_desc">Trace search and keyboard activity without Logcat</string>
+    <string name="prime_diag_swipe">Swipe diagnostics</string>
+    <string name="prime_diag_swipe_desc">View swipe traces between drawer categories</string>
+    <string name="prime_diag_copy">Copy</string>
+    <string name="prime_diag_share_title">Share diagnostics</string>
+    <string name="prime_diag_share">Share</string>
+    <string name="prime_diag_cleared">Log cleared. Long-press an empty area again.</string>
+    <string name="prime_diag_clear">Clear</string>
+    <string name="prime_diag_capture_on">Capture enabled</string>
+    <string name="prime_diag_capture_off">Capture disabled</string>
+    <string name="prime_diag_prime_swipe">Prime swipe diagnostics</string>
+</resources>

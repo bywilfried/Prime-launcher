@@ -77,7 +77,15 @@ sealed class LawnchairSearchAlgorithm(
     protected fun transformSearchResults(results: List<SearchTargetCompat>): List<SearchAdapterItem> {
         val filtered = results
             .asSequence()
-            .filter { it.packageName != BuildConfig.APPLICATION_ID }
+            .filter { target ->
+                // Virtual browser shortcuts intentionally use Prime's package.
+                // Keep those application results, but continue hiding Prime's
+                // own internal search targets.
+                target.packageName != BuildConfig.APPLICATION_ID ||
+                    (target.resultType == RESULT_TYPE_APPLICATION &&
+                        target.extras.getString("class")
+                            ?.startsWith(BuildConfig.APPLICATION_ID + ".prime.pinned.Shortcut_") == true)
+            }
             .filter { LawnchairSearchAdapterProvider.viewTypeMap[it.layoutType] != null }
             .removeDuplicateDividers()
             .toList()
@@ -235,7 +243,7 @@ sealed class LawnchairSearchAlgorithm(
             return true
         }
 
-        fun create(context: Context): LawnchairSearchAlgorithm {
+        fun create(context: Context, primeMatching: Boolean = false): LawnchairSearchAlgorithm {
             val prefs = PreferenceManager2.getInstance(context)
             val searchAlgorithm = prefs.searchAlgorithm.firstCached()
 
@@ -244,7 +252,7 @@ sealed class LawnchairSearchAlgorithm(
                     context,
                 )
 
-                searchAlgorithm == LOCAL_SEARCH -> LawnchairLocalSearchAlgorithm(context)
+                searchAlgorithm == LOCAL_SEARCH -> LawnchairLocalSearchAlgorithm(context, primeMatching = primeMatching)
 
                 else -> LawnchairAppSearchAlgorithm(context)
             }

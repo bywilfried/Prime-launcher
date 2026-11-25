@@ -81,6 +81,9 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
         mWallpaperManager = WallpaperManager.getInstance(context);
         mContainerType = containerType;
         setClipChildren(false);
+        // Draw widgets behind icons when overlap is enabled on the workspace.
+        // Android also uses child drawing order for touch hit testing.
+        setChildrenDrawingOrderEnabled(true);
         mPreferenceManager2 = PreferenceManager2.getInstance(context);
     }
 
@@ -100,6 +103,29 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
         mCountX = countX;
         mCountY = countY;
         mBorderSpace = borderSpace;
+    }
+
+    @Override
+    protected int getChildDrawingOrder(int childCount, int drawingPosition) {
+        if (mContainerType != WORKSPACE
+                || !PreferenceCacheExtensionsKt.firstCached(mPreferenceManager2.getAllowWidgetOverlap())) {
+            return super.getChildDrawingOrder(childCount, drawingPosition);
+        }
+
+        // Widgets go first (background); shortcuts, folders and WebApps go last.
+        // Preserve the existing relative order inside each group.
+        int widgets = 0;
+        for (int i = 0; i < childCount; i++) {
+            if (getChildAt(i) instanceof LauncherAppWidgetHostView) widgets++;
+        }
+        boolean drawWidget = drawingPosition < widgets;
+        int target = drawWidget ? drawingPosition : drawingPosition - widgets;
+        for (int i = 0; i < childCount; i++) {
+            if ((getChildAt(i) instanceof LauncherAppWidgetHostView) == drawWidget) {
+                if (target-- == 0) return i;
+            }
+        }
+        return super.getChildDrawingOrder(childCount, drawingPosition);
     }
 
     public View getChildAt(int cellX, int cellY) {

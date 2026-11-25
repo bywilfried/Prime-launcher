@@ -55,27 +55,27 @@ fun PrimeDevelopmentOptionsPreference() {
                 onClick = { navController.navigate(PrimeDiagnosticLogs) },
             )
             ClickablePreference(
-                label = "Exporter les logs des widgets",
-                subtitle = "Récupérer et partager les journaux accessibles à Prime Launcher",
+                label = stringResource(R.string.prime_diag_export),
+                subtitle = stringResource(R.string.prime_diag_export_desc),
                 onClick = { app.lawnchair.bugreport.PrimeWidgetLogExporter.export(context) },
             )
             ClickablePreference(
-                label = "Diagnostic des menus contextuels",
-                subtitle = "Afficher et partager les couleurs et fonds des menus de l’accueil",
+                label = stringResource(R.string.prime_diag_popup),
+                subtitle = stringResource(R.string.prime_diag_popup_desc),
                 onClick = {
                     popupLog = PrimeDebugLog.getPopupText(context)
-                        .ifBlank { "Aucune trace. Effectuez un appui long sur une zone vide de l’accueil, puis revenez ici." }
+                        .ifBlank { context.getString(R.string.prime_diag_no_trace) }
                     showPopupDiagnostic = true
                 },
             )
             ClickablePreference(
-                label = "Diagnostic de recherche",
-                subtitle = "Tracer les recherches et le clavier sans Logcat",
+                label = stringResource(R.string.prime_diag_search),
+                subtitle = stringResource(R.string.prime_diag_search_desc),
                 onClick = { searchLog = app.lawnchair.search.PrimeSearchTrace.dump(); showSearchDiagnostic = true },
             )
             ClickablePreference(
-                label = "Diagnostic swipe",
-                subtitle = "Afficher les traces du swipe entre les catégories du tiroir",
+                label = stringResource(R.string.prime_diag_swipe),
+                subtitle = stringResource(R.string.prime_diag_swipe_desc),
                 onClick = { showSwipeDiagnostic = true },
             )
         }
@@ -84,7 +84,7 @@ fun PrimeDevelopmentOptionsPreference() {
     if (showPopupDiagnostic) {
         AlertDialog(
             onDismissRequest = { showPopupDiagnostic = false },
-            title = { Text("Diagnostic des menus contextuels") },
+            title = { Text(stringResource(R.string.prime_diag_popup)) },
             text = {
                 Box(Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState())) {
                     Text(popupLog)
@@ -94,7 +94,7 @@ fun PrimeDevelopmentOptionsPreference() {
                 TextButton(onClick = {
                     context.getSystemService(ClipboardManager::class.java)
                         ?.setPrimaryClip(ClipData.newPlainText("Prime popup diagnostic", popupLog))
-                }) { Text("Copier") }
+                }) { Text(stringResource(R.string.prime_diag_copy)) }
             },
             dismissButton = {
                 TextButton(onClick = {
@@ -102,12 +102,12 @@ fun PrimeDevelopmentOptionsPreference() {
                         type = "text/plain"
                         putExtra(Intent.EXTRA_TEXT, popupLog)
                     }
-                    context.startActivity(Intent.createChooser(share, "Partager le diagnostic"))
-                }) { Text("Partager") }
+                    context.startActivity(Intent.createChooser(share, context.getString(R.string.prime_diag_share_title)))
+                }) { Text(stringResource(R.string.prime_diag_share)) }
                 TextButton(onClick = {
                     PrimeDebugLog.clearPopup(context)
-                    popupLog = "Journal effacé. Effectuez un nouvel appui long sur une zone vide."
-                }) { Text("Effacer") }
+                    popupLog = context.getString(R.string.prime_diag_cleared)
+                }) { Text(stringResource(R.string.prime_diag_clear)) }
             },
         )
     }
@@ -115,7 +115,7 @@ fun PrimeDevelopmentOptionsPreference() {
     if (showSearchDiagnostic) {
         AlertDialog(
             onDismissRequest = { showSearchDiagnostic = false },
-            title = { Text("Diagnostic de recherche") },
+            title = { Text(stringResource(R.string.prime_diag_search)) },
             text = {
                 androidx.compose.foundation.layout.Column {
                     androidx.compose.material3.Switch(
@@ -125,9 +125,9 @@ fun PrimeDevelopmentOptionsPreference() {
                             app.lawnchair.search.PrimeSearchTrace.enabled = it
                         },
                     )
-                    Text(if (searchTraceEnabled) "Capture activée" else "Capture désactivée")
+                    Text(if (searchTraceEnabled) stringResource(R.string.prime_diag_capture_on) else stringResource(R.string.prime_diag_capture_off))
                     TextButton(onClick = { searchLog = app.lawnchair.search.PrimeSearchTrace.dump() }) {
-                        Text("Actualiser")
+                        Text(stringResource(R.string.prime_diag_refresh))
                     }
                     Box(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
                         Text(searchLog)
@@ -138,20 +138,20 @@ fun PrimeDevelopmentOptionsPreference() {
                 TextButton(onClick = {
                     context.getSystemService(ClipboardManager::class.java)
                         ?.setPrimaryClip(ClipData.newPlainText("Prime search diagnostic", searchLog))
-                }) { Text("Copier") }
+                }) { Text(stringResource(R.string.prime_diag_copy)) }
             },
             dismissButton = {
                 TextButton(onClick = {
                     app.lawnchair.search.PrimeSearchTrace.clear()
                     searchLog = app.lawnchair.search.PrimeSearchTrace.dump()
-                }) { Text("Effacer") }
+                }) { Text(stringResource(R.string.prime_diag_clear)) }
                 TextButton(onClick = {
                     val share = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
                         putExtra(Intent.EXTRA_TEXT, searchLog)
                     }
-                    context.startActivity(Intent.createChooser(share, "Partager le diagnostic"))
-                }) { Text("Partager") }
+                    context.startActivity(Intent.createChooser(share, context.getString(R.string.prime_diag_share_title)))
+                }) { Text(stringResource(R.string.prime_diag_share)) }
             },
         )
     }
@@ -160,7 +160,7 @@ fun PrimeDevelopmentOptionsPreference() {
         val log = ActivityAllAppsContainerView.getPrimeSwipeDebugLog()
         AlertDialog(
             onDismissRequest = { showSwipeDiagnostic = false },
-            title = { Text("Diagnostic swipe Prime") },
+            title = { Text(stringResource(R.string.prime_diag_prime_swipe)) },
             text = {
                 Box(Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState())) {
                     Text(log)
@@ -170,13 +170,13 @@ fun PrimeDevelopmentOptionsPreference() {
                 TextButton(onClick = {
                     val clipboard = context.getSystemService(ClipboardManager::class.java)
                     clipboard?.setPrimaryClip(ClipData.newPlainText("Prime swipe diagnostic", log))
-                }) { Text("Copier") }
+                }) { Text(stringResource(R.string.prime_diag_copy)) }
             },
             dismissButton = {
                 TextButton(onClick = {
                     ActivityAllAppsContainerView.clearPrimeSwipeDebugLog()
                     showSwipeDiagnostic = false
-                }) { Text("Effacer") }
+                }) { Text(stringResource(R.string.prime_diag_clear)) }
             },
         )
     }

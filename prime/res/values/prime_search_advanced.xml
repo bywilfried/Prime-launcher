@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_search_advanced_rows">Number of rows: %1$d</string>
+    <string name="prime_search_advanced_two_lines">Two-line app labels</string>
+    <string name="prime_search_advanced_results">Show in search results</string>
+    <string name="prime_search_advanced_follow">Follow Prime Search settings</string>
+    <string name="prime_search_advanced_max_rows">Maximum number of rows: %1$d</string>
+    <string name="prime_search_advanced_alignment">App alignment</string>
+    <string name="prime_search_advanced_preview">App results preview</string>
+    <string name="prime_search_advanced_notif_yes">Notification access granted</string>
+    <string name="prime_search_advanced_notif_no">Notification access not granted</string>
+    <string name="prime_search_advanced_manage_permission">Manage Android permission</string>
+    <string name="prime_search_advanced_allow_notif">Allow notification access</string>
+    <string name="prime_search_advanced_clear_history">Clear notification history</string>
+    <string name="prime_search_advanced_notif_desc">Recording requires Android notification access.</string>
+    <string name="prime_search_advanced_allow">Allow access</string>
+    <string name="prime_search_advanced_files_yes">All files access: granted</string>
+    <string name="prime_search_advanced_files_no">All files access: not granted</string>
+    <string name="prime_search_advanced_files_desc">This access enables searching documents, APKs, archives and folders in shared storage, in Prime Search and the app drawer.</string>
+    <string name="prime_search_advanced_manage_files">Manage all files access</string>
+    <string name="prime_search_advanced_allow_files">Allow all files access</string>
+    <string name="prime_search_advanced_providers_desc">Results depend on available providers and Android permissions.</string>
+    <string name="prime_search_advanced_clear_question">Clear history?</string>
+    <string name="prime_search_advanced_clear_desc">This will delete notifications recorded in Prime Launcher.</string>
+    <string name="prime_search_advanced_clear">Clear</string>
+    <string name="prime_search_advanced_cancel">Cancel</string>
+    <string name="prime_search_advanced_reset_order">Reset order</string>
+</resources>

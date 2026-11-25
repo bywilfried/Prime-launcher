@@ -200,6 +200,23 @@ class SearchResultIcon(context: Context, attrs: AttributeSet?) :
                     if (boundId == targetId) {
                         applyFromItemInfoWithIcon(info)
                         setPrimeIconShape(PreferenceManager2.getInstance(context).iconShape.firstCached())
+                        val engine = app.lawnchair.prime.search.PrimeSearchResultPreferences.WebEngine.entries.firstOrNull {
+                            it.title == target.extras.getString("prime_web_engine")
+                        }
+                        if (engine != null) {
+                            app.lawnchair.prime.search.PrimeWebIcons.load(context, engine,
+                                app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER,
+                                app.lawnchair.prime.search.PrimeWebIcons.localResource(engine) != 0 ||
+                                    app.lawnchair.prime.search.PrimeWebIcons.installedIcon(context, engine) != null) { bitmap ->
+                                if (boundId == targetId) {
+                                    LauncherIcons.obtain(context).use { li ->
+                                        info.bitmap = li.createBadgedIconBitmap(android.graphics.drawable.BitmapDrawable(resources, bitmap), BaseIconFactory.IconOptions().setUser(info.user))
+                                    }
+                                    applyFromItemInfoWithIcon(info)
+                                    setPrimeIconShape(PreferenceManager2.getInstance(context).iconShape.firstCached())
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -221,6 +238,8 @@ class SearchResultIcon(context: Context, attrs: AttributeSet?) :
 
     private fun bindFromApp(componentName: ComponentName, user: UserHandle) {
         val appInfo = launcher.appsView.appsStore.getApp(ComponentKey(componentName, user))
+            ?: com.android.launcher3.model.PrimePinnedDrawerShortcuts.getEntries(context)
+                .firstOrNull { it.componentName == componentName && it.user == user }
         if (appInfo == null) {
             isVisible = false
             return
@@ -263,11 +282,20 @@ class SearchResultIcon(context: Context, attrs: AttributeSet?) :
     ) {
         val action = target.searchAction!!
         LauncherIcons.obtain(context).use { li ->
-            val icon = action.icon
+            val engine = app.lawnchair.prime.search.PrimeSearchResultPreferences.WebEngine.entries.firstOrNull {
+                it.title == target.extras.getString("prime_web_engine")
+            }
+            val installed = engine?.let { app.lawnchair.prime.search.PrimeWebIcons.installedIcon(context, it) }
+            val localRes = engine?.let { app.lawnchair.prime.search.PrimeWebIcons.localResource(it) } ?: 0
+            val icon = if (localRes != 0) android.graphics.drawable.Icon.createWithResource(context, localRes) else action.icon
 
             val packageIcon = getPackageIcon(target.packageName, target.userHandle)
 
             info.bitmap = when {
+                installed != null -> li.createBadgedIconBitmap(installed, BaseIconFactory.IconOptions().setUser(info.user))
+                engine != null && localRes == 0 ->
+                    li.createIconBitmap(engine.title.take(1).uppercase(java.util.Locale.ROOT), packageIcon.color)
+
                 info.hasFlags(SearchActionItemInfo.FLAG_PRIMARY_ICON_FROM_TITLE) ->
                     li.createIconBitmap("${info.title}", packageIcon.color)
 

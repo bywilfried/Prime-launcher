@@ -88,8 +88,17 @@ object PrimeSearchOverlay {
         private val floating: Boolean,
         private val density: Float,
         private val onDismiss: () -> Unit,
+        private val embeddedHost: ViewGroup? = null,
     ) {
         private val layer = launcher.dragLayer
+        private val hostAttachListener = object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(view: View) = Unit
+            override fun onViewDetachedFromWindow(view: View) {
+                if (embeddedHost != null && content.parent === embeddedHost) dismiss()
+            }
+        }.also { listener ->
+            embeddedHost?.addOnAttachStateChangeListener(listener)
+        }
         private val scrim = object : FrameLayout(launcher) {
             override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
                 if (event.keyCode == android.view.KeyEvent.KEYCODE_BACK &&
@@ -109,9 +118,15 @@ object PrimeSearchOverlay {
                 if (popup != null) popup.close(true) else dismiss()
             }
         }
-        val isShowing get() = scrim.parent != null
+        val isShowing get() = if (embeddedHost != null) content.parent === embeddedHost else scrim.parent != null
         fun show() {
             if (isShowing) return
+            if (embeddedHost != null) {
+                (content.parent as? ViewGroup)?.removeView(content)
+                embeddedHost.addView(content, FrameLayout.LayoutParams(-1, -1))
+                content.isClickable = true
+                return
+            }
             layer.setPrimeSearchOpen(true)
             layer.addView(scrim, FrameLayout.LayoutParams(-1, -1))
             val width = if (floating) {
@@ -138,15 +153,21 @@ object PrimeSearchOverlay {
         fun dismiss() {
             if (!isShowing) return
             (content.parent as? ViewGroup)?.removeView(content)
-            layer.removeView(scrim)
-            layer.setPrimeSearchOpen(false)
+            if (embeddedHost == null) {
+                layer.removeView(scrim)
+                layer.setPrimeSearchOpen(false)
+            } else {
+                embeddedHost.removeOnAttachStateChangeListener(hostAttachListener)
+            }
             onDismiss()
         }
         fun hideForDrag() {
+            if (embeddedHost != null) return
             scrim.visibility = View.INVISIBLE
             layer.setPrimeSearchDrag(true)
         }
         fun restoreAfterDrag() {
+            if (embeddedHost != null) return
             layer.setPrimeSearchDrag(false)
             if (isShowing) scrim.visibility = View.VISIBLE
         }
@@ -199,9 +220,9 @@ object PrimeSearchOverlay {
         icon.setOnTouchListener { _, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    // Let the app icon own the complete tap immediately.
-                    // The parent ScrollView must not steal the first gesture.
-                    icon.parent?.requestDisallowInterceptTouchEvent(true)
+                    // Allow the parent ScrollView to intercept a vertical swipe.
+                    // Only a confirmed long press should lock touch interception
+                    // for the native popup/drag gesture.
                     onTouchActive(true)
                     pressed = false
                     dragging = false
@@ -262,18 +283,31 @@ object PrimeSearchOverlay {
         }
     }
 
-    fun show(launcher: LawnchairLauncher) {
+    fun show(
+        launcher: LawnchairLauncher,
+        preferenceSurface: PrimeSearchResultPreferences.Surface = PrimeSearchResultPreferences.Surface.PRIME_SEARCH,
+        embeddedHost: ViewGroup? = null,
+        initialQuery: String = "",
+        initialCategory: PrimeSearchResultPreferences.Category? = null,
+    ) {
         if (activeDialog?.isShowing == true) return
         if (activeDialog != null) dismiss()
         val density = launcher.resources.displayMetrics.density
         val inset = (16 * density).toInt()
-        val floating = PrimeSearchResultPreferences.floatingWindow(launcher)
+        val floating = embeddedHost == null && PrimeSearchResultPreferences.floatingWindow(launcher, preferenceSurface)
         val profile = ThemeProfile.current(launcher)
         val variant = launcher.effectiveThemeVariant()
         fun themed(role: ThemeColorRole) = ThemeColors.resolve(launcher, profile, role, variant)
-        val algorithm = LawnchairLocalSearchAlgorithm(launcher, primeSearch = true)
+        val algorithm = LawnchairLocalSearchAlgorithm(
+            launcher,
+            primeSearch = true,
+            preferenceSurface = preferenceSurface,
+        )
         activeAlgorithm = algorithm
         val input = EditText(launcher).apply {
+            // App matches belong in the results grid, not as inline ghost text.
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
             isSingleLine = true
             hint = "Prime Search"
             gravity = Gravity.CENTER_VERTICAL
@@ -324,6 +358,13 @@ object PrimeSearchOverlay {
         fun resultGestureBusy(): Boolean =
             resultGestureActive || android.os.SystemClock.uptimeMillis() < resultGestureSettlesAt
         val container = object : LinearLayout(launcher) {
+            override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+                if (embeddedHost != null && event.keyCode == android.view.KeyEvent.KEYCODE_BACK) {
+                    if (event.action == android.view.KeyEvent.ACTION_UP) dismiss()
+                    return true
+                }
+                return super.dispatchKeyEvent(event)
+            }
             override fun dispatchTouchEvent(event: MotionEvent): Boolean {
                 when (event.actionMasked) {
                     MotionEvent.ACTION_DOWN -> resultGestureActive = true
@@ -354,7 +395,11 @@ object PrimeSearchOverlay {
             searchBar.addView(input, FrameLayout.LayoutParams(-1, -2))
             addView(searchBar, LinearLayout.LayoutParams(-1, -2))
             addView(zeroState, LinearLayout.LayoutParams(-1, -2))
-            addView(scroll, LinearLayout.LayoutParams(-1, -2))
+            addView(scroll, if (embeddedHost != null) {
+                LinearLayout.LayoutParams(-1, 0, 1f)
+            } else {
+                LinearLayout.LayoutParams(-1, -2)
+            })
             // Use a real outlined vector-like gear instead of the platform
             // Unicode gear glyph, whose filled appearance varies by font.
             val settingsIcon = object : Drawable() {
@@ -401,7 +446,7 @@ object PrimeSearchOverlay {
                 scaleType = ImageView.ScaleType.CENTER_INSIDE
                 setPadding((10 * density).toInt(), (10 * density).toInt(),
                     (10 * density).toInt(), (10 * density).toInt())
-                contentDescription = "Options Prime Search"
+                contentDescription = launcher.getString(com.android.launcher3.R.string.prime_overlay_options)
                 setOnClickListener {
                     PrimeSearchOverlay.dismiss()
                     launcher.startActivity(
@@ -416,20 +461,20 @@ object PrimeSearchOverlay {
             input.setPadding(inset, 0, (56 * density).toInt(), 0)
         }
         lateinit var dialog: PrimeSearchSurface
-        dialog = PrimeSearchSurface(launcher, container, floating, density) {
+        dialog = PrimeSearchSurface(launcher, container, floating, density, onDismiss = {
             algorithm.cancel(true)
             if (activeAlgorithm === algorithm) activeAlgorithm = null
             if (activeDialog === dialog) activeDialog = null
-        }
+        }, embeddedHost = embeddedHost)
         val packageManager = launcher.packageManager
         // Do not enumerate installed apps or query usage stats on the UI thread
         // before the search window and its keyboard can appear.
         var installed: List<android.content.pm.ApplicationInfo> = cachedApps.orEmpty()
         var usage: Map<String, android.app.usage.UsageStats> = cachedUsage.orEmpty()
         var hasUsageAccess = cachedUsageGranted
-        val sections = listOf("FRÉQUENTES", "RÉCENTES", "NOUVELLES")
-        var selectedTab = when (PrimeSearchResultPreferences.openingTab(launcher)) {
-            PrimeSearchResultPreferences.OpeningTab.LAST -> PrimeSearchResultPreferences.lastOpenedTab(launcher)
+        val sections = listOf(PrimeSearchResultPreferences.OpeningTab.FREQUENT, PrimeSearchResultPreferences.OpeningTab.RECENT, PrimeSearchResultPreferences.OpeningTab.NEW).map { it.localizedLabel(launcher).uppercase(java.util.Locale.getDefault()) }
+        var selectedTab = when (PrimeSearchResultPreferences.openingTab(launcher, preferenceSurface)) {
+            PrimeSearchResultPreferences.OpeningTab.LAST -> PrimeSearchResultPreferences.lastOpenedTab(launcher, preferenceSurface)
             PrimeSearchResultPreferences.OpeningTab.FREQUENT -> 0
             PrimeSearchResultPreferences.OpeningTab.RECENT -> 1
             PrimeSearchResultPreferences.OpeningTab.NEW -> 2
@@ -449,7 +494,7 @@ object PrimeSearchOverlay {
                     setPadding((8 * density).toInt(), inset, (8 * density).toInt(), inset)
                     setOnClickListener {
                         selectedTab = index
-                        PrimeSearchResultPreferences.setLastOpenedTab(launcher, index)
+                        PrimeSearchResultPreferences.setLastOpenedTab(launcher, index, preferenceSurface)
                         renderZeroState()
                     }
                 }
@@ -457,7 +502,7 @@ object PrimeSearchOverlay {
             }
             if (selectedTab != 2 && !hasUsageAccess) {
                 val permission = TextView(launcher).apply {
-                    text = "Autoriser l’accès aux données d’utilisation pour afficher les applications fréquentes et récentes.\nAppuyer pour ouvrir les paramètres Android."
+                    text = launcher.getString(com.android.launcher3.R.string.prime_overlay_usage)
                     textSize = 12f
                     gravity = Gravity.CENTER
                     setTextColor(themed(ThemeColorRole.PRIME_SEARCH_TEXT))
@@ -480,8 +525,8 @@ object PrimeSearchOverlay {
                     catch (_: Exception) { 0L }
                 }
             }
-            val columns = PrimeSearchResultPreferences.appsPerRow(launcher)
-            val maxCount = columns * PrimeSearchResultPreferences.zeroStateRows(launcher)
+            val columns = PrimeSearchResultPreferences.appsPerRow(launcher, preferenceSurface)
+            val maxCount = columns * PrimeSearchResultPreferences.zeroStateRows(launcher, preferenceSurface)
             val usableWidth = (if (floating) {
                 (launcher.resources.displayMetrics.widthPixels - (24 * density).toInt())
                     .coerceAtMost((600 * density).toInt())
@@ -491,15 +536,15 @@ object PrimeSearchOverlay {
             // Always allocate the configured number of rows, even if a tab
             // has fewer apps (or none). This keeps the overlay height stable
             // while switching between Fréquentes, Récentes and Nouvelles.
-            val rows = PrimeSearchResultPreferences.zeroStateRows(launcher)
+            val rows = PrimeSearchResultPreferences.zeroStateRows(launcher, preferenceSurface)
             // Derive row height from the actual icon dimension, font metrics
             // and vertical padding instead of a hard-coded 100dp.
-            val iconSize = (48 * density * PrimeSearchResultPreferences.iconSizePercent(launcher) / 100f).toInt()
+            val iconSize = (48 * density * PrimeSearchResultPreferences.iconSizePercent(launcher, preferenceSurface) / 100f).toInt()
             val titleTextSizeSp = 11f
             val titlePaint = android.text.TextPaint().apply {
                 textSize = titleTextSizeSp * launcher.resources.displayMetrics.scaledDensity
             }
-            val labelLines = if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
+            val labelLines = if (PrimeSearchResultPreferences.twoLineAppLabels(launcher, preferenceSurface)) 2 else 1
             val titleHeight = kotlin.math.ceil(
                 (titlePaint.fontMetrics.descent - titlePaint.fontMetrics.ascent).toDouble()
             ).toInt().coerceAtLeast(1) * labelLines
@@ -611,14 +656,10 @@ object PrimeSearchOverlay {
             webPanel.removeAllViews()
             if (query.isBlank()) return
             val foreground = themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT)
-            fun row(title: String, action: () -> Unit) {
-                val isHeading = title in setOf(
-                    "Suggestions Web", "Raccourcis Web", "Contacts",
-                    "Événements de l'agenda", "Tâches · Tasks.org",
-                    "Historique des notifications", "Paramètres de l'appareil",
-                    "Device settings",
-                )
+            fun row(title: String, category: PrimeSearchResultPreferences.Category? = null, action: () -> Unit) {
+                val isHeading = category != null
                 val label = TextView(launcher).apply {
+                    tag = category
                     text = title
                     textSize = 15f
                     setTextColor(foreground)
@@ -638,11 +679,11 @@ object PrimeSearchOverlay {
                 }
                 webPanel.addView(label, LinearLayout.LayoutParams(-1, -2))
             }
-            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB) && currentSuggestions.isNotEmpty()) {
-                row("Suggestions Web") {}
+            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB, preferenceSurface) && currentSuggestions.isNotEmpty()) {
+                row(PrimeSearchResultPreferences.Category.WEB.localizedTitle(launcher), PrimeSearchResultPreferences.Category.WEB) {}
                 currentSuggestions.forEach { suggestion ->
                     row(suggestion) {
-                        val provider = PrimeSearchResultPreferences.suggestionProvider(launcher)
+                        val provider = PrimeSearchResultPreferences.suggestionProvider(launcher, preferenceSurface)
                         val engine = when (provider) {
                             PrimeSearchResultPreferences.SuggestionProvider.GOOGLE -> PrimeSearchResultPreferences.WebEngine.GOOGLE
                             PrimeSearchResultPreferences.SuggestionProvider.DUCKDUCKGO -> PrimeSearchResultPreferences.WebEngine.DUCKDUCKGO
@@ -657,7 +698,7 @@ object PrimeSearchOverlay {
                     }
                 }
             }
-            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.CONTACTS)) {
+            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.CONTACTS, preferenceSurface)) {
                 if (contactQuery != query) {
                     contactQuery = query
                     contactResults = emptyList()
@@ -676,7 +717,7 @@ object PrimeSearchOverlay {
                 }
                 val contacts = contactResults
                 if (contacts.isNotEmpty()) {
-                    row("Contacts") {}
+                    row(PrimeSearchResultPreferences.Category.CONTACTS.localizedTitle(launcher), PrimeSearchResultPreferences.Category.CONTACTS) {}
                     contacts.forEach { contact ->
                         val contactRow = LinearLayout(launcher).apply {
                             orientation = LinearLayout.HORIZONTAL
@@ -700,7 +741,7 @@ object PrimeSearchOverlay {
                                 setColor(Color.HSVToColor(floatArrayOf(hue.toFloat(), 0.34f, 0.66f)))
                             }
                             clipToOutline = true
-                            contentDescription = "Contact : " + contact.name
+                            contentDescription = launcher.getString(com.android.launcher3.R.string.prime_overlay_contact, contact.name)
                             setOnClickListener {
                                 dialog.hideKeyboardForSelection()
                                 runCatching {
@@ -787,17 +828,17 @@ object PrimeSearchOverlay {
                                 contactRow.addView(button, LinearLayout.LayoutParams(
                                     (48 * density).toInt(), (44 * density).toInt()))
                             }
-                            actionIcon(android.R.drawable.ic_dialog_email, "Envoyer un SMS à ${contact.name}", Uri.fromParts("smsto", phone, null))
-                            actionIcon(android.R.drawable.ic_menu_call, "Appeler ${contact.name}", Uri.fromParts("tel", phone, null))
+                            actionIcon(android.R.drawable.ic_dialog_email, launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_sms, contact.name), Uri.fromParts("smsto", phone, null))
+                            actionIcon(android.R.drawable.ic_menu_call, launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_call, contact.name), Uri.fromParts("tel", phone, null))
                         }
                         webPanel.addView(contactRow, LinearLayout.LayoutParams(-1, -2))
                     }
                 }
             }
-            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.CALENDAR)) {
+            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.CALENDAR, preferenceSurface)) {
                 val events = PrimeCalendarSearch.events(launcher, query)
                 if (events.isNotEmpty()) {
-                    row("Événements de l'agenda") {}
+                    row(PrimeSearchResultPreferences.Category.CALENDAR.localizedTitle(launcher), PrimeSearchResultPreferences.Category.CALENDAR) {}
                     events.forEach { event ->
                         row("${event.title}\n${event.detail}") {
                             runCatching {
@@ -808,10 +849,10 @@ object PrimeSearchOverlay {
                     }
                 }
             }
-            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.REMINDERS)) {
+            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.REMINDERS, preferenceSurface)) {
                 val tasks = PrimeTasksSearch.search(launcher, query)
                 if (tasks.isNotEmpty()) {
-                    row("Tâches · Tasks.org") {}
+                    row(launcher.getString(com.android.launcher3.R.string.prime_overlay_tasks), PrimeSearchResultPreferences.Category.REMINDERS) {}
                     tasks.forEach { task ->
                         row(task.title + task.detail.takeIf { it.isNotBlank() }?.let { "\n$it" }.orEmpty()) {
                             runCatching {
@@ -822,12 +863,12 @@ object PrimeSearchOverlay {
                     }
                 }
             }
-            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.NOTIFICATIONS)) {
+            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.NOTIFICATIONS, preferenceSurface)) {
                 // Stored history is searchable even after notification access is revoked.
                 val matches = runCatching { PrimeNotificationHistory.search(launcher, query) }
                     .getOrDefault(emptyList())
                 if (matches.isNotEmpty()) {
-                    row("Historique des notifications") {}
+                    row(launcher.getString(com.android.launcher3.R.string.prime_overlay_history), PrimeSearchResultPreferences.Category.NOTIFICATIONS) {}
                     val formatter = java.text.DateFormat.getDateTimeInstance(
                         java.text.DateFormat.SHORT, java.text.DateFormat.SHORT
                     )
@@ -835,42 +876,31 @@ object PrimeSearchOverlay {
                         row("${entry.app} · ${entry.title}\n${entry.body.take(180)}\n${formatter.format(java.util.Date(entry.posted))}") {}
                     }
                 } else if (query.contains("notif", ignoreCase = true)) {
-                    row("Historique des notifications") {}
+                    row(launcher.getString(com.android.launcher3.R.string.prime_overlay_history), PrimeSearchResultPreferences.Category.NOTIFICATIONS) {}
                     if (!PrimeNotificationHistory.isGranted(launcher)) {
-                        row("Accès aux notifications désactivé · toucher pour autoriser") {
+                        row(launcher.getString(com.android.launcher3.R.string.prime_overlay_notif_disabled)) {
                             launcher.startActivity(PrimeNotificationHistory.accessIntent(launcher))
                         }
                     } else {
-                        row("Aucune notification correspondante enregistrée") {}
+                        row(launcher.getString(com.android.launcher3.R.string.prime_overlay_notif_empty)) {}
                         row(runCatching { PrimeNotificationHistory.diagnostic(launcher) }
                             .getOrElse { "Diagnostic indisponible : " + it.javaClass.simpleName }) {}
                     }
                 }
             }
-            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.SETTINGS)) {
+            if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.SETTINGS, preferenceSurface)) {
                 // Use localized labels rather than Android intent action class names.
                 val settingsActions = listOf(
                     Triple("Wi-Fi", android.provider.Settings.ACTION_WIFI_SETTINGS, listOf("wifi", "wi-fi", "réseau", "network")),
                     Triple("Bluetooth", android.provider.Settings.ACTION_BLUETOOTH_SETTINGS, listOf("bluetooth")),
-                    Triple("Affichage", android.provider.Settings.ACTION_DISPLAY_SETTINGS, listOf("affichage", "écran", "display", "screen")),
-                    Triple("Son", android.provider.Settings.ACTION_SOUND_SETTINGS, listOf("son", "audio", "sound")),
-                    Triple("Batterie", android.provider.Settings.ACTION_BATTERY_SAVER_SETTINGS, listOf("batterie", "économie", "battery")),
-                    Triple("Date et heure", android.provider.Settings.ACTION_DATE_SETTINGS, listOf("date", "heure", "time")),
-                    Triple("Applications", android.provider.Settings.ACTION_APPLICATION_SETTINGS, listOf("application", "appli", "apps")),
-                    Triple("Paramètres Android", android.provider.Settings.ACTION_SETTINGS, listOf("paramètre", "réglage", "settings"))
+                    Triple(launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_display), android.provider.Settings.ACTION_DISPLAY_SETTINGS, listOf("affichage", "écran", "display", "screen")),
+                    Triple(launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_sound), android.provider.Settings.ACTION_SOUND_SETTINGS, listOf("son", "audio", "sound")),
+                    Triple(launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_battery), android.provider.Settings.ACTION_BATTERY_SAVER_SETTINGS, listOf("batterie", "économie", "battery")),
+                    Triple(launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_date_time), android.provider.Settings.ACTION_DATE_SETTINGS, listOf("date", "heure", "time")),
+                    Triple(PrimeSearchResultPreferences.Category.APPS.localizedTitle(launcher), android.provider.Settings.ACTION_APPLICATION_SETTINGS, listOf("application", "appli", "apps")),
+                    Triple(launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_android_settings), android.provider.Settings.ACTION_SETTINGS, listOf("paramètre", "réglage", "settings"))
                 )
-                val locale = launcher.resources.configuration.locales[0].language
-                val labels = if (locale == "fr") settingsActions else settingsActions.map { (name, action, keywords) ->
-                    Triple(when (name) {
-                        "Affichage" -> "Display"
-                        "Son" -> "Sound"
-                        "Batterie" -> "Battery"
-                        "Date et heure" -> "Date & time"
-                        "Applications" -> "Apps"
-                        "Paramètres Android" -> "Android Settings"
-                        else -> name
-                    }, action, keywords)
-                }
+                val labels = settingsActions
                 val term = query.trim()
                 val generic = listOf("param", "régl", "setting").any { term.contains(it, ignoreCase = true) }
                 val matches = labels.filter { (name, _, keywords) ->
@@ -878,7 +908,7 @@ object PrimeSearchOverlay {
                         keywords.any { it.contains(term, ignoreCase = true) || term.contains(it, ignoreCase = true) }
                 }
                 if (term.length >= 2 && matches.isNotEmpty()) {
-                    row(if (locale == "fr") "Paramètres de l'appareil" else "Device settings") {}
+                    row(PrimeSearchResultPreferences.Category.SETTINGS.localizedTitle(launcher), PrimeSearchResultPreferences.Category.SETTINGS) {}
                     matches.forEach { (name, action, _) ->
                         row(name) {
                             runCatching {
@@ -889,10 +919,10 @@ object PrimeSearchOverlay {
                     }
                 }
             }
-            val engines = if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB_SHORTCUTS))
-                PrimeSearchResultPreferences.enabledWebEngines(launcher) else emptyList()
+            val engines = if (PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB_SHORTCUTS, preferenceSurface))
+                PrimeSearchResultPreferences.enabledWebEngines(launcher, preferenceSurface) else emptyList()
             if (engines.isNotEmpty()) {
-                row("Raccourcis Web") {}
+                row(PrimeSearchResultPreferences.Category.WEB_SHORTCUTS.localizedTitle(launcher), PrimeSearchResultPreferences.Category.WEB_SHORTCUTS) {}
                 val columns = 5
                 engines.chunked(columns).forEach { group ->
                     val icons = LinearLayout(launcher).apply {
@@ -905,7 +935,7 @@ object PrimeSearchOverlay {
                             gravity = Gravity.CENTER
                             setPadding((4 * density).toInt(), (5 * density).toInt(),
                                 (4 * density).toInt(), (8 * density).toInt())
-                            contentDescription = "Rechercher sur ${engine.title}"
+                            contentDescription = launcher.getString(com.android.launcher3.R.string.prime_overlay_engine, engine.title)
                             setOnClickListener {
                                 dialog.hideKeyboardForSelection()
                                 val url = engine.url + Uri.encode(query)
@@ -942,19 +972,12 @@ object PrimeSearchOverlay {
                             val iconSize = (36 * density).toInt()
                             layoutParams = LinearLayout.LayoutParams(iconSize, iconSize)
                             contentDescription = engine.title
-                            // Start with an installed app icon when available.
-                            val packageName = when (engine) {
-                                PrimeSearchResultPreferences.WebEngine.SPOTIFY -> "com.spotify.music"
-                                PrimeSearchResultPreferences.WebEngine.DUCKDUCKGO -> "com.duckduckgo.mobile.android"
-                                PrimeSearchResultPreferences.WebEngine.WIKIPEDIA -> "org.wikipedia"
-                                PrimeSearchResultPreferences.WebEngine.YOUTUBE -> "com.google.android.youtube"
-                                PrimeSearchResultPreferences.WebEngine.REDDIT -> "com.reddit.frontpage"
-                                else -> null
-                            }
-                            val drawable = try { packageName?.let { packageManager.getApplicationIcon(it) } }
-                                catch (_: Exception) { null }
+                            val drawable = PrimeWebIcons.installedIcon(launcher, engine)
+                            val localIcon = PrimeWebIcons.localResource(engine)
                             if (drawable != null) {
                                 setImageDrawable(drawable)
+                            } else if (localIcon != 0) {
+                                setImageResource(localIcon)
                             } else {
                                 val fallback = android.graphics.drawable.GradientDrawable().apply {
                                     shape = android.graphics.drawable.GradientDrawable.OVAL
@@ -963,19 +986,20 @@ object PrimeSearchOverlay {
                                         themed(ThemeColorRole.PRIME_SEARCH_BORDER))
                                 }
                                 background = fallback
-                                val site = Uri.parse(engine.url).host.orEmpty()
-                                Thread {
-                                    val bitmap = try {
-                                        val connection = URL("https://www.google.com/s2/favicons?domain=" +
-                                            Uri.encode(site) + "&sz=96").openConnection() as HttpURLConnection
-                                        connection.connectTimeout = 2000
-                                        connection.readTimeout = 2000
-                                        try { connection.inputStream.use { android.graphics.BitmapFactory.decodeStream(it) } }
-                                        finally { connection.disconnect() }
-                                    } catch (_: Exception) { null }
-                                    if (bitmap != null) post { setImageBitmap(bitmap) }
-                                }.start()
+                                // Use a local monogram rather than contacting a third-party favicon service.
+                                val bitmap = android.graphics.Bitmap.createBitmap(iconSize.coerceAtLeast(1),
+                                    iconSize.coerceAtLeast(1), android.graphics.Bitmap.Config.ARGB_8888)
+                                val canvas = android.graphics.Canvas(bitmap)
+                                val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                                    color = foreground
+                                    textAlign = android.graphics.Paint.Align.CENTER
+                                    textSize = iconSize * 0.48f
+                                }
+                                canvas.drawText(engine.title.take(1).uppercase(java.util.Locale.ROOT),
+                                    iconSize / 2f, iconSize / 2f - (paint.ascent() + paint.descent()) / 2f, paint)
+                                setImageBitmap(bitmap)
                             }
+                            PrimeWebIcons.bind(this, engine, preferenceSurface, drawable != null || localIcon != 0)
                         }
                         cell.addView(icon)
                         cell.addView(TextView(launcher).apply {
@@ -992,23 +1016,13 @@ object PrimeSearchOverlay {
                 }
             }
             // Sort complete dynamic sections (heading plus rows) by user preference.
-            val order = PrimeSearchResultPreferences.order(launcher)
-            val headings = mapOf(
-                "Suggestions Web" to PrimeSearchResultPreferences.Category.WEB,
-                "Contacts" to PrimeSearchResultPreferences.Category.CONTACTS,
-                "Événements de l'agenda" to PrimeSearchResultPreferences.Category.CALENDAR,
-                "Tâches · Tasks.org" to PrimeSearchResultPreferences.Category.REMINDERS,
-                "Historique des notifications" to PrimeSearchResultPreferences.Category.NOTIFICATIONS,
-                "Paramètres de l'appareil" to PrimeSearchResultPreferences.Category.SETTINGS,
-                "Device settings" to PrimeSearchResultPreferences.Category.SETTINGS,
-                "Raccourcis Web" to PrimeSearchResultPreferences.Category.WEB_SHORTCUTS,
-            )
+            val order = PrimeSearchResultPreferences.order(launcher, preferenceSurface)
             val sections = mutableListOf<Pair<PrimeSearchResultPreferences.Category, MutableList<View>>>()
             var current: MutableList<View>? = null
             while (webPanel.childCount > 0) {
                 val child = webPanel.getChildAt(0)
                 webPanel.removeViewAt(0)
-                val category = (child as? TextView)?.text?.toString()?.let(headings::get)
+                val category = (child as? TextView)?.tag as? PrimeSearchResultPreferences.Category
                 if (category != null) {
                     val group = mutableListOf<View>()
                     current = group
@@ -1056,7 +1070,7 @@ object PrimeSearchOverlay {
             addView(detailContent)
         }
         val detailBack = TextView(launcher).apply {
-            text = "‹  Retour à la recherche"
+            text = launcher.getString(com.android.launcher3.R.string.prime_overlay_back)
             textSize = 16f
             setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
             setPadding((16 * density).toInt(), (12 * density).toInt(),
@@ -1111,7 +1125,7 @@ object PrimeSearchOverlay {
             }
         }
         val detailReduce = TextView(launcher).apply {
-            text = "⌃  Réduire"
+            text = launcher.getString(com.android.launcher3.R.string.prime_overlay_collapse)
             gravity = Gravity.CENTER
             textSize = 15f
             setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
@@ -1258,6 +1272,7 @@ object PrimeSearchOverlay {
                 true
             } else false
         }
+        var refreshExpandedApps: ((String) -> Unit)? = null
         fun openDetail(card: LinearLayout) {
             if (detailOpen) return
             val parent = card.parent as? ViewGroup ?: return
@@ -1279,7 +1294,12 @@ object PrimeSearchOverlay {
                 rememberDetailSizes(child)
             }
             detailSearchCategory = card.tag as? PrimeSearchResultPreferences.Category
-            detailSearchAlgorithm = LawnchairLocalSearchAlgorithm(launcher, primeSearch = true)
+            detailSearchAlgorithm = LawnchairLocalSearchAlgorithm(
+                launcher,
+                primeSearch = true,
+                expandedAppResults = true,
+                preferenceSurface = preferenceSurface,
+            )
             detailSessionId++
             detailSearchQuery = input.text.toString()
             detailSearchSerial++
@@ -1288,23 +1308,15 @@ object PrimeSearchOverlay {
             parent.removeView(card)
             val category = card.tag as? PrimeSearchResultPreferences.Category
             val heading = when (category) {
-                PrimeSearchResultPreferences.Category.APPS -> "Applications"
-                PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> "Raccourcis d'app"
-                PrimeSearchResultPreferences.Category.CONTACTS -> "Contacts"
-                PrimeSearchResultPreferences.Category.FILES -> "Fichiers"
-                PrimeSearchResultPreferences.Category.WEB -> "Suggestions Web"
-                PrimeSearchResultPreferences.Category.WEB_SHORTCUTS -> "Raccourcis Web"
-                PrimeSearchResultPreferences.Category.CALENDAR -> "Événements de l'agenda"
-                PrimeSearchResultPreferences.Category.REMINDERS -> "Tâches"
-                PrimeSearchResultPreferences.Category.NOTIFICATIONS -> "Historique des notifications"
-                PrimeSearchResultPreferences.Category.SETTINGS -> "Paramètres de l'appareil"
-                else -> null
+                PrimeSearchResultPreferences.Category.NOTIFICATIONS -> launcher.getString(com.android.launcher3.R.string.prime_overlay_history)
+                PrimeSearchResultPreferences.Category.REMINDERS -> launcher.getString(com.android.launcher3.R.string.prime_overlay_tasks)
+                else -> category?.localizedTitle(launcher)
             }
             // Many sections already contain their own heading. Add a matching
             // header only when one is missing, keeping the compact position.
             val existingHeading = (0 until card.childCount).any { index ->
                 val child = card.getChildAt(index)
-                child is TextView && child.text?.toString() == heading
+                child is TextView && (child.text?.toString() == heading || (category != null && child.tag == category))
             }
             detailHeading.text = heading.orEmpty()
             // The compact card's header can be clipped or hidden by filtering.
@@ -1312,7 +1324,7 @@ object PrimeSearchOverlay {
             // existing identical heading to prevent duplicates.
             for (index in 0 until card.childCount) {
                 val child = card.getChildAt(index)
-                if (child is TextView && child.text?.toString() == heading) {
+                if (child is TextView && (child.text?.toString() == heading || (category != null && child.tag == category))) {
                     child.visibility = View.GONE
                 }
             }
@@ -1327,7 +1339,7 @@ object PrimeSearchOverlay {
                     if (detailOpen && !detailClosing && detailCard === card &&
                         detailOriginalChildren.any { it.parent === card } && card.width > 0) {
                         val available = (card.width - card.paddingLeft - card.paddingRight).coerceAtLeast(1)
-                        val columns = PrimeSearchResultPreferences.appResultsColumns(launcher)
+                        val columns = PrimeSearchResultPreferences.appResultsColumns(launcher, preferenceSurface)
                         sizeDetailAppGrid(card, (available / columns).coerceAtLeast(1))
                     }
                 }
@@ -1340,7 +1352,7 @@ object PrimeSearchOverlay {
             // category title solely in the fixed detail heading.
             for (index in 0 until card.childCount) {
                 val child = card.getChildAt(index)
-                if (child is TextView && child.text?.toString() == heading) child.visibility = View.GONE
+                if (child is TextView && (child.text?.toString() == heading || (category != null && child.tag == category))) child.visibility = View.GONE
             }
             dialog.hideKeyboardForSelection()
             scroll.animate().cancel()
@@ -1359,6 +1371,17 @@ object PrimeSearchOverlay {
                 .start()
             detailPage.requestFocus()
             container.requestLayout()
+            // The compact grid only binds visible rows. Populate the full app
+            // list on demand when the user opens its expanded category.
+            if (category == PrimeSearchResultPreferences.Category.APPS) {
+                val expandedQuery = originalDetailQuery
+                detailContent.post {
+                    if (detailOpen && !detailClosing && detailCard === card &&
+                        input.text.toString() == expandedQuery) {
+                        refreshExpandedApps?.invoke(expandedQuery)
+                    }
+                }
+            }
         }
         // Protect both app icons and the compact card's expansion action from
         // asynchronous result updates during an active pointer gesture.
@@ -1378,25 +1401,20 @@ object PrimeSearchOverlay {
             }
         }
         val categoryCards = mutableMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
+        var initialCategoryOpened = false
         val compactWrappers = mutableMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
         val compactClips = mutableMapOf<PrimeSearchResultPreferences.Category, FrameLayout>()
         val compactMoreButtons = mutableMapOf<PrimeSearchResultPreferences.Category, TextView>()
+        var compactAppsTruncated = false
         fun reorderSearchSections() {
             if (detailOpen || resultGestureBusy()) {
                 if (!detailOpen) scheduleResultsReorder(::reorderSearchSections)
                 return
             }
-            val priorities = PrimeSearchResultPreferences.order(launcher)
-            val headingCategories = mapOf(
-                "Suggestions Web" to PrimeSearchResultPreferences.Category.WEB,
-                "Contacts" to PrimeSearchResultPreferences.Category.CONTACTS,
-                "Événements de l'agenda" to PrimeSearchResultPreferences.Category.CALENDAR,
-                "Tâches · Tasks.org" to PrimeSearchResultPreferences.Category.REMINDERS,
-                "Historique des notifications" to PrimeSearchResultPreferences.Category.NOTIFICATIONS,
-                "Paramètres de l'appareil" to PrimeSearchResultPreferences.Category.SETTINGS,
-                "Device settings" to PrimeSearchResultPreferences.Category.SETTINGS,
-                "Raccourcis Web" to PrimeSearchResultPreferences.Category.WEB_SHORTCUTS,
-            )
+            val priorities = PrimeSearchResultPreferences.order(launcher, preferenceSurface)
+            val showAllSingleCategory = priorities.count {
+                PrimeSearchResultPreferences.enabled(launcher, it, preferenceSurface)
+            } == 1
             // Exactly one section per enabled category, regardless of how many
             // separate chunks the drawer provider produced.
             val grouped = linkedMapOf<PrimeSearchResultPreferences.Category, LinearLayout>()
@@ -1422,16 +1440,13 @@ object PrimeSearchOverlay {
             // Both providers can return the same "Applications" action.
             val hasPrimeSettings = (0 until webPanel.childCount).any { index ->
                 val child = webPanel.getChildAt(index)
-                child is TextView && (
-                    child.text?.toString() == "Paramètres de l'appareil" ||
-                    child.text?.toString() == "Device settings"
-                )
+                child is TextView && child.tag == PrimeSearchResultPreferences.Category.SETTINGS
             }
             // Prime's own contact rows include avatars and call/message actions.
             // Do not also show the drawer's contact tiles for the same query.
             val hasPrimeContacts = (0 until webPanel.childCount).any { index ->
                 val child = webPanel.getChildAt(index)
-                child is TextView && child.text?.toString() == "Contacts"
+                child is TextView && child.tag == PrimeSearchResultPreferences.Category.CONTACTS
             }
             val native = (0 until results.childCount).map { results.getChildAt(it) }
                 .filter { it !== webPanel }
@@ -1443,7 +1458,7 @@ object PrimeSearchOverlay {
                     category == PrimeSearchResultPreferences.Category.WEB_SHORTCUTS ||
                     (hasPrimeSettings && category == PrimeSearchResultPreferences.Category.SETTINGS) ||
                     (hasPrimeContacts && category == PrimeSearchResultPreferences.Category.CONTACTS)) return@forEach
-                if (category != null && PrimeSearchResultPreferences.enabled(launcher, category)) {
+                if (category != null && PrimeSearchResultPreferences.enabled(launcher, category, preferenceSurface)) {
                     val section = sectionFor(category)
                     if (view is ViewGroup && view !== section) {
                         // A compact wrapper already contains the cached section.
@@ -1472,26 +1487,47 @@ object PrimeSearchOverlay {
             while (webPanel.childCount > 0) {
                 val child = webPanel.getChildAt(0)
                 webPanel.removeViewAt(0)
-                val headingCategory = (child as? TextView)?.text?.toString()?.let(headingCategories::get)
+                val headingCategory = (child.tag as? PrimeSearchResultPreferences.Category)
+                    ?: PrimeSearchCategoryPresentation.categoryForHeading((child as? TextView)?.text?.toString(), launcher)
                 if (headingCategory != null) currentCategory = headingCategory
                 val category = currentCategory
-                if (category != null && PrimeSearchResultPreferences.enabled(launcher, category)) {
+                if (category == PrimeSearchResultPreferences.Category.APPS) {
+                    // App rows belong exclusively to the native search provider.
+                    // A dynamic heading named "Applications" must never clear the
+                    // already-built app grid when Web sections are refreshed.
+                    app.lawnchair.search.PrimeSearchTrace.record(
+                        "overlay ignore dynamic apps heading=${headingCategory != null}"
+                    )
+                    currentCategory = null
+                } else if (category != null && PrimeSearchResultPreferences.enabled(launcher, category, preferenceSurface)) {
                     val section = sectionFor(category)
                     if (dynamicCategories.add(category)) section.removeAllViews()
                     section.addView(child)
                 }
             }
+            // Providers may emit a category heading without any actual result.
+            // Do not render heading-only cards, including cached sections after
+            // asynchronous refreshes. Check the content, not just childCount.
+            fun hasVisibleResult(card: LinearLayout, category: PrimeSearchResultPreferences.Category): Boolean =
+                (0 until card.childCount).any { index ->
+                    val child = card.getChildAt(index)
+                    child.visibility != View.GONE && !(
+                        child is TextView &&
+                            PrimeSearchCategoryPresentation.categoryForHeading(child.text?.toString()) == category
+                    ) && !(child is ViewGroup && child.childCount == 0)
+                }
+            app.lawnchair.search.PrimeSearchTrace.record(
+                "overlay reorder grouped=${grouped.keys.joinToString()} appsChildren=${grouped[PrimeSearchResultPreferences.Category.APPS]?.childCount ?: -1}"
+            )
             val orderedWrappers = mutableListOf<View>()
             priorities.forEach { category ->
-                grouped[category]?.takeIf { it.childCount > 0 }?.let { card ->
-                    val limit = if (category == PrimeSearchResultPreferences.Category.APPS) {
-                        PrimeAppGridGeometry.rowHeightPx(
-                            launcher, PrimeSearchResultPreferences.appResultsIconSizePercent(launcher),
-                            if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
-                        ) * 2 + (52 * density).toInt()
-                    } else if (category == PrimeSearchResultPreferences.Category.APP_SHORTCUTS) {
-                        (160 * density).toInt()
-                    } else (190 * density).toInt()
+                grouped[category]?.takeIf { hasVisibleResult(it, category) }?.let { card ->
+                    val limit = PrimeSearchCategoryPresentation.compactPreviewHeightDp(category)
+                        ?.let { (it * density).toInt() }
+                        ?: (PrimeAppGridGeometry.rowHeightPx(
+                            launcher, PrimeSearchResultPreferences.appResultsIconSizePercent(launcher, preferenceSurface),
+                            if (PrimeSearchResultPreferences.twoLineAppLabels(launcher, preferenceSurface)) 2 else 1
+                        ) * 2 + (52 * density).toInt())
                     // Cards are cached across asynchronous contact/web refreshes.
                     // Detach from the previous clipped holder before reparenting.
                     (card.parent as? ViewGroup)?.removeView(card)
@@ -1517,26 +1553,29 @@ object PrimeSearchOverlay {
                             child.orientation == LinearLayout.HORIZONTAL &&
                             child.childCount > 0
                     } else 0
-                    val maxVisibleRows = PrimeSearchResultPreferences.appResultsRows(launcher)
+                    if (isApps) app.lawnchair.search.PrimeSearchTrace.record(
+                        "overlay appCard rows=$appRowCount children=${card.childCount}"
+                    )
+                    val maxVisibleRows = PrimeSearchResultPreferences.appResultsRows(launcher, preferenceSurface)
                     val appViewportHeight = if (isApps) {
                         val rowHeight = PrimeAppGridGeometry.rowHeightPx(
-                            launcher, PrimeSearchResultPreferences.appResultsIconSizePercent(launcher),
-                            if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
+                            launcher, PrimeSearchResultPreferences.appResultsIconSizePercent(launcher, preferenceSurface),
+                            if (PrimeSearchResultPreferences.twoLineAppLabels(launcher, preferenceSurface)) 2 else 1
                         )
                         card.paddingTop + card.paddingBottom +
                             appRowCount.coerceAtMost(maxVisibleRows) * rowHeight
                     } else limit
                      clipped.layoutParams = (clipped.layoutParams as? LinearLayout.LayoutParams
                         ?: LinearLayout.LayoutParams(-1, -2)).apply {
-                        height = if (isApps) appViewportHeight.coerceAtLeast(1) else limit
+                        height = if (isApps && compactAppsTruncated) appViewportHeight.coerceAtLeast(1) else if (showAllSingleCategory) -2 else if (isApps) appViewportHeight.coerceAtLeast(1) else limit
                     }
                     val more = compactMoreButtons.getOrPut(category) { TextView(launcher).apply {
-                        text = "Plus de " + when (category) {
-                            PrimeSearchResultPreferences.Category.APPS -> "applications"
-                            PrimeSearchResultPreferences.Category.CONTACTS -> "contacts"
-                            PrimeSearchResultPreferences.Category.FILES -> "fichiers"
-                            PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> "raccourcis"
-                            else -> "résultats"
+                        text = when (category) {
+                            PrimeSearchResultPreferences.Category.APPS -> launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_more_apps)
+                            PrimeSearchResultPreferences.Category.CONTACTS -> launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_more_contacts)
+                            PrimeSearchResultPreferences.Category.FILES -> launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_more_files)
+                            PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_more_shortcuts)
+                            else -> launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_more_results)
                         } + "  ⌄"
                         gravity = Gravity.CENTER
                         textSize = 13f
@@ -1574,7 +1613,7 @@ object PrimeSearchOverlay {
                         wrapper.removeAllViews()
                         if (isApps) {
                             val heading = TextView(launcher).apply {
-                                text = "Applications"
+                                text = PrimeSearchResultPreferences.Category.APPS.localizedTitle(launcher)
                                 setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
                                 setTypeface(typeface, android.graphics.Typeface.BOLD)
                                 setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
@@ -1585,15 +1624,15 @@ object PrimeSearchOverlay {
                             wrapper.addView(heading, LinearLayout.LayoutParams(-1, -2))
                         }
                         wrapper.addView(clipped, LinearLayout.LayoutParams(
-                            -1, if (isApps) appViewportHeight.coerceAtLeast(1) else limit
+                            -1, if (isApps && compactAppsTruncated) appViewportHeight.coerceAtLeast(1) else if (showAllSingleCategory) -2 else if (isApps) appViewportHeight.coerceAtLeast(1) else limit
                         ))
                         wrapper.addView(more, LinearLayout.LayoutParams(-1, -2))
                     }
                     orderedWrappers.add(wrapper)
                     if (isApps) {
-                        more.visibility = if (appRowCount > maxVisibleRows) View.VISIBLE else View.GONE
+                        more.visibility = if (compactAppsTruncated || (!showAllSingleCategory && appRowCount > maxVisibleRows)) View.VISIBLE else View.GONE
                     } else clipped.post {
-                        if (!detailOpen && card.parent === clipped) {
+                        if (!detailOpen && card.parent === clipped && !showAllSingleCategory) {
                             // Measure the actual card independently of its clipped parent.
                             val widthSpec = View.MeasureSpec.makeMeasureSpec(
                                 clipped.width.coerceAtLeast(1), View.MeasureSpec.EXACTLY)
@@ -1602,7 +1641,7 @@ object PrimeSearchOverlay {
                                 // An app grid with fewer rows than the configured
                                 // maximum must wrap its content. Never show "Plus de"
                                 // merely because a measurement includes extra padding.
-                                val maxRows = PrimeSearchResultPreferences.appResultsRows(launcher)
+                                val maxRows = PrimeSearchResultPreferences.appResultsRows(launcher, preferenceSurface)
                                 val actualRows = (0 until card.childCount).count { index ->
                                     val child = card.getChildAt(index)
                                     child is LinearLayout &&
@@ -1660,14 +1699,16 @@ object PrimeSearchOverlay {
         fun updateWebSuggestions(query: String) {
             val request = ++webRequestSerial
             currentSuggestions = emptyList()
-            val count = PrimeSearchResultPreferences.webSuggestionCount(launcher)
+            val count = PrimeSearchResultPreferences.webSuggestionCount(launcher, preferenceSurface)
             if (query.isBlank() || count == 0 ||
-                !PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB)) return
+                !PrimeSearchResultPreferences.enabled(launcher, PrimeSearchResultPreferences.Category.WEB, preferenceSurface)) return
             // Keep network I/O off the main thread; ignore stale responses.
             webHandler.postDelayed({
+                if (request != webRequestSerial || !PrimeSearchResultPreferences.enabled(launcher,
+                        PrimeSearchResultPreferences.Category.WEB, preferenceSurface)) return@postDelayed
                 Thread {
                 val suggestions = try {
-                    val provider = PrimeSearchResultPreferences.suggestionProvider(launcher)
+                    val provider = PrimeSearchResultPreferences.suggestionProvider(launcher, preferenceSurface)
                     val endpoint = when (provider) {
                         PrimeSearchResultPreferences.SuggestionProvider.DUCKDUCKGO ->
                             "https://duckduckgo.com/ac/?q="
@@ -1707,20 +1748,7 @@ object PrimeSearchOverlay {
                         }
                     } finally { connection.disconnect() }
                 } catch (_: Exception) {
-                    // Google suggestions can be unavailable on some networks.
-                    // DuckDuckGo provides a compatible fallback.
-                    try {
-                        val connection = URL("https://duckduckgo.com/ac/?q=" + Uri.encode(query))
-                            .openConnection() as HttpURLConnection
-                        connection.connectTimeout = 2500
-                        connection.readTimeout = 2500
-                        try {
-                            val entries = JSONArray(connection.inputStream.bufferedReader().use { it.readText() })
-                            (0 until minOf(entries.length(), count)).mapNotNull {
-                                entries.optJSONObject(it)?.optString("phrase")?.takeIf(String::isNotBlank)
-                            }
-                        } finally { connection.disconnect() }
-                    } catch (_: Exception) { emptyList() }
+                    emptyList()
                 }
                 webHandler.post {
                     if (request == webRequestSerial && !detailOpen && !detailClosing &&
@@ -1742,12 +1770,43 @@ object PrimeSearchOverlay {
         var lastNativeRenderSignature: List<String>? = null
         var lastAppGridQuery: String? = null
         var lastAppGridSignature: List<String>? = null
+        var lastRankedNativeSignature: List<String>? = null
         var pendingNativeRefresh: Runnable? = null
+        var pendingTypingRender: Runnable? = null
+        var pendingSecondaryRender: Runnable? = null
+        var readyTypingRender: ArrayList<BaseAllAppsAdapter.AdapterItem>? = null
+        var executingTypingRender = false
         // A result refresh must never detach an app tile between DOWN and UP.
         var appTouchInProgress = false
+        // Cache labels for this search session instead of querying PackageManager
+        // repeatedly on the UI thread for every keystroke and provider refresh.
+        val sessionAppLabels = mutableMapOf<String, String>()
+        val sessionNormalizedLabels = mutableMapOf<String, String>()
         val callback = object : SearchCallback<BaseAllAppsAdapter.AdapterItem> {
             override fun onSearchResult(query: String, items: ArrayList<BaseAllAppsAdapter.AdapterItem>?) {
                 if (!dialog.isShowing || input.text.toString() != query || detailOpen) return
+                // Coalesce rapid provider emissions and keystrokes into one UI pass.
+                // Never build result views in the same frame as an input edit.
+                if (!executingTypingRender) {
+                    pendingTypingRender?.let(webHandler::removeCallbacks)
+                    val deferredItems = items?.let { ArrayList(it) }
+                    val deferred = Runnable {
+                        pendingTypingRender = null
+                        if (dialog.isShowing && !detailOpen && input.text.toString() == query) {
+                            readyTypingRender = deferredItems
+                            executingTypingRender = true
+                            try {
+                                onSearchResult(query, deferredItems)
+                            } finally {
+                                executingTypingRender = false
+                                readyTypingRender = null
+                            }
+                        }
+                    }
+                    pendingTypingRender = deferred
+                    webHandler.postDelayed(deferred, 32L)
+                    return
+                }
                 // Keep only the newest deferred update. Replaying every provider
                 // callback after a touch can otherwise cause repeated full rebuilds.
                 pendingNativeRefresh?.let(webHandler::removeCallbacks)
@@ -1759,6 +1818,9 @@ object PrimeSearchOverlay {
                     return
                 }
                 val incoming = items.orEmpty().filterIsInstance<SearchAdapterItem>()
+                app.lawnchair.search.PrimeSearchTrace.record(
+                    "overlay callback len=${query.length} incoming=${incoming.size} apps=${incoming.count { it.searchTarget.resultType == SearchTargetCompat.RESULT_TYPE_APPLICATION }}"
+                )
                 // Some providers publish an intermediate partial/empty snapshot.
                 // Do not erase a visible app grid for the unchanged query.
                 val hasApps = incoming.any {
@@ -1774,7 +1836,10 @@ object PrimeSearchOverlay {
                     val target = (adapterItem as? SearchAdapterItem)?.searchTarget
                     if (target != null) "${target.resultType}:${target.layoutType}:${target.id}" else adapterItem.toString()
                 }
-                if (lastNativeRenderQuery == query && lastNativeRenderSignature == signature) return
+                if (lastNativeRenderQuery == query && lastNativeRenderSignature == signature) {
+                    app.lawnchair.search.PrimeSearchTrace.record("overlay skip duplicate len=${query.length}")
+                    return
+                }
                 lastNativeRenderQuery = query
                 lastNativeRenderSignature = signature
                 // Build the replacement sections before detaching the visible
@@ -1784,8 +1849,8 @@ object PrimeSearchOverlay {
                 // Preserve the algorithm's order and section boundaries. Each item is
                 // inflated with the same layout used by the drawer's adapter provider.
                 val inflater = LayoutInflater.from(launcher)
-                val columns = PrimeSearchResultPreferences.appResultsColumns(launcher)
-                val maxAppTiles = columns * PrimeSearchResultPreferences.appResultsRows(launcher)
+                val columns = PrimeSearchResultPreferences.appResultsColumns(launcher, preferenceSurface)
+                val maxAppTiles = columns * PrimeSearchResultPreferences.appResultsRows(launcher, preferenceSurface)
                 var displayedAppTiles = 0
                 // Each row is centered independently. Fixed-width cells keep
                 // identical spacing whether the row has 1, 2 or 6 apps.
@@ -1797,7 +1862,7 @@ object PrimeSearchOverlay {
                 // wider overlay width. The results container adds 4dp on each side
                 // and the app card adds another 6dp on each side.
                 // Preserve the existing centered geometry unchanged.
-                val appAlignment = PrimeSearchResultPreferences.appResultsAlignment(launcher)
+                val appAlignment = PrimeSearchResultPreferences.appResultsAlignment(launcher, preferenceSurface)
                 val alignedGridWidth = if (appAlignment == PrimeSearchResultPreferences.AppResultsAlignment.CENTER) {
                     gridWidth
                 } else {
@@ -1806,8 +1871,8 @@ object PrimeSearchOverlay {
                 val cellWidth = (alignedGridWidth / columns).coerceAtLeast(1)
                 // Match the zero-state Prime Search icon and label settings.
                 // This is local to the Prime overlay; drawer search is untouched.
-                val searchLabelLines = if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
-                val searchIconPercent = PrimeSearchResultPreferences.appResultsIconSizePercent(launcher)
+                val searchLabelLines = if (PrimeSearchResultPreferences.twoLineAppLabels(launcher, preferenceSurface)) 2 else 1
+                val searchIconPercent = PrimeSearchResultPreferences.appResultsIconSizePercent(launcher, preferenceSurface)
                 val searchIconSize = PrimeAppGridGeometry.iconPx(launcher, searchIconPercent)
                 val searchRowHeight = PrimeAppGridGeometry.rowHeightPx(
                     launcher, searchIconPercent, searchLabelLines)
@@ -1835,7 +1900,7 @@ object PrimeSearchOverlay {
                 // Prefer grid application tiles over the drawer's duplicate text rows.
                 // The provider may return both layouts for the same package.
                 val gridApplicationIds = PrimeSearchResultPreferences.filter(
-                    launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(),
+                    launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(), preferenceSurface,
                 ).filter {
                     it.searchTarget.resultType == SearchTargetCompat.RESULT_TYPE_APPLICATION &&
                         it.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT
@@ -1857,7 +1922,7 @@ object PrimeSearchOverlay {
                     appsInRow = 0
                 }
                 val filteredNativeItems = PrimeSearchResultPreferences.filter(
-                    launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(),
+                    launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(), preferenceSurface,
                 )
                 // Rank application results in Prime Search only, without moving
                 // any other category or changing the drawer search algorithm.
@@ -1867,25 +1932,31 @@ object PrimeSearchOverlay {
                 val appSlots = filteredNativeItems.filter {
                     nativeCategoryFor(it) == appCategory
                 }
+                app.lawnchair.search.PrimeSearchTrace.record(
+                    "overlay queryLength=${query.length} incoming=${incoming.size} " +
+                    "rawApps=${incoming.count { nativeCategoryFor(it) == appCategory }} " +
+                    "filteredApps=${appSlots.size} enabled=${PrimeSearchResultPreferences.enabled(launcher, appCategory, preferenceSurface)}"
+                )
                 val normalizedQuery = java.text.Normalizer.normalize(
                     query.trim(), java.text.Normalizer.Form.NFD,
                 ).replace(Regex("\\p{M}+"), "").lowercase(java.util.Locale.ROOT)
-                val appLabels = mutableMapOf<String, String>()
                 fun appLabel(packageName: String): String =
-                    appLabels.getOrPut(packageName) {
+                    sessionAppLabels.getOrPut(packageName) {
                         runCatching {
                             launcher.packageManager.getApplicationLabel(
                                 launcher.packageManager.getApplicationInfo(packageName, 0)
                             ).toString()
                         }.getOrDefault(packageName)
                     }
-                fun normalizedLabel(label: String): String =
-                    java.text.Normalizer.normalize(label, java.text.Normalizer.Form.NFD)
-                        .replace(Regex("\\p{M}+"), "")
-                        .lowercase(java.util.Locale.ROOT)
+                fun normalizedLabel(packageName: String): String =
+                    sessionNormalizedLabels.getOrPut(packageName) {
+                        java.text.Normalizer.normalize(appLabel(packageName), java.text.Normalizer.Form.NFD)
+                            .replace(Regex("\\p{M}+"), "")
+                            .lowercase(java.util.Locale.ROOT)
+                    }
                 val rankedApps = appSlots.sortedWith(
                     compareBy<SearchAdapterItem> {
-                        val label = normalizedLabel(appLabel(it.searchTarget.packageName))
+                        val label = normalizedLabel(it.searchTarget.packageName)
                         when {
                             label == normalizedQuery -> 0
                             label.startsWith(normalizedQuery) -> 1
@@ -1893,25 +1964,53 @@ object PrimeSearchOverlay {
                             else -> 3
                         }
                     }.thenBy {
-                        normalizedLabel(appLabel(it.searchTarget.packageName))
+                        normalizedLabel(it.searchTarget.packageName)
                     }.thenBy { it.searchTarget.packageName }
                 ).iterator()
                 val rankedNativeItems = filteredNativeItems.map {
                     if (nativeCategoryFor(it) == appCategory) rankedApps.next() else it
+                }
+                // Differential fast path: when the ordered native result IDs are
+                // unchanged, preserve the entire bound hierarchy (not just icons).
+                // Only dynamic provider sections need a refresh.
+                val rankedSignature = rankedNativeItems.map {
+                    "${nativeCategoryFor(it)}:${it.searchTarget.resultType}:${it.searchTarget.layoutType}:${it.searchTarget.id}"
+                }
+                if (lastRankedNativeSignature == rankedSignature &&
+                    results.childCount > 0 && categoryCards.isNotEmpty()) {
+                    lastAppGridQuery = query
+                    lastNativeRenderQuery = query
+                    lastNativeRenderSignature = signature
+                    pendingSecondaryRender?.let(webHandler::removeCallbacks)
+                    val refresh = Runnable {
+                        pendingSecondaryRender = null
+                        if (dialog.isShowing && !detailOpen && input.text.toString() == query) {
+                            renderWebPanel(query)
+                            scheduleResultsReorder {
+                                if (dialog.isShowing && !detailOpen && input.text.toString() == query) {
+                                    reorderSearchSections()
+                                }
+                            }
+                        }
+                    }
+                    pendingSecondaryRender = refresh
+                    webHandler.post(refresh)
+                    app.lawnchair.search.PrimeSearchTrace.record("overlay differential reuse len=${query.length} native=${rankedSignature.size}")
+                    return
                 }
                 // Reuse bound app views when another provider updates the same query.
                 // This avoids decoding icons and replacing click targets unnecessarily.
                 val appGridSignature = rankedNativeItems.filter { nativeCategoryFor(it) == appCategory }
                     .map { "${it.searchTarget.resultType}:${it.searchTarget.layoutType}:${it.searchTarget.id}" }
                 val cachedAppCard = categoryCards[appCategory]
-                val reuseAppGrid = lastAppGridQuery == query &&
+                val reuseAppGrid =
                     lastAppGridSignature == appGridSignature && cachedAppCard != null &&
                     cachedAppCard.childCount > 0
                 rankedNativeItems.forEach { item ->
                     val category = nativeCategoryFor(item) ?: return@forEach
                     // A result is visible only when its corresponding search
                     // category is enabled in the Prime Search settings.
-                    if (!PrimeSearchResultPreferences.enabled(launcher, category)) return@forEach
+                    if (!PrimeSearchResultPreferences.enabled(launcher, category, preferenceSurface)) return@forEach
                     if (category != null && nativeCategory != null && category != nativeCategory) flushNativeSection()
                     if (category != null && nativeCategory != category) {
                         nativeCategory = category
@@ -1924,9 +2023,14 @@ object PrimeSearchOverlay {
                                 nativeSection.addView(row)
                             }
                         }
-                        if (category == PrimeSearchResultPreferences.Category.APP_SHORTCUTS) {
+                        if (category == PrimeSearchResultPreferences.Category.APP_SHORTCUTS ||
+                            category == PrimeSearchResultPreferences.Category.CALCULATOR) {
                             val heading = TextView(launcher).apply {
-                                text = "Raccourcis d'app"
+                                text = if (category == PrimeSearchResultPreferences.Category.CALCULATOR) {
+                                    category.title
+                                } else {
+                                    "Raccourcis d'app"
+                                }
                                 setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
                                 setTypeface(typeface, android.graphics.Typeface.BOLD)
                                 setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
@@ -1937,6 +2041,10 @@ object PrimeSearchOverlay {
                             nativeSection.addView(heading)
                         }
                     }
+                    // Only exclude the explicit settings shortcut. Genuine app targets
+                    // can have an empty packageName while still carrying a valid icon.
+                    if (category == appCategory &&
+                        item.searchTarget.layoutType == LayoutType.SEARCH_SETTINGS) return@forEach
                     if (category == appCategory && reuseAppGrid) return@forEach
                     // The drawer can emit the same application as a grid icon
                     // and again as a text row. Prime Search keeps one app entry.
@@ -1952,7 +2060,9 @@ object PrimeSearchOverlay {
                     val isAppIcon = item.searchTarget.resultType ==
                         SearchTargetCompat.RESULT_TYPE_APPLICATION &&
                         item.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT
-                    // Keep all results for expanded view; compact grid is clipped.
+                    // Bind only visible app rows in compact mode. The full set
+                    // remains available through the independent detail search.
+                    if (isAppIcon && displayedAppTiles >= maxAppTiles) return@forEach
                     if (isAppIcon) {
                         displayedAppTiles++
                         if (appRow == null || appsInRow == columns) {
@@ -2049,7 +2159,7 @@ object PrimeSearchOverlay {
                             return null
                         }
                         val filename = findFileTitle(view).orEmpty()
-                        if (!PrimeSearchResultPreferences.fileAllowed(launcher, filename)) {
+                        if (!PrimeSearchResultPreferences.fileAllowed(launcher, filename, null, preferenceSurface)) {
                             parent.removeView(view)
                             return@forEach
                         }
@@ -2084,7 +2194,7 @@ object PrimeSearchOverlay {
                         parent.removeView(view)
                         if (renderedFilesInSection == 0) {
                             val fileHeading = TextView(launcher).apply {
-                                text = "Fichiers de l'appareil"
+                                text = launcher.getString(com.android.launcher3.R.string.prime_overlay_detail_device_files)
                                 setTextColor(themed(ThemeColorRole.PRIME_SEARCH_RESULT_TEXT))
                                 setTypeface(typeface, android.graphics.Typeface.BOLD)
                                 textSize = 15f
@@ -2150,6 +2260,20 @@ object PrimeSearchOverlay {
                             topMargin = 0
                             bottomMargin = 0
                         }
+                    }
+                    // Use the exact same compact row geometry as the embedded
+                    // drawer adapter. Category cards may have different clipping,
+                    // but their individual result rows must not drift in size.
+                    if (!isAppIcon && !item.searchTarget.layoutType.toString().contains("HEADER", ignoreCase = true)) {
+                        val rowHeight = app.lawnchair.search.SearchResultGeometry.compactRowHeightDp(
+                            item.searchTarget.layoutType,
+                            isAppShortcut = category == PrimeSearchResultPreferences.Category.APP_SHORTCUTS,
+                        )
+                        app.lawnchair.search.SearchResultGeometry.styleCompactResultRow(
+                            view,
+                            rowHeight,
+                            file = item.searchTarget.layoutType == LayoutType.THUMBNAIL,
+                        )
                     }
                     // Normalize every bound text result after the drawer view has
                     // finished binding; drawer styles otherwise overwrite Prime's scale.
@@ -2313,7 +2437,8 @@ object PrimeSearchOverlay {
                             cell.setOnTouchListener { _, event ->
                                 if (event.actionMasked == MotionEvent.ACTION_DOWN) {
                                     appTouchInProgress = true
-                                    cell.parent?.requestDisallowInterceptTouchEvent(true)
+                                    // Do not block the parent ScrollView on ACTION_DOWN.
+                                    // A vertical swipe starting on an app tile must scroll.
                                 } else if (event.actionMasked == MotionEvent.ACTION_UP ||
                                     event.actionMasked == MotionEvent.ACTION_CANCEL) {
                                     appTouchInProgress = false
@@ -2329,19 +2454,54 @@ object PrimeSearchOverlay {
                         }
                     }
                 }
+                compactAppsTruncated = rankedNativeItems.count {
+                    nativeCategoryFor(it) == appCategory &&
+                        it.searchTarget.layoutType == LayoutType.ICON_SINGLE_VERTICAL_TEXT
+                } > maxAppTiles
                 flushNativeSection()
+                app.lawnchair.search.PrimeSearchTrace.record(
+                    "overlay built len=${query.length} sections=${nativeSections.size} appSections=${nativeSections.count { it.first == appCategory }} appRows=${nativeSections.filter { it.first == appCategory }.sumOf { it.second.childCount }} reused=$reuseAppGrid"
+                )
                 lastAppGridQuery = query
                 lastAppGridSignature = appGridSignature
+                lastRankedNativeSignature = rankedSignature
                 results.removeAllViews()
                 nativeSections.forEach { (category, section) ->
-                    if (PrimeSearchResultPreferences.enabled(launcher, category)) {
+                    if (PrimeSearchResultPreferences.enabled(launcher, category, preferenceSurface)) {
                         section.tag = category
                         results.addView(section)
                     }
                 }
                 results.addView(webPanel)
-                renderWebPanel(query)
-                scheduleResultsReorder(::reorderSearchSections)
+                // The app grid is the first priority. Render secondary providers
+                // on the next frame, and discard their work if typing continues.
+                pendingSecondaryRender?.let(webHandler::removeCallbacks)
+                val secondaryRender = Runnable {
+                    pendingSecondaryRender = null
+                    if (!dialog.isShowing || detailOpen || input.text.toString() != query) return@Runnable
+                    renderWebPanel(query)
+                    scheduleResultsReorder {
+                        if (dialog.isShowing && !detailOpen && input.text.toString() == query) {
+                            reorderSearchSections()
+                        }
+                    }
+                }
+                pendingSecondaryRender = secondaryRender
+                webHandler.post(secondaryRender)
+                scheduleResultsReorder {
+                    // A newer keystroke can arrive before this deferred layout.
+                    // Never reorder cards for an obsolete result snapshot.
+                    if (!dialog.isShowing || detailOpen || input.text.toString() != query) return@scheduleResultsReorder
+                    reorderSearchSections()
+                    val requestedCategory = initialCategory
+                    val categoryCard = requestedCategory?.let(categoryCards::get)
+                    if (!initialCategoryOpened && categoryCard != null) {
+                        initialCategoryOpened = true
+                        categoryCard.post {
+                            if (dialog.isShowing && !detailOpen) openDetail(categoryCard)
+                        }
+                    }
+                }
                 results.requestLayout()
             }
 
@@ -2354,6 +2514,7 @@ object PrimeSearchOverlay {
                 lastNativeRenderSignature = null
                 lastAppGridQuery = null
                 lastAppGridSignature = null
+                lastRankedNativeSignature = null
                 results.removeAllViews()
                 results.requestLayout()
             }
@@ -2363,8 +2524,8 @@ object PrimeSearchOverlay {
         fun searchExpandedCategory(query: String) {
             // The compact callback's grid geometry is scoped to that callback.
             // Compute the same settings locally for independent expanded results.
-            val searchLabelLines = if (PrimeSearchResultPreferences.twoLineAppLabels(launcher)) 2 else 1
-            val searchIconPercent = PrimeSearchResultPreferences.appResultsIconSizePercent(launcher)
+            val searchLabelLines = if (PrimeSearchResultPreferences.twoLineAppLabels(launcher, preferenceSurface)) 2 else 1
+            val searchIconPercent = PrimeSearchResultPreferences.appResultsIconSizePercent(launcher, preferenceSurface)
             val searchIconSize = PrimeAppGridGeometry.iconPx(launcher, searchIconPercent)
             val searchRowHeight = PrimeAppGridGeometry.rowHeightPx(
                 launcher, searchIconPercent, searchLabelLines)
@@ -2453,7 +2614,7 @@ object PrimeSearchOverlay {
                             }
                         }
                         PrimeSearchResultPreferences.Category.WEB_SHORTCUTS ->
-                            PrimeSearchResultPreferences.enabledWebEngines(launcher).forEach { engine ->
+                            PrimeSearchResultPreferences.enabledWebEngines(launcher, preferenceSurface).forEach { engine ->
                                 addRow(engine.title) {
                                     runCatching {
                                         launcher.startActivity(Intent(Intent.ACTION_VIEW,
@@ -2477,7 +2638,7 @@ object PrimeSearchOverlay {
                             resultQuery != query || input.text.toString() != query ||
                             detailCard !== card) return
                         val matched = PrimeSearchResultPreferences.filter(
-                            launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(),
+                            launcher, items.orEmpty().filterIsInstance<SearchAdapterItem>(), preferenceSurface,
                         ).filter { item ->
                             val type = item.searchTarget.resultType
                             when (category) {
@@ -2493,7 +2654,7 @@ object PrimeSearchOverlay {
                         }
                         card.removeAllViews()
                         val inflater = LayoutInflater.from(launcher)
-                        val columns = PrimeSearchResultPreferences.appResultsColumns(launcher)
+                        val columns = PrimeSearchResultPreferences.appResultsColumns(launcher, preferenceSurface)
                         var appRow: LinearLayout? = null
                         var appsInRow = 0
                         val seenApps = mutableSetOf<String>()
@@ -2506,7 +2667,7 @@ object PrimeSearchOverlay {
                                 if (appRow == null || appsInRow == columns) {
                                     appRow = LinearLayout(launcher).apply {
                                         orientation = LinearLayout.HORIZONTAL
-                                        gravity = when (PrimeSearchResultPreferences.appResultsAlignment(launcher)) {
+                                        gravity = when (PrimeSearchResultPreferences.appResultsAlignment(launcher, preferenceSurface)) {
                                             PrimeSearchResultPreferences.AppResultsAlignment.CENTER -> Gravity.CENTER_HORIZONTAL
                                             PrimeSearchResultPreferences.AppResultsAlignment.LEFT -> Gravity.START
                                             PrimeSearchResultPreferences.AppResultsAlignment.RIGHT -> Gravity.END
@@ -2555,7 +2716,8 @@ object PrimeSearchOverlay {
                                         when (event.actionMasked) {
                                             MotionEvent.ACTION_DOWN -> {
                                                 appTouchInProgress = true
-                                                parent.requestDisallowInterceptTouchEvent(true)
+                                                // Keep vertical scrolling available from app cells.
+                                                // Long-press popup handling locks interception separately.
                                             }
                                             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
                                                 appTouchInProgress = false
@@ -2596,6 +2758,7 @@ object PrimeSearchOverlay {
             detailSearchTask = task
             webHandler.postDelayed(task, 60L)
         }
+        refreshExpandedApps = ::searchExpandedCategory
         // IME visibility and focus changes must not restart an unchanged query.
         // Only an actual change in the search text starts a new request.
         var lastSubmittedQuery = input.text?.toString().orEmpty()
@@ -2621,6 +2784,10 @@ object PrimeSearchOverlay {
                 pendingSearch = null
                 pendingNativeRefresh?.let(webHandler::removeCallbacks)
                 pendingNativeRefresh = null
+                pendingTypingRender?.let(webHandler::removeCallbacks)
+                pendingTypingRender = null
+                pendingSecondaryRender?.let(webHandler::removeCallbacks)
+                pendingSecondaryRender = null
                 updateWebSuggestions(query)
                 // Keep current rows visible while the user types. Only the
                 // settled query is sent to the expensive native search engine.
@@ -2634,7 +2801,7 @@ object PrimeSearchOverlay {
                         }
                     }
                     pendingSearch = task
-                    webHandler.postDelayed(task, 60L)
+                    webHandler.postDelayed(task, 16L)
                 }
             }
             override fun afterTextChanged(s: Editable?) = Unit
@@ -2642,6 +2809,7 @@ object PrimeSearchOverlay {
         activeDialog = dialog
         input.requestFocus()
         dialog.show()
+        if (initialQuery.isNotBlank()) input.setText(initialQuery)
         if (floating) {
             val decor = dialog.decorView
             val screenHeight = launcher.resources.displayMetrics.heightPixels
@@ -2737,7 +2905,7 @@ object PrimeSearchOverlay {
         // waiting for the next posted UI task. Keep the existing Prime Search
         // entrance animation and its 220 ms duration unchanged.
         val keyboard = launcher.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        if (!PrimeSearchResultPreferences.autoShowKeyboard(launcher)) {
+        if (!PrimeSearchResultPreferences.autoShowKeyboard(launcher, preferenceSurface)) {
             // Keep the field usable: tapping it still opens the keyboard normally.
         } else if (input.isAttachedToWindow) {
             keyboard.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
@@ -2756,6 +2924,34 @@ object PrimeSearchOverlay {
         }
         zeroState.visibility = View.VISIBLE
         scroll.visibility = View.GONE
+    }
+
+    /**
+     * Mount the same Prime Search screen inside the app drawer's view hierarchy.
+     * The host owns its bounds and lifecycle; no DragLayer scrim or floating
+     * window is created. Pass the drawer's content container as [host].
+     */
+    fun showInDrawer(launcher: LawnchairLauncher, host: ViewGroup) {
+        show(launcher, PrimeSearchResultPreferences.Surface.DRAWER, host)
+    }
+
+    /**
+     * Open the same expanded category page used by Prime Search, embedded in
+     * the drawer. The query is re-run through the drawer's independent surface.
+     */
+    fun showCategoryInDrawer(
+        launcher: LawnchairLauncher,
+        host: ViewGroup,
+        category: PrimeSearchResultPreferences.Category,
+        query: String,
+    ) {
+        show(
+            launcher = launcher,
+            preferenceSurface = PrimeSearchResultPreferences.Surface.DRAWER,
+            embeddedHost = host,
+            initialQuery = query,
+            initialCategory = category,
+        )
     }
 
     fun dismiss() {

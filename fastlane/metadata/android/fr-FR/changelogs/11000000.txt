@@ -1,0 +1,1 @@
+Préparation de la première version F-Droid de Prime Launcher : personnalisation de l’écran d’accueil et du tiroir, Prime Search avec recherche locale et calculatrice, recherche Web facultative et cache facultatif des icônes Web. Sauvegarde des réglages du lanceur.

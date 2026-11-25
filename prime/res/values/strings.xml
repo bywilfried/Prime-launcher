@@ -495,7 +495,7 @@
     <string name="smartspace_battery_low">Battery low</string>
     <string name="battery_charging_percentage_charging_time">"%1$d%% — Full in %2$s"</string>
 
-    <string name="smartspace_widget">Aperçu</string>
+    <string name="smartspace_widget">At a Glance</string>
     <string name="smartspace_widget_description">What to show</string>
 
     <!-- Data and time format settings -->
@@ -1192,4 +1192,15 @@
     <string name="gesture_handler_open_app_shortcut_option">Open app shortcut</string>
     <string name="pick_shortcut_for_gesture">Pick app shortcut</string>
     <string name="no_app_shortcuts_available">No app shortcuts available</string>
+    <string name="widgets_settings_label">Widgets</string>
+    <string name="widgets_settings_description">Configure widgets and suggestions</string>
+    <string name="show_widget_suggestions_label">Show widget suggestions</string>
+    <string name="show_widget_suggestions_description">Show or hide suggested widget categories in the widget picker</string>
+    <string name="configure_prime_preview_widget">Configure Prime Launcher Preview widget</string>
+    <string name="gesture_handler_toggle_flashlight">Toggle flashlight</string>
+    <string name="gesture_handler_show_volume">Show volume panel</string>
+    <string name="gesture_handler_toggle_prime_theme">Toggle light / dark theme</string>
+    <string name="gesture_handler_open_prime_settings">Open Prime Launcher settings</string>
+    <string name="prime_haptic_gestures_group">Gestures</string>
+    <string name="prime_haptic_gestures">Gesture intensity</string>
 </resources>

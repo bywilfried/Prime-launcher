@@ -49,6 +49,8 @@ fun GestureHandlerPreference(
     adapter: PreferenceAdapter<GestureHandlerConfig>,
     label: String,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    disabledReason: String? = null,
 ) {
     val context = LocalContext.current
     val maxSheetListHeight = (LocalConfiguration.current.screenHeightDp * 0.65f).dp
@@ -72,7 +74,8 @@ fun GestureHandlerPreference(
     PreferenceTemplate(
         title = { Text(text = label) },
         modifier = modifier,
-        description = { Text(text = currentConfig.getLabel(context)) },
+        description = { Text(text = disabledReason ?: currentConfig.getLabel(context)) },
+        enabled = enabled,
         onClick = {
             mMSDLPlayerWrapper.playToken(MSDLToken.TAP_MEDIUM_EMPHASIS)
             bottomSheetHandler.show {

@@ -15,6 +15,7 @@ import android.util.AttributeSet
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.view.ViewTreeObserver.OnGlobalFocusChangeListener
 import android.view.animation.DecelerateInterpolator
@@ -47,6 +48,11 @@ import app.lawnchair.qsb.LawnQsbLayout.Companion.getVoiceIntent
 import app.lawnchair.qsb.LawnQsbUi
 import app.lawnchair.qsb.QsbActions
 import app.lawnchair.qsb.QsbIconId
+import app.lawnchair.qsb.QsbIconState
+import app.lawnchair.qsb.ThemingMethod
+import app.lawnchair.ui.preferences.PreferenceActivity
+import app.lawnchair.ui.preferences.destinations.SearchRoute
+import app.lawnchair.ui.preferences.navigation.Search
 import app.lawnchair.qsb.buildQsbStyle
 import app.lawnchair.qsb.providers.Google
 import app.lawnchair.qsb.providers.PixelSearch
@@ -102,6 +108,40 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
     private lateinit var apps: LawnchairAlphabeticalAppsList<*>
     private lateinit var appsView: ActivityAllAppsContainerView<*>
     private var searchAlgorithm: LawnchairSearchAlgorithm? = null
+    private var detailCallback: ((String, ArrayList<AdapterItem>?) -> Unit)? = null
+    private var savedQuery: String? = null
+    private var categoryBackHandler: (() -> Unit)? = null
+
+    fun beginCategorySearch(
+        callback: (String, ArrayList<AdapterItem>?) -> Unit,
+        onBack: () -> Unit,
+    ) {
+        savedQuery = input.text?.toString().orEmpty()
+        detailCallback = callback
+        categoryBackHandler = onBack
+        input.setOnBackKeyListener {
+            categoryBackHandler?.invoke()
+            true
+        }
+        // Preserve the global query visually when entering category detail.
+        // Subsequent edits are routed to the detail callback, not the compact list.
+        (context.getSystemService(Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager)
+            ?.hideSoftInputFromWindow(input.windowToken, 0)
+        input.clearFocus()
+    }
+
+    fun endCategorySearch() {
+        val previous = savedQuery ?: return
+        detailCallback = null
+        categoryBackHandler = null
+        input.setOnBackKeyListener(searchBarController)
+        savedQuery = null
+        input.clearFocus()
+        if (input.text?.toString() != previous) input.setText(previous)
+    }
+
+    private val inCategorySearch: Boolean get() = savedQuery != null
+
 
     private var isDirectFocus = false
     private var focusedResultTitle = ""
@@ -185,6 +225,20 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
                     showLens = lensIntent != null,
                 )
 
+                val drawerQsbState = state.copy(
+                    endIcons = if (queryEmpty) {
+                        listOf(QsbIconState(
+                            id = QsbIconId.SETTINGS,
+                            resId = R.drawable.ic_prime_search_settings_outline,
+                            themed = true,
+                            method = ThemingMethod.TINT,
+                            contentDescription = "Paramètres de recherche du tiroir",
+                        ))
+                    } else {
+                        state.endIcons.filter { it.id == QsbIconId.CLEAR }
+                    },
+                )
+
                 val profile = ThemeProfile.current(context)
                 val variant = context.effectiveThemeVariant()
                 val backgroundColor = ThemeColors.resolve(
@@ -253,6 +307,12 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
 
                             QsbIconId.LENS -> lensIntent?.let { context.startActivity(it) }
 
+                            QsbIconId.SETTINGS -> {
+                                context.startActivity(PreferenceActivity.createIntent(
+                                    context, Search(SearchRoute.DRAWER_SEARCH),
+                                ))
+                            }
+
                             QsbIconId.CLEAR -> {
                                 input.reset()
                                 searchAlgorithm?.doZeroStateSearch(this@AllAppsSearchInput)
@@ -267,7 +327,7 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
                 LawnchairTheme {
                     ProvideLifecycleState {
                         LawnQsbUi(
-                            state = state,
+                            state = drawerQsbState,
                             style = style,
                             actions = actions,
                         )
@@ -303,11 +363,11 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
         input.onFocusChangeListener = { _, hasFocus ->
             app.lawnchair.search.PrimeSearchTrace.record("drawer focus=$hasFocus len=${input.text?.length ?: 0}")
             if (hasFocus) {
-                if (prefs2.searchAlgorithm.firstCached() != LawnchairSearchAlgorithm.APP_SEARCH) {
-                    input.setHint(R.string.all_apps_device_search_hint)
-                } else {
-                    input.setHint(R.string.all_apps_search_bar_hint)
-                }
+                // A focused, empty drawer search field should be truly blank.
+                // Keep the idle search-bar label managed by the unfocused QSB.
+                input.hint = ""
+                hint.text = ""
+                hint.isInvisible = true
 
                 if (input.text.toString().isEmpty() && isDirectFocus) {
                     searchAlgorithm?.doZeroStateSearch(this)
@@ -315,7 +375,7 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
                 }
 
                 setBackgroundVisibility(false, 0f)
-                animateHintVisibility(true)
+                animateHintVisibility(false)
                 animatePadding(currentPaddingLeft / 2, currentPaddingRight / 2)
             } else {
                 setBackgroundVisibility(true, 1f)
@@ -344,7 +404,7 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
             },
             afterTextChanged = {
                 updateHint()
-                if (input.text.isNullOrEmpty() && input.hasFocus() && !input.isResetting) {
+                if (!inCategorySearch && input.text.isNullOrEmpty() && input.hasFocus() && !input.isResetting) {
                     searchAlgorithm?.doZeroStateSearch(this)
                 }
                 if (input.text.toString() == "/lawnchairdebug") {
@@ -358,6 +418,7 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
                     animatePadding(currentPaddingLeft, currentPaddingRight)
                 }
                 queryEmpty = isEmpty
+                if (!isEmpty) updateDrawerTabsSearchVisibility(true)
             },
         )
 
@@ -415,8 +476,10 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
     }
 
     override fun setFocusedResultTitle(title: CharSequence?, sub: CharSequence?, showArrow: Boolean) {
-        focusedResultTitle = title?.toString().orEmpty()
-        updateHint()
+        // Search suggestions remain in the result list, never inline in the editor.
+        focusedResultTitle = ""
+        hint.text = ""
+        hint.isInvisible = true
     }
 
     override fun refreshResults() {
@@ -424,28 +487,9 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
     }
 
     private fun updateHint() {
-        val inputString = input.text.toString()
-        val inputLowerCase = inputString.lowercase(Locale.getDefault())
-        val focusedLowerCase = focusedResultTitle.lowercase(Locale.getDefault())
-        if (canShowHint &&
-            inputLowerCase.isNotEmpty() &&
-            focusedLowerCase.isNotEmpty() &&
-            focusedLowerCase.matches(Regex("^[\\x00-\\x7F]*$")) &&
-            focusedLowerCase.startsWith(inputLowerCase)
-        ) {
-            val hintColor = ThemeColors.resolve(
-                context,
-                ThemeProfile.current(context),
-                ThemeColorRole.DRAWER_SEARCH_HINT,
-                context.effectiveThemeVariant(),
-            )
-            val hintText = SpannableStringBuilder(inputString)
-                .append(focusedLowerCase.substring(inputLowerCase.length))
-            hintText.setSpan(ForegroundColorSpan(Color.TRANSPARENT), 0, inputLowerCase.length, SPAN_POINT_MARK)
-            hintText.setSpan(ForegroundColorSpan(hintColor), inputLowerCase.length, hintText.length, SPAN_POINT_MARK)
-            hint.text = hintText
-            hint.isVisible = true
-        }
+        // Do not append the focused result title to the user's actual query.
+        hint.text = ""
+        hint.isInvisible = true
     }
 
     override fun onGlobalLayout() {
@@ -480,7 +524,15 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
     override fun initializeSearch(appsView: ActivityAllAppsContainerView<*>) {
         apps = appsView.searchResultList as LawnchairAlphabeticalAppsList<*>
         this.appsView = appsView
-        val algorithm = LawnchairSearchAlgorithm.create(context)
+        // Use the drawer pipeline so results are grouped into autonomous
+        // category cards. Prime Search remains a read-only reference, and
+        // all search preferences stay scoped to the drawer.
+        val algorithm = app.lawnchair.search.algorithms.LawnchairLocalSearchAlgorithm(
+            context,
+            primeSearch = false,
+            primeMatching = true,
+            preferenceSurface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER,
+        )
         this.searchAlgorithm = algorithm
         searchBarController.initialize(
             algorithm,
@@ -492,6 +544,10 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
     }
 
     override fun resetSearch() {
+        if (inCategorySearch) {
+            categoryBackHandler?.invoke()
+            return
+        }
         searchBarController.reset()
     }
 
@@ -516,9 +572,26 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
         }
     }
 
+    private fun updateDrawerTabsSearchVisibility(active: Boolean) {
+        if (!::appsView.isInitialized) return
+        fun findTabs(view: View): app.lawnchair.prime.drawer.PrimeDrawerTabsView? {
+            if (view is app.lawnchair.prime.drawer.PrimeDrawerTabsView) return view
+            if (view is ViewGroup) for (index in 0 until view.childCount) {
+                findTabs(view.getChildAt(index))?.let { return it }
+            }
+            return null
+        }
+        findTabs(appsView)?.setDrawerSearchActive(active)
+    }
+
     override fun onSearchResult(query: String, items: ArrayList<AdapterItem>?) {
         app.lawnchair.search.PrimeSearchTrace.record("drawer onSearchResult len=${query.length} items=${items?.size ?: 0}")
+        if (inCategorySearch) {
+            detailCallback?.invoke(query, items)
+            return
+        }
         if (items != null) {
+            updateDrawerTabsSearchVisibility(true)
             apps.setSearchResults(items)
             notifyResultChanged()
             appsView.setSearchResults(items)
@@ -526,7 +599,12 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
     }
 
     override fun clearSearchResult() {
+        updateDrawerTabsSearchVisibility(false)
         app.lawnchair.search.PrimeSearchTrace.record("drawer clearSearchResult")
+        if (inCategorySearch) {
+            detailCallback?.invoke("", null)
+            return
+        }
         if (apps.setSearchResults(null)) {
             notifyResultChanged()
         }

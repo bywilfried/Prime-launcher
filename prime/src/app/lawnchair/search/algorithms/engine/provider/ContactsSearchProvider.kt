@@ -72,9 +72,18 @@ object ContactsSearchProvider : SearchProvider, SearchPermission {
     ): Flow<List<SearchResult>> = searchInternal(context, query, false)
 
     fun searchForPrime(context: Context, query: String): Flow<List<SearchResult>> =
-        searchInternal(context, query, true)
+        searchInternal(context, query, true, app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.PRIME_SEARCH)
 
-    private fun searchInternal(context: Context, query: String, primeSearch: Boolean): Flow<List<SearchResult>> = flow {
+    fun searchForDrawer(context: Context, query: String): Flow<List<SearchResult>> =
+        searchInternal(context, query, true, app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER)
+
+    private fun searchInternal(
+        context: Context,
+        query: String,
+        primeSearch: Boolean,
+        surface: app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface =
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER,
+    ): Flow<List<SearchResult>> = flow {
         val prefs = PreferenceManager.getInstance(context)
         val prefs2 = PreferenceManager2.getInstance(context)
 
@@ -92,9 +101,6 @@ object ContactsSearchProvider : SearchProvider, SearchPermission {
             "contacts query len=${query.length} count=${contactInfoList.size} ms=${SystemClock.elapsedRealtime() - started}"
         )
 
-        val surface = if (primeSearch)
-            app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.PRIME_SEARCH
-        else app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
         val selected = app.lawnchair.prime.search.PrimeSourceSelection.selected(context, "contacts", surface)
         val allowedIds = selected?.let { accounts ->
             val ids = mutableSetOf<String>()
@@ -194,13 +200,18 @@ object ContactsSearchProvider : SearchProvider, SearchPermission {
                         val imageUri = photoUri ?: ""
                         val pkg = contactId + displayName + phoneNumber
                         if (key != null && !EXCLUDED_MIME_TYPES.contains(mimeType)) {
-                            contactMap[key] = ContactInfo(
-                                contactId,
-                                displayName,
-                                phoneNumber,
-                                imageUri,
-                                pkg,
-                            )
+                            // Prefer a phone/detail row over a name-only row, but
+                            // retain name-only contacts as searchable entries.
+                            val previous = contactMap[key]
+                            if (previous == null || mimeType == ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE) {
+                                contactMap[key] = ContactInfo(
+                                    contactId,
+                                    displayName,
+                                    phoneNumber,
+                                    imageUri,
+                                    pkg,
+                                )
+                            }
                         } else {
                             if (contactMap.containsKey(contactId)) {
                                 val existingContact = contactMap[contactId]
@@ -238,8 +249,11 @@ object ContactsSearchProvider : SearchProvider, SearchPermission {
                             val phone = cursor.getString(data3Index) ?: cursor.getString(data5Index) ?: cursor.getString(dataIndex)
                             val identity = id ?: phone
                             if (identity != null && !EXCLUDED_MIME_TYPES.contains(cursor.getString(mimeIndex))) {
-                                contactMap[identity] = ContactInfo(id, name, phone,
-                                    cursor.getString(photoIndex).orEmpty(), id + name + phone)
+                                if (!contactMap.containsKey(identity) ||
+                                    cursor.getString(mimeIndex) == ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE) {
+                                    contactMap[identity] = ContactInfo(id, name, phone,
+                                        cursor.getString(photoIndex).orEmpty(), id + name + phone)
+                                }
                             }
                         }
                     }
@@ -270,7 +284,6 @@ object ContactsSearchProvider : SearchProvider, SearchPermission {
     private const val CONTACT_ACCOUNT_TITLE = "contact.title"
 
     private val EXCLUDED_MIME_TYPES = arrayOf(
-        "vnd.android.cursor.item/name",
         "vnd.android.cursor.item/nickname",
         "vnd.android.cursor.item/note",
         "vnd.android.cursor.item/photo",

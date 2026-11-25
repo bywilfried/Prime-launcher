@@ -14,6 +14,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -254,69 +260,70 @@ private fun DrawerAdvancedSearchPreferences() {
             if (missing.isNotEmpty()) permissionLauncher.launch(missing.toTypedArray())
         }
     }
-    PreferenceGroup(heading = "Recherche du tiroir d'applications") {
-        Text("Réglages indépendants de Prime Search. L'apparence du tiroir et de sa barre de recherche reste inchangée.")
-        val drawerSurface = PrimeSearchResultPreferences.Surface.DRAWER
-        var drawerWebCount by remember {
-            mutableStateOf(PrimeSearchResultPreferences.webSuggestionCount(context, drawerSurface))
-        }
-        /* Les suggestions Web se règlent depuis la carte de leur catégorie. */
-        /* Text("Suggestions Web du tiroir : $drawerWebCount")
-        androidx.compose.material3.Slider(
-            value = drawerWebCount.toFloat(),
-            onValueChange = {
-                drawerWebCount = it.roundToInt().coerceIn(0, 8)
-                PrimeSearchResultPreferences.setWebSuggestionCount(context, drawerWebCount, drawerSurface)
+    PreferenceGroup(heading = stringResource(R.string.prime_drawer_search_drawer_heading)) {
+        Text(stringResource(R.string.prime_drawer_search_drawer_desc))
+        var fuzzyEnabled by remember { mutableStateOf(PrimeSearchResultPreferences.fuzzyApps(context, PrimeSearchResultPreferences.Surface.DRAWER)) }
+        PreferenceTemplate(
+            title = { Text(stringResource(R.string.prime_search_pref_fuzzy)) },
+            description = { Text(stringResource(R.string.prime_drawer_search_fuzzy_desc)) },
+            endWidget = {
+                androidx.compose.material3.Switch(
+                    checked = fuzzyEnabled,
+                    onCheckedChange = {
+                        fuzzyEnabled = it
+                        PrimeSearchResultPreferences.setFuzzyApps(context, it, PrimeSearchResultPreferences.Surface.DRAWER)
+                    },
+                )
             },
-            valueRange = 0f..8f,
+            onClick = {
+                fuzzyEnabled = !fuzzyEnabled
+                PrimeSearchResultPreferences.setFuzzyApps(context, fuzzyEnabled, PrimeSearchResultPreferences.Surface.DRAWER)
+            },
         )
-        var drawerSuggestionProvider by remember {
-            mutableStateOf(PrimeSearchResultPreferences.suggestionProvider(context, drawerSurface))
+        val drawerSurface = PrimeSearchResultPreferences.Surface.DRAWER
+        var drawerAutoKeyboard by remember {
+            mutableStateOf(PrimeSearchResultPreferences.autoShowKeyboard(context, drawerSurface))
         }
-        PrimeSearchResultPreferences.SuggestionProvider.entries.forEach { provider ->
-            PreferenceTemplate(
-                title = { Text("Suggestions : ${provider.title}") },
-                endWidget = {
-                    androidx.compose.material3.RadioButton(
-                        selected = drawerSuggestionProvider == provider,
-                        onClick = {
-                            drawerSuggestionProvider = provider
-                            PrimeSearchResultPreferences.setSuggestionProvider(context, provider, drawerSurface)
-                        },
-                    )
-                },
-                onClick = {
-                    drawerSuggestionProvider = provider
-                    PrimeSearchResultPreferences.setSuggestionProvider(context, provider, drawerSurface)
-                },
-            )
+        PreferenceTemplate(
+            title = { Text(stringResource(R.string.prime_drawer_search_keyboard)) },
+            description = { Text(stringResource(R.string.prime_drawer_search_keyboard_desc)) },
+            endWidget = {
+                androidx.compose.material3.Switch(
+                    checked = drawerAutoKeyboard,
+                    onCheckedChange = {
+                        drawerAutoKeyboard = it
+                        PrimeSearchResultPreferences.setAutoShowKeyboard(context, it, drawerSurface)
+                    },
+                )
+            },
+            onClick = {
+                drawerAutoKeyboard = !drawerAutoKeyboard
+                PrimeSearchResultPreferences.setAutoShowKeyboard(context, drawerAutoKeyboard, drawerSurface)
+            },
+        )
+        var drawerTwoLines by remember {
+            mutableStateOf(PrimeSearchResultPreferences.twoLineAppLabels(context, drawerSurface))
         }
-        PrimeSearchResultPreferences.WebEngine.entries.forEach { engine ->
-            var active by remember(engine) {
-                mutableStateOf(engine in PrimeSearchResultPreferences.enabledWebEngines(context, drawerSurface))
-            }
-            PreferenceTemplate(
-                title = { Text("Moteur Web : ${engine.title}") },
-                endWidget = {
-                    androidx.compose.material3.Switch(
-                        checked = active,
-                        onCheckedChange = {
-                            active = it
-                            PrimeSearchResultPreferences.setWebEngineEnabled(context, engine, it, drawerSurface)
-                        },
-                    )
-                },
-                onClick = {
-                    active = !active
-                    PrimeSearchResultPreferences.setWebEngineEnabled(context, engine, active, drawerSurface)
-                },
-            )
-        }
-        */
+        PreferenceTemplate(
+            title = { Text(stringResource(R.string.prime_drawer_search_two_lines)) },
+            endWidget = {
+                androidx.compose.material3.Switch(
+                    checked = drawerTwoLines,
+                    onCheckedChange = {
+                        drawerTwoLines = it
+                        PrimeSearchResultPreferences.setTwoLineAppLabels(context, it, drawerSurface)
+                    },
+                )
+            },
+            onClick = {
+                drawerTwoLines = !drawerTwoLines
+                PrimeSearchResultPreferences.setTwoLineAppLabels(context, drawerTwoLines, drawerSurface)
+            },
+        )
         val drawerCategories = PrimeSearchResultPreferences.order(context, drawerSurface)
         var drawerOrder by remember { mutableStateOf(drawerCategories) }
         var categorySettings by remember { mutableStateOf<PrimeSearchResultPreferences.Category?>(null) }
-        Text("Afficher dans les résultats de recherche")
+        Text(stringResource(R.string.prime_search_advanced_results))
         val sharedDrag = remember { CategoryDragState() }
         fun moveDrawerCategory(from: Int, to: Int) {
             if (from !in drawerOrder.indices || to !in drawerOrder.indices || from == to) return
@@ -349,7 +356,7 @@ private fun DrawerAdvancedSearchPreferences() {
         androidx.compose.material3.TextButton(onClick = {
             PrimeSearchResultPreferences.resetOrder(context, drawerSurface)
             drawerOrder = PrimeSearchResultPreferences.order(context, drawerSurface)
-        }) { Text("Réinitialiser l'ordre") }
+        }) { Text(stringResource(R.string.prime_search_advanced_reset_order)) }
         categorySettings?.let { selected ->
             SharedCategorySettingsDialog(
                 category = selected,
@@ -357,10 +364,166 @@ private fun DrawerAdvancedSearchPreferences() {
                 permissionRefresh = permissionRefresh,
                 onDismiss = { categorySettings = null },
             ) {
+                if (selected == PrimeSearchResultPreferences.Category.APPS) {
+                    var columns by remember(selected) {
+                        mutableStateOf(PrimeSearchResultPreferences.appResultsColumns(context, drawerSurface))
+                    }
+                    var rows by remember(selected) {
+                        mutableStateOf(PrimeSearchResultPreferences.appResultsRows(context, drawerSurface))
+                    }
+                    var iconSize by remember(selected) {
+                        mutableStateOf(PrimeSearchResultPreferences.appResultsIconSizePercent(context, drawerSurface))
+                    }
+                    var alignment by remember(selected) {
+                        mutableStateOf(PrimeSearchResultPreferences.appResultsAlignment(context, drawerSurface))
+                    }
+                    var showAlignment by remember(selected) { mutableStateOf(false) }
+                    Text(stringResource(R.string.prime_search_pref_columns, columns))
+                    androidx.compose.material3.Slider(
+                        value = columns.toFloat(),
+                        onValueChange = {
+                            columns = it.roundToInt().coerceIn(3, 5)
+                            PrimeSearchResultPreferences.setAppResultsFollowGeneral(context, false, drawerSurface)
+                            PrimeSearchResultPreferences.setAppResultsColumns(context, columns, drawerSurface)
+                        },
+                        valueRange = 3f..5f,
+                        steps = 1,
+                    )
+                    Text(stringResource(R.string.prime_search_advanced_max_rows, rows))
+                    androidx.compose.material3.Slider(
+                        value = rows.toFloat(),
+                        onValueChange = {
+                            rows = it.roundToInt().coerceIn(1, 3)
+                            PrimeSearchResultPreferences.setAppResultsFollowGeneral(context, false, drawerSurface)
+                            PrimeSearchResultPreferences.setAppResultsRows(context, rows, drawerSurface)
+                        },
+                        valueRange = 1f..3f,
+                        steps = 1,
+                    )
+                    Text(stringResource(R.string.prime_search_pref_icon_size, iconSize))
+                    androidx.compose.material3.Slider(
+                        value = iconSize.toFloat(),
+                        onValueChange = {
+                            iconSize = (it.roundToInt() / 5 * 5).coerceIn(60, 150)
+                            PrimeSearchResultPreferences.setAppResultsFollowGeneral(context, false, drawerSurface)
+                            PrimeSearchResultPreferences.setAppResultsIconSizePercent(context, iconSize, drawerSurface)
+                        },
+                        valueRange = 60f..150f,
+                    )
+                    // Live drawer-only preview: independent of Prime Search settings.
+                    val previewApps = remember(context) {
+                        val pm = context.packageManager
+                        pm.getInstalledApplications(0)
+                            .asSequence()
+                            .filter { pm.getLaunchIntentForPackage(it.packageName) != null }
+                            .sortedBy { pm.getApplicationLabel(it).toString().lowercase() }
+                            .take(15)
+                            .map { pm.getApplicationLabel(it).toString() to it.packageName }
+                            .toList()
+                    }
+                    Text(stringResource(R.string.prime_search_advanced_preview))
+                    androidx.compose.material3.Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant,
+                    ) {
+                        androidx.compose.foundation.layout.Column(modifier = Modifier.padding(8.dp)) {
+                            Text(stringResource(R.string.prime_search_pref_apps), modifier = Modifier.padding(6.dp))
+                            val geometry = app.lawnchair.prime.search.PrimeAppGridGeometry
+                            val density = context.resources.displayMetrics.density
+                            val twoLines = PrimeSearchResultPreferences.twoLineAppLabels(context, drawerSurface)
+                            val lineCount = if (twoLines) 2 else 1
+                            val iconDp = (geometry.iconPx(context, iconSize) / density).dp
+                            val rowDp = (geometry.rowHeightPx(context, iconSize, lineCount) / density).dp
+                            repeat(rows) { rowIndex ->
+                                androidx.compose.foundation.layout.Row(
+                                    modifier = Modifier.fillMaxWidth().height(rowDp),
+                                ) {
+                                    repeat(columns) { columnIndex ->
+                                        val app = previewApps.getOrNull(rowIndex * columns + columnIndex)
+                                        androidx.compose.foundation.layout.Column(
+                                            modifier = Modifier.weight(1f),
+                                            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+                                        ) {
+                                            androidx.compose.foundation.layout.Box(
+                                                modifier = Modifier.height(iconDp).fillMaxWidth(),
+                                                contentAlignment = androidx.compose.ui.Alignment.Center,
+                                            ) {
+                                                if (app != null) {
+                                                    val icon = remember(app.second) {
+                                                        runCatching { context.packageManager.getApplicationIcon(app.second) }
+                                                            .getOrNull()
+                                                    }
+                                                    if (icon != null) {
+                                                        androidx.compose.foundation.Image(
+                                                            painter = androidx.compose.ui.graphics.painter.BitmapPainter(
+                                                                remember(icon) {
+                                                                    val bitmap = android.graphics.Bitmap.createBitmap(
+                                                                        icon.intrinsicWidth.coerceAtLeast(1),
+                                                                        icon.intrinsicHeight.coerceAtLeast(1),
+                                                                        android.graphics.Bitmap.Config.ARGB_8888,
+                                                                    )
+                                                                    val canvas = android.graphics.Canvas(bitmap)
+                                                                    icon.setBounds(0, 0, bitmap.width, bitmap.height)
+                                                                    icon.draw(canvas)
+                                                                    bitmap.asImageBitmap()
+                                                                },
+                                                            ),
+                                                            contentDescription = null,
+                                                            modifier = Modifier.size(iconDp),
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                            Text(
+                                                app?.first.orEmpty(),
+                                                maxLines = lineCount,
+                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                                style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Text(stringResource(R.string.prime_search_advanced_alignment))
+                    androidx.compose.material3.OutlinedButton(onClick = { showAlignment = true }) {
+                        Text(alignment.label)
+                    }
+                    if (showAlignment) {
+                        androidx.compose.material3.AlertDialog(
+                            onDismissRequest = { showAlignment = false },
+                            title = { Text(stringResource(R.string.prime_search_advanced_alignment)) },
+                            text = {
+                                androidx.compose.foundation.layout.Column {
+                                    PrimeSearchResultPreferences.AppResultsAlignment.entries.forEach { option ->
+                                        Row {
+                                            androidx.compose.material3.RadioButton(
+                                                selected = alignment == option,
+                                                onClick = {
+                                                    alignment = option
+                                                    PrimeSearchResultPreferences.setAppResultsAlignment(context, option, drawerSurface)
+                                                    showAlignment = false
+                                                },
+                                            )
+                                            Text(option.localizedLabel(context))
+                                        }
+                                    }
+                                }
+                            },
+                            confirmButton = {
+                                androidx.compose.material3.TextButton(onClick = { showAlignment = false }) {
+                                    Text(stringResource(R.string.prime_search_shared_close))
+                                }
+                            },
+                        )
+                    }
+                }
                 if (PrimeSearchPermissions.required(selected) && !PrimeSearchPermissions.granted(context, selected)) {
-                    Text(PrimeSearchPermissions.explanation(selected))
+                    Text(PrimeSearchPermissions.explanation(context, selected))
                     androidx.compose.material3.TextButton(onClick = { requestCategory(selected, drawerSurface) }) {
-                        Text("Autoriser l'accès")
+                        Text(stringResource(R.string.prime_search_advanced_allow))
                     }
                 }
             }

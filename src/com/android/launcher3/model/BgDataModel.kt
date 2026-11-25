@@ -264,6 +264,11 @@ constructor(
                     operation = { _, accumulator, element -> accumulator.apply { add(element.id) } },
                 )
 
+        // Drawer WebApps own native pins too, even without a workspace icon.
+        PrimePinnedDrawerShortcuts.getDrawerPinnedIds(context, user).forEach { (pkg, ids) ->
+            modelMap.getOrPut(pkg) { mutableSetOf() }.addAll(ids)
+        }
+
         // Check for diff
         for ((key, modelShortcuts) in modelMap) {
             val systemShortcuts = systemMap.remove(key) ?: emptySet()

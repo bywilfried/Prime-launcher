@@ -653,6 +653,13 @@ public class WidgetsFullSheet extends BaseWidgetSheet
         if (mIsInSearchMode) {
             return;
         }
+        if (!getContext().getSharedPreferences(
+                "prime_widget_picker_preferences", android.content.Context.MODE_PRIVATE)
+                .getBoolean("show_widget_recommendations", true)) {
+            mRecommendedWidgetsCount = 0;
+            mWidgetRecommendationsContainer.setVisibility(GONE);
+            return;
+        }
         boolean forceUpdate = false;
         // We avoid applying new recommendations when some are already displayed.
         if (mRecommendedWidgetsMap.isEmpty()) {

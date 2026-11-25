@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_drawer_category_add">Add category</string>
+    <string name="prime_drawer_category_add_desc">Create a new drawer tab</string>
+    <string name="prime_drawer_category_new">New category</string>
+    <string name="prime_drawer_category_name">Category name</string>
+    <string name="prime_drawer_category_create">Create</string>
+    <string name="prime_drawer_category_cancel">Cancel</string>
+    <string name="prime_drawer_category_sort_apps">App sorting</string>
+    <string name="prime_drawer_category_asc">Apps: A → Z</string>
+    <string name="prime_drawer_category_desc">Apps: Z → A</string>
+    <string name="prime_drawer_category_manual_apps">Apps: manual order</string>
+    <string name="prime_drawer_category_placement">Folder placement</string>
+    <string name="prime_drawer_category_start">Folders first</string>
+    <string name="prime_drawer_category_end">Folders last</string>
+    <string name="prime_drawer_category_mixed">Folders mixed with apps</string>
+    <string name="prime_drawer_category_folder">Folder</string>
+    <string name="prime_drawer_category_active">Active items in folders</string>
+    <string name="prime_drawer_category_remove">Remove from category</string>
+    <string name="prime_drawer_category_delete">Delete</string>
+    <string name="prime_drawer_category_delete_folder">Delete this folder?</string>
+    <string name="prime_drawer_category_sort">Sorting</string>
+    <string name="prime_drawer_category_selected">Selected</string>
+    <string name="prime_drawer_category_manual">Manual</string>
+    <string name="prime_drawer_category_delete_category">Delete this category?</string>
+    <string name="prime_drawer_category_alphabetical">Alphabetical order</string>
+    <string name="prime_drawer_category_custom">Custom order</string>
+    <string name="prime_drawer_category_folder_name">Folder: %1$s</string>
+    <string name="prime_drawer_category_folder_names">Folders: %1$s</string>
+</resources>

@@ -174,7 +174,14 @@ fun CustomizeAppDialog(
             if (newTitle != previousTitle) {
                 prefs.customAppName[componentKey] = newTitle
                 val model = launcherAppState.model
-                model.onAppIconChanged(componentKey.componentName.packageName, componentKey.user)
+                if (componentKey.componentName.className.startsWith(
+                        context.packageName + ".prime.pinned.Shortcut_"
+                    )
+                ) {
+                    model.forceReload()
+                } else {
+                    model.onAppIconChanged(componentKey.componentName.packageName, componentKey.user)
+                }
             }
         }
     }

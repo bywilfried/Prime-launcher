@@ -22,6 +22,7 @@ import com.android.launcher3.BuildConfig
 import com.android.launcher3.LauncherAppState
 import com.android.launcher3.LauncherFiles
 import com.android.launcher3.R
+import com.android.launcher3.model.PrimePinnedDrawerShortcuts
 import com.android.launcher3.model.DeviceGridState
 import com.android.launcher3.provider.RestoreDbTask
 import com.google.protobuf.Timestamp
@@ -66,9 +67,17 @@ class LawnchairBackup(
         val contents = selectedContents and info.contents
         if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
             handlers[PREFS_FILE_NAME] = { restoreLauncherPreferences(it) }
+            EXTRA_PREF_STORES.forEach { store ->
+                handlers["$store.xml"] = { input ->
+                    restoreLauncherPreferences(input, context.getSharedPreferences(store, Context.MODE_PRIVATE))
+                }
+            }
+            handlers[WEB_SHORTCUTS_FILE_NAME] = { input ->
+                PrimePinnedDrawerShortcuts.importBackup(context, input.bufferedReader().readText())
+            }
             handlers.putAll(
                 getFiles(context, forRestore = true)
-                    .filterKeys { it != PREFS_FILE_NAME }
+                    .filterKeys { it != PREFS_FILE_NAME && it != PREFS_DB_FILE_NAME && it != PREFS_DATASTORE_FILE_NAME }
                     .mapValues { entry ->
                     {
                         val file = entry.value
@@ -90,8 +99,20 @@ class LawnchairBackup(
         // Stage the workspace until all preferences have been restored. The archive's
         // entry order must not decide which grid-specific database receives the layout.
         val stagedWorkspace = File(context.cacheDir, "prime-workspace-restore.db")
+        val stagedRoom = File.createTempFile("prime-room-", ".db", context.cacheDir)
+        val stagedDataStore = File.createTempFile("prime-datastore-", ".preferences_pb", context.cacheDir)
+        var hasRoom = false
+        var hasDataStore = false
         try {
             if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
+                handlers[PREFS_DB_FILE_NAME] = { input ->
+                    stagedRoom.outputStream().use { input.copyTo(it) }
+                    hasRoom = true
+                }
+                handlers[PREFS_DATASTORE_FILE_NAME] = { input ->
+                    stagedDataStore.outputStream().use { input.copyTo(it) }
+                    hasDataStore = true
+                }
                 handlers[LAUNCHER_DB_FILE_NAME] = { input ->
                     stagedWorkspace.outputStream().use { output -> input.copyTo(output) }
                     SQLiteDatabase.openDatabase(
@@ -108,7 +129,7 @@ class LawnchairBackup(
                     }
                 }
             }
-            readZip(handlers)
+            readZip(handlers, restoreAssets = contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS))
             if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
                 DeviceGridState(info.gridState).writeToPrefs(context, true)
                 check(stagedWorkspace.exists()) { "Backup workspace database is missing" }
@@ -130,10 +151,14 @@ class LawnchairBackup(
 
                 // Perform profile remapping and widget validation on the next launcher
                 // startup, after its existing SQLite connections have been closed.
+                if (hasRoom) PendingBackupRestore.stageRoom(context, stagedRoom)
+                if (hasDataStore) PendingBackupRestore.stageDataStore(context, stagedDataStore)
                 RestoreDbTask.setPending(context)
             }
         } finally {
             stagedWorkspace.delete()
+            stagedRoom.delete()
+            stagedDataStore.delete()
         }
     }
 
@@ -142,7 +167,10 @@ class LawnchairBackup(
      * LauncherPrefs and Prime drawer repositories cache this instance; a raw file replacement
      * leaves the old values in memory and they can be written back during launcher restart.
      */
-    private fun restoreLauncherPreferences(input: InputStream) {
+    private fun restoreLauncherPreferences(
+        input: InputStream,
+        preferences: android.content.SharedPreferences = LauncherPrefs.getPrefs(context),
+    ) {
         val parser = Xml.newPullParser()
         parser.setInput(input, "UTF-8")
         val values = linkedMapOf<String, Any>()
@@ -172,7 +200,7 @@ class LawnchairBackup(
             }
             event = parser.next()
         }
-        val editor = LauncherPrefs.getPrefs(context).edit().clear()
+        val editor = preferences.edit().clear()
         values.forEach { (key, value) ->
             when (value) {
                 is String -> editor.putString(key, value)
@@ -186,7 +214,10 @@ class LawnchairBackup(
         check(editor.commit()) { "Failed to restore launcher preferences" }
     }
 
-    private suspend fun readZip(handlers: Map<String, suspend (InputStream) -> Unit>) {
+    private suspend fun readZip(
+        handlers: Map<String, suspend (InputStream) -> Unit>,
+        restoreAssets: Boolean = false,
+    ) {
         withContext(Dispatchers.IO) {
             val pfd = context.contentResolver.openFileDescriptor(uri, "r")!!
             pfd.use {
@@ -196,7 +227,9 @@ class LawnchairBackup(
                         while (true) {
                             entry = zipIs.nextEntry
                             if (entry == null) break
-                            handlers[entry.name]?.invoke(zipIs)
+                            val handler = handlers[entry.name]
+                            if (handler != null) handler(zipIs)
+                            else if (restoreAssets && !entry.isDirectory) restoreAsset(entry.name, zipIs)
                         }
                     }
                 }
@@ -204,9 +237,43 @@ class LawnchairBackup(
         }
     }
 
+    private fun restoreAsset(name: String, input: InputStream) {
+        val parts = name.split('/')
+        if (parts.size != 3 || parts[0] != "assets" || parts[1] !in ASSET_DIRS) return
+        val filename = parts[2]
+        require(filename.isNotBlank() && filename != "." && filename != ".." && !filename.contains('\\'))
+        val directory = File(context.filesDir, parts[1]).apply { mkdirs() }
+        val target = File(directory, filename)
+        require(target.canonicalFile.parentFile == directory.canonicalFile)
+        val temporary = File.createTempFile("restore-", ".tmp", directory)
+        try {
+            temporary.outputStream().use { output ->
+                val buffer = ByteArray(8192)
+                var total = 0L
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    total += count
+                    require(total <= 64L * 1024 * 1024) { "Backup asset exceeds size limit" }
+                    output.write(buffer, 0, count)
+                }
+            }
+            check(temporary.renameTo(target)) { "Unable to restore asset" }
+        } finally {
+            temporary.delete()
+        }
+    }
+
     companion object {
         private const val BACKUP_VERSION = 1
         private const val PREFS_FILE_NAME = "${LauncherFiles.SHARED_PREFERENCES_KEY}.xml"
+        private val EXTRA_PREF_STORES = listOf(
+            "prime_search_result_preferences",
+            "prime_drawer_search_result_preferences",
+            "prime_search_sources",
+            "prime_drawer_search_sources",
+            "prime_web_apps",
+        )
         private const val PREFS_DB_FILE_NAME = "preferences"
         private const val PREFS_DATASTORE_FILE_NAME = "preferences.preferences_pb"
 
@@ -220,6 +287,7 @@ class LawnchairBackup(
         const val INCLUDE_WALLPAPER = 1 shl 1
         const val INCLUDE_THEME_CUSTOMIZATIONS = 1 shl 2
         private const val THEME_FILE_NAME = "prime_theme_preferences.json"
+        private const val WEB_SHORTCUTS_FILE_NAME = "prime_drawer_web_shortcuts.json"
 
         const val MIME_TYPE = "application/zip"
         val EXTRA_MIME_TYPES = arrayOf(MIME_TYPE, "application/x-zip", "application/octet-stream")
@@ -247,6 +315,10 @@ class LawnchairBackup(
         @SuppressLint("MissingPermission")
         suspend fun create(context: Context, contents: Int, screenshotBitmap: Bitmap, fileUri: Uri) {
             val idp = LauncherAppState.getIDP(context)
+            if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
+                val database = app.lawnchair.data.AppDatabase.INSTANCE.get(context)
+                withContext(Dispatchers.IO) { database.checkpoint() }
+            }
             val createdAt = Timestamp.newBuilder()
                 .setSeconds(System.currentTimeMillis() / 1000)
             val colorHints = WallpaperManagerCompat.INSTANCE.get(context).wallpaperColors?.colorHints ?: 0
@@ -287,14 +359,83 @@ class LawnchairBackup(
                             PrimeThemeBackup.write(context, out)
                             out.closeEntry()
                         }
-                        getFiles(context, forRestore = false).entries.forEach {
-                            if (!it.value.exists()) return@forEach
-                            out.putNextEntry(ZipEntry(it.key))
-                            it.value.inputStream().use { input -> input.copyTo(out) }
+                        if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
+                            out.putNextEntry(ZipEntry(WEB_SHORTCUTS_FILE_NAME))
+                            out.write(PrimePinnedDrawerShortcuts.exportBackup(context).toByteArray(Charsets.UTF_8))
+                            out.closeEntry()
+                        }
+                        if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
+                            EXTRA_PREF_STORES.forEach { store ->
+                                out.putNextEntry(ZipEntry("$store.xml"))
+                                writeExtraPreferences(context.getSharedPreferences(store, Context.MODE_PRIVATE), out)
+                                out.closeEntry()
+                            }
+                        }
+                        if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
+                            writeAssets(context, out)
+                            out.putNextEntry(ZipEntry(PREFS_FILE_NAME))
+                            writeExtraPreferences(LauncherPrefs.getPrefs(context), out)
+                            out.closeEntry()
+                            getFiles(context, forRestore = false).filterKeys { it != PREFS_FILE_NAME }.entries.forEach {
+                                if (!it.value.exists()) return@forEach
+                                out.putNextEntry(ZipEntry(it.key))
+                                it.value.inputStream().use { input -> input.copyTo(out) }
+                            }
                         }
                     }
                 }
             }
+        }
+
+        // Only user-imported fonts and wallpaper history images, never caches.
+        private val ASSET_DIRS = listOf("customFonts", "wallpapers")
+
+        private fun writeAssets(context: Context, out: ZipOutputStream) {
+            ASSET_DIRS.forEach { directory ->
+                File(context.filesDir, directory).listFiles().orEmpty()
+                    .filter { it.isFile && it.canonicalFile.parentFile == File(context.filesDir, directory).canonicalFile }
+                    .sortedBy { it.name }.forEach { file ->
+                        out.putNextEntry(ZipEntry("assets/$directory/${file.name}"))
+                        file.inputStream().use { it.copyTo(out) }
+                        out.closeEntry()
+                    }
+            }
+        }
+
+        private fun writeExtraPreferences(
+            preferences: android.content.SharedPreferences,
+            output: java.io.OutputStream,
+        ) {
+            val xml = Xml.newSerializer()
+            xml.setOutput(output, "UTF-8")
+            xml.startDocument("UTF-8", true)
+            xml.startTag(null, "map")
+            preferences.all.toSortedMap().forEach { (key, value) ->
+                val type = when (value) {
+                    is String -> "string"
+                    is Boolean -> "boolean"
+                    is Int -> "int"
+                    is Long -> "long"
+                    is Float -> "float"
+                    is Set<*> -> "set"
+                    else -> error("Unsupported search preference type: $key")
+                }
+                xml.startTag(null, type)
+                xml.attribute(null, "name", key)
+                when (value) {
+                    is String -> xml.text(value)
+                    is Set<*> -> value.filterIsInstance<String>().sorted().forEach {
+                        xml.startTag(null, "string")
+                        xml.text(it)
+                        xml.endTag(null, "string")
+                    }
+                    else -> xml.attribute(null, "value", value.toString())
+                }
+                xml.endTag(null, type)
+            }
+            xml.endTag(null, "map")
+            xml.endDocument()
+            xml.flush()
         }
 
         private fun launcherDbFile(context: Context, forRestore: Boolean): File {

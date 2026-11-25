@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_drawer_search_center">Centered</string>
+    <string name="prime_drawer_search_left">Left aligned</string>
+    <string name="prime_drawer_search_right">Right aligned</string>
+    <string name="prime_drawer_search_drawer_heading">App drawer search</string>
+    <string name="prime_drawer_search_drawer_desc">Settings independent of Prime Search. Drawer results use rounded cards and the colors defined in Customization → Drawers.</string>
+    <string name="prime_drawer_search_fuzzy_desc">Allow minor typos in app names without changing Prime Search</string>
+    <string name="prime_drawer_search_keyboard">Show keyboard automatically</string>
+    <string name="prime_drawer_search_keyboard_desc">Open the keyboard when drawer search is displayed</string>
+    <string name="prime_drawer_search_two_lines">Two-line labels</string>
+</resources>

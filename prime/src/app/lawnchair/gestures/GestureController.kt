@@ -45,6 +45,13 @@ class GestureController(private val launcher: LawnchairLauncher) {
     private val swipeDownHandler = handler(prefs.swipeDownGestureHandler)
     private val twoFingerSwipeUpHandler = handler(prefs.twoFingerSwipeUpGestureHandler)
     private val twoFingerSwipeDownHandler = handler(prefs.twoFingerSwipeDownGestureHandler)
+    private val swipeLeftHandler = handler(prefs.swipeLeftGestureHandler)
+    private val swipeRightHandler = handler(prefs.swipeRightGestureHandler)
+    private val twoFingerSwipeLeftHandler = handler(prefs.twoFingerSwipeLeftGestureHandler)
+    private val twoFingerSwipeRightHandler = handler(prefs.twoFingerSwipeRightGestureHandler)
+    private val pinchInHandler = handler(prefs.pinchInGestureHandler)
+    private val pinchOutHandler = handler(prefs.pinchOutGestureHandler)
+    private val twoFingerDoubleTapHandler = handler(prefs.twoFingerDoubleTapGestureHandler)
     private val homePressHandler = handler(prefs.homePressGestureHandler)
     private val backPressHandler = handler(prefs.backPressGestureHandler)
 
@@ -68,6 +75,14 @@ class GestureController(private val launcher: LawnchairLauncher) {
         triggerHandler(twoFingerSwipeDownHandler)
     }
 
+    fun onSwipeLeft() { triggerHandler(swipeLeftHandler) }
+    fun onSwipeRight() { triggerHandler(swipeRightHandler) }
+    fun onTwoFingerSwipeLeft() { triggerHandler(twoFingerSwipeLeftHandler) }
+    fun onTwoFingerSwipeRight() { triggerHandler(twoFingerSwipeRightHandler) }
+    fun onPinchIn() { triggerHandler(pinchInHandler) }
+    fun onPinchOut() { triggerHandler(pinchOutHandler) }
+    fun onTwoFingerDoubleTap() { triggerHandler(twoFingerDoubleTapHandler) }
+
     fun onHomePressed() {
         triggerHandler(homePressHandler, LawnchairApp.isRecentsEnabled)
     }
@@ -84,6 +99,16 @@ class GestureController(private val launcher: LawnchairLauncher) {
                 vibrateForNotifications()
             }
         }
+    }
+
+    private fun vibrateForGesture() {
+        val intensity = PreferenceManager.getInstance(launcher).primeHapticGestures.get()
+        if (intensity <= 0) return
+        VibratorWrapper.INSTANCE.get(launcher).vibrateScaled(
+            VibrationEffect.Composition.PRIMITIVE_CLICK,
+            (intensity / 150f).coerceIn(0f, 1f),
+            8L,
+        )
     }
 
     private fun vibrateForNotifications() {
@@ -105,7 +130,7 @@ class GestureController(private val launcher: LawnchairLauncher) {
             if (handler is OpenNotificationsHandler) {
                 vibrateForNotifications()
             } else if (withHaptic) {
-                VibratorWrapper.INSTANCE.get(launcher).vibrate(VibratorWrapper.OVERVIEW_HAPTIC)
+                vibrateForGesture()
             }
         }
     }

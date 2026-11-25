@@ -168,7 +168,7 @@
     <string name="smartspace_calendar_label">Personnalisation du calendrier dans Aperçu</string>
     <string name="smartspace_calendar_description">Autoriser l\'affichage de la date dans les systèmes de calendrier non grégoriens</string>
     <string name="workspace_increase_max_grid_size_label">Augmenter la taille maximale de la grille de l\'écran d\'accueil</string>
-    <string name="workspace_increase_max_grid_size_description">Augmenter la taille maximale autorisée de la grille de 10 &#xd7; 10 à 20 &#xd7; 20</string>
+    <string name="workspace_increase_max_grid_size_description">Permet de passer de 10 × 10 à 20 × 20 cases au maximum sur la grille de l’écran d’accueil. Activez cette option pour pouvoir choisir davantage de lignes et de colonnes.</string>
     <string name="always_reload_icons_label">Toujours recharger les icônes</string>
     <string name="always_reload_icons_description">Éviter d\'utiliser les icônes en cache provenant des packs d\'icônes</string>
     <string name="always_reload_icons_warning">Cela entraînera le rechargement régulier des icônes, ce qui aura un impact sur les performances. Désactivez cette option si le pack d\'icônes n\'est pas mis à jour régulièrement.</string>
@@ -513,7 +513,7 @@
     <string name="gesture_handler_open_app_config">Ouvrir %1$s</string>
     <string name="gesture_handler_open_app_drawer">Ouvrir le tiroir des applis</string>
     <string name="gesture_handler_open_app_search">Ouvrir la recherche d\'applis</string>
-    <string name="gesture_handler_open_search">Ouvrir la recherche</string>
+    <string name="gesture_handler_open_search">Ouvrir le moteur de recherche Web choisi</string>
     <string name="gesture_handler_open_assistant">Ouvrir l\'assistant</string>
     <string name="pick_app_for_gesture">Sélectionnez une appli</string>
     <string name="dt2s_admin_hint_title">Autorisations d\'administration requises</string>

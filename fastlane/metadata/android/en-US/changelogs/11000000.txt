@@ -1,0 +1,1 @@
+Preparation of the first F-Droid version of Prime Launcher: home screen and app drawer customization, Prime Search with local search and calculator, optional web search and optional web icon caching. Launcher settings backup.

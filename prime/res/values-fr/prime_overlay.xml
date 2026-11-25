@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_overlay_options">Options Prime Search</string>
+    <string name="prime_overlay_usage">Autoriser l’accès aux données d’utilisation pour afficher les applications fréquentes et récentes.\nAppuyer pour ouvrir les paramètres Android.</string>
+    <string name="prime_overlay_contact">Contact : %1$s</string>
+    <string name="prime_overlay_engine">Rechercher sur %1$s</string>
+    <string name="prime_overlay_back">‹  Retour à la recherche</string>
+    <string name="prime_overlay_collapse">⌃  Réduire</string>
+</resources>

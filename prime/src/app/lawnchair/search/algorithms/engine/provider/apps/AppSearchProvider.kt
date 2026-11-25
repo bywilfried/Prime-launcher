@@ -6,6 +6,7 @@ import app.lawnchair.preferences2.firstCached
 import app.lawnchair.search.algorithms.engine.SearchResult
 import app.lawnchair.search.algorithms.filterHiddenApps
 import com.android.launcher3.model.AllAppsList
+import com.android.launcher3.model.PrimePinnedDrawerShortcuts
 import com.android.launcher3.model.data.AppInfo
 import com.android.launcher3.search.StringMatcherUtility
 import java.text.Normalizer
@@ -26,6 +27,11 @@ object AppSearchProvider {
         }
     }
 
+    /** Precompute the same matching keys used by live search, off the UI thread. */
+    fun warmUp(allApps: AllAppsList) {
+        allApps.data.forEach { prepared(it) }
+    }
+
     fun search(context: Context, query: String, allApps: AllAppsList, maxResultsOverride: Int? = null, fuzzyOverride: Boolean? = null, strictTypos: Boolean = false): List<SearchResult.App> {
         val prefs = PreferenceManager2.getInstance(context)
         val hiddenApps = prefs.hiddenApps.firstCached()
@@ -34,16 +40,46 @@ object AppSearchProvider {
         val enableFuzzySearch = fuzzyOverride ?: prefs.enableFuzzySearch.firstCached()
 
         val queryNormalized = stripDiacritics(query).lowercase(Locale.getDefault())
+        // The model can publish a filtered app snapshot while Prime's native
+        // pinned shortcuts live in its separate persistent drawer store.
+        // Merge by component so entries remain searchable without duplicates.
+        val stored = PrimePinnedDrawerShortcuts.getEntries(context)
+        val modelComponents = allApps.data.mapNotNull { it.componentName }.toHashSet()
+        val searchableApps = allApps.data + stored.filter { it.componentName !in modelComponents }
 
         val appResults = if (strictTypos) {
-            strictTypoSearch(allApps.data, queryNormalized, maxAppResults, hiddenApps, hiddenAppsInSearch)
+            strictTypoSearch(searchableApps, queryNormalized, maxAppResults, hiddenApps, hiddenAppsInSearch)
         } else if (enableFuzzySearch) {
-            fuzzySearch(allApps.data, queryNormalized, maxAppResults, hiddenApps, hiddenAppsInSearch)
+            fuzzySearch(searchableApps, queryNormalized, maxAppResults, hiddenApps, hiddenAppsInSearch)
         } else {
-            normalSearch(allApps.data, queryNormalized, maxAppResults, hiddenApps, hiddenAppsInSearch)
+            normalSearch(searchableApps, queryNormalized, maxAppResults, hiddenApps, hiddenAppsInSearch)
         }
 
-        return appResults.map { SearchResult.App(data = it) }
+        // Prime-owned drawer shortcuts are not installed launcher activities.
+        // Include matching saved entries independently of the hidden-app filter,
+        // which can hide the Prime package that hosts their synthetic components.
+        val matches = stored.filter {
+            stripDiacritics(it.title.toString()).lowercase(Locale.getDefault())
+                .contains(queryNormalized)
+        }
+        val result = appResults.toMutableList()
+        val seen = result.mapNotNull { it.componentName }.toHashSet()
+        matches.forEach { app ->
+            if (app.componentName?.let(seen::add) == true) result.add(app)
+        }
+        return result.map { SearchResult.App(data = it) }
+    }
+
+    // Shared relevance order for Prime Search and drawer search.
+    // Beginning of title > beginning of another word > substring > typo.
+    private fun relevance(app: AppInfo, query: String): Int {
+        val name = prepared(app)
+        return when {
+            name.normalized.startsWith(query) -> 0
+            name.words.any { it.startsWith(query) } -> 1
+            name.normalized.contains(query) -> 2
+            else -> 3
+        }
     }
 
     private fun normalSearch(apps: List<AppInfo>, query: String, maxResultsCount: Int, hiddenApps: Set<String>, hiddenAppsInSearch: String): List<AppInfo> {
@@ -51,8 +87,9 @@ object AppSearchProvider {
         // apps that don't match all of the words in the query.
         val matcher = StringMatcherUtility.StringMatcher.getInstance()
         return apps.asSequence()
-            .filter { StringMatcherUtility.matches(query, stripDiacritics(it.title.toString()), matcher) }
+            .filter { prepared(it).normalized.contains(query) || StringMatcherUtility.matches(query, stripDiacritics(it.title.toString()), matcher) }
             .filterHiddenApps(query, hiddenApps, hiddenAppsInSearch)
+            .sortedWith(compareBy<AppInfo> { relevance(it, query) }.thenBy { prepared(it).normalized })
             .take(maxResultsCount)
             .toList()
     }
@@ -65,10 +102,11 @@ object AppSearchProvider {
         return filteredApps
             .mapNotNull { app ->
                 val matchResult = AppMatcher.match(stripDiacritics(app.title.toString()), query)
-                if (matchResult.type == MatchType.NO_MATCH) null else Pair(app, matchResult)
+                if (matchResult.type == MatchType.NO_MATCH && !prepared(app).normalized.contains(query)) null else Pair(app, matchResult)
             }
             .sortedWith(
                 compareBy(
+                    { relevance(it.first, query) },
                     { it.second.type.priority },
                     { -it.second.score },
                 ),
@@ -86,7 +124,6 @@ object AppSearchProvider {
         hiddenApps: Set<String>,
         hiddenAppsInSearch: String,
     ): List<AppInfo> {
-        val matcher = StringMatcherUtility.StringMatcher.getInstance()
         val needle = query.trim()
         if (needle.isEmpty()) return emptyList()
         val allowedEdits = when {
@@ -99,22 +136,29 @@ object AppSearchProvider {
             .mapNotNull { app ->
                 val preparedName = prepared(app)
                 val name = preparedName.normalized
-                if (StringMatcherUtility.matches(needle, name, matcher)) {
+                if (name.contains(needle)) {
+                    // Exact substring wins, even in the middle of a word.
                     app to 0
                 } else if (allowedEdits > 0) {
-                    val words = preparedName.words
-                    val distance = words.minOfOrNull { word ->
-                        if (kotlin.math.abs(word.length - needle.length) > allowedEdits ||
-                            !sharesEnoughCharacters(word, needle, allowedEdits)) {
-                            allowedEdits + 1
-                        } else {
-                            editDistanceWithin(word, needle, allowedEdits)
-                        }
+                    // Compare with substrings, not only entire words: "appp"
+                    // should match the "app" in "App Lock".
+                    val distance = preparedName.words.minOfOrNull { word ->
+                        val lengths = ((needle.length - allowedEdits).coerceAtLeast(1))..(needle.length + allowedEdits)
+                        lengths.minOfOrNull { length ->
+                            if (length > word.length) allowedEdits + 1 else
+                                (0..word.length - length).minOf { offset ->
+                                    val segment = word.substring(offset, offset + length)
+                                    if (!sharesEnoughCharacters(segment, needle, allowedEdits)) allowedEdits + 1
+                                    else editDistanceWithin(segment, needle, allowedEdits)
+                                }
+                        } ?: (allowedEdits + 1)
                     } ?: (allowedEdits + 1)
                     if (distance <= allowedEdits) app to distance else null
                 } else null
             }
-            .sortedBy { it.second }
+            .sortedWith(compareBy<Pair<AppInfo, Int>> { relevance(it.first, needle) }
+                .thenBy { it.second }
+                .thenBy { prepared(it.first).normalized })
             .map { it.first }
             .take(maxResults)
             .toList()

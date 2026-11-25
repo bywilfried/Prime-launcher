@@ -67,12 +67,12 @@ fun PrimeDrawerFolderAppsPreference(tabId: String, folderId: String) {
         reorderEnabled = folder.sortMode == "custom",
         extraMenuContent = { hideMenu ->
             DropdownMenuItem(
-                text = { Text("Ordre alphabétique") },
+                text = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_alphabetical)) },
                 trailingIcon = { if (folder.sortMode == "alphabetical") Icon(Icons.Rounded.Check, null) },
                 onClick = { repository.setFolderSortMode(tabId, folderId, "alphabetical"); hideMenu() },
             )
             DropdownMenuItem(
-                text = { Text("Ordre personnalisé") },
+                text = { Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_drawer_category_custom)) },
                 trailingIcon = { if (folder.sortMode == "custom") Icon(Icons.Rounded.Check, null) },
                 onClick = { repository.setFolderSortMode(tabId, folderId, "custom"); hideMenu() },
             )

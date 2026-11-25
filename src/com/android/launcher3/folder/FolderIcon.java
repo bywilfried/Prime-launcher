@@ -774,16 +774,30 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
         }
     }
 
+    private boolean mPrimeDrawerLabel;
+
+    public void setPrimeDrawerLabelLines(boolean twoLines) {
+        mPrimeDrawerLabel = true;
+        mFolderName.setPrimeDrawerFolderLabelLines(twoLines);
+        requestLayout();
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        boolean shouldCenterIcon = mActivity.getDeviceProfile().iconCenterVertically;
+        boolean shouldCenterIcon = mPrimeDrawerLabel || mActivity.getDeviceProfile().iconCenterVertically;
         if (shouldCenterIcon) {
-            int iconSize = mActivity.getDeviceProfile().iconSizePx;
+            int iconSize = mPrimeDrawerLabel
+                    ? mActivity.getDeviceProfile().getAllAppsProfile().getIconSizePx()
+                    : mActivity.getDeviceProfile().iconSizePx;
             Paint.FontMetrics fm = mFolderName.getPaint().getFontMetrics();
-            int cellHeightPx = iconSize + mFolderName.getCompoundDrawablePadding()
-                    + (int) Math.ceil(fm.bottom - fm.top);
-            setPadding(getPaddingLeft(), (MeasureSpec.getSize(heightMeasureSpec)
-                    - cellHeightPx) / 2, getPaddingRight(), getPaddingBottom());
+            int drawablePadding = mPrimeDrawerLabel
+                    ? mActivity.getDeviceProfile().getAllAppsProfile().getIconDrawablePaddingPx()
+                    : mFolderName.getCompoundDrawablePadding();
+            int cellHeightPx = iconSize + drawablePadding
+                    + (int) Math.ceil(fm.bottom - fm.top) * (mPrimeDrawerLabel ? mFolderName.getCellSpecMaxTextLineCount() : 1);
+            int topPadding = (MeasureSpec.getSize(heightMeasureSpec) - cellHeightPx) / 2;
+            setPadding(getPaddingLeft(), mPrimeDrawerLabel ? Math.max(0, topPadding) : topPadding,
+                    getPaddingRight(), getPaddingBottom());
         }
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
@@ -792,7 +806,7 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
         // restored text line inside the measured FolderIcon instead of letting it be clipped below.
         PrimeDrawerFolderVisualOverrides overrides = mInfo == null ? null
                 : PrimeFolderLongPressHelper.getVisualOverrides(getContext(), mInfo);
-        if (overrides != null && Boolean.TRUE.equals(overrides.getShowFolderLabel())
+        if (!mPrimeDrawerLabel && overrides != null && Boolean.TRUE.equals(overrides.getShowFolderLabel())
                 && mFolderName.getTextSize() > 0f) {
             FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) mFolderName.getLayoutParams();
             Paint.FontMetrics fm = mFolderName.getPaint().getFontMetrics();

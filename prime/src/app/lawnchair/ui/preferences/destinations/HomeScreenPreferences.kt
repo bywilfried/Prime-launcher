@@ -215,33 +215,6 @@ fun HomeScreenPreferences(
                 )
             }
         }
-        PreferenceGroup(heading = stringResource(id = R.string.widget_button_text)) {
-            SwitchPreference(
-                adapter = prefs2.roundedWidgets.getAdapter(),
-                label = stringResource(id = R.string.force_rounded_widgets),
-            )
-            SwitchPreference(
-                adapter = prefs2.allowWidgetOverlap.getAdapter(),
-                label = stringResource(id = R.string.allow_widget_overlap),
-            )
-            SwitchPreference(
-                adapter = prefs2.widgetUnlimitedSize.getAdapter(),
-                label = stringResource(id = R.string.widget_unlimited_size_label),
-                description = stringResource(id = R.string.widget_unlimited_size_description),
-            )
-            SwitchPreference(
-                adapter = prefs2.forceWidgetResize.getAdapter(),
-                label = stringResource(id = R.string.force_widget_resize_label),
-                description = stringResource(id = R.string.force_widget_resize_description),
-            )
-            SliderPreference(
-                label = stringResource(id = R.string.widget_padding_label),
-                adapter = prefs2.widgetPaddingFactor.getAdapter(),
-                step = 0.05f,
-                valueRange = 0F..2F,
-                showAsPercentage = true,
-            )
-        }
         PreferenceGroup {
             ClickablePreference(
                 label = stringResource(id = R.string.prime_clear_home_screen_label),

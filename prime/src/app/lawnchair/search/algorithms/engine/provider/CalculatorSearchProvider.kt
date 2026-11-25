@@ -18,10 +18,16 @@ object CalculatorSearchProvider : SearchProvider {
     override fun search(
         context: Context,
         query: String,
+    ): Flow<List<SearchResult>> = search(context, query, respectLegacyPreference = true)
+
+    fun search(
+        context: Context,
+        query: String,
+        respectLegacyPreference: Boolean,
     ): Flow<List<SearchResult>> = flow {
         val legacyPrefs = PreferenceManager.getInstance(context)
 
-        if (query.isBlank() || !legacyPrefs.searchResultCalculator.get()) {
+        if (query.isBlank() || (respectLegacyPreference && !legacyPrefs.searchResultCalculator.get())) {
             emit(emptyList())
             return@flow
         }

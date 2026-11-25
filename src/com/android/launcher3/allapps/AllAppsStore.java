@@ -79,6 +79,17 @@ public class AllAppsStore<T extends Context & ActivityContext> {
         return mApps;
     }
 
+    /** Remove a saved Prime drawer shortcut from the visible drawer immediately. */
+    public void removePrimeDrawerShortcut(@NonNull android.content.ComponentName component) {
+        AppInfo[] remaining = Arrays.stream(mApps)
+                .filter(app -> !component.equals(app.componentName))
+                .toArray(AppInfo[]::new);
+        if (remaining.length != mApps.length) {
+            mApps = remaining;
+            notifyUpdate();
+        }
+    }
+
     public AllAppsStore(@NonNull T context) {
         mContext = context;
     }

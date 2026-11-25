@@ -37,6 +37,7 @@ import app.lawnchair.compat.LawnchairQuickstepCompat
 import app.lawnchair.data.AppDatabase
 import app.lawnchair.data.wallpaper.service.WallpaperService
 import app.lawnchair.gestures.GestureController
+import app.lawnchair.gestures.WorkspaceExtraGestureController
 import app.lawnchair.gestures.VerticalSwipeTouchController
 import app.lawnchair.gestures.config.GestureHandlerConfig
 import app.lawnchair.gestures.ui.LawnchairShortcutActivity
@@ -46,6 +47,8 @@ import app.lawnchair.prime.drawer.PrimeDrawerTabsView
 import app.lawnchair.prime.drawer.PrimeAppCategoriesShortcut
 import app.lawnchair.preferences2.PreferenceManager2
 import app.lawnchair.preferences2.firstCached
+import app.lawnchair.search.algorithms.PrimeSearchWarmup
+import kotlinx.coroutines.delay
 import app.lawnchair.root.RootHelperManager
 import app.lawnchair.root.RootNotAvailableException
 import app.lawnchair.theme.ThemeProvider
@@ -184,6 +187,13 @@ class LawnchairLauncher : QuickstepLauncher() {
         layoutInflater.factory2 = LawnchairLayoutFactory(this)
         super.onCreate(savedInstanceState)
         lastPrimeNightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+
+        // Warm app-search matching keys after startup, without blocking first draw.
+        // The model callback is cancelled with the launcher's lifecycle.
+        lifecycleScope.launch {
+            delay(750L)
+            PrimeSearchWarmup.refresh(this@LawnchairLauncher)
+        }
 
         prefs.launcherTheme.subscribeChanges(this, ::updateTheme)
         prefs.feedProvider.subscribeChanges(this, defaultOverlay::reconnect)
@@ -367,7 +377,7 @@ class LawnchairLauncher : QuickstepLauncher() {
 
     override fun createTouchControllers(): Array<TouchController> {
         val verticalSwipeController = VerticalSwipeTouchController(this, gestureController)
-        return arrayOf<TouchController>(verticalSwipeController) + super.createTouchControllers()
+        return arrayOf<TouchController>(WorkspaceExtraGestureController(this, gestureController), verticalSwipeController) + super.createTouchControllers()
     }
 
     override fun handleHomeTap() {
@@ -562,6 +572,15 @@ class LawnchairLauncher : QuickstepLauncher() {
         options.launchDisplayId = if (v.display != null) v.display.displayId else Display.DEFAULT_DISPLAY
         val callback = RunnableList()
         return ActivityOptionsWrapper(options, callback)
+    }
+
+    override fun onPause() {
+        // Snapshot workspace page count before the settings activity takes focus.
+        getSharedPreferences("prime_workspace_gestures", Context.MODE_PRIVATE)
+            .edit()
+            .putInt("page_count", workspace?.childCount ?: 1)
+            .apply()
+        super.onPause()
     }
 
     override fun onResume() {

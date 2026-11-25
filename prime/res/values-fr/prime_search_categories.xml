@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_category_apps_title">Applications</string>
+    <string name="prime_category_apps_description">Applications installées</string>
+    <string name="prime_category_app_shortcuts_title">Raccourcis d’app</string>
+    <string name="prime_category_app_shortcuts_description">Raccourcis des applications</string>
+    <string name="prime_category_web_title">Suggestions Web</string>
+    <string name="prime_category_web_description">Suggestions Internet pendant la saisie</string>
+    <string name="prime_category_web_shortcuts_title">Raccourcis Web</string>
+    <string name="prime_category_web_shortcuts_description">Raccourcis vers les moteurs de recherche</string>
+    <string name="prime_category_contacts_title">Contacts</string>
+    <string name="prime_category_contacts_description">Contacts et autres</string>
+    <string name="prime_category_calendar_title">Événements de l’agenda</string>
+    <string name="prime_category_calendar_description">Événements du calendrier</string>
+    <string name="prime_category_reminders_title">Tâches</string>
+    <string name="prime_category_reminders_description">Tâches locales et synchronisées</string>
+    <string name="prime_category_notifications_title">Notifications</string>
+    <string name="prime_category_notifications_description">Notifications des applications</string>
+    <string name="prime_category_notes_title">Notes</string>
+    <string name="prime_category_notes_description">Notes disponibles</string>
+    <string name="prime_category_files_title">Fichiers</string>
+    <string name="prime_category_files_description">Contenu multimédia et fichiers</string>
+    <string name="prime_category_settings_title">Paramètres de l’appareil</string>
+    <string name="prime_category_settings_description">Réglages du système</string>
+    <string name="prime_category_history_title">Historique des recherches</string>
+    <string name="prime_category_history_description">Recherches récentes</string>
+    <string name="prime_category_calculator_title">Calculatrice</string>
+    <string name="prime_category_calculator_description">Résultats de calcul</string>
+</resources>

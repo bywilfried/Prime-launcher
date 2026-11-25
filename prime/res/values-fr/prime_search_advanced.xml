@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_search_advanced_rows">Nombre de lignes : %1$d</string>
+    <string name="prime_search_advanced_two_lines">Noms des applications sur deux lignes</string>
+    <string name="prime_search_advanced_results">Afficher dans les résultats de recherche</string>
+    <string name="prime_search_advanced_follow">Suivre les paramètres de Prime Search</string>
+    <string name="prime_search_advanced_max_rows">Nombre maximal de lignes : %1$d</string>
+    <string name="prime_search_advanced_alignment">Alignement des applications</string>
+    <string name="prime_search_advanced_preview">Aperçu des résultats d\'applications</string>
+    <string name="prime_search_advanced_notif_yes">Accès aux notifications autorisé</string>
+    <string name="prime_search_advanced_notif_no">Accès aux notifications non autorisé</string>
+    <string name="prime_search_advanced_manage_permission">Gérer l\'autorisation Android</string>
+    <string name="prime_search_advanced_allow_notif">Autoriser l\'accès aux notifications</string>
+    <string name="prime_search_advanced_clear_history">Effacer l\'historique des notifications</string>
+    <string name="prime_search_advanced_notif_desc">L\'enregistrement nécessite l\'accès aux notifications Android.</string>
+    <string name="prime_search_advanced_allow">Autoriser l\'accès</string>
+    <string name="prime_search_advanced_files_yes">Accès à tous les fichiers : autorisé</string>
+    <string name="prime_search_advanced_files_no">Accès à tous les fichiers : non autorisé</string>
+    <string name="prime_search_advanced_files_desc">Cet accès permet de rechercher les documents, APK, archives et dossiers dans le stockage partagé, dans Prime Search et dans le tiroir.</string>
+    <string name="prime_search_advanced_manage_files">Gérer l\'accès à tous les fichiers</string>
+    <string name="prime_search_advanced_allow_files">Autoriser l\'accès à tous les fichiers</string>
+    <string name="prime_search_advanced_providers_desc">Les résultats dépendent des fournisseurs disponibles et des autorisations Android.</string>
+    <string name="prime_search_advanced_clear_question">Effacer l\'historique ?</string>
+    <string name="prime_search_advanced_clear_desc">Cette action supprimera les notifications enregistrées dans Prime Launcher.</string>
+    <string name="prime_search_advanced_clear">Effacer</string>
+    <string name="prime_search_advanced_cancel">Annuler</string>
+    <string name="prime_search_advanced_reset_order">Réinitialiser l\'ordre</string>
+</resources>

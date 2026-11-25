@@ -32,6 +32,13 @@ sealed interface SearchResult {
             @DrawableRes val providerIconRes: Int,
             val tintIcon: Boolean = false,
         ) : Action
+        data class WebShortcut(
+            val query: String,
+            val providerName: String,
+            val searchUrl: String,
+            @DrawableRes val providerIconRes: Int,
+            val tintIcon: Boolean = false,
+        ) : Action
         data class EmptyState(
             @StringRes val titleRes: Int,
             @StringRes val subtitleRes: Int,

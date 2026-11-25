@@ -1,5 +1,8 @@
 package app.lawnchair.search.algorithms
 
+import app.lawnchair.prime.search.PrimeSearchResultPreferences
+import app.lawnchair.prime.search.PrimeSearchCategoryPresentation
+
 import android.content.Context
 import app.lawnchair.preferences.PreferenceManager
 import app.lawnchair.preferences2.PreferenceManager2
@@ -31,6 +34,7 @@ import app.lawnchair.search.algorithms.engine.provider.ShortcutSearchProvider
 import app.lawnchair.search.algorithms.engine.provider.apps.AppSearchProvider
 import app.lawnchair.search.algorithms.engine.provider.web.CustomWebSearchProvider
 import app.lawnchair.search.algorithms.engine.provider.web.WebSuggestionProvider
+import com.android.launcher3.model.AllAppsList
 import com.android.launcher3.LauncherAppState
 import com.android.launcher3.R
 import com.android.launcher3.allapps.BaseAllAppsAdapter
@@ -48,13 +52,23 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.os.SystemClock
 
-class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: Boolean = false) : LawnchairSearchAlgorithm(context) {
+class LawnchairLocalSearchAlgorithm(
+    context: Context,
+    private val primeSearch: Boolean = false,
+    /** Reuse Prime Search's matching/providers while retaining the drawer's own result filtering and actions. */
+    private val primeMatching: Boolean = primeSearch,
+    private val expandedAppResults: Boolean = false,
+    private val preferenceSurface: PrimeSearchResultPreferences.Surface =
+        if (primeSearch) PrimeSearchResultPreferences.Surface.PRIME_SEARCH
+        else PrimeSearchResultPreferences.Surface.DRAWER,
+) : LawnchairSearchAlgorithm(context) {
 
     private val appState = LauncherAppState.getInstance(context)
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var currentJob: Job? = null
     private var modelRetryJob: Job? = null
+    @Volatile private var lastLoadedApps: AllAppsList? = null
     @Volatile private var searchGeneration = 0L
     private var lastQuery: String? = null
     private var lastCallback: SearchCallback<BaseAllAppsAdapter.AdapterItem>? = null
@@ -93,26 +107,53 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
         val generation = ++searchGeneration
         modelRetryJob?.cancel()
         currentJob?.cancel()
-        modelRetryJob = appState.model.runWhenModelLoaded(coroutineScope) { apps ->
-            if (generation != searchGeneration) return@runWhenModelLoaded
+        app.lawnchair.search.PrimeSearchTrace.record("engine awaitingModel len=${query.length} generation=$generation")
+        val searchWithApps: (AllAppsList) -> Unit = searchWithApps@{ apps ->
+            app.lawnchair.search.PrimeSearchTrace.record("engine modelReady len=${query.length} generation=$generation current=$searchGeneration apps=${apps.data.size}")
+            if (generation != searchGeneration) return@searchWithApps
             // Querying published shortcuts can be expensive. Keep it off the
             // model/UI callback thread so typing remains responsive.
             currentJob?.cancel()
             currentJob = coroutineScope.launch {
+                app.lawnchair.search.PrimeSearchTrace.record("engine jobStart len=${query.length} generation=$generation")
                 val appSearchStarted = SystemClock.elapsedRealtime()
+                val drawerTypoMatching = primeMatching &&
+                    PrimeSearchResultPreferences.fuzzyApps(context, preferenceSurface)
+                app.lawnchair.search.PrimeSearchTrace.record("engine matchStart len=${query.length} strict=$drawerTypoMatching")
+                // Cap compact matching before target conversion and adapter binding.
+                // Expanded Prime Search explicitly opts into the full result set.
+                val appLimit = if (expandedAppResults) Int.MAX_VALUE else if (primeMatching) 48 else null
                 val appResults = appSearchProvider.search(
-                    context, query, apps, if (primeSearch) Int.MAX_VALUE else null,
-                    if (primeSearch) false else null,
-                    strictTypos = primeSearch,
+                    context, query, apps, appLimit,
+                    if (primeMatching) false else null,
+                    strictTypos = drawerTypoMatching,
                 )
-                app.lawnchair.search.PrimeSearchTrace.record("engine appMatch len=${query.length} count=${appResults.size} ms=${SystemClock.elapsedRealtime() - appSearchStarted}")
+                // Prime and drawer must agree on literal substring matches.
+                // If the strict typo pass unexpectedly returns no applications,
+                // retry with the normal contains-based matcher before publishing
+                // an empty app section. This preserves typo tolerance when it
+                // succeeds and never replaces its ranked matches.
+                val resolvedAppResults = if (primeMatching && appResults.isEmpty() && query.isNotBlank()) {
+                    appSearchProvider.search(
+                        context, query, apps, appLimit, false,
+                        strictTypos = false,
+                    ).also { fallback ->
+                        app.lawnchair.search.PrimeSearchTrace.record(
+                            "engine appFallback len=${query.length} count=${fallback.size} prime=$primeSearch"
+                        )
+                    }
+                } else appResults
+                app.lawnchair.search.PrimeSearchTrace.record("engine appMatch len=${query.length} count=${resolvedAppResults.size} ms=${SystemClock.elapsedRealtime() - appSearchStarted}")
+                if (primeSearch) app.lawnchair.search.PrimeSearchTrace.record(
+                    "engine appDiagnostic queryLength=${query.length} modelApps=${apps.data.size} matches=${resolvedAppResults.size} strict=$drawerTypoMatching"
+                )
                 if (generation != searchGeneration) return@launch
                 // Deliver apps independently of slower contacts, shortcuts, files
                 // and network providers. A provider that stalls cannot hide apps.
-                if (primeSearch && appResults.isNotEmpty()) {
-                    val appTargets = translateToSearchTargets(appResults)
+                if (primeMatching && resolvedAppResults.isNotEmpty()) {
+                    val appTargets = translateToSearchTargets(resolvedAppResults)
                     setFirstItemQuickLaunch(appTargets)
-                    val appItems = transformSearchResults(appTargets)
+                    val appItems = drawerSectionItems(transformSearchResults(appTargets))
                     withContext(Dispatchers.Main) {
                         if (generation == searchGeneration) {
                             val snapshot = ArrayList<BaseAllAppsAdapter.AdapterItem>(appItems)
@@ -125,10 +166,10 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                 // can take much longer on devices with many installed apps.
                 val shortcutResultsFlow = flow {
                     emit(emptyList<SearchResult.Shortcut>())
-                    val shortcuts = if (primeSearch) {
-                        shortcutSearchProvider.searchForPrime(context, query, apps.data, appResults)
+                    val shortcuts = if (primeMatching) {
+                        shortcutSearchProvider.searchForPrime(context, query, apps.data, resolvedAppResults)
                     } else {
-                        shortcutSearchProvider.search(context, appResults)
+                        shortcutSearchProvider.search(context, resolvedAppResults)
                     }
                     emit(shortcuts)
                 }.flowOn(Dispatchers.IO)
@@ -141,9 +182,10 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                 // See issue #7325 (symptom 1: results gated behind the slowest provider).
                 val nonAppProvidersFlow = combine(
                     searchProviders.map { provider ->
-                        (if (primeSearch && provider === ContactsSearchProvider) {
-                            ContactsSearchProvider.searchForPrime(context, query)
-                        } else if (primeSearch && provider === FileSearchProvider) {
+                        (if (primeMatching && provider === ContactsSearchProvider) {
+                            if (primeSearch) ContactsSearchProvider.searchForPrime(context, query)
+                            else ContactsSearchProvider.searchForDrawer(context, query)
+                        } else if (primeMatching && provider === FileSearchProvider) {
                             FileSearchProvider.searchForPrime(context, query)
                         } else if (!primeSearch && provider === WebSuggestionProvider) {
                             WebSuggestionProvider.searchForDrawer(context, query)
@@ -153,7 +195,18 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                     resultsArray.toList().flatten()
                 }
 
-                val calcResult = CalculatorSearchProvider.search(context, query).firstOrNull()
+                // Prime Search has its own calculator category switch. Do not
+                // silently hide calculations because the legacy drawer toggle is off.
+                val calculatorEnabled = app.lawnchair.prime.search.PrimeSearchResultPreferences.enabled(
+                    context,
+                    app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALCULATOR,
+                    preferenceSurface,
+                )
+                val calcResult = if (calculatorEnabled) {
+                    CalculatorSearchProvider.search(
+                        context, query, respectLegacyPreference = !primeSearch,
+                    ).firstOrNull()
+                } else null
                 val actions = generateActionResults(query).filterNot { primeSearch && it is SearchResult.Action.SearchSettings }
                 var previousProviderSnapshot: Pair<List<SearchResult>, List<SearchResult.Shortcut>>? = null
                 combine(nonAppProvidersFlow, shortcutResultsFlow) { nonAppResults, shortcutResults ->
@@ -165,10 +218,10 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                     val updateStarted = SystemClock.elapsedRealtime()
                     val drawerWebActions = if (primeSearch) emptyList() else {
                         val settings = app.lawnchair.prime.search.PrimeSearchResultPreferences
-                        val surface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
+                        val surface = preferenceSurface
                         if (settings.enabled(context, app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB_SHORTCUTS, surface)) {
                             settings.enabledWebEngines(context, surface).map { engine ->
-                                SearchResult.Action.WebSearch(
+                                SearchResult.Action.WebShortcut(
                                     query = query,
                                     providerName = engine.title,
                                     searchUrl = engine.url + android.net.Uri.encode(query),
@@ -178,11 +231,11 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                             }
                         } else emptyList()
                     }
-                    val allResults = appResults + shortcutResults + (calcResult ?: emptyList()) + nonAppResults + actions + drawerWebActions
+                    val allResults = resolvedAppResults + shortcutResults + (calcResult ?: emptyList()) + nonAppResults + actions + drawerWebActions
 
                     val drawerEntries = if (primeSearch || query.isBlank()) emptyList() else {
                         val preferences = app.lawnchair.prime.search.PrimeSearchResultPreferences
-                        val surface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
+                        val surface = preferenceSurface
                         val entries = mutableListOf<SearchResult.PrimeEntry>()
                         if (preferences.enabled(context, app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALENDAR, surface)) {
                             runCatching { app.lawnchair.prime.search.PrimeCalendarSearch.events(context, query, surface) }
@@ -207,7 +260,7 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                     }
                     val visibleResults = if (primeSearch) allResults else {
                         val prefs = app.lawnchair.prime.search.PrimeSearchResultPreferences
-                        val surface = app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER
+                        val surface = preferenceSurface
                         allResults.filter { result ->
                             val category = when (result) {
                                 is SearchResult.App -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS
@@ -218,14 +271,51 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                                 is SearchResult.History -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.HISTORY
                                 is SearchResult.Calculation -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALCULATOR
                                 is SearchResult.WebSuggestion -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB
+                                is SearchResult.Action.WebShortcut -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB_SHORTCUTS
                                 else -> null
                             }
                             category == null || prefs.enabled(context, category, surface)
                         }
                     }
-                    val searchTargets = translateToSearchTargets(visibleResults + drawerEntries)
+                    val resultsForSurface = if (primeSearch) {
+                        visibleResults + drawerEntries
+                    } else {
+                        val preferences = app.lawnchair.prime.search.PrimeSearchResultPreferences
+                        val priorities = preferences.order(context, preferenceSurface)
+                            .withIndex().associate { it.value to it.index }
+                        fun categoryOf(result: SearchResult):
+                            app.lawnchair.prime.search.PrimeSearchResultPreferences.Category? =
+                            when (result) {
+                                is SearchResult.App -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS
+                                is SearchResult.Shortcut -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS
+                                is SearchResult.File -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.FILES
+                                is SearchResult.Contact -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CONTACTS
+                                is SearchResult.Setting -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.SETTINGS
+                                is SearchResult.History -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.HISTORY
+                                is SearchResult.Calculation -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALCULATOR
+                                is SearchResult.WebSuggestion -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB
+                                is SearchResult.Action.WebShortcut -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB_SHORTCUTS
+                                is SearchResult.PrimeEntry -> when (result.category) {
+                                    "Agenda" -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALENDAR
+                                    "Tâches" -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.REMINDERS
+                                    "Notifications" -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.NOTIFICATIONS
+                                    else -> null
+                                }
+                                else -> null
+                            }
+                        (visibleResults + drawerEntries).withIndex()
+                            .sortedWith(compareBy(
+                                { indexed -> categoryOf(indexed.value)?.let { priorities[it] } ?: Int.MAX_VALUE },
+                                { it.index },
+                            ))
+                            .map { it.value }
+                    }
+                    val searchTargets = translateToSearchTargets(resultsForSurface)
                     setFirstItemQuickLaunch(searchTargets)
-                    val adapterItems = transformSearchResults(searchTargets)
+                    val adapterItems = drawerSectionItems(transformSearchResults(searchTargets))
+                    if (primeSearch) app.lawnchair.search.PrimeSearchTrace.record(
+                        "engine targets total=${searchTargets.size} apps=${searchTargets.count { it.resultType == SearchTargetCompat.RESULT_TYPE_APPLICATION }} adapterItems=${adapterItems.size}"
+                    )
                     app.lawnchair.search.PrimeSearchTrace.record("engine transform len=${query.length} items=${adapterItems.size} ms=${SystemClock.elapsedRealtime() - updateStarted}")
                     withContext(Dispatchers.Main) {
                         if (generation != searchGeneration) return@withContext
@@ -234,6 +324,22 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                         app.lawnchair.search.PrimeSearchTrace.record("engine deliver len=${query.length} items=${snapshot.size} generation=$generation")
                         lastCallback?.onSearchResult(query, ArrayList(snapshot))
                     }
+                }
+            }
+        }
+        // runWhenModelLoaded can stop invoking callbacks after its previous
+        // registration is cancelled. Prime Search already received a loaded
+        // app model for this overlay session, so reuse it for subsequent keystrokes.
+        // This also avoids dropping a query while a new model callback is pending.
+        val cachedApps = if (primeSearch) lastLoadedApps else null
+        if (cachedApps != null) {
+            app.lawnchair.search.PrimeSearchTrace.record("engine reuseModel len=${query.length} apps=${cachedApps.data.size}")
+            searchWithApps(cachedApps)
+        } else {
+            modelRetryJob = appState.model.runWhenModelLoaded(coroutineScope) { apps ->
+                if (generation == searchGeneration) {
+                    if (primeSearch) lastLoadedApps = apps
+                    searchWithApps(apps)
                 }
             }
         }
@@ -249,7 +355,12 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
         currentJob?.cancel()
 
         val prefs = PreferenceManager.getInstance(context)
-        val historyEnabled = prefs.searchResulRecentSuggestion.get()
+        val historyEnabled = prefs.searchResulRecentSuggestion.get() &&
+            app.lawnchair.prime.search.PrimeSearchResultPreferences.enabled(
+                context,
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.HISTORY,
+                preferenceSurface,
+            )
 
         if (!historyEnabled) {
             callback.clearSearchResult()
@@ -339,6 +450,27 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
         SearchSettingsSectionBuilder,
     )
 
+
+    private fun drawerSectionItems(items: List<BaseAllAppsAdapter.AdapterItem>): List<BaseAllAppsAdapter.AdapterItem> {
+        if (primeSearch || items.isEmpty()) return items
+        val searchItems = items.mapNotNull { it as? app.lawnchair.search.adapter.SearchAdapterItem }
+        if (searchItems.size != items.size) return items
+        // Section builders emit their own fixed order. Apply the drawer's saved
+        // category order after grouping so the visible cards match preferences.
+        val priorities = PrimeSearchResultPreferences.order(context, PrimeSearchResultPreferences.Surface.DRAWER)
+            .withIndex().associate { it.value to it.index }
+        return app.lawnchair.search.DrawerSearchSectionAdapterItem.group(searchItems)
+            .withIndex()
+            .sortedWith(compareBy(
+                { indexed ->
+                    (indexed.value as? app.lawnchair.search.DrawerSearchSectionAdapterItem)
+                        ?.category?.let { priorities[it] } ?: Int.MAX_VALUE
+                },
+                { it.index },
+            ))
+            .map { it.value }
+    }
+
     private fun translateToSearchTargets(
         results: List<SearchResult>,
     ): List<SearchTargetCompat> {
@@ -350,20 +482,7 @@ class LawnchairLocalSearchAlgorithm(context: Context, private val primeSearch: B
                 if (builder === AppsAndShortcutsSectionBuilder) PrimeAppsAndShortcutsSectionBuilder else builder
             }
         } else {
-            val settings = app.lawnchair.prime.search.PrimeSearchResultPreferences
-            val order = settings.order(context, app.lawnchair.prime.search.PrimeSearchResultPreferences.Surface.DRAWER)
-            val byCategory = mapOf(
-                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS to AppsAndShortcutsSectionBuilder,
-                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALCULATOR to CalculationSectionBuilder,
-                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB to WebSuggestionsSectionBuilder,
-                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CONTACTS to ContactsSectionBuilder,
-                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.FILES to FilesSectionBuilder,
-                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.SETTINGS to SettingsSectionBuilder,
-                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.HISTORY to HistorySectionBuilder,
-                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALENDAR to PrimeEntriesSectionBuilder,
-            )
-            val ordered = order.mapNotNull { byCategory[it] }.distinct()
-            ordered + sectionBuilders.filterNot { it in ordered }
+            PrimeSearchCategoryPresentation.orderedDrawerBuilders(context)
         }
         return builders.flatMap { builder ->
             builder.build(context, factory, results)

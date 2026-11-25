@@ -32,6 +32,8 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
+import com.android.launcher3.R
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,7 +60,7 @@ internal fun SharedCategoryOptions(category: Prefs.Category, surface: Prefs.Surf
                 if (category == Prefs.Category.REMINDERS) {
                     var showCompleted by remember(surface) { mutableStateOf(Prefs.showCompletedTasks(context, surface)) }
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Afficher les tâches terminées", modifier = Modifier.weight(1f))
+                        Text(stringResource(R.string.prime_search_shared_completed), modifier = Modifier.weight(1f))
                         Switch(checked = showCompleted, onCheckedChange = {
                             showCompleted = it
                             Prefs.setShowCompletedTasks(context, surface, it)
@@ -68,7 +70,7 @@ internal fun SharedCategoryOptions(category: Prefs.Category, surface: Prefs.Surf
                 if (category == Prefs.Category.CALENDAR) {
                     var futureOnly by remember(surface) { mutableStateOf(PrimeCalendarSearch.futureOnly(context, surface)) }
                     Row {
-                        Text("Événements futurs uniquement", modifier = Modifier.weight(1f))
+                        Text(stringResource(R.string.prime_search_shared_future), modifier = Modifier.weight(1f))
                         Switch(checked = futureOnly, onCheckedChange = {
                             futureOnly = it
                             PrimeCalendarSearch.setFutureOnly(context, it, surface)
@@ -87,11 +89,11 @@ internal fun SharedCategoryOptions(category: Prefs.Category, surface: Prefs.Surf
                         mutableStateOf(PrimeSourceSelection.selected(context, kind, surface))
                     }
                     Text(when (kind) {
-                        "calendars" -> "Agendas utilisés pour la recherche"
-                        "tasks" -> "Listes Tasks.org utilisées pour la recherche"
-                        else -> "Comptes de contacts utilisés pour la recherche"
+                        "calendars" -> stringResource(R.string.prime_search_shared_calendars)
+                        "tasks" -> stringResource(R.string.prime_search_shared_tasks)
+                        else -> stringResource(R.string.prime_search_shared_contacts)
                     })
-                    if (sources.isEmpty()) Text("Aucune source disponible sur cet appareil.")
+                    if (sources.isEmpty()) Text(stringResource(R.string.prime_search_shared_no_sources))
                     Column(modifier = Modifier.fillMaxWidth()) {
                         sources.forEach { source ->
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -109,12 +111,12 @@ internal fun SharedCategoryOptions(category: Prefs.Category, surface: Prefs.Surf
                     TextButton(onClick = {
                         PrimeSourceSelection.reset(context, kind, surface)
                         selectedIds = null
-                    }) { Text("Tout sélectionner") }
+                    }) { Text(stringResource(R.string.prime_search_shared_select_all)) }
                 }
             }
             Prefs.Category.FILES -> {
                 var limit by remember(surface) { mutableStateOf(Prefs.maxFileResults(context, surface)) }
-                Text("Nombre maximal de fichiers : $limit")
+                Text(stringResource(R.string.prime_search_shared_file_limit, limit))
                 Slider(value = limit.toFloat(), onValueChange = {
                     limit = it.roundToInt().coerceIn(3, 100)
                     Prefs.setMaxFileResults(context, limit, surface)
@@ -122,24 +124,24 @@ internal fun SharedCategoryOptions(category: Prefs.Category, surface: Prefs.Surf
                 Prefs.FileOption.entries.forEach { option ->
                     var active by remember(surface, option) { mutableStateOf(Prefs.fileOptionEnabled(context, option, surface)) }
                     Row {
-                        Text(option.label, modifier = Modifier.weight(1f))
+                        Text(option.localizedLabel(context), modifier = Modifier.weight(1f))
                         Switch(checked = active, onCheckedChange = {
                             active = it
                             Prefs.setFileOptionEnabled(context, option, it, surface)
                         })
                     }
                 }
-                Text("Les fichiers accessibles dépendent des autorisations Android.")
+                Text(stringResource(R.string.prime_search_shared_file_access))
             }
             Prefs.Category.WEB -> {
                 var count by remember(surface) { mutableStateOf(Prefs.webSuggestionCount(context, surface)) }
-                Text("Nombre de suggestions : $count")
+                Text(stringResource(R.string.prime_search_shared_suggestion_count, count))
                 Slider(value = count.toFloat(), onValueChange = {
                     count = it.roundToInt().coerceIn(0, 8)
                     Prefs.setWebSuggestionCount(context, count, surface)
                 }, valueRange = 0f..8f, steps = 7)
                 var provider by remember(surface) { mutableStateOf(Prefs.suggestionProvider(context, surface)) }
-                Text("Fournisseur de suggestions")
+                Text(stringResource(R.string.prime_search_shared_provider))
                 Prefs.SuggestionProvider.entries.forEach { option ->
                     Row {
                         RadioButton(selected = provider == option, onClick = {
@@ -149,9 +151,10 @@ internal fun SharedCategoryOptions(category: Prefs.Category, surface: Prefs.Surf
                         Text(option.title)
                     }
                 }
-                Text("Les termes saisis sont transmis au fournisseur sélectionné.")
+                Text(stringResource(R.string.prime_search_shared_privacy))
             }
             Prefs.Category.WEB_SHORTCUTS -> {
+                WebIconDownloadOption(surface)
                 Prefs.WebEngine.entries.forEach { engine ->
                     var active by remember(surface, engine) { mutableStateOf(engine in Prefs.enabledWebEngines(context, surface)) }
                     Row {
@@ -165,14 +168,14 @@ internal fun SharedCategoryOptions(category: Prefs.Category, surface: Prefs.Surf
             }
             Prefs.Category.NOTIFICATIONS -> {
                 var retention by remember(surface) { mutableStateOf(Prefs.notificationRetention(context, surface)) }
-                Text("Conserver les notifications pendant :")
+                Text(stringResource(R.string.prime_search_shared_retention))
                 Prefs.NotificationRetention.entries.forEach { option ->
                     Row {
                         RadioButton(selected = retention == option, onClick = {
                             retention = option
                             Prefs.setNotificationRetention(context, option, surface)
                         })
-                        Text(option.label)
+                        Text(option.localizedLabel(context))
                     }
                 }
             }
@@ -195,6 +198,7 @@ internal fun SharedCategoryCard(
     onPermission: () -> Unit,
     dragState: CategoryDragState,
 ) {
+    val context = LocalContext.current
     val dragging = dragState.active == category
     val rowPixels = with(LocalDensity.current) { 112.dp.toPx() }
     val targetIndex = (dragState.origin + (dragState.offset / rowPixels).roundToInt()).coerceIn(0, lastIndex)
@@ -214,21 +218,21 @@ internal fun SharedCategoryCard(
             scaleY = lift
             shadowElevation = if (dragging) 12.dp.toPx() else 0f
         },
-        title = { Text(category.title) },
+        title = { Text(category.localizedTitle(context)) },
         description = {
             Text(
-                if (needsPermission) PrimeSearchPermissions.explanation(category) else category.description,
+                if (needsPermission) PrimeSearchPermissions.explanation(context, category) else category.localizedDescription(context),
                 color = if (needsPermission) androidx.compose.ui.graphics.Color.Gray else androidx.compose.ui.graphics.Color.Unspecified,
             )
         },
         endWidget = {
             Row {
                 IconButton(onClick = onSettings) {
-                    Icon(Icons.Default.Settings, contentDescription = "Paramètres de ${category.title}")
+                    Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.prime_search_shared_settings, category.localizedTitle(context)))
                 }
                 Icon(
                     Icons.Default.DragHandle,
-                    contentDescription = "Maintenir puis glisser pour réorganiser",
+                    contentDescription = stringResource(R.string.prime_search_shared_reorder),
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp)
                         .pointerInput(category, index, lastIndex) {
                             var distance = 0f
@@ -259,10 +263,10 @@ internal fun SharedCategoryCard(
                         },
                 )
                 IconButton(onClick = { onMove(index, index - 1) }, enabled = index > 0) {
-                    Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Monter")
+                    Icon(Icons.Default.KeyboardArrowUp, contentDescription = stringResource(R.string.prime_search_shared_up))
                 }
                 IconButton(onClick = { onMove(index, index + 1) }, enabled = index < lastIndex) {
-                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Descendre")
+                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = stringResource(R.string.prime_search_shared_down))
                 }
                 Switch(
                     checked = enabled && !needsPermission,
@@ -293,18 +297,35 @@ internal fun SharedCategorySettingsDialog(
     onDismiss: () -> Unit,
     extra: @Composable () -> Unit,
 ) {
+    val context = LocalContext.current
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(category.title) },
+        title = { Text(category.localizedTitle(context)) },
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                Text(category.description)
+                Text(category.localizedDescription(context))
                 SharedCategoryOptions(category, surface, permissionRefresh)
                 extra()
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Fermer") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.prime_search_shared_close)) }
         },
     )
+}
+
+@Composable
+internal fun WebIconDownloadOption(surface: Prefs.Surface) {
+    val context = LocalContext.current
+    var enabled by remember(surface) { mutableStateOf(Prefs.downloadWebIcons(context, surface)) }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Checkbox(checked = enabled, onCheckedChange = {
+            enabled = it
+            Prefs.setDownloadWebIcons(context, surface, it)
+        })
+        Column(modifier = Modifier.weight(1f)) {
+            Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_download_web_icons))
+            Text(androidx.compose.ui.res.stringResource(com.android.launcher3.R.string.prime_download_web_icons_description))
+        }
+    }
 }

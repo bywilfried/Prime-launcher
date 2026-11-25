@@ -1,9 +1,16 @@
 package app.lawnchair.search
 
+import android.content.res.ColorStateList
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.RippleDrawable
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import app.lawnchair.theme.ThemeColorRole
+import app.lawnchair.theme.ThemeColors
+import app.lawnchair.theme.ThemeProfile
+import app.lawnchair.theme.effectiveThemeVariant
 import com.android.launcher3.R
 
 /**
@@ -47,4 +54,93 @@ object SearchResultGeometry {
     fun styleTextRow(view: View) = styleResultRow(view, false)
 
     fun styleFileRow(view: View) = styleResultRow(view, true)
+
+    /**
+     * Shared row-height policy for compact native search results.
+     * Grid application tiles have their own configurable geometry.
+     */
+    fun compactRowHeightDp(layoutType: String, isAppShortcut: Boolean = false): Int =
+        when {
+            isAppShortcut -> 56
+            layoutType == com.android.app.search.LayoutType.THUMBNAIL.toString() -> 72
+            layoutType == com.android.app.search.LayoutType.ICON_HORIZONTAL_TEXT.toString() -> 60
+            layoutType == com.android.app.search.LayoutType.EMPTY_STATE.toString() ||
+                layoutType == com.android.app.search.LayoutType.SEARCH_SETTINGS.toString() -> 56
+            else -> 48
+        }
+
+    /**
+     * One compact row contract for both the embedded drawer and Prime Search.
+     * The caller selects the row height from the result type; typography and
+     * text-container spacing stay identical on both surfaces.
+     */
+    fun styleCompactResultRow(view: View, rowHeightDp: Int, file: Boolean = false) {
+        view.minimumHeight = 0
+        view.layoutParams?.height = view.dp(rowHeightDp)
+        view.findViewById<TextView>(R.id.title)?.apply {
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            includeFontPadding = false
+            if (file) {
+                maxLines = 2
+                isSingleLine = false
+            }
+        }
+        view.findViewById<TextView>(R.id.subtitle)?.apply {
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            includeFontPadding = false
+        }
+        view.findViewById<View>(R.id.text_rows)?.setPadding(
+            view.findViewById<View>(R.id.text_rows)?.paddingLeft ?: 0,
+            0,
+            view.findViewById<View>(R.id.text_rows)?.paddingRight ?: 0,
+            0,
+        )
+    }
+
+    /**
+     * Drawer-only result card treatment. Shared row geometry is handled above;
+     * the card palette and outline remain surface-specific.
+     */
+    fun styleDrawerCard(view: View) {
+        val context = view.context
+        val profile = ThemeProfile.current(context)
+        val variant = context.effectiveThemeVariant()
+        val cardColor = ThemeColors.resolve(
+            context,
+            profile,
+            ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BACKGROUND,
+            variant,
+        )
+        val borderColor = ThemeColors.resolve(
+            context, profile, ThemeColorRole.DRAWER_SEARCH_RESULT_CARD_BORDER, variant,
+        )
+        val selectedColor = ThemeColors.resolve(
+            context,
+            profile,
+            ThemeColorRole.DRAWER_SEARCH_SELECTED_RESULT_BACKGROUND,
+            variant,
+        )
+        val density = view.resources.displayMetrics.density
+        val radius = 14f * density
+        view.background = GradientDrawable().apply {
+            setColor(cardColor)
+            cornerRadius = radius
+            setStroke((1 * density).toInt(), borderColor)
+        }
+        view.foreground = RippleDrawable(
+            ColorStateList.valueOf(selectedColor),
+            null,
+            GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = radius
+                setColor(android.graphics.Color.WHITE)
+            },
+        )
+        view.clipToOutline = true
+        (view.layoutParams as? ViewGroup.MarginLayoutParams)?.let { params ->
+            params.leftMargin = (4 * density).toInt()
+            params.rightMargin = (4 * density).toInt()
+            view.layoutParams = params
+        }
+    }
 }

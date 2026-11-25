@@ -52,12 +52,12 @@ object PrimeSearchPermissions {
             Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
         } else null
 
-    fun explanation(category: PrimeSearchResultPreferences.Category): String = when (category) {
-        PrimeSearchResultPreferences.Category.CONTACTS -> "Autoriser l'accès aux contacts pour les rechercher."
-        PrimeSearchResultPreferences.Category.CALENDAR -> "Autoriser la lecture de l'agenda pour rechercher les événements."
-        PrimeSearchResultPreferences.Category.REMINDERS -> "Autoriser la lecture des tâches Tasks.org pour les rechercher."
-        PrimeSearchResultPreferences.Category.FILES -> "Autoriser l'accès aux médias pour rechercher les fichiers compatibles."
-        PrimeSearchResultPreferences.Category.NOTIFICATIONS -> "Activer l'accès aux notifications dans les paramètres Android pour enregistrer leur historique."
+    fun explanation(context: Context, category: PrimeSearchResultPreferences.Category): String = when (category) {
+        PrimeSearchResultPreferences.Category.CONTACTS -> context.getString(com.android.launcher3.R.string.prime_permission_contacts)
+        PrimeSearchResultPreferences.Category.CALENDAR -> context.getString(com.android.launcher3.R.string.prime_permission_calendar)
+        PrimeSearchResultPreferences.Category.REMINDERS -> context.getString(com.android.launcher3.R.string.prime_permission_reminders)
+        PrimeSearchResultPreferences.Category.FILES -> context.getString(com.android.launcher3.R.string.prime_permission_files)
+        PrimeSearchResultPreferences.Category.NOTIFICATIONS -> context.getString(com.android.launcher3.R.string.prime_permission_notifications)
         else -> ""
     }
 }

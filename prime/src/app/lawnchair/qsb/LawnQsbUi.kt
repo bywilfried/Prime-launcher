@@ -63,6 +63,7 @@ enum class QsbIconId {
     MIC,
     LENS,
     CLEAR,
+    SETTINGS,
 }
 
 /**
@@ -460,7 +461,7 @@ fun QsbIcon(
             ),
             contentDescription = icon.contentDescription,
             tint = tintColor?.let { ComposeColor(it) } ?: ComposeColor.Unspecified,
-            modifier = Modifier.fillMaxSize(),
+            modifier = if (icon.id == QsbIconId.SETTINGS) Modifier.fillMaxSize(0.76f) else Modifier.fillMaxSize(),
         )
     }
 }

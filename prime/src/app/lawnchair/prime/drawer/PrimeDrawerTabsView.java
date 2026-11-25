@@ -62,6 +62,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
     private final PrimeDrawerTabsRepository mRepository;
     private final LinearLayout mTabsContainer;
     private boolean mIsScrolledOut;
+    private boolean mDrawerSearchActive;
     private OptionsPopupView<?> mTabPopup;
     private String mDraggingTabId;
     private float mLongPressDownX;
@@ -178,10 +179,17 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
         }
     }
 
+    /** Hide category navigation while drawer search results are displayed. */
+    public void setDrawerSearchActive(boolean active) {
+        if (mDrawerSearchActive == active) return;
+        mDrawerSearchActive = active;
+        setVisibility(active ? GONE : (mPrefs.getDrawerTabsEnabled().get() ? VISIBLE : GONE));
+    }
+
     private void refreshForConfiguration(
             FloatingHeaderView parent, PrimeDrawerTabsConfiguration configuration) {
         boolean enabled = mPrefs.getDrawerTabsEnabled().get();
-        setVisibility(enabled && !mIsScrolledOut ? VISIBLE : enabled ? INVISIBLE : GONE);
+        setVisibility(mDrawerSearchActive ? GONE : enabled && !mIsScrolledOut ? VISIBLE : enabled ? INVISIBLE : GONE);
         mTabsContainer.removeAllViews();
         if (!enabled) return;
         updateStickyBackground(configuration);
@@ -1075,7 +1083,7 @@ public class PrimeDrawerTabsView extends HorizontalScrollView implements Floatin
                 : scroll;
         setTranslationY(-headerTranslation);
         mIsScrolledOut = false;
-        setVisibility(mPrefs.getDrawerTabsEnabled().get() ? VISIBLE : GONE);
+        setVisibility(mDrawerSearchActive ? GONE : (mPrefs.getDrawerTabsEnabled().get() ? VISIBLE : GONE));
     }
 
     @Override

@@ -60,7 +60,7 @@ object PrimeTasksSearch {
                     if (!includeCompleted && c.getLong(completed) != 0L) continue
                     val dueDate = c.getLong(due)
                     val detail = listOf(
-                        if (c.getLong(completed) != 0L) "Terminée" else "",
+                        if (c.getLong(completed) != 0L) context.getString(com.android.launcher3.R.string.prime_provider_completed) else "",
                         if (dueDate > 0L) java.text.DateFormat.getDateInstance().format(java.util.Date(dueDate)) else "",
                         c.getString(notes).orEmpty().take(100)
                     ).filter { it.isNotBlank() }.joinToString(" · ")

@@ -1,0 +1,95 @@
+package app.lawnchair.prime.search
+
+import android.content.Context
+import app.lawnchair.search.algorithms.engine.ActionsSectionBuilder
+import app.lawnchair.search.algorithms.engine.AppsAndShortcutsSectionBuilder
+import app.lawnchair.search.algorithms.engine.AppShortcutsSectionBuilder
+import app.lawnchair.search.algorithms.engine.CalculationSectionBuilder
+import app.lawnchair.search.algorithms.engine.ContactsSectionBuilder
+import app.lawnchair.search.algorithms.engine.FilesSectionBuilder
+import app.lawnchair.search.algorithms.engine.EmptyStateSectionBuilder
+import app.lawnchair.search.algorithms.engine.HistorySectionBuilder
+import app.lawnchair.search.algorithms.engine.PrimeEntriesSectionBuilder
+import app.lawnchair.search.algorithms.engine.SectionBuilder
+import app.lawnchair.search.algorithms.engine.SearchSettingsSectionBuilder
+import app.lawnchair.search.algorithms.engine.SettingsSectionBuilder
+import app.lawnchair.search.algorithms.engine.WebSuggestionsSectionBuilder
+import app.lawnchair.search.algorithms.engine.WebShortcutsSectionBuilder
+
+/**
+ * Presentation rules shared by the drawer and Prime Search.
+ *
+ * Surface-specific visibility, order and colours remain in
+ * [PrimeSearchResultPreferences]; this object only describes category identity
+ * and the common compact-preview geometry.
+ */
+object PrimeSearchCategoryPresentation {
+
+    private val builderByCategory = mapOf(
+        PrimeSearchResultPreferences.Category.APPS to AppsAndShortcutsSectionBuilder,
+        PrimeSearchResultPreferences.Category.APP_SHORTCUTS to AppShortcutsSectionBuilder,
+        PrimeSearchResultPreferences.Category.CALCULATOR to CalculationSectionBuilder,
+        PrimeSearchResultPreferences.Category.WEB to WebSuggestionsSectionBuilder,
+        PrimeSearchResultPreferences.Category.WEB_SHORTCUTS to WebShortcutsSectionBuilder,
+        PrimeSearchResultPreferences.Category.CONTACTS to ContactsSectionBuilder,
+        PrimeSearchResultPreferences.Category.FILES to FilesSectionBuilder,
+        PrimeSearchResultPreferences.Category.SETTINGS to SettingsSectionBuilder,
+        PrimeSearchResultPreferences.Category.HISTORY to HistorySectionBuilder,
+        PrimeSearchResultPreferences.Category.CALENDAR to PrimeEntriesSectionBuilder,
+    )
+
+    private val headings = mapOf(
+        "Suggestions Web" to PrimeSearchResultPreferences.Category.WEB,
+        "Raccourcis d'app" to PrimeSearchResultPreferences.Category.APP_SHORTCUTS,
+        "Raccourcis d’app" to PrimeSearchResultPreferences.Category.APP_SHORTCUTS,
+        "Contacts" to PrimeSearchResultPreferences.Category.CONTACTS,
+        "Événements de l'agenda" to PrimeSearchResultPreferences.Category.CALENDAR,
+        "Tâches · Tasks.org" to PrimeSearchResultPreferences.Category.REMINDERS,
+        "Tâches" to PrimeSearchResultPreferences.Category.REMINDERS,
+        "Historique des notifications" to PrimeSearchResultPreferences.Category.NOTIFICATIONS,
+        "Paramètres de l'appareil" to PrimeSearchResultPreferences.Category.SETTINGS,
+        "Device settings" to PrimeSearchResultPreferences.Category.SETTINGS,
+        "Raccourcis Web" to PrimeSearchResultPreferences.Category.WEB_SHORTCUTS,
+    )
+
+    fun categoryForHeading(title: String?, context: Context? = null): PrimeSearchResultPreferences.Category? {
+        val normalized = title?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+        // Prefer explicit aliases for provider-specific headings, then fall back
+        // to the canonical category title so every shared category is recognized.
+        return headings[normalized]
+            ?: PrimeSearchResultPreferences.Category.values().firstOrNull {
+                it.title.equals(normalized, ignoreCase = true) ||
+                    (context != null && it.localizedTitle(context).equals(normalized, ignoreCase = true))
+            }
+    }
+
+    fun orderedDrawerBuilders(context: Context): List<SectionBuilder> {
+        val surface = PrimeSearchResultPreferences.Surface.DRAWER
+        val ordered = PrimeSearchResultPreferences.order(context, surface)
+            .mapNotNull(builderByCategory::get)
+            .distinct()
+        return ordered + listOf(
+            AppsAndShortcutsSectionBuilder,
+            AppShortcutsSectionBuilder,
+            CalculationSectionBuilder,
+            WebSuggestionsSectionBuilder,
+            WebShortcutsSectionBuilder,
+            ContactsSectionBuilder,
+            FilesSectionBuilder,
+            PrimeEntriesSectionBuilder,
+            SettingsSectionBuilder,
+            HistorySectionBuilder,
+            ActionsSectionBuilder,
+            EmptyStateSectionBuilder,
+            SearchSettingsSectionBuilder,
+        ).filterNot { it in ordered }
+    }
+
+    /** Compact card preview heights, in dp. App grids use their measured row height. */
+    fun compactPreviewHeightDp(category: PrimeSearchResultPreferences.Category): Int? =
+        when (category) {
+            PrimeSearchResultPreferences.Category.APPS -> null
+            PrimeSearchResultPreferences.Category.APP_SHORTCUTS -> 160
+            else -> 190
+        }
+}

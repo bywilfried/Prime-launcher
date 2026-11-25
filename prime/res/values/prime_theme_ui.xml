@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_theme_ui_exported">Theme exported</string>
+    <string name="prime_theme_ui_export_failed">Theme export failed</string>
+    <string name="prime_theme_ui_imported">Theme imported</string>
+    <string name="prime_theme_ui_invalid">Invalid theme file</string>
+    <string name="prime_theme_ui_folder">Folder colors</string>
+    <string name="prime_theme_ui_customize">Customize theme colors</string>
+    <string name="prime_theme_ui_category">Category colors</string>
+    <string name="prime_theme_ui_variant">Variant</string>
+    <string name="prime_theme_ui_light">Light</string>
+    <string name="prime_theme_ui_dark">Dark</string>
+    <string name="prime_theme_ui_global">Global</string>
+    <string name="prime_theme_ui_home">Home screen</string>
+    <string name="prime_theme_ui_drawer">App drawer</string>
+    <string name="prime_theme_ui_manage_folder">Folder management</string>
+    <string name="prime_theme_ui_manage_theme">Theme management</string>
+    <string name="prime_theme_ui_manage_category">Category management</string>
+    <string name="prime_theme_ui_reset_variant">Reset variant</string>
+    <string name="prime_theme_ui_reset_variant_desc">Remove customizations for the displayed variant.</string>
+    <string name="prime_theme_ui_reset_theme">Reset theme</string>
+    <string name="prime_theme_ui_reset_theme_desc">Restore the selected theme’s default values.</string>
+    <string name="prime_theme_ui_export">Export theme</string>
+    <string name="prime_theme_ui_export_desc">Share the overall theme, palette and colors.</string>
+    <string name="prime_theme_ui_import">Import theme</string>
+    <string name="prime_theme_ui_import_desc">Import a .primetheme file without changing the home screen.</string>
+    <string name="prime_theme_ui_reset_variant_question">Reset variant?</string>
+    <string name="prime_theme_ui_reset">Reset</string>
+    <string name="prime_theme_ui_cancel">Cancel</string>
+    <string name="prime_theme_ui_reset_theme_question">Reset theme?</string>
+    <string name="prime_theme_ui_reset_both">All customizations for Light and Dark variants will be removed.</string>
+    <string name="prime_theme_ui_hide">Hide colors</string>
+    <string name="prime_theme_ui_show">Show colors</string>
+    <string name="prime_theme_ui_legacy">Legacy behavior (fixed)</string>
+    <string name="prime_theme_ui_contrast">Automatic contrast (black/white)</string>
+    <string name="prime_theme_ui_parent">Inherited from parent colors</string>
+    <string name="prime_theme_ui_parent_theme">Inherited from the main theme or its customization</string>
+    <string name="prime_theme_ui_theme_value">Theme value</string>
+    <string name="prime_theme_ui_reset_variant_message">All customizations for the %1$s variant will be removed. The other variant will be kept.</string>
+    <string name="prime_theme_ui_reset_role">Restore default value for %1$s</string>
+</resources>

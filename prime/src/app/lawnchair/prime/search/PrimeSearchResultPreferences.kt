@@ -28,6 +28,13 @@ object PrimeSearchResultPreferences {
     private fun surfacePrefs(context: Context, surface: Surface) =
         context.getSharedPreferences(surface.store, Context.MODE_PRIVATE)
 
+    fun downloadWebIcons(context: Context, surface: Surface): Boolean =
+        surfacePrefs(context, surface).getBoolean("download_web_icons", false)
+
+    fun setDownloadWebIcons(context: Context, surface: Surface, enabled: Boolean) {
+        surfacePrefs(context, surface).edit().putBoolean("download_web_icons", enabled).apply()
+    }
+
     fun showCompletedTasks(context: Context, surface: Surface): Boolean =
         surfacePrefs(context, surface).getBoolean("show_completed_tasks", false)
 
@@ -39,11 +46,16 @@ object PrimeSearchResultPreferences {
         surfacePrefs(context, surface).contains(category.key)
 
     fun enabled(context: Context, category: Category, surface: Surface): Boolean =
-        surfacePrefs(context, surface).getBoolean(category.key, true) &&
+        surfacePrefs(context, surface).getBoolean(category.key, category != Category.WEB) &&
             (!PrimeSearchPermissions.required(category) || PrimeSearchPermissions.granted(context, category))
 
     fun setEnabled(context: Context, category: Category, enabled: Boolean, surface: Surface) {
-        surfacePrefs(context, surface).edit().putBoolean(category.key, enabled).apply()
+        val preferences = surfacePrefs(context, surface)
+        val previous = preferences.getBoolean(category.key, category != Category.WEB)
+        preferences.edit().putBoolean(category.key, enabled).apply()
+        if (previous != enabled && category == Category.APPS) {
+            app.lawnchair.search.algorithms.PrimeSearchWarmup.refresh(context)
+        }
     }
 
     fun order(context: Context, surface: Surface): List<Category> {
@@ -101,12 +113,23 @@ object PrimeSearchResultPreferences {
         surfacePrefs(context, surface).edit().putString("suggestion_provider", provider.name).apply()
     }
 
-    fun enabledWebEngines(context: Context, surface: Surface): List<WebEngine> {
-        val preferences = surfacePrefs(context, surface)
-        val selected = preferences.getStringSet("web_engines", setOf(WebEngine.DUCKDUCKGO.name)).orEmpty()
-        val saved = preferences.getString("web_engine_order", null)
+    fun webEngineOrder(context: Context, surface: Surface): List<WebEngine> {
+        val saved = surfacePrefs(context, surface).getString("web_engine_order", null)
             ?.split(",")?.mapNotNull { name -> WebEngine.entries.firstOrNull { it.name == name } }.orEmpty()
-        return (saved + WebEngine.entries).distinct().filter { it.name in selected }
+        return (saved + WebEngine.entries).distinct()
+    }
+
+    fun enabledWebEngines(context: Context, surface: Surface): List<WebEngine> {
+        val selected = surfacePrefs(context, surface)
+            .getStringSet("web_engines", setOf(WebEngine.DUCKDUCKGO.name)).orEmpty()
+        return webEngineOrder(context, surface).filter { it.name in selected }
+    }
+
+    fun saveWebEngineOrder(context: Context, engines: List<WebEngine>, surface: Surface) {
+        surfacePrefs(context, surface).edit().putString(
+            "web_engine_order",
+            (engines + WebEngine.entries).distinct().joinToString(",") { it.name },
+        ).apply()
     }
 
     fun setWebEngineEnabled(context: Context, engine: WebEngine, enabled: Boolean, surface: Surface) {
@@ -139,7 +162,38 @@ object PrimeSearchResultPreferences {
         FILES("files", "Fichiers", "Contenu multimédia et fichiers"),
         SETTINGS("settings", "Paramètres de l’appareil", "Réglages du système"),
         HISTORY("history", "Historique des recherches", "Recherches récentes"),
-        CALCULATOR("calculator", "Calculatrice", "Résultats de calcul"),
+        CALCULATOR("calculator", "Calculatrice", "Résultats de calcul");
+        fun localizedTitle(context: Context): String = context.getString(when (this) {
+            APPS -> com.android.launcher3.R.string.prime_category_apps_title
+            APP_SHORTCUTS -> com.android.launcher3.R.string.prime_category_app_shortcuts_title
+            WEB -> com.android.launcher3.R.string.prime_category_web_title
+            WEB_SHORTCUTS -> com.android.launcher3.R.string.prime_category_web_shortcuts_title
+            CONTACTS -> com.android.launcher3.R.string.prime_category_contacts_title
+            CALENDAR -> com.android.launcher3.R.string.prime_category_calendar_title
+            REMINDERS -> com.android.launcher3.R.string.prime_category_reminders_title
+            NOTIFICATIONS -> com.android.launcher3.R.string.prime_category_notifications_title
+            NOTES -> com.android.launcher3.R.string.prime_category_notes_title
+            FILES -> com.android.launcher3.R.string.prime_category_files_title
+            SETTINGS -> com.android.launcher3.R.string.prime_category_settings_title
+            HISTORY -> com.android.launcher3.R.string.prime_category_history_title
+            CALCULATOR -> com.android.launcher3.R.string.prime_category_calculator_title
+        })
+
+        fun localizedDescription(context: Context): String = context.getString(when (this) {
+            APPS -> com.android.launcher3.R.string.prime_category_apps_description
+            APP_SHORTCUTS -> com.android.launcher3.R.string.prime_category_app_shortcuts_description
+            WEB -> com.android.launcher3.R.string.prime_category_web_description
+            WEB_SHORTCUTS -> com.android.launcher3.R.string.prime_category_web_shortcuts_description
+            CONTACTS -> com.android.launcher3.R.string.prime_category_contacts_description
+            CALENDAR -> com.android.launcher3.R.string.prime_category_calendar_description
+            REMINDERS -> com.android.launcher3.R.string.prime_category_reminders_description
+            NOTIFICATIONS -> com.android.launcher3.R.string.prime_category_notifications_description
+            NOTES -> com.android.launcher3.R.string.prime_category_notes_description
+            FILES -> com.android.launcher3.R.string.prime_category_files_description
+            SETTINGS -> com.android.launcher3.R.string.prime_category_settings_description
+            HISTORY -> com.android.launcher3.R.string.prime_category_history_description
+            CALCULATOR -> com.android.launcher3.R.string.prime_category_calculator_description
+        })
     }
 
     fun maxFileResults(context: Context): Int =
@@ -158,7 +212,19 @@ object PrimeSearchResultPreferences {
         AUDIO("Audio", true),
         APKS("APKs", true),
         OTHER("Autre", true),
-        SYSTEM("Fichiers système", false),
+        SYSTEM("Fichiers système", false);
+
+        fun localizedLabel(context: Context): String = context.getString(when (this) {
+            PREVIEW -> com.android.launcher3.R.string.prime_option_fileoption_preview
+            FOLDERS -> com.android.launcher3.R.string.prime_option_fileoption_folders
+            DOCUMENTS -> com.android.launcher3.R.string.prime_option_fileoption_documents
+            IMAGES -> com.android.launcher3.R.string.prime_option_fileoption_images
+            VIDEOS -> com.android.launcher3.R.string.prime_option_fileoption_videos
+            AUDIO -> com.android.launcher3.R.string.prime_option_fileoption_audio
+            APKS -> com.android.launcher3.R.string.prime_option_fileoption_apks
+            OTHER -> com.android.launcher3.R.string.prime_option_fileoption_other
+            SYSTEM -> com.android.launcher3.R.string.prime_option_fileoption_system
+        })
     }
 
     fun fileOptionEnabled(context: Context, option: FileOption): Boolean =
@@ -247,7 +313,7 @@ object PrimeSearchResultPreferences {
 
     fun suggestionProvider(context: Context): SuggestionProvider =
         runCatching { SuggestionProvider.valueOf(prefs(context).getString("suggestion_provider", "DUCKDUCKGO") ?: "DUCKDUCKGO") }
-            .getOrDefault(SuggestionProvider.GOOGLE)
+            .getOrDefault(SuggestionProvider.DUCKDUCKGO)
 
     fun setSuggestionProvider(context: Context, provider: SuggestionProvider) {
         prefs(context).edit().putString("suggestion_provider", provider.name).apply()
@@ -259,7 +325,16 @@ object PrimeSearchResultPreferences {
         THREE_MONTHS("3 mois", 3),
         SIX_MONTHS("6 mois", 6),
         TWELVE_MONTHS("12 mois", 12),
-        FOREVER("Toujours", 0),
+        FOREVER("Toujours", 0);
+
+        fun localizedLabel(context: Context): String = context.getString(when (this) {
+            ONE_MONTH -> com.android.launcher3.R.string.prime_option_notificationretention_one_month
+            TWO_MONTHS -> com.android.launcher3.R.string.prime_option_notificationretention_two_months
+            THREE_MONTHS -> com.android.launcher3.R.string.prime_option_notificationretention_three_months
+            SIX_MONTHS -> com.android.launcher3.R.string.prime_option_notificationretention_six_months
+            TWELVE_MONTHS -> com.android.launcher3.R.string.prime_option_notificationretention_twelve_months
+            FOREVER -> com.android.launcher3.R.string.prime_option_notificationretention_forever
+        })
     }
 
     fun notificationRetention(context: Context, surface: Surface): NotificationRetention =
@@ -301,7 +376,14 @@ object PrimeSearchResultPreferences {
         LAST("Dernière consultée"),
         FREQUENT("Fréquentes"),
         RECENT("Récentes"),
-        NEW("Nouvelles"),
+        NEW("Nouvelles");
+
+        fun localizedLabel(context: Context): String = context.getString(when (this) {
+            LAST -> com.android.launcher3.R.string.prime_option_openingtab_last
+            FREQUENT -> com.android.launcher3.R.string.prime_option_openingtab_frequent
+            RECENT -> com.android.launcher3.R.string.prime_option_openingtab_recent
+            NEW -> com.android.launcher3.R.string.prime_option_openingtab_new
+        })
     }
 
     fun openingTab(context: Context): OpeningTab =
@@ -339,6 +421,13 @@ object PrimeSearchResultPreferences {
         prefs(context).edit().putBoolean("fuzzy_apps", enabled).apply()
     }
 
+    fun fuzzyApps(context: Context, surface: Surface): Boolean =
+        surfacePrefs(context, surface).getBoolean("fuzzy_apps", true)
+
+    fun setFuzzyApps(context: Context, enabled: Boolean, surface: Surface) {
+        surfacePrefs(context, surface).edit().putBoolean("fuzzy_apps", enabled).apply()
+    }
+
     fun twoLineAppLabels(context: Context): Boolean =
         prefs(context).getBoolean("two_line_app_labels", false)
 
@@ -363,7 +452,13 @@ object PrimeSearchResultPreferences {
     enum class AppResultsAlignment(val label: String) {
         CENTER("Centré"),
         LEFT("Aligné à gauche"),
-        RIGHT("Aligné à droite"),
+        RIGHT("Aligné à droite");
+
+        fun localizedLabel(context: Context): String = context.getString(when (this) {
+            CENTER -> com.android.launcher3.R.string.prime_drawer_search_center
+            LEFT -> com.android.launcher3.R.string.prime_drawer_search_left
+            RIGHT -> com.android.launcher3.R.string.prime_drawer_search_right
+        })
     }
 
     fun appResultsAlignment(context: Context): AppResultsAlignment =
@@ -410,7 +505,7 @@ object PrimeSearchResultPreferences {
         context.getSharedPreferences(STORE, Context.MODE_PRIVATE)
 
     fun enabled(context: Context, category: Category): Boolean =
-        prefs(context).getBoolean(category.key, true) &&
+        prefs(context).getBoolean(category.key, category != Category.WEB) &&
             (!PrimeSearchPermissions.required(category) || PrimeSearchPermissions.granted(context, category))
 
     fun setEnabled(context: Context, category: Category, enabled: Boolean) {
@@ -438,6 +533,140 @@ object PrimeSearchResultPreferences {
 
     fun resetOrder(context: Context) {
         prefs(context).edit().remove("category_order").apply()
+    }
+
+    // Every renderer option is keyed by Surface so the drawer can use the exact
+    // Prime Search presentation without sharing its configuration.
+    fun openingTab(context: Context, surface: Surface): OpeningTab =
+        runCatching {
+            OpeningTab.valueOf(surfacePrefs(context, surface).getString("opening_tab", OpeningTab.FREQUENT.name)!!)
+        }.getOrDefault(OpeningTab.FREQUENT)
+
+    fun setOpeningTab(context: Context, tab: OpeningTab, surface: Surface) {
+        surfacePrefs(context, surface).edit().putString("opening_tab", tab.name).apply()
+    }
+
+    fun lastOpenedTab(context: Context, surface: Surface): Int =
+        surfacePrefs(context, surface).getInt("last_opened_tab", 0).coerceIn(0, 2)
+
+    fun setLastOpenedTab(context: Context, tab: Int, surface: Surface) {
+        surfacePrefs(context, surface).edit().putInt("last_opened_tab", tab.coerceIn(0, 2)).apply()
+    }
+
+    fun zeroStateRows(context: Context, surface: Surface): Int =
+        surfacePrefs(context, surface).getInt("zero_state_rows", 1).coerceIn(1, 2)
+
+    fun setZeroStateRows(context: Context, rows: Int, surface: Surface) {
+        surfacePrefs(context, surface).edit().putInt("zero_state_rows", rows.coerceIn(1, 2)).apply()
+    }
+
+    fun floatingWindow(context: Context, surface: Surface): Boolean =
+        surfacePrefs(context, surface).getBoolean("floating_window", true)
+
+    fun setFloatingWindow(context: Context, enabled: Boolean, surface: Surface) {
+        surfacePrefs(context, surface).edit().putBoolean("floating_window", enabled).apply()
+    }
+
+    fun twoLineAppLabels(context: Context, surface: Surface): Boolean =
+        surfacePrefs(context, surface).getBoolean("two_line_app_labels", false)
+
+    fun setTwoLineAppLabels(context: Context, enabled: Boolean, surface: Surface) {
+        surfacePrefs(context, surface).edit().putBoolean("two_line_app_labels", enabled).apply()
+    }
+
+    fun iconSizePercent(context: Context, surface: Surface): Int =
+        surfacePrefs(context, surface).getInt("icon_size_percent", 100).coerceIn(60, 150)
+
+    fun setIconSizePercent(context: Context, percent: Int, surface: Surface) {
+        surfacePrefs(context, surface).edit().putInt("icon_size_percent", percent.coerceIn(60, 150)).apply()
+    }
+
+    fun appResultsFollowGeneral(context: Context, surface: Surface): Boolean =
+        surfacePrefs(context, surface).getBoolean("app_results_follow_general", true)
+
+    fun setAppResultsFollowGeneral(context: Context, follow: Boolean, surface: Surface) {
+        surfacePrefs(context, surface).edit().putBoolean("app_results_follow_general", follow).apply()
+    }
+
+    fun appResultsAlignment(context: Context, surface: Surface): AppResultsAlignment =
+        runCatching {
+            AppResultsAlignment.valueOf(surfacePrefs(context, surface).getString("app_results_alignment", "CENTER") ?: "CENTER")
+        }.getOrDefault(AppResultsAlignment.CENTER)
+
+    fun setAppResultsAlignment(context: Context, alignment: AppResultsAlignment, surface: Surface) {
+        surfacePrefs(context, surface).edit().putString("app_results_alignment", alignment.name).apply()
+    }
+
+    fun appResultsColumns(context: Context, surface: Surface): Int =
+        if (appResultsFollowGeneral(context, surface)) appsPerRow(context, surface)
+        else surfacePrefs(context, surface).getInt("app_results_columns", 5).coerceIn(3, 5)
+
+    fun setAppResultsColumns(context: Context, columns: Int, surface: Surface) {
+        surfacePrefs(context, surface).edit().putInt("app_results_columns", columns.coerceIn(3, 5)).apply()
+    }
+
+    fun appResultsRows(context: Context, surface: Surface): Int =
+        if (appResultsFollowGeneral(context, surface)) zeroStateRows(context, surface)
+        else surfacePrefs(context, surface).getInt("app_results_rows", 2).coerceIn(1, 3)
+
+    fun setAppResultsRows(context: Context, rows: Int, surface: Surface) {
+        surfacePrefs(context, surface).edit().putInt("app_results_rows", rows.coerceIn(1, 3)).apply()
+    }
+
+    fun appResultsIconSizePercent(context: Context, surface: Surface): Int =
+        if (appResultsFollowGeneral(context, surface)) iconSizePercent(context, surface)
+        else surfacePrefs(context, surface).getInt("app_results_icon_percent", 100).coerceIn(60, 150)
+
+    fun setAppResultsIconSizePercent(context: Context, percent: Int, surface: Surface) {
+        surfacePrefs(context, surface).edit().putInt("app_results_icon_percent", percent.coerceIn(60, 150)).apply()
+    }
+
+    fun appsPerRow(context: Context, surface: Surface): Int =
+        surfacePrefs(context, surface).getInt("apps_per_row", 4).coerceIn(3, 6)
+
+    fun setAppsPerRow(context: Context, count: Int, surface: Surface) {
+        surfacePrefs(context, surface).edit().putInt("apps_per_row", count.coerceIn(3, 6)).apply()
+    }
+
+    fun autoShowKeyboard(context: Context, surface: Surface): Boolean =
+        surfacePrefs(context, surface).getBoolean("auto_show_keyboard", true)
+
+    fun setAutoShowKeyboard(context: Context, enabled: Boolean, surface: Surface) {
+        surfacePrefs(context, surface).edit().putBoolean("auto_show_keyboard", enabled).apply()
+    }
+
+    fun filter(context: Context, items: List<SearchAdapterItem>, surface: Surface): List<SearchAdapterItem> {
+        val kept = items.filter { item ->
+            val target = item.searchTarget
+            val type = target.resultType
+            if (type == SearchTargetCompat.RESULT_TYPE_SETTING_TILE ||
+                type == SearchTargetCompat.RESULT_TYPE_CONTACT_TILE ||
+                (type == SearchTargetCompat.RESULT_TYPE_SUGGESTIONS &&
+                    item.searchTarget.packageName != app.lawnchair.search.adapter.HISTORY)
+            ) false else category(item)?.let { enabled(context, it, surface) } ?: true
+        }
+        val cleaned = kept.filterIndexed { index, item ->
+            if (item.searchTarget.resultType != SearchTargetCompat.RESULT_TYPE_SECTION_HEADER &&
+                item.searchTarget.layoutType != LayoutType.EMPTY_DIVIDER) return@filterIndexed true
+            kept.drop(index + 1).takeWhile {
+                it.searchTarget.resultType != SearchTargetCompat.RESULT_TYPE_SECTION_HEADER
+            }.any { category(it) != null }
+        }
+        val sections = mutableListOf<MutableList<SearchAdapterItem>>()
+        cleaned.forEach { item ->
+            if (sections.isEmpty() ||
+                (item.searchTarget.resultType == SearchTargetCompat.RESULT_TYPE_SECTION_HEADER &&
+                    item.searchTarget.layoutType != LayoutType.EMPTY_DIVIDER)
+            ) sections.add(mutableListOf())
+            sections.last().add(item)
+        }
+        val priorities = order(context, surface).withIndex().associate { it.value to it.index }
+        return sections.withIndex().sortedWith(
+            compareBy({ indexed ->
+                indexed.value.firstNotNullOfOrNull { category(it) }
+                    ?.let { priorities[it] } ?: Int.MAX_VALUE
+            }, { it.index }),
+        ).flatMap { it.value }
     }
 
     private fun category(item: SearchAdapterItem): Category? {

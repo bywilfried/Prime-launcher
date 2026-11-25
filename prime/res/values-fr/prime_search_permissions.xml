@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_permission_contacts">Autoriser l\'accès aux contacts pour les rechercher.</string>
+    <string name="prime_permission_calendar">Autoriser la lecture de l\'agenda pour rechercher les événements.</string>
+    <string name="prime_permission_reminders">Autoriser la lecture des tâches Tasks.org pour les rechercher.</string>
+    <string name="prime_permission_files">Autoriser l\'accès aux médias pour rechercher les fichiers compatibles.</string>
+    <string name="prime_permission_notifications">Activer l\'accès aux notifications dans les paramètres Android pour enregistrer leur historique.</string>
+</resources>

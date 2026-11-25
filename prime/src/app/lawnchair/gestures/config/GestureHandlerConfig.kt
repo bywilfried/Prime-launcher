@@ -19,6 +19,10 @@ import app.lawnchair.gestures.handlers.OpenQuickSettingsHandler
 import app.lawnchair.gestures.handlers.OpenPrimeSearchGestureHandler
 import app.lawnchair.gestures.handlers.OpenSearchGestureHandler
 import app.lawnchair.gestures.handlers.RecentsGestureHandler
+import app.lawnchair.gestures.handlers.ToggleFlashlightGestureHandler
+import app.lawnchair.gestures.handlers.ShowVolumeGestureHandler
+import app.lawnchair.gestures.handlers.TogglePrimeThemeGestureHandler
+import app.lawnchair.gestures.handlers.OpenPrimeSettingsGestureHandler
 import app.lawnchair.gestures.handlers.SleepGestureHandler
 import app.lawnchair.theme.color.tokens.ColorTokens
 import app.lawnchair.util.kotlinxJson
@@ -157,6 +161,22 @@ sealed class GestureHandlerConfig {
         Simple(R.string.gesture_handler_open_assistant, ::OpenAssistantHandler) {
         override val iconRes = R.drawable.ic_mic_flat
     }
+
+    @Serializable
+    @SerialName("toggleFlashlight")
+    data object ToggleFlashlight : Simple(R.string.gesture_handler_toggle_flashlight, ::ToggleFlashlightGestureHandler)
+
+    @Serializable
+    @SerialName("showVolume")
+    data object ShowVolume : Simple(R.string.gesture_handler_show_volume, ::ShowVolumeGestureHandler)
+
+    @Serializable
+    @SerialName("togglePrimeTheme")
+    data object TogglePrimeTheme : Simple(R.string.gesture_handler_toggle_prime_theme, ::TogglePrimeThemeGestureHandler)
+
+    @Serializable
+    @SerialName("openPrimeSettings")
+    data object OpenPrimeSettings : Simple(R.string.gesture_handler_open_prime_settings, ::OpenPrimeSettingsGestureHandler)
 
     @Serializable
     @SerialName("openApp")

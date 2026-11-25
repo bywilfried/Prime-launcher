@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_drawer_search_center">Centré</string>
+    <string name="prime_drawer_search_left">Aligné à gauche</string>
+    <string name="prime_drawer_search_right">Aligné à droite</string>
+    <string name="prime_drawer_search_drawer_heading">Recherche du tiroir d\'applications</string>
+    <string name="prime_drawer_search_drawer_desc">Réglages indépendants de Prime Search. Les résultats du tiroir utilisent des cartes arrondies et les couleurs définies dans Personnalisation → Tiroirs.</string>
+    <string name="prime_drawer_search_fuzzy_desc">Autoriser les petites erreurs dans les noms d’applications, sans modifier Prime Search</string>
+    <string name="prime_drawer_search_keyboard">Afficher le clavier automatiquement</string>
+    <string name="prime_drawer_search_keyboard_desc">Ouvrir le clavier lors de l\'affichage de la recherche du tiroir</string>
+    <string name="prime_drawer_search_two_lines">Libellés sur deux lignes</string>
+</resources>

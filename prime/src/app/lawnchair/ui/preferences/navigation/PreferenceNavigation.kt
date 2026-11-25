@@ -64,6 +64,7 @@ import app.lawnchair.ui.preferences.destinations.GesturePreferences
 import app.lawnchair.ui.preferences.destinations.HiddenAppsPreferences
 import app.lawnchair.ui.preferences.destinations.HomeScreenGridPreferences
 import app.lawnchair.ui.preferences.destinations.HomeScreenPreferences
+import app.lawnchair.ui.preferences.destinations.WidgetsPreferences
 import app.lawnchair.ui.preferences.destinations.IconPackPreferences
 import app.lawnchair.ui.preferences.destinations.IconPickerPreference
 import app.lawnchair.ui.preferences.destinations.LauncherPopupPreference
@@ -81,6 +82,7 @@ import app.lawnchair.ui.preferences.destinations.PrimeDiagnosticLogsPreference
 import app.lawnchair.ui.preferences.destinations.PrimeHapticTuningPreference
 import app.lawnchair.ui.preferences.destinations.PrimeDrawerCategoryFoldersPreference
 import app.lawnchair.ui.preferences.destinations.PrimeDrawerFolderAppsPreference
+import app.lawnchair.ui.preferences.destinations.WebAppsPreferences
 import app.lawnchair.ui.preferences.destinations.PreferencesDashboard
 import app.lawnchair.ui.preferences.destinations.QuickstepPreferences
 import app.lawnchair.ui.preferences.destinations.SearchPreferences
@@ -148,6 +150,8 @@ fun PreferenceNavigation(
         composable<Dummy> {
             DummyPreference()
         }
+
+        composable<WebApps>(deepLinks = getDeepLink(WebApps)) { WebAppsPreferences() }
 
         composable<General>(
             deepLinks = getDeepLink(General),
@@ -297,6 +301,9 @@ fun PreferenceNavigation(
             deepLinks = getDeepLink(HomeScreenPopupEditor),
         ) { LauncherPopupPreference() }
 
+        composable<Widgets>(
+            deepLinks = getDeepLink(Widgets),
+        ) { WidgetsPreferences() }
         composable<Dock>(
             deepLinks = getDeepLink(Dock),
         ) { DockPreferences() }

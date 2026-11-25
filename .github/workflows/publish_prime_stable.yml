@@ -25,8 +25,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -f version.properties
-          grep -q 'primeStable' build.gradle
           version="$(sed -n 's/^VERSION_NAME=//p' version.properties)"
           code="$(sed -n 's/^VERSION_CODE=//p' version.properties)"
           [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
@@ -69,7 +67,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          ./gradlew assembleLawnWithQuickstepGithubRelease -PprimeStable=true --warning-mode=none 2>&1 | sed \
+          ./gradlew assemblePrimeWithQuickstepGithubRelease -PprimeStable=true --warning-mode=none 2>&1 | sed \
             -e '/^w: /d' \
             -e '/^warning: /d' \
             -e '/^Warning: /d' \

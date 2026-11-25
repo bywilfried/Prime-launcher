@@ -41,7 +41,13 @@ data object PrimeEntriesSectionBuilder : SectionBuilder {
         return entries.groupBy { it.category }.toList().sortedBy { (category, _) ->
             categoryOrder[category] ?: Int.MAX_VALUE
         }.flatMap { (category, group) ->
-            listOf(factory.createHeaderTarget(category)) +
+            val displayTitle = when (category) {
+                "Agenda" -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.CALENDAR.localizedTitle(context)
+                "Tâches" -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.REMINDERS.localizedTitle(context)
+                "Notifications" -> app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.NOTIFICATIONS.localizedTitle(context)
+                else -> app.lawnchair.prime.search.PrimeSearchCategoryPresentation.categoryForHeading(category, context)?.localizedTitle(context) ?: category
+            }
+            listOf(factory.createHeaderTarget(displayTitle)) +
                 group.map { factory.createPrimeEntryTarget(it) } +
                 listOf(factory.createHeaderTarget(SPACE))
         }
@@ -181,6 +187,37 @@ data object HistorySectionBuilder : SectionBuilder {
     }
 }
 
+data object WebShortcutsSectionBuilder : SectionBuilder {
+    override fun build(
+        context: Context,
+        factory: SearchTargetFactory,
+        results: List<SearchResult>,
+    ): List<SearchTargetCompat> {
+        val shortcuts = results.filterIsInstance<SearchResult.Action.WebShortcut>()
+        if (shortcuts.isEmpty()) return emptyList()
+        val targets = mutableListOf<SearchTargetCompat>()
+        targets.add(
+            factory.createHeaderTarget(
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.WEB_SHORTCUTS.title,
+            ),
+        )
+        shortcuts.distinctBy { it.searchUrl }.forEach { action ->
+            targets.add(
+                factory.createWebSearchActionTarget(
+                    query = action.query,
+                    providerName = action.providerName,
+                    searchUrl = action.searchUrl,
+                    providerIconRes = action.providerIconRes,
+                    tintIcon = action.tintIcon,
+                    webShortcut = true,
+                ),
+            )
+        }
+        targets.add(factory.createHeaderTarget(SPACE))
+        return targets
+    }
+}
+
 data object ActionsSectionBuilder : SectionBuilder {
     override fun build(
         context: Context,
@@ -218,23 +255,34 @@ data object AppsAndShortcutsSectionBuilder : SectionBuilder {
         results: List<SearchResult>,
     ): List<SearchTargetCompat> {
         val apps = results.filterIsInstance<SearchResult.App>()
-        val shortcuts = results.filterIsInstance<SearchResult.Shortcut>()
-        val appResultCount = apps.size
-
         val targets = mutableListOf<SearchTargetCompat>()
-
-        if (appResultCount == 1 && shortcuts.isNotEmpty()) {
-            val singleApp = apps.first()
-            targets.add(factory.createAppSearchTarget(singleApp.data, asRow = false))
-            targets.add(factory.createHeaderTarget(SPACE))
-            targets.add(factory.createAppSearchTarget(singleApp.data, asRow = true))
-            targets.addAll(shortcuts.map { factory.createShortcutTarget(it.data) })
-        } else {
+        if (apps.isNotEmpty()) {
+            targets.add(
+                factory.createHeaderTarget(
+                    app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS.title,
+                ),
+            )
             targets.addAll(apps.map { factory.createAppSearchTarget(it.data, asRow = false) })
+            targets.add(factory.createHeaderTarget(SPACE))
         }
-        targets.add(factory.createHeaderTarget(SPACE))
-
         return targets
+    }
+}
+
+/** Drawer shortcut results are a separate category, matching Prime Search ordering. */
+data object AppShortcutsSectionBuilder : SectionBuilder {
+    override fun build(
+        context: Context,
+        factory: SearchTargetFactory,
+        results: List<SearchResult>,
+    ): List<SearchTargetCompat> {
+        val shortcuts = results.filterIsInstance<SearchResult.Shortcut>()
+        if (shortcuts.isEmpty()) return emptyList()
+        return listOf(
+            factory.createHeaderTarget(
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS.title,
+            ),
+        ) + shortcuts.map { factory.createShortcutTarget(it.data) } + listOf(factory.createHeaderTarget(SPACE))
     }
 }
 
@@ -251,9 +299,24 @@ data object PrimeAppsAndShortcutsSectionBuilder : SectionBuilder {
     ): List<SearchTargetCompat> {
         val apps = results.filterIsInstance<SearchResult.App>()
         val shortcuts = results.filterIsInstance<SearchResult.Shortcut>()
-        val targets = apps.map { factory.createAppSearchTarget(it.data, asRow = false) }.toMutableList()
-        targets.addAll(shortcuts.map { factory.createShortcutTarget(it.data) })
-        targets.add(factory.createHeaderTarget(SPACE))
+        // Prime Search also needs a section header: the adapter's section
+        // transformer uses it to delimit application results. Without it,
+        // app tiles can disappear when another provider publishes its results.
+        val targets = mutableListOf<SearchTargetCompat>()
+        if (apps.isNotEmpty()) {
+            targets.add(factory.createHeaderTarget(
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APPS.title,
+            ))
+            targets.addAll(apps.map { factory.createAppSearchTarget(it.data, asRow = false) })
+            targets.add(factory.createHeaderTarget(SPACE))
+        }
+        if (shortcuts.isNotEmpty()) {
+            targets.add(factory.createHeaderTarget(
+                app.lawnchair.prime.search.PrimeSearchResultPreferences.Category.APP_SHORTCUTS.title,
+            ))
+            targets.addAll(shortcuts.map { factory.createShortcutTarget(it.data) })
+            targets.add(factory.createHeaderTarget(SPACE))
+        }
         return targets
     }
 }

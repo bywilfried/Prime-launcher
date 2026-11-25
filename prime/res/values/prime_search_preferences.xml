@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_search_pref_web_heading">Web suggestions and search engines</string>
+    <string name="prime_search_pref_web_suggestions">Web suggestions</string>
+    <string name="prime_search_pref_sources">Web search sources</string>
+    <string name="prime_search_pref_done">Done</string>
+    <string name="prime_search_pref_window">Prime Search window</string>
+    <string name="prime_search_pref_keyboard">Automatically open the keyboard</string>
+    <string name="prime_search_pref_keyboard_desc">Show the keyboard when Prime Search opens</string>
+    <string name="prime_search_pref_floating">Floating window (overlay)</string>
+    <string name="prime_search_pref_floating_desc">Show Prime Search above the home screen with visible margins. Disable for full screen.</string>
+    <string name="prime_search_pref_opening">Apps on opening</string>
+    <string name="prime_search_pref_opening_tab">Tab shown on opening</string>
+    <string name="prime_search_pref_open_on">Open Prime Search on</string>
+    <string name="prime_search_pref_usage">Usage access</string>
+    <string name="prime_search_pref_frequent_recent">Frequent and recent apps</string>
+    <string name="prime_search_pref_granted">Permission granted</string>
+    <string name="prime_search_pref_usage_desc">Permission required to show frequent and recent apps. Tap to open Android settings.</string>
+    <string name="prime_search_pref_app_search">App search</string>
+    <string name="prime_search_pref_fuzzy">Allow typos</string>
+    <string name="prime_search_pref_fuzzy_desc">Fuzzy app name search, independent of the app drawer</string>
+    <string name="prime_search_pref_appearance">Prime Search appearance</string>
+    <string name="prime_search_pref_frequent">Frequent</string>
+    <string name="prime_search_pref_recent">Recent</string>
+    <string name="prime_search_pref_new">New</string>
+    <string name="prime_search_pref_apps">Apps</string>
+    <string name="prime_search_pref_columns">Apps per row: %1$d</string>
+    <string name="prime_search_pref_icon_size">Icon size: %1$d%%</string>
+    <string name="prime_search_pref_reset_appearance">Reset appearance</string>
+</resources>

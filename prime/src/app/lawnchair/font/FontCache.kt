@@ -501,7 +501,12 @@ class FontCache @Inject constructor(
         override val fullDisplayName = "$family $displayName"
         override val familySorter = "${GoogleFontsListing.getWeight(variant)}${GoogleFontsListing.isItalic(variant)}"
 
-        override val composeFontFamily = FontFamily(
+        private fun hasFontProvider(): Boolean = runCatching {
+            context.packageManager.resolveContentProvider("com.google.android.gms.fonts", 0)
+                ?.packageName == "com.google.android.gms"
+        }.getOrDefault(false)
+
+        override val composeFontFamily = if (!hasFontProvider()) FontFamily.Default else FontFamily(
             androidx.compose.ui.text.googlefonts.Font(
                 googleFont = ComposeGoogleFont(family),
                 fontProvider = provider,
@@ -523,6 +528,7 @@ class FontCache @Inject constructor(
         }
 
         override suspend fun load(): Typeface? {
+            if (!hasFontProvider()) return Typeface.DEFAULT
             val request = FontRequest(
                 // ProviderAuthority
                 "com.google.android.gms.fonts",

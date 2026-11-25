@@ -255,6 +255,7 @@ class SearchTargetFactory(
         searchUrl: String,
         @DrawableRes providerIconRes: Int,
         tintIcon: Boolean = false,
+        webShortcut: Boolean = false,
     ): SearchTargetCompat {
         val id = "browser:$query:$providerName"
         val browserIntent = Intent(Intent.ACTION_VIEW, searchUrl.toUri())
@@ -272,6 +273,7 @@ class SearchTargetFactory(
             .build()
 
         val extras = bundleOf(SearchResultView.EXTRA_HIDE_SUBTITLE to true)
+        if (webShortcut) extras.putString("prime_web_engine", providerName)
 
         // Assuming START_PAGE is a generic package key for this type
         return createSearchLinksTarget(id, action, START_PAGE, extras)

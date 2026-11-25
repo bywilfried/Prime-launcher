@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_provider_event">Événement</string>
+    <string name="prime_provider_completed">Terminée</string>
+    <string name="prime_provider_connected">Service connecté</string>
+    <string name="prime_provider_disconnected">Service non connecté</string>
+    <string name="prime_provider_error">Erreur : %1$s</string>
+    <plurals name="prime_provider_notification_count">
+        <item quantity="one">%1$d notification enregistrée</item>
+        <item quantity="other">%1$d notifications enregistrées</item>
+    </plurals>
+</resources>

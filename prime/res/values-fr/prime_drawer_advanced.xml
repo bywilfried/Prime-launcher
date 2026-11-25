@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prime_advanced_advanced">Options avancées</string>
+    <string name="prime_advanced_reset">Tout remettre par défaut</string>
+    <string name="prime_advanced_reset_category_desc">Supprime toutes les personnalisations de cette catégorie et rétablit l’héritage.</string>
+    <string name="prime_advanced_reset_category_confirm">Tout remettre par défaut pour cette catégorie ?</string>
+    <string name="prime_advanced_style">Style</string>
+    <string name="prime_advanced_folder_colors">Personnalisation des couleurs du dossier</string>
+    <string name="prime_advanced_category_inherit">Couleurs par thème et variante clair/sombre, héritées de la catégorie</string>
+    <string name="prime_advanced_reset_folder_desc">Supprime toutes les personnalisations de ce dossier et rétablit l’héritage.</string>
+    <string name="prime_advanced_reset_folder_confirm">Tout remettre par défaut pour ce dossier ?</string>
+    <string name="prime_advanced_parent_inherit">Couleurs par thème et variante clair/sombre, héritées du parent</string>
+    <string name="prime_advanced_closed">Dossier fermé</string>
+    <string name="prime_advanced_closed_label">Afficher le nom du dossier fermé</string>
+    <string name="prime_advanced_open">Dossier ouvert</string>
+    <string name="prime_advanced_open_icons">Icônes dans le dossier ouvert</string>
+    <string name="prime_advanced_child_shape">Forme des icônes dans les dossiers</string>
+    <string name="prime_advanced_inherited">Valeur parente</string>
+    <string name="prime_advanced_custom">Personnalisé</string>
+    <string name="prime_advanced_category_colors">Personnalisation des couleurs de la catégorie</string>
+    <string name="prime_advanced_theme_inherit">Couleurs par thème et variante, avec héritage du thème parent</string>
+    <string name="prime_advanced_icon_shape">Forme des icônes</string>
+    <string name="prime_advanced_closed_color">Couleur du dossier fermé</string>
+    <string name="prime_advanced_open_color">Couleur du dossier ouvert</string>
+    <string name="prime_advanced_text_color">Couleur du texte dans les dossiers</string>
+    <string name="prime_advanced_enabled">Activé</string>
+    <string name="prime_advanced_disabled">Désactivé</string>
+    <string name="prime_advanced_inherited_status">Valeur parente • %1$s</string>
+    <string name="prime_advanced_custom_status">Personnalisé • ↶ Valeur parente : %1$s</string>
+    <string name="prime_advanced_custom_switch">Personnalisé • %1$s • ↶ Valeur parente : %2$s</string>
+</resources>

@@ -118,6 +118,7 @@ class PreferenceManager @Inject constructor(
     val primeHapticDragStart = IntPref("pref_prime_haptic_drag_start", 100)
     val primeHapticIconDrag = IntPref("pref_prime_haptic_icon_drag", 100)
     val primeHapticNotificationGesture = IntPref("pref_prime_haptic_notification_gesture", 100)
+    val primeHapticGestures = IntPref("pref_prime_haptic_gestures", 100)
     val primeHapticDrawerThreshold = IntPref("pref_prime_haptic_drawer_threshold", 100)
     val primeHapticDrawerTap = IntPref("pref_prime_haptic_drawer_tap", 100)
     val primeHapticReorderStart = IntPref("pref_prime_haptic_reorder_start", 100)
@@ -177,7 +178,7 @@ class PreferenceManager @Inject constructor(
     val searchResultAllFiles = BoolPref("pref_searchResultAllFiles", false, recreate)
     val searchResultAudio = BoolPref("pref_searchResultAudio", false, recreate)
     val searchResultVisualMedia = BoolPref("pref_searchResultVisualMedia", false, recreate)
-    val searchResultStartPageSuggestion = BoolPref("pref_searchResultStartPageSuggestion", true, recreate)
+    val searchResultStartPageSuggestion = BoolPref("pref_searchResultStartPageSuggestion", false, recreate)
     val searchResultSettingsEntry = BoolPref("pref_searchResultSettingsEntry", false, recreate)
     val searchResulRecentSuggestion = BoolPref("pref_searchResultRecentSuggestion", false, recreate)
 
@@ -201,7 +202,7 @@ class PreferenceManager @Inject constructor(
     val wallpaperBlurFactorThreshold = FloatPref("pref_wallpaperBlurFactor", 3.0F, recreate)
 
     val drawerList = BoolPref("pref_drawerList", true, recreate)
-    val drawerTabsEnabled = BoolPref("pref_drawerTabsEnabled", false, recreate)
+    val drawerTabsEnabled = BoolPref("pref_drawerTabsEnabled", true, recreate)
     val drawerTabsOpenMode = StringPref("pref_drawerTabsOpenMode", "last")
     val drawerTabsHideAll = BoolPref("pref_drawerTabsHideAll", false, recreate)
     val drawerTabsHideUnclassified = BoolPref("pref_drawerTabsHideUnclassified", true, recreate)
