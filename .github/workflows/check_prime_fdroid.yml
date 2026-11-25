@@ -110,4 +110,5 @@ jobs:
         if: always()
         run: |
           test "$(cat fdroid-scanner-report/source.exit)" = 0
+          python3 -c 'import json; d=json.load(open("fdroid-scanner-report/source.json")); n=sum(len(b.get("errors", [])) for a in d.values() for b in a.values()); print(f"Source scanner errors: {n}"); raise SystemExit(bool(n))'
           test "$(cat fdroid-scanner-report/apk.exit)" = 0
