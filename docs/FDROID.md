@@ -5,7 +5,7 @@
 Set VERSION_NAME and VERSION_CODE in version.properties before merging to main.
 The proposed initial stable code is 11000000; increment for every stable release. Public stable GitHub builds use com.bywilfried.prime.stable; F-Droid builds use com.bywilfried.prime.fdroid. Existing personal RC builds retain com.bywilfried.prime and Dev builds retain their debug ID. Existing GitHub users moving to the public stable app will install a separate application.
 
-Run Check Prime F-Droid build on the feature branch first. It does not publish.
+Check Prime F-Droid build now runs on pushes to feature/fdroid-support and validates Dev, Stable and F-Droid without publishing. Review all job results before merging.
 After validation and merge to main, manually run Publish Prime Stable. It creates a GitHub release and vX.Y.Z tag only after compilation and APK version checks.
 
 F-Droid build command:
@@ -35,12 +35,12 @@ Builds:
     gradleprops:
       - primeStable=true
 ```
-The tag filter and UpdateCheckData use the documented F-Droid Tags syntax. Validate with fdroidserver before changing AutoUpdateMode from None to Version. No scanner exceptions are proposed until binary provenance is established.
+The tag filter and UpdateCheckData use the documented F-Droid Tags syntax. Validate with fdroidserver before changing AutoUpdateMode from None to Version. No blanket scanner exceptions are proposed. Ten required AOSP prebuilts remain after removal of fifteen unused legacy JARs; individual source-build recipes or reviewer-approved handling remain necessary.
 
 ## Remaining blockers
-- Prepare GPL-3.0-or-later distribution of the combined launcher, subject to completing the source and asset license inventory. Retain Apache-2.0 and other upstream notices, and confirm rights to Prime-specific contributions. GPLv3 text is included in prime/assets/licenses/GPL-3.0.txt. Update the root license declaration, README, in-app legal notices and draft F-Droid License field together after review.
-- Verify all prebuilt JARs, including AOSP SystemUI-statsd and WindowManager-Shell packaged dependencies, against source and F-Droid policy. See prebuilts/libs/README.md. Do not remove required JARs.
-- Inspect resolved runtime dependency report, including JitPack artifacts, and scan the final APK for non-free libraries.
+- Retain Apache-2.0 pending resolution of the 18 inherited GPL-3.0-or-later source headers. Obtain upstream clarification or approved remediation before submission; do not change the project license without maintainer approval.
+- All 26 original tracked JARs matched upstream Git blobs. Fifteen legacy prebuilts were removed in 24d40c0; ten required prebuilts remain. Framework 10–16 are used by compatibility modules; SystemUI-core-16, SystemUI-statsd-16 and WindowManager-Shell-16 are used by current modules. Independent source reconstruction and reviewer acceptance remain open.
+- Previous official APK scanner reported zero problems; rerun after cleanup. Inspect transitive dependency licenses and JitPack source provenance.
 - Test Google Fonts, optional feed and web suggestions on a device without Google Play Services; inspect defaults and network requests.
 - Fastlane currently contains English (en-US) and French (fr-FR) Prime Launcher descriptions only. The placeholder device-frame.jpg was removed. The maintainer will supply final screenshots at the end of preparation. Verify images/icon.png against current branding. App resource translations are a separate audit.
 - Run fdroidserver lint, checkupdates and build with actual fdroiddata metadata.
