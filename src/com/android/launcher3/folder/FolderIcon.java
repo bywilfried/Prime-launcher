@@ -775,11 +775,9 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
     }
 
     private boolean mPrimeDrawerLabel;
-    private boolean mPrimeDrawerTwoLines;
 
     public void setPrimeDrawerLabelLines(boolean twoLines) {
         mPrimeDrawerLabel = true;
-        mPrimeDrawerTwoLines = twoLines;
         mFolderName.setPrimeDrawerFolderLabelLines(twoLines);
         requestLayout();
     }
@@ -796,7 +794,7 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
                     ? mActivity.getDeviceProfile().getAllAppsProfile().getIconDrawablePaddingPx()
                     : mFolderName.getCompoundDrawablePadding();
             int cellHeightPx = iconSize + drawablePadding
-                    + (int) Math.ceil(fm.bottom - fm.top) * (mPrimeDrawerTwoLines ? 2 : 1);
+                    + (int) Math.ceil(fm.bottom - fm.top) * (mPrimeDrawerLabel ? mFolderName.getCellSpecMaxTextLineCount() : 1);
             int topPadding = (MeasureSpec.getSize(heightMeasureSpec) - cellHeightPx) / 2;
             setPadding(getPaddingLeft(), mPrimeDrawerLabel ? Math.max(0, topPadding) : topPadding,
                     getPaddingRight(), getPaddingBottom());

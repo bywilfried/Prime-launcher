@@ -930,7 +930,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
      * @return The number of lines the that the cell spec associated with the BubbleTextView
      * declared it can support.
      */
-    private int getCellSpecMaxTextLineCount() {
+    public int getCellSpecMaxTextLineCount() {
         if (!enableScalabilityForDesktopExperience()) {
             return 1;
         }
