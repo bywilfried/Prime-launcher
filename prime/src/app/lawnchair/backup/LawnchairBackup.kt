@@ -67,6 +67,11 @@ class LawnchairBackup(
         val contents = selectedContents and info.contents
         if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
             handlers[PREFS_FILE_NAME] = { restoreLauncherPreferences(it) }
+            SEARCH_PREF_STORES.forEach { store ->
+                handlers["$store.xml"] = { input ->
+                    restoreLauncherPreferences(input, context.getSharedPreferences(store, Context.MODE_PRIVATE))
+                }
+            }
             handlers[WEB_SHORTCUTS_FILE_NAME] = { input ->
                 PrimePinnedDrawerShortcuts.importBackup(context, input.bufferedReader().readText())
             }
@@ -146,7 +151,10 @@ class LawnchairBackup(
      * LauncherPrefs and Prime drawer repositories cache this instance; a raw file replacement
      * leaves the old values in memory and they can be written back during launcher restart.
      */
-    private fun restoreLauncherPreferences(input: InputStream) {
+    private fun restoreLauncherPreferences(
+        input: InputStream,
+        preferences: android.content.SharedPreferences = LauncherPrefs.getPrefs(context),
+    ) {
         val parser = Xml.newPullParser()
         parser.setInput(input, "UTF-8")
         val values = linkedMapOf<String, Any>()
@@ -176,7 +184,7 @@ class LawnchairBackup(
             }
             event = parser.next()
         }
-        val editor = LauncherPrefs.getPrefs(context).edit().clear()
+        val editor = preferences.edit().clear()
         values.forEach { (key, value) ->
             when (value) {
                 is String -> editor.putString(key, value)
@@ -211,6 +219,12 @@ class LawnchairBackup(
     companion object {
         private const val BACKUP_VERSION = 1
         private const val PREFS_FILE_NAME = "${LauncherFiles.SHARED_PREFERENCES_KEY}.xml"
+        private val SEARCH_PREF_STORES = listOf(
+            "prime_search_result_preferences",
+            "prime_drawer_search_result_preferences",
+            "prime_search_sources",
+            "prime_drawer_search_sources",
+        )
         private const val PREFS_DB_FILE_NAME = "preferences"
         private const val PREFS_DATASTORE_FILE_NAME = "preferences.preferences_pb"
 
@@ -297,6 +311,13 @@ class LawnchairBackup(
                             out.write(PrimePinnedDrawerShortcuts.exportBackup(context).toByteArray(Charsets.UTF_8))
                             out.closeEntry()
                         }
+                        if (contents.hasFlag(INCLUDE_LAYOUT_AND_SETTINGS)) {
+                            SEARCH_PREF_STORES.forEach { store ->
+                                out.putNextEntry(ZipEntry("$store.xml"))
+                                writeSearchPreferences(context.getSharedPreferences(store, Context.MODE_PRIVATE), out)
+                                out.closeEntry()
+                            }
+                        }
                         getFiles(context, forRestore = false).entries.forEach {
                             if (!it.value.exists()) return@forEach
                             out.putNextEntry(ZipEntry(it.key))
@@ -305,6 +326,42 @@ class LawnchairBackup(
                     }
                 }
             }
+        }
+
+        private fun writeSearchPreferences(
+            preferences: android.content.SharedPreferences,
+            output: java.io.OutputStream,
+        ) {
+            val xml = Xml.newSerializer()
+            xml.setOutput(output, "UTF-8")
+            xml.startDocument("UTF-8", true)
+            xml.startTag(null, "map")
+            preferences.all.toSortedMap().forEach { (key, value) ->
+                val type = when (value) {
+                    is String -> "string"
+                    is Boolean -> "boolean"
+                    is Int -> "int"
+                    is Long -> "long"
+                    is Float -> "float"
+                    is Set<*> -> "set"
+                    else -> error("Unsupported search preference type: $key")
+                }
+                xml.startTag(null, type)
+                xml.attribute(null, "name", key)
+                when (value) {
+                    is String -> xml.text(value)
+                    is Set<*> -> value.filterIsInstance<String>().sorted().forEach {
+                        xml.startTag(null, "string")
+                        xml.text(it)
+                        xml.endTag(null, "string")
+                    }
+                    else -> xml.attribute(null, "value", value.toString())
+                }
+                xml.endTag(null, type)
+            }
+            xml.endTag(null, "map")
+            xml.endDocument()
+            xml.flush()
         }
 
         private fun launcherDbFile(context: Context, forRestore: Boolean): File {
