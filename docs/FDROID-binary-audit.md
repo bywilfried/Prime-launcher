@@ -110,3 +110,8 @@ Prime and upstream Lawnchair 16-dev have identical prebuilts/libs/README.md docu
 | WindowManager-Shell-16.jar | 6e90a87b280e8b2532ecae3e6c08101b70eaabb7 | m WindowManager-Shell |
 
 Documented source tag: android-16.0.0_r3; lunch target: aosp_cf_x86_64_only_phone-aosp_current-userdebug. Source: https://android.googlesource.com/platform/frameworks/base/+/refs/tags/android-16.0.0_r3/ . Exact equality with upstream Git objects is established; independent AOSP source-to-binary rebuild and F-Droid scanner acceptance are not established. Historical JARs outside these four remain outside this comparison. No deletions or scanner exemptions.
+
+
+### Historical framework JAR comparison
+
+All seven additional documented framework JARs match upstream Lawnchair 16-dev Git blob IDs: framework-15.jar 265de0f75c3cd7082e1dd7e58a2a361e67b0aed9; framework-14.jar 51975822b108b29285c2b9b192d5b9e210b369ae; framework-13.jar 0e9085a68705bb508ca62507ced7ac66769c9c35; framework-12l.jar 24d28c71f7b943b9aec2a9b22b0df18b7a15a7a2; framework-12.jar 2cb001a9224372de76c5345aeba53548b2397b3f; framework-11.jar f2881766a9a7b1196c626b049c77b1c4e39ff233; framework-10.jar 592572c90dfa1660afe7996790c6d4deefcd1fb4. Together with the four Android 16 JARs, 11 documented JARs match upstream. README lacks source revisions for Android 10 and 13. Independent rebuild, other undocumented JARs, and scanner acceptance remain unverified. Preserve all historical files.
