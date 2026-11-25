@@ -1,9 +1,34 @@
 name: Check Prime F-Droid build
 on:
   workflow_dispatch:
+  push:
+    branches: [feature/fdroid-support]
 permissions:
   contents: read
 jobs:
+  validate-github-variants:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: dev
+            task: assemblePrimeWithQuickstepGithubDebug
+            properties: ''
+          - variant: stable
+            task: assemblePrimeWithQuickstepGithubRelease
+            properties: '-PprimeStable=true'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+      - uses: actions/setup-java@v6
+        with:
+          distribution: zulu
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Compile without publishing
+        run: ./gradlew ${{ matrix.task }} ${{ matrix.properties }}
   check:
     runs-on: ubuntu-latest
     steps:
