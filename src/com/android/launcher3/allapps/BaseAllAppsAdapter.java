@@ -408,6 +408,11 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
                         folderIcon.getFolderName().setTextColor(folderTabOverrides.getDrawerTextColor());
                     }
                 }
+                PrimeDrawerVisualOverrides labelOverrides = getPrimeTabVisualOverrides();
+                boolean twoLines = labelOverrides != null && labelOverrides.getTwoLineLabels() != null
+                        ? labelOverrides.getTwoLineLabels()
+                        : mActivityContext.getDeviceProfile().inv.enableTwoLinesInAllApps;
+                folderIcon.setPrimeDrawerLabelLines(twoLines);
                 folderIcon.setOnLongClickListener(mOnIconLongClickListener);
                 container.addView(folderIcon);
                 applyPrimeTabCellHeight(container);

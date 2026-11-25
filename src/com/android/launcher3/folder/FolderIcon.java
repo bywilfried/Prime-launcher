@@ -774,25 +774,29 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
         }
     }
 
+    private boolean mPrimeDrawerLabel;
+    private boolean mPrimeDrawerTwoLines;
+
+    public void setPrimeDrawerLabelLines(boolean twoLines) {
+        mPrimeDrawerLabel = true;
+        mPrimeDrawerTwoLines = twoLines;
+        mFolderName.setPrimeDrawerFolderLabelLines(twoLines);
+        requestLayout();
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        // Drawer folder labels have no compound icon: the preview is drawn by FolderIcon.
-        // Let TextView wrap within the remaining cell height, using the drawer preference.
-        if (mInfo != null && mInfo.container == ItemInfo.NO_ID) {
-            boolean twoLines = mActivity.getDeviceProfile().inv.enableTwoLinesInAllApps;
-            int maxLines = twoLines ? 2 : 1;
-            if (mFolderName.getMaxLines() != maxLines) {
-                mFolderName.setSingleLine(!twoLines);
-                mFolderName.setMaxLines(maxLines);
-                mFolderName.setEllipsize(android.text.TextUtils.TruncateAt.END);
-            }
-        }
         boolean shouldCenterIcon = mActivity.getDeviceProfile().iconCenterVertically;
         if (shouldCenterIcon) {
-            int iconSize = mActivity.getDeviceProfile().iconSizePx;
+            int iconSize = mPrimeDrawerLabel
+                    ? mActivity.getDeviceProfile().getAllAppsProfile().getIconSizePx()
+                    : mActivity.getDeviceProfile().iconSizePx;
             Paint.FontMetrics fm = mFolderName.getPaint().getFontMetrics();
-            int cellHeightPx = iconSize + mFolderName.getCompoundDrawablePadding()
-                    + (int) Math.ceil(fm.bottom - fm.top);
+            int drawablePadding = mPrimeDrawerLabel
+                    ? mActivity.getDeviceProfile().getAllAppsProfile().getIconDrawablePaddingPx()
+                    : mFolderName.getCompoundDrawablePadding();
+            int cellHeightPx = iconSize + drawablePadding
+                    + (int) Math.ceil(fm.bottom - fm.top) * (mPrimeDrawerTwoLines ? 2 : 1);
             setPadding(getPaddingLeft(), (MeasureSpec.getSize(heightMeasureSpec)
                     - cellHeightPx) / 2, getPaddingRight(), getPaddingBottom());
         }

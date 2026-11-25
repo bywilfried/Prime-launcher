@@ -1458,6 +1458,15 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         mCenterVertically = centerVertically;
     }
 
+    private boolean mPrimeDrawerFolderLabel;
+
+    public void setPrimeDrawerFolderLabelLines(boolean twoLines) {
+        mPrimeDrawerFolderLabel = true;
+        setSingleLine(!twoLines);
+        setMaxLines(twoLines ? 2 : 1);
+        setEllipsize(TextUtils.TruncateAt.END);
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int height = MeasureSpec.getSize(heightMeasureSpec);
@@ -1477,6 +1486,11 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             setPadding(mAppTitleHorizontalPadding + mRoundRectPadding, getPaddingTop(),
                     mAppTitleHorizontalPadding + mRoundRectPadding,
                     getPaddingBottom());
+        }
+        // Folder previews are drawn by the parent; their label has no compound icon.
+        if (mPrimeDrawerFolderLabel) {
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+            return;
         }
         // Only apply two line for all_apps and device search only if necessary.
         if (shouldUseTwoLine() && (mLastOriginalText != null)) {
