@@ -1,8 +1,6 @@
 name: Check Prime F-Droid build
 on:
   workflow_dispatch:
-  push:
-    branches: [feature/fdroid-support]
 permissions:
   contents: read
 jobs:
