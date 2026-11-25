@@ -5,7 +5,7 @@
 Set VERSION_NAME and VERSION_CODE in version.properties before merging to main.
 The proposed initial stable code is 11000000; increment for every stable release. Public stable GitHub builds use com.bywilfried.prime.stable; F-Droid builds use com.bywilfried.prime.fdroid. Existing personal RC builds retain com.bywilfried.prime and Dev builds retain their debug ID. Existing GitHub users moving to the public stable app will install a separate application.
 
-Check Prime F-Droid build now runs on pushes to feature/fdroid-support and validates Dev, Stable and F-Droid without publishing. Review all job results before merging.
+Run Check Prime F-Droid build manually on feature/fdroid-support; it validates Dev, Stable and F-Droid without publishing. Review all job results before merging.
 After validation and merge to main, manually run Publish Prime Stable. It creates a GitHub release and vX.Y.Z tag only after compilation and APK version checks.
 
 F-Droid build command:
@@ -39,7 +39,7 @@ The tag filter and UpdateCheckData use the documented F-Droid Tags syntax. Valid
 
 ## Remaining blockers
 - Retain Apache-2.0 pending resolution of the 18 inherited GPL-3.0-or-later source headers. Obtain upstream clarification or approved remediation before submission; do not change the project license without maintainer approval.
-- All 26 original tracked JARs matched upstream Git blobs. Fifteen legacy prebuilts were removed in 24d40c0; ten required prebuilts remain. Framework 10–16 are used by compatibility modules; SystemUI-core-16, SystemUI-statsd-16 and WindowManager-Shell-16 are used by current modules. Independent source reconstruction and reviewer acceptance remain open.
+- All 26 original tracked JARs matched upstream Git blobs. Fifteen legacy prebuilts were removed in 24d40c0; ten required prebuilts remain. Framework 10–16 are used by compatibility modules; SystemUI-core-16, SystemUI-statsd-16 and WindowManager-Shell-16 are used by current modules. Independent source reconstruction and reviewer acceptance remain open. Actions run 45578003085 confirmed all three builds and exactly ten source scanner errors. Automatic push triggers were removed in b90eead.
 - Previous official APK scanner reported zero problems; rerun after cleanup. Inspect transitive dependency licenses and JitPack source provenance.
 - Test Google Fonts, optional feed and web suggestions on a device without Google Play Services; inspect defaults and network requests.
 - Fastlane currently contains English (en-US) and French (fr-FR) Prime Launcher descriptions only. The placeholder device-frame.jpg was removed. The maintainer will supply final screenshots at the end of preparation. Verify images/icon.png against current branding. App resource translations are a separate audit.
