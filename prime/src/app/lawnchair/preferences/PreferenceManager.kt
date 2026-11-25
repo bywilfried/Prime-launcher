@@ -202,7 +202,7 @@ class PreferenceManager @Inject constructor(
     val wallpaperBlurFactorThreshold = FloatPref("pref_wallpaperBlurFactor", 3.0F, recreate)
 
     val drawerList = BoolPref("pref_drawerList", true, recreate)
-    val drawerTabsEnabled = BoolPref("pref_drawerTabsEnabled", false, recreate)
+    val drawerTabsEnabled = BoolPref("pref_drawerTabsEnabled", true, recreate)
     val drawerTabsOpenMode = StringPref("pref_drawerTabsOpenMode", "last")
     val drawerTabsHideAll = BoolPref("pref_drawerTabsHideAll", false, recreate)
     val drawerTabsHideUnclassified = BoolPref("pref_drawerTabsHideUnclassified", true, recreate)
