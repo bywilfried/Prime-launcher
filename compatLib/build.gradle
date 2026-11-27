@@ -23,7 +23,6 @@ android {
 
 addFrameworkJar('framework-16.jar')
 dependencies {
-    compileOnly files('../prebuilts/libs/framework-16.jar')
     compileOnly files('../prebuilts/libs/WindowManager-Shell-16.jar')
     compileOnly files('../prebuilts/libs/SystemUI-core-16.jar')
 }
