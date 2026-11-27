@@ -134,3 +134,9 @@ After commit 24d40c0, CI run https://github.com/bywilfried/Prime-launcher/action
 ### Dependency and Fastlane follow-up (2026-11-25)
 
 Audit artifact: run 45578003085, commit f322603b4bbcc5ac9f151e4d77c5c5d8af4d0210. APK contains assets/licenses.json, license.html, GPL-3.0, calculator MIT, Google Sans Flex OFL, META-INF/NOTICE.md and AndroidX license files. No separate GPL-2.0 text identified in APK filenames; complete redistribution notices not established. FuzzyWuzzy 1.4.0 POM declares GPL 2; GPL-2.0-only versus or-later remains unresolved, no Apache-only clearance. Libsu 6.0.0 upstream exact tag LICENSE is Apache-2.0; RestrictionBypass exact revision previously reviewed. Successful GitHub resolution is not proof of F-Droid builder availability, source reproducibility or scanner acceptance. Keep existing dependencies and root license pending resolution. Fastlane descriptions and version-code changelogs prepared; screenshots and final release approval pending.
+
+## Notice inventory — 2026-11-25
+
+Run [45629838150](https://github.com/bywilfried/Prime-launcher/actions/runs/45629838150), audit artifact 15031720887: 173 artifact records, 119 notice occurrences, 14 distinct SHA-256 values (including APK-origin records). Thirteen hashes match license/notice entries in the unsigned APK. The remaining hash `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30` is an Apache-2.0 license text with appendix, collected from Guava 33.7.2-jre, FailureAccess 1.0.3 and Jakarta Inject API 2.0.1. Apache-2.0 texts are already bundled; a non-identical hash alone does not establish a missing legal notice. The Jakarta Inject notice itself matches an APK entry. This inventory does not prove complete upstream attribution or license compatibility.
+
+All three variants compiled. Source scanner exit file is 0 but its JSON reports the ten known JAR errors; the explicit JSON gate fails. APK scanner exit is 0. No scanner exemptions added.

@@ -168,6 +168,7 @@ final def quickstepMaxSdk = "36"
 android {
     namespace "com.android.launcher3"
     defaultConfig {
+        applicationId "com.bywilfried.prime.fdroid"
         versionCode (primeStable ? stableVersion.getProperty("VERSION_CODE").toInteger() : primeVersionCode + primeBuildNumber)
         versionName primeBaseVersion
         buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${primeBaseVersion}\""
