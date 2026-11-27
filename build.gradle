@@ -86,18 +86,31 @@ allprojects {
     ext {
         FRAMEWORK_PREBUILTS_DIR = "$rootDir/prebuilts/libs"
 
+        // Maven Central framework inputs, used only at compile time.
+        frameworkMavenVersions = [
+            'framework-10.jar': '10-robolectric-5803371',
+            'framework-11.jar': '11-robolectric-6757853',
+            'framework-12.jar': '12-robolectric-7732740',
+            'framework-13.jar': '13-robolectric-9030017',
+            'framework-14.jar': '14-robolectric-10818077',
+            'framework-15.jar': '15-robolectric-12650502',
+            'framework-16.jar': '16-robolectric-13921718'
+        ]
+
         addFrameworkJar = { String name ->
-            def frameworkJar = new File(FRAMEWORK_PREBUILTS_DIR, name)
-            if (!frameworkJar.exists()) {
-                throw new IllegalArgumentException("Framework jar path ${frameworkJar.path} doesn't exist")
+            def version = frameworkMavenVersions[name]
+            if (version == null) {
+                throw new IllegalArgumentException("Unknown framework input: ${name}")
             }
+            def frameworkJar = configurations.detachedConfiguration(
+                dependencies.create("org.robolectric:android-all:${version}")
+            )
+            frameworkJar.transitive = false
             gradle.projectsEvaluated {
                 tasks.withType(JavaCompile).configureEach {
-                    // Make sure the frameworkJar is always first in the classpath.
                     classpath = files(frameworkJar, classpath)
                 }
                 tasks.withType(KotlinCompile).configureEach {
-                    // Make sure the frameworkJar is always first in the classpath.
                     libraries.setFrom files(frameworkJar, libraries)
                 }
             }
@@ -447,7 +460,6 @@ dependencies {
 
     implementation fileTree(dir: FRAMEWORK_PREBUILTS_DIR, include: 'SystemUI-statsd-16.jar')
     implementation fileTree(dir: FRAMEWORK_PREBUILTS_DIR, include: 'WindowManager-Shell-16.jar')
-    withQuickstepCompileOnly fileTree(dir: FRAMEWORK_PREBUILTS_DIR, include: 'framework-16.jar')
     baselineProfile projects.baselineProfile
 
     coreLibraryDesugaring libs.android.desugarJdkLibs

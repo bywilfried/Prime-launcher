@@ -36,3 +36,7 @@ The 15 unused legacy JARs were removed in commit 24d40c0. Dev, Stable and F-Droi
 The seven framework JARs (Android 10–16) and SystemUI-core-16 are compile-only inputs. SystemUI-statsd-16 and WindowManager-Shell-16 are also implementation dependencies. All ten Git blob identities match Lawnchair 16-dev at the time of the audit. See docs/FDROID-binary-audit.md.
 
 The table above is inherited build documentation, not independent reproduction evidence. Android 10 and 13 source revisions and older target configurations remain unverified. Branch names for Android 12 and 14 must be resolved to immutable source revisions before claiming reproducibility. AOSP source: https://android.googlesource.com/platform/manifest . No scanner exceptions are applied; seek F-Droid reviewer guidance for these exact inputs.
+
+## Experimental Maven framework migration
+
+On feature/fdroid-support the seven framework JARs are replaced by pinned org.robolectric:android-all artifacts from Maven Central (versions in root build.gradle). They remain compile-only, non-transitive inputs and retain first position in Java/Kotlin compilation classpaths. These are candidate replacements, not byte-identical AOSP turbine stubs. Compilation and runtime compatibility must be validated; no F-Droid acceptance is claimed. The three SystemUI/WindowManager JARs remain unchanged pending separate resolution. The historical table above documents the original inputs.
