@@ -13,7 +13,7 @@ absent, fetch the official tag before running.
 Compare class inventories, APIs and hashes against existing inputs; test all
 three Prime variants. Never commit generated binaries. This script is an
 unexecuted candidate recipe, not an integrated F-Droid build. The current
-three tracked JARs remain until the source recipe and build integration are
+four tracked JARs remain until the source recipe and build integration are
 validated. F-Droid custom compilation belongs in the build phase, after
 source scanning; discuss build host requirements with the reviewer.
 

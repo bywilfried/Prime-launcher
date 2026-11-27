@@ -93,19 +93,23 @@ allprojects {
             'framework-12.jar': '12-robolectric-7732740',
             'framework-13.jar': '13-robolectric-9030017',
             'framework-14.jar': '14-robolectric-10818077',
-            'framework-15.jar': '15-robolectric-12650502',
-            'framework-16.jar': '16-robolectric-13921718'
+            'framework-15.jar': '15-robolectric-12650502'
         ]
 
         addFrameworkJar = { String name ->
             def version = frameworkMavenVersions[name]
-            if (version == null) {
+            if (name != "framework-16.jar" && version == null) {
                 throw new IllegalArgumentException("Unknown framework input: ${name}")
             }
-            def frameworkJar = configurations.detachedConfiguration(
-                dependencies.create("org.robolectric:android-all:${version}")
-            )
-            frameworkJar.transitive = false
+            def frameworkJar
+            if (name == "framework-16.jar") {
+                frameworkJar = files("$FRAMEWORK_PREBUILTS_DIR/$name")
+            } else {
+                frameworkJar = configurations.detachedConfiguration(
+                    dependencies.create("org.robolectric:android-all:${version}")
+                )
+                frameworkJar.transitive = false
+            }
             gradle.projectsEvaluated {
                 tasks.withType(JavaCompile).configureEach {
                     classpath = files(frameworkJar, classpath)
